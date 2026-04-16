@@ -45,7 +45,7 @@ import {
   arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
-  horizontalListSortingStrategy,
+  verticalListSortingStrategy,
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -56,7 +56,7 @@ import { ConfirmationModal } from './ConfirmationModal';
 import { useWorkout, WorkoutSession } from '../contexts/WorkoutContext';
 import { BlockType, getPlanForDuration } from '../constants/periodization';
 
-type WidgetId = 'hero' | 'recovery' | 'pr' | 'volume' | 'macros' | 'logs' | 'block';
+type WidgetId = 'recovery' | 'readiness' | 'pr' | 'volume' | 'macros' | 'logs' | 'block';
 
 interface Widget {
   id: WidgetId;
@@ -66,211 +66,91 @@ interface Widget {
 }
 
 const ALL_WIDGETS: Widget[] = [
-  { id: 'hero', label: 'analysis.nextSession', icon: Play, span: 'w-full lg:w-[700px] xl:w-[850px] h-auto lg:h-full shrink-0' },
-  { id: 'recovery', label: 'analysis.recoveryScore', icon: TrendingUp, span: 'w-full lg:w-[350px] xl:w-[450px] h-auto lg:h-[calc(50%-1rem)] shrink-0' },
-  { id: 'pr', label: 'analysis.personalRecord', icon: Star, span: 'w-full lg:w-[350px] xl:w-[450px] h-auto lg:h-[calc(50%-1rem)] shrink-0' },
-  { id: 'volume', label: 'analysis.weeklyVolume', icon: Activity, span: 'w-full lg:w-[350px] xl:w-[450px] h-auto lg:h-[calc(50%-1rem)] shrink-0' },
-  { id: 'macros', label: 'analysis.macroDistribution', icon: Utensils, span: 'w-full lg:w-[350px] xl:w-[450px] h-auto lg:h-[calc(50%-1rem)] shrink-0' },
-  { id: 'logs', label: 'analysis.recentLogs', icon: History, span: 'w-full lg:w-[600px] xl:w-[700px] h-auto lg:h-full shrink-0' },
-  { id: 'block', label: 'Block Progression', icon: Zap, span: 'w-full lg:w-[700px] xl:w-[850px] h-auto lg:h-full shrink-0' },
+  { id: 'readiness', label: 'analysis.readiness', icon: Activity, span: 'col-span-1' },
+  { id: 'recovery', label: 'analysis.recoveryScore', icon: TrendingUp, span: 'col-span-1' },
+  { id: 'volume', label: 'analysis.weeklyVolume', icon: Activity, span: 'col-span-1' },
+  { id: 'pr', label: 'analysis.personalRecord', icon: Star, span: 'col-span-1' },
+  { id: 'macros', label: 'analysis.macroDistribution', icon: Utensils, span: 'col-span-1 md:col-span-2' },
+  { id: 'logs', label: 'analysis.recentLogs', icon: History, span: 'col-span-1 md:col-span-3' },
+  { id: 'block', label: 'Block Progression', icon: Zap, span: 'col-span-1 md:col-span-3' },
 ];
 
-const HeroWidget = ({ onContinueSession, isLifting }: { onContinueSession?: () => void, isLifting?: boolean }) => {
-  const { t, unit } = useSettings();
-  const { currentSession, getNextWorkoutTemplate, history, getCalibrationStatus } = useWorkout();
+
+export const ReadinessWidget = () => {
+  const { t } = useSettings();
+  const { history, getCalibrationStatus } = useWorkout();
+  
+  const hasHistory = history && history.length > 0;
   const calibration = getCalibrationStatus();
-  const hasHistory = (history?.length || 0) > 0;
-  
-  const nextWorkout = getNextWorkoutTemplate();
-  const activeOrNext = currentSession || nextWorkout;
-  
-  const isActiveSession = isLifting && !!currentSession;
-  const [elapsedTime, setElapsedTime] = React.useState('00:00:00');
-
-  React.useEffect(() => {
-    if (!isActiveSession || !currentSession?.startTime) return;
-
-    const interval = setInterval(() => {
-      const start = currentSession.startTime!;
-      const diff = Date.now() - start;
-      const hours = Math.floor(diff / 3600000);
-      const minutes = Math.floor((diff % 3600000) / 60000);
-      const seconds = Math.floor((diff % 60000) / 1000);
-      setElapsedTime(
-        `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
-      );
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [isActiveSession, currentSession?.startTime]);
-
-  // Calculate volume for the workout to show in the module
-  const calculateVolume = (workout: any) => {
-    if (!workout || !workout.exercises) return '0';
-    let total = 0;
-    workout.exercises.forEach((ex: any) => {
-      if (!ex.sets) return;
-      ex.sets.forEach((s: any) => {
-        total += (parseFloat(s.weight) || 0) * (parseInt(s.reps) || 0);
-      });
-    });
-    return total.toLocaleString();
-  };
-
-  const displayTitle = activeOrNext.title;
-  const getFocusText = (workout: any) => {
-    if (workout.title.includes('Foundation')) return t('analysis.focusFoundation');
-    if (workout.title.includes('Power')) return t('analysis.focusPower');
-    if (workout.title.includes('Hypertrophy')) return t('analysis.focusHypertrophy');
-    return t('analysis.focusingOn');
-  };
-  const focusText = getFocusText(activeOrNext);
-  const firstExercise = activeOrNext?.exercises?.[0];
-  const firstExerciseName = firstExercise?.name || t('analysis.barbellSquat');
-  const firstExerciseSets = firstExercise?.sets?.length || 5;
-  const firstExerciseTarget = firstExercise?.sets?.[0]?.weight || '0';
-  const firstExerciseReps = firstExercise?.sets?.[0]?.reps || '0';
-  const totalLoad = calculateVolume(activeOrNext);
-  const weightUnit = unit === 'metric' ? 'Kg' : 'lbs';
-  
-  // Estimate duration: 15 mins per exercise + 15 mins warmup/cool
-  const estDuration = ((activeOrNext?.exercises?.length || 0) * 15) + 15;
-
-  const calculateProgress = (session: WorkoutSession | null) => {
-    if (!session || !session.exercises) return 0;
-    let totalSets = 0;
-    let completedSets = 0;
-    session.exercises.forEach(ex => {
-      ex.sets?.forEach(s => {
-        totalSets++;
-        if (s.isCompleted) completedSets++;
-      });
-    });
-    return totalSets > 0 ? Math.round((completedSets / totalSets) * 100) : 0;
-  };
-  const sessionProgress = calculateProgress(currentSession);
+  const readinessScore = hasHistory ? calibration.readiness : '–';
+  const readinessY = hasHistory ? 40 - (calibration.readiness / 100) * 32 : 35; // Map 0-100 to 40-8
 
   return (
-    <div className="w-full h-full glass-panel p-6 md:p-10 border-none relative overflow-hidden flex flex-col">
-      <div className="flex flex-col md:flex-row justify-between items-start mb-6 md:mb-8 gap-4 md:gap-0">
-        <div>
-          <div className="flex items-center gap-3 mb-2 md:mb-4">
-            {isActiveSession ? (
-              <>
-                <span className="relative flex h-3 w-3">
-                  <span className="animate-tactical-pulse relative inline-flex h-3 w-3 bg-volt"></span>
-                </span>
-                <span className="text-volt font-headline text-[10px] font-black uppercase tracking-widest">{t('analysis.activeSession')}</span>
-              </>
-            ) : (
-              <div className="flex items-center gap-2">
-                <div className={cn(
-                  "w-1.5 h-1.5 animate-tactical-pulse",
-                  calibration.readiness >= 90 ? "bg-emerald-500" : calibration.readiness >= 70 ? "bg-volt" : "bg-crimson"
-                )} />
-                <span className={cn(
-                  "text-[10px] font-black uppercase tracking-widest",
-                  calibration.readiness >= 90 ? "text-emerald-500" : "text-zinc-500"
-                )}>
-                  {calibration.readiness >= 90 ? t('analysis.primeCondition') : t('analysis.readiness')}: {hasHistory ? `${calibration.readiness}%` : '–'}
-                </span>
-              </div>
-            )}
-          </div>
-          <h2 className="font-headline text-3xl md:text-5xl font-black uppercase italic tracking-tight mb-2">{displayTitle}</h2>
-          <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed">
-            {focusText}
-          </p>
-        </div>
-        <div className="md:text-right">
-          <div className="flex items-center gap-2 text-zinc-400 mb-1 md:justify-end">
-            <Clock size={14} />
-            <span className="font-mono text-sm font-bold">{isActiveSession ? elapsedTime : `${estDuration} Min`}</span>
-          </div>
-          <span className="block text-[10px] font-black uppercase tracking-widest text-zinc-500 mt-1 md:mt-2">
-            {isActiveSession ? t('analysis.duration') : t('analysis.estDuration')}
-          </span>
+    <div className="w-full h-full glass-panel p-8 flex flex-col relative overflow-hidden group/module min-h-[300px]">
+      {/* Tactical Grid Background overlay */}
+      <div className="absolute inset-0 opacity-[0.03] pointer-events-none group-hover/module:opacity-[0.05] transition-opacity duration-700" 
+           style={{ backgroundImage: 'radial-gradient(var(--primary-color) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
+      
+      <div className="flex items-center justify-between mb-6 md:mb-8 relative z-10">
+        <div className="flex items-center gap-3">
+          <h3 className="font-headline text-xl md:text-2xl font-black uppercase italic tracking-tight">{t('analysis.readiness')}</h3>
         </div>
       </div>
 
-      {/* Progress Bar (Only show if active) */}
-      {isActiveSession ? (
-        <div className="mb-6 md:mb-10">
-          <div className="flex justify-between items-end mb-3">
-            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('analysis.sessionProgress')}</span>
-            <span className="text-xl md:text-2xl font-black italic">{sessionProgress}%</span>
-          </div>
-          <div className="w-full h-2 bg-void overflow-hidden border border-white/5">
-            <motion.div 
-              initial={{ width: 0 }}
-              animate={{ width: `${sessionProgress}%` }}
-              className="h-full bg-volt shadow-[0_0_10px_var(--primary-glow)]"
-            />
-          </div>
-        </div>
-      ) : (
-        <div className="mb-6 md:mb-10 flex flex-wrap gap-8 md:gap-12">
-          <div className="space-y-1">
-            <span className="block text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('analysis.mainLift')}</span>
-            <div className="flex flex-col">
-              <div className="flex items-baseline gap-1">
-                <span className="text-2xl md:text-3xl font-black italic text-volt">
-                  {hasHistory ? `${firstExerciseSets}x${firstExerciseReps} @ ${firstExerciseTarget}${weightUnit}` : '–'}
-                </span>
-              </div>
-              {(calibration.readinessModifier !== 1 || calibration.recoveryModifier !== 1) && (
-                <span className="text-[10px] font-black uppercase tracking-widest text-volt/60 mt-0.5">
-                  {t('analysis.calibratedTo')} {(calibration.readinessModifier * calibration.recoveryModifier * 100).toFixed(0)}%
-                </span>
-              )}
-            </div>
-          </div>
-          <div className="space-y-1">
-            <span className="block text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('analysis.totalLoad')}</span>
-            <div className="flex items-baseline gap-1">
-              <span className="text-2xl md:text-3xl font-black italic">{hasHistory ? totalLoad : '–'}</span>
-              <span className="text-xs font-black uppercase text-zinc-400">{weightUnit}</span>
-            </div>
-          </div>
-        </div>
-      )}
+      <div className="flex items-end gap-3 mb-2 relative z-10">
+        <span className="text-6xl md:text-8xl font-black italic tracking-tighter leading-none text-white transition-all scale-100 group-hover/module:scale-[1.02] duration-500">
+          {readinessScore}
+        </span>
+        <span className="text-xl md:text-3xl font-black italic text-zinc-600 mb-2">%</span>
+      </div>
+      <span className="text-volt font-headline text-[10px] md:text-xs font-black uppercase tracking-[0.3em] mb-6 md:mb-8 relative z-10 border-l-2 border-volt/30 pl-3">
+        {hasHistory ? t('analysis.optimalState') : t('analysis.awaitingData')}
+      </span>
 
-      {/* Current Movement */}
-      <div className="bg-void/40 p-4 md:p-6 border border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 md:gap-6 mt-auto mb-6">
-        <div className="flex items-center gap-4 md:gap-6">
-          <div className="h-12 w-12 md:h-16 md:w-16 shrink-0 bg-white/5 flex items-center justify-center border border-white/10">
-            <Dumbbell className={isActiveSession ? "text-volt" : "text-zinc-500"} size={24} md:size={28} />
+      {/* Readiness Graph */}
+      <div className="mt-auto pt-4 md:pt-8 relative z-10 w-full overflow-hidden flex-1 flex flex-col justify-end">
+        {hasHistory ? (
+          <div className="h-24 md:h-32 w-full relative">
+            <svg className="w-full h-full overflow-visible" viewBox="0 0 100 40" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="readiness-grad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--primary-color)" stopOpacity="0.4" />
+                  <stop offset="100%" stopColor="var(--primary-color)" stopOpacity="0" />
+                </linearGradient>
+              </defs>
+              <path 
+                d={`M0,35 L15,28 L30,32 L45,15 L60,20 L75,8 L100,${readinessY} L100,40 L0,40 Z`} 
+                fill="url(#readiness-grad)" 
+              />
+              <polyline 
+                points={`0,35 15,28 30,32 45,15 60,20 75,8 100,${readinessY}`} 
+                fill="none" 
+                stroke="var(--primary-color)" 
+                strokeWidth="2"
+                className="drop-shadow-[0_0_8px_var(--primary-glow)]"
+                vectorEffect="non-scaling-stroke"
+              />
+              {/* Current point marker */}
+              <circle cx="100" cy={readinessY} r="3" fill="var(--primary-color)" className="drop-shadow-[0_0_8px_var(--primary-glow)]" />
+            </svg>
           </div>
-          <div>
-            <span className={cn(
-              "block text-[8px] md:text-[10px] font-black uppercase tracking-widest mb-1",
-              isActiveSession ? "text-volt" : "text-zinc-500"
-            )}>
-              {isActiveSession ? t('analysis.currentExercise') : t('analysis.firstExercise')}
-            </span>
-            <h3 className="font-headline text-xl md:text-2xl font-black uppercase italic tracking-tight">{firstExerciseName}</h3>
-            <span className="text-zinc-400 text-[10px] md:text-xs font-medium">
-              {isActiveSession ? t('analysis.set4of5') : `${firstExerciseSets} ${t('analysis.5sets').split(' ')[1]}`}
-            </span>
+        ) : (
+          <div className="h-24 md:h-32 w-full flex items-center justify-center border-none bg-void/20">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600 italic">
+              {t('analysis.completeFirstWorkout')}
+            </p>
           </div>
-        </div>
-        <div className="sm:text-right">
-          <span className="block text-[8px] md:text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">{t('analysis.target')}</span>
-          <div className="flex items-baseline gap-1 sm:justify-end">
-            <span className="text-3xl md:text-4xl font-black italic tracking-tighter">{firstExerciseTarget}</span>
-            <span className="text-[10px] md:text-xs font-black uppercase text-zinc-400">{weightUnit}</span>
-            <span className="text-lg md:text-xl font-black italic tracking-tighter ml-2 text-zinc-600">x {firstExerciseReps}</span>
-          </div>
+        )}
+        <div className="flex justify-between mt-4 text-[8px] md:text-[10px] font-black uppercase tracking-widest text-zinc-500">
+          <span>-7D</span>
+          <span className="text-volt">CURRENT_PHASE</span>
         </div>
       </div>
 
-      <button 
-        onClick={onContinueSession}
-        className="w-full px-8 py-4 bg-volt text-void font-headline text-xs md:text-sm font-black uppercase tracking-widest hover:bg-white transition-colors flex items-center justify-center gap-2 group"
-      >
-        <Play size={16} md:size={18} className="fill-void group-hover:scale-110 transition-transform" />
-        {isActiveSession ? t('analysis.continueSession') : t('analysis.startSession')}
-      </button>
+      <div className="mt-4 flex justify-between items-center px-1 opacity-20 relative z-10">
+        <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">READINESS_INDEX: {readinessScore}{readinessScore !== '–' ? '%' : ''}</span>
+        <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">CALIBRATION: {calibration.readinessModifier.toFixed(2)}</span>
+      </div>
     </div>
   );
 };
@@ -294,20 +174,11 @@ export const RecoveryWidget = () => {
   const statusColor = getStatusColor(scoreValue);
 
   return (
-  <div className="glass-panel p-6 xl:p-8 border-none flex flex-col items-center justify-between text-center h-full">
+  <div className="glass-panel px-4 py-6 md:p-8 border-none flex flex-col items-center justify-between text-center h-full">
     <div className="w-full flex justify-between items-center mb-2 xl:mb-4">
       <div className="flex items-center gap-2">
-        <div className="grid grid-cols-2 gap-0.5">
-          <div className="w-1 h-1 bg-zinc-500" />
-          <div className="w-1 h-1 bg-zinc-500" />
-          <div className="w-1 h-1 bg-zinc-500" />
-          <div className="w-1 h-1 bg-zinc-500" />
-          <div className="w-1 h-1 bg-zinc-500" />
-          <div className="w-1 h-1 bg-zinc-500" />
-        </div>
         <span className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500">{t('analysis.recoveryScore')}</span>
       </div>
-      <TrendingUp size={18} className={statusColor} />
     </div>
 
     <div className="relative w-24 h-24 xl:w-32 xl:h-32 flex items-center justify-center">
@@ -359,11 +230,17 @@ export const BlockWidget = () => {
   const weekInBlock = nextWorkout.weekInBlock || 1;
   const totalWeek = nextWorkout.totalWeek || 1;
   
-  const plan = getPlanForDuration((profile?.trainingDurationMonths || 3) * 4);
+  const plan = getPlanForDuration((profile?.trainingDurationMonths || 3) * 4, profile?.trainingGoal || 'powerbuilding');
   const blockDef = plan.find(b => b.type === currentBlock);
   const totalWeeks = blockDef?.durationWeeks || 4;
-  const progress = (weekInBlock / totalWeeks) * 100;
   const cycleLength = plan.reduce((acc, b) => acc + b.durationWeeks, 0);
+  const hasHistory = (history?.length || 0) > 0;
+  
+  // Only show progress if they've actually started lifting
+  // And calculate based on completed weeks (e.g., Week 1 = 0% complete)
+  const programProgress = hasHistory ? ((totalWeek - 1) / cycleLength) * 100 : 0;
+  const blockProgress = hasHistory ? ((weekInBlock - 1) / totalWeeks) * 100 : 0;
+  
   const currentCycleWeek = ((totalWeek - 1) % cycleLength) + 1;
 
   const graphData = React.useMemo(() => {
@@ -389,7 +266,7 @@ export const BlockWidget = () => {
       const data = payload[0].payload;
       return (
         <div className="glass-panel p-3 border-volt/30 shadow-xl">
-          <p className="text-[10px] font-black uppercase tracking-widest text-volt mb-1">{data.block}</p>
+          <p className="text-[10px] font-black uppercase tracking-widest text-volt mb-1">{nextWorkout.blockLabel || data.block}</p>
           <p className="text-xs font-bold text-white">Week {data.week}</p>
           <p className="text-xs font-bold text-zinc-400">Intensity: {data.intensity}%</p>
         </div>
@@ -399,12 +276,11 @@ export const BlockWidget = () => {
   };
 
   return (
-    <div className="glass-panel p-6 xl:p-8 border-none flex flex-col justify-between h-full relative overflow-hidden">
+    <div className="glass-panel px-4 py-6 md:p-8 border-none flex flex-col justify-between h-full relative overflow-hidden">
       <div className="absolute top-0 right-0 w-24 h-24 bg-volt/5 blur-[40px] -z-10" />
       
       <div className="flex items-center justify-between mb-6 md:mb-8 relative z-10">
         <div className="flex items-center gap-3">
-          <BarChart3 className="text-volt" size={24} />
           <h3 className="font-headline text-xl md:text-2xl font-black uppercase italic tracking-tight">Block Progression</h3>
         </div>
         <div className="flex items-center gap-2 px-3 py-1 bg-volt/10 border border-volt/20">
@@ -417,10 +293,9 @@ export const BlockWidget = () => {
         <div className="space-y-4">
           <div className="space-y-2">
             <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Training Cycle</span>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2">
+            <div className="grid grid-cols-1 gap-2">
               {plan.map((block, idx) => {
                 const isCurrent = currentBlock === block.type;
-                if (!isCurrent) return null;
                 
                 let accumulated = 0;
                 for(let i=0; i<idx; i++) accumulated += plan[i].durationWeeks;
@@ -429,12 +304,12 @@ export const BlockWidget = () => {
                 
                 return (
                   <div 
-                    key={block.type}
+                    key={block.type + idx}
                     className={cn(
                       "p-3 border-none transition-all duration-300",
                       isCurrent 
-                        ? "bg-white/10" 
-                        : "bg-white/5 opacity-40"
+                        ? "bg-white/10 ring-1 ring-volt/30" 
+                        : "bg-white/5 opacity-40 hover:opacity-60"
                     )}
                   >
                     <div className="flex justify-between items-center mb-1">
@@ -442,9 +317,9 @@ export const BlockWidget = () => {
                         "text-[10px] font-black uppercase tracking-widest",
                         isCurrent ? "text-volt" : "text-zinc-400"
                       )}>
-                        Block {idx + 1}: {block.type}
+                        Block {idx + 1}: {block.label || block.type}
                       </span>
-                      {isCurrent && <Zap size={10} className="text-volt" />}
+                      {isCurrent && <Zap size={10} className="text-volt animate-pulse" />}
                     </div>
                     <div className="flex justify-between items-end">
                       <span className="text-[8px] font-bold text-zinc-500 uppercase tracking-widest">
@@ -452,7 +327,7 @@ export const BlockWidget = () => {
                       </span>
                       {isCurrent && (
                         <span className="text-[10px] font-black italic text-white">
-                          {weekInBlock} / {block.durationWeeks}
+                          WK {weekInBlock} / {block.durationWeeks}
                         </span>
                       )}
                     </div>
@@ -466,13 +341,13 @@ export const BlockWidget = () => {
             <div className="w-full h-2 bg-void overflow-hidden border border-white/5">
               <motion.div 
                 initial={{ width: 0 }}
-                animate={{ width: `${progress}%` }}
+                animate={{ width: `${programProgress}%` }}
                 className="h-full bg-volt shadow-[0_0_10px_var(--primary-glow)]"
               />
             </div>
             <div className="flex justify-between text-[8px] font-black uppercase tracking-widest text-zinc-600">
               <span>{t('analysis.start')}</span>
-              <span>{Math.round(progress)}% {t('analysis.complete')}</span>
+              <span>{Math.round(programProgress)}% {t('analysis.complete')}</span>
               <span>{t('analysis.peak')}</span>
             </div>
           </div>
@@ -483,10 +358,16 @@ export const BlockWidget = () => {
               <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500">Current Focus</span>
             </div>
             <p className="text-[10px] text-zinc-400 leading-relaxed font-bold uppercase tracking-widest">
-              {currentBlock === BlockType.HYPERTROPHY && "Building muscle mass and work capacity."}
-              {currentBlock === BlockType.STRENGTH && "Developing maximal strength and neural drive."}
-              {currentBlock === BlockType.PEAKING && "Realizing strength and preparing for 1RM."}
-              {currentBlock === BlockType.DELOAD && "Dissipating fatigue and recovery."}
+              {(nextWorkout.blockLabel === 'PEAKING' || nextWorkout.blockType === BlockType.PEAKING) && "Realizing strength and preparing for 1RM."}
+              {(nextWorkout.blockLabel === 'MAX EFFORT' || nextWorkout.blockType === BlockType.MAX_EFFORT) && "Hybrid of strength and aesthetics. Focused on top sets."}
+              {(nextWorkout.blockLabel === 'OVERREACH' || nextWorkout.blockType === BlockType.OVERREACH) && "Maximal muscle cross-sectional area and metabolic stress."}
+              {(nextWorkout.blockLabel === 'COMPETITION' || nextWorkout.blockType === BlockType.COMPETITION) && "Competition specificity and realization under maximum load."}
+              {(nextWorkout.blockLabel === 'REGENERATION' || nextWorkout.blockType === BlockType.REGENERATION) && "Sustainable performance and flushing out systemic fatigue."}
+              {nextWorkout.blockType === BlockType.HYPERTROPHY && nextWorkout.blockLabel === undefined && "Building muscle mass and work capacity."}
+              {nextWorkout.blockType === BlockType.STRENGTH && nextWorkout.blockLabel === undefined && "Developing maximal strength and neural drive."}
+              {nextWorkout.blockType === BlockType.FOUNDATION && "Establishing movement quality and structural foundation."}
+              {nextWorkout.blockType === BlockType.POWER && "Developing explosive power and rate of force development."}
+              {nextWorkout.blockType === BlockType.DELOAD && "Dissipating fatigue and recovery."}
             </p>
           </div>
         </div>
@@ -551,7 +432,7 @@ export const BlockWidget = () => {
       </div>
 
       <div className="mt-4 flex justify-between items-center px-1 opacity-20">
-        <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">BLOCK_TYPE: {currentBlock}</span>
+        <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">BLOCK_LABEL: {nextWorkout.blockLabel || currentBlock}</span>
         <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">CYCLE_WEEK: {currentCycleWeek}/{cycleLength}</span>
       </div>
     </div>
@@ -592,11 +473,10 @@ const PRWidget = () => {
       className="w-full h-full object-cover opacity-20 group-hover:scale-110 transition-transform duration-1000"
       referrerPolicy="no-referrer"
     />
-    <div className="absolute inset-0 p-6 xl:p-8 flex flex-col justify-between">
+    <div className="absolute inset-0 p-4 py-6 md:p-8 flex flex-col justify-between">
       <div className="space-y-2 xl:space-y-4">
         <div className="flex items-center justify-between text-white/80">
           <div className="flex items-center gap-2">
-            <Star size={14} fill={hasHistory ? "currentColor" : "none"} />
             <span className="text-[10px] font-black uppercase tracking-[0.3em]">
               {hasHistory ? t('analysis.newPersonalRecord') : t('analysis.personalRecord')}
             </span>
@@ -679,13 +559,9 @@ const VolumeWidget = () => {
   }, [volumeData]);
 
   return (
-  <div className="glass-panel p-6 xl:p-8 border-none space-y-4 xl:space-y-8 h-full">
+  <div className="glass-panel px-4 py-6 md:p-8 border-none space-y-4 xl:space-y-8 h-full">
     <div className="flex justify-between items-center">
       <span className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500">{t('analysis.weeklyAccumulatedVolume')}</span>
-      <div className="flex gap-1">
-        <div className="w-2 h-2 bg-volt" />
-        <div className="w-2 h-2 bg-zinc-800" />
-      </div>
     </div>
     
     <div className="flex items-end justify-between h-32 xl:h-48 gap-2">
@@ -739,13 +615,12 @@ const MacrosWidget = () => {
   ] : [];
 
   return (
-  <div className="glass-panel p-6 xl:p-8 border-none space-y-4 xl:space-y-8 h-full flex flex-col">
+  <div className="glass-panel px-4 py-6 md:p-8 border-none space-y-4 xl:space-y-8 h-full flex flex-col">
     <div className="flex justify-between items-center">
       <div className="flex items-center gap-2">
         <span className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500">{t('analysis.macroDistribution')}</span>
         <span className="text-[8px] font-black uppercase tracking-widest text-volt bg-volt/10 px-1.5 py-0.5 border border-volt/20">EXP</span>
       </div>
-      <Utensils size={18} className="text-zinc-500" />
     </div>
 
     <div className="flex-1 flex flex-col justify-center">
@@ -790,11 +665,16 @@ const MacrosWidget = () => {
 
 export const LogsWidget = ({ onViewHistory }: { onViewHistory?: (sessionId?: string) => void }) => {
   const { t, unit } = useSettings();
-  const { history } = useWorkout();
-  const hasHistory = (history?.length || 0) > 0;
+  const { history, recoveryHistory } = useWorkout();
   const weightUnit = unit === 'metric' ? 'Kg' : 'lbs';
   
-  const recentLogs = [...history].reverse().slice(0, 3);
+  const allLogs = React.useMemo(() => {
+    const workouts = history.map(h => ({ ...h, logType: 'workout' as const, timestamp: h.completedAt || 0 }));
+    const recoveries = recoveryHistory.map(r => ({ ...r, logType: 'recovery' as const, timestamp: r.timestamp }));
+    return [...workouts, ...recoveries].sort((a, b) => b.timestamp - a.timestamp).slice(0, 4);
+  }, [history, recoveryHistory]);
+
+  const hasAnyLogs = allLogs.length > 0;
 
   return (
   <div className="glass-panel p-8 border-none h-full overflow-y-auto custom-scrollbar">
@@ -804,7 +684,7 @@ export const LogsWidget = ({ onViewHistory }: { onViewHistory?: (sessionId?: str
       </div>
 
       <div className="space-y-4">
-        {(history?.length || 0) === 0 ? (
+        {!hasAnyLogs ? (
           <div className="flex flex-col items-center justify-center py-12 border border-dashed border-white/5 bg-void/20">
             <span className="text-6xl font-black text-zinc-800 mb-2">–</span>
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600 italic">
@@ -812,16 +692,49 @@ export const LogsWidget = ({ onViewHistory }: { onViewHistory?: (sessionId?: str
             </p>
           </div>
         ) : (
-          recentLogs.map((log) => {
-            const date = log.completedAt ? new Date(log.completedAt) : new Date();
+          allLogs.map((log) => {
+            const date = new Date(log.timestamp);
             const day = date.getDate().toString();
             const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
             const time = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
             
+            if (log.logType === 'recovery') {
+              const recovery = log as any;
+              return (
+                <div 
+                  key={recovery.id}
+                  className="glass-panel p-4 md:p-6 border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-0 group hover:bg-volt/5 transition-all border-l-4 border-l-zinc-800"
+                >
+                  <div className="flex items-center gap-4 sm:gap-6">
+                    <div className="w-12 h-12 md:w-14 md:h-14 shrink-0 bg-void flex items-center justify-center border border-white/5">
+                      <Zap size={20} className="text-zinc-700 group-hover:text-volt transition-colors" />
+                    </div>
+                    <div className="min-w-0">
+                      <h4 className="text-lg sm:text-xl font-black uppercase italic leading-tight group-hover:text-volt transition-colors truncate">
+                        {recovery.type}
+                      </h4>
+                      <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mt-1 truncate">
+                        {dayName} • {time} • {recovery.durationMinutes}m • RPE {recovery.rpe}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between md:justify-end gap-4 sm:gap-12 shrink-0 md:ml-4 pt-4 md:pt-0 border-t border-white/5 md:border-t-0">
+                    <div className="text-left md:text-right">
+                      <span className="block text-[8px] font-black uppercase tracking-widest text-zinc-600 mb-1">
+                        ACTIVE_RECOVERY
+                      </span>
+                      <span className="text-xs font-black uppercase text-white/40 italic">Log Entry</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
+            const workout = log as any;
             let peakWeight = 0;
             let peakExercise = '';
-            log.exercises?.forEach(ex => {
-              ex.sets?.forEach(set => {
+            workout.exercises?.forEach((ex: any) => {
+              ex.sets?.forEach((set: any) => {
                 const w = parseFloat(set.weight) || 0;
                 if (w > peakWeight) {
                   peakWeight = w;
@@ -832,8 +745,8 @@ export const LogsWidget = ({ onViewHistory }: { onViewHistory?: (sessionId?: str
 
             return (
               <div 
-                key={log.id}
-                onClick={() => onViewHistory?.(log.id)}
+                key={workout.id}
+                onClick={() => onViewHistory?.(workout.id)}
                 className="glass-panel p-4 md:p-6 border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-0 group hover:bg-white/5 transition-colors cursor-pointer"
               >
                 <div className="flex items-center gap-4 sm:gap-6">
@@ -842,10 +755,10 @@ export const LogsWidget = ({ onViewHistory }: { onViewHistory?: (sessionId?: str
                   </div>
                   <div className="min-w-0">
                     <h4 className="text-lg sm:text-xl font-black uppercase italic leading-tight group-hover:text-volt transition-colors truncate">
-                      {log.title}
+                      {workout.title}
                     </h4>
                     <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mt-1 truncate">
-                      {dayName} • {time} • RPE {(log.rpe || 0).toFixed(1)}
+                      {dayName} • {time} • RPE {(workout.rpe || 0).toFixed(1)}
                     </p>
                   </div>
                 </div>
@@ -853,7 +766,7 @@ export const LogsWidget = ({ onViewHistory }: { onViewHistory?: (sessionId?: str
                 <div className="flex items-center justify-between md:justify-end gap-4 sm:gap-12 shrink-0 md:ml-4 pt-4 md:pt-0 border-t border-white/5 md:border-t-0">
                   <div className="text-left md:text-right">
                     <span className="block text-[8px] font-black uppercase tracking-widest text-zinc-600 mb-1">
-                      {log.blockType === BlockType.PEAKING ? t('analysis.peakIntensity') : t('analysis.topSet')}
+                      {workout.blockType === BlockType.PEAKING ? t('analysis.peakIntensity') : t('analysis.topSet')}
                     </span>
                     <div className="flex flex-row md:flex-col items-baseline md:items-end gap-2 md:gap-0">
                       <span className="text-sm font-black uppercase text-volt">{peakWeight} {weightUnit}</span>
@@ -868,7 +781,7 @@ export const LogsWidget = ({ onViewHistory }: { onViewHistory?: (sessionId?: str
         )}
       </div>
 
-      {hasHistory && (
+      {hasAnyLogs && (
         <button 
           onClick={() => onViewHistory?.()}
           className="w-full py-4 mt-2 border border-white/5 bg-white/5 hover:bg-volt hover:text-void text-[10px] font-black uppercase tracking-[0.3em] text-volt transition-all"
@@ -881,9 +794,95 @@ export const LogsWidget = ({ onViewHistory }: { onViewHistory?: (sessionId?: str
   );
 };
 
+
+export const ExternalActivityWidget = () => {
+  const { recoveryHistory, getCalibrationStatus } = useWorkout();
+  const calibration = getCalibrationStatus();
+  
+  const now = Date.now();
+  const oneWeek = 7 * 24 * 60 * 60 * 1000;
+  const oneMonth = 30 * 24 * 60 * 60 * 1000;
+  const oneYear = 365 * 24 * 60 * 60 * 1000;
+
+  const thisWeek = recoveryHistory.filter(r => r.timestamp > now - oneWeek);
+  const thisMonth = recoveryHistory.filter(r => r.timestamp > now - oneMonth);
+  const thisYear = recoveryHistory.filter(r => r.timestamp > now - oneYear);
+
+  const hoursWeek = thisWeek.reduce((acc, curr) => acc + (curr.durationMinutes || 0), 0) / 60;
+  const hoursMonth = thisMonth.reduce((acc, curr) => acc + (curr.durationMinutes || 0), 0) / 60;
+  const hoursYear = thisYear.reduce((acc, curr) => acc + (curr.durationMinutes || 0), 0) / 60;
+
+  const avgRpeWeek = thisWeek.length > 0 ? (thisWeek.reduce((acc, curr) => acc + curr.rpe, 0) / thisWeek.length) : 0;
+  
+  return (
+    <div className="glass-panel p-8 border-none h-full flex flex-col relative overflow-hidden group/module">
+      {/* Tactical Grid Background overlay */}
+      <div className="absolute inset-0 opacity-[0.03] pointer-events-none group-hover/module:opacity-[0.05] transition-opacity duration-700" 
+           style={{ backgroundImage: 'radial-gradient(var(--primary-color) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
+      
+      <div className="flex items-center gap-3 mb-6 md:mb-8 relative z-10">
+        <h3 className="font-headline text-xl md:text-2xl font-black uppercase italic tracking-tight">Tactical Integration</h3>
+      </div>
+      
+      <div className="grid grid-cols-3 gap-4 mb-6 relative z-10 w-full max-w-sm">
+        <div className="flex flex-col">
+          <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">Weekly</span>
+          <div className="flex items-end gap-1">
+            <span className="text-3xl lg:text-4xl font-black italic">{hoursWeek.toFixed(1)}</span>
+            <span className="text-xs font-bold text-zinc-600 mb-1">hrs</span>
+          </div>
+        </div>
+        <div className="flex flex-col border-l border-white/10 pl-4">
+          <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">Monthly</span>
+          <div className="flex items-end gap-1">
+            <span className="text-3xl lg:text-4xl font-black italic">{hoursMonth.toFixed(1)}</span>
+            <span className="text-xs font-bold text-zinc-600 mb-1">hrs</span>
+          </div>
+        </div>
+        <div className="flex flex-col border-l border-white/10 pl-4">
+          <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">Yearly</span>
+          <div className="flex items-end gap-1">
+            <span className="text-3xl lg:text-4xl font-black italic">{hoursYear.toFixed(1)}</span>
+            <span className="text-xs font-bold text-zinc-600 mb-1">hrs</span>
+          </div>
+        </div>
+      </div>
+      
+      <div className="bg-void/40 border border-white/5 p-4 flex flex-col sm:flex-row gap-4 items-start sm:items-center mb-6 relative z-10">
+         <div className="flex flex-col justify-center min-w-[70px]">
+           <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">AVG RPE</span>
+           <span className="text-2xl md:text-3xl font-black italic text-volt">{avgRpeWeek > 0 ? avgRpeWeek.toFixed(1) : '–'}</span>
+         </div>
+         <div className="sm:border-l sm:border-white/5 pt-2 sm:pt-0 sm:pl-4 flex-1 w-full border-t border-white/5 sm:border-t-0 mt-2 sm:mt-0">
+           <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 block mb-1">Program Impact</span>
+           {calibration.hasAerobicInterference ? (
+              <span className="text-xs text-crimson font-medium">Excessive tactical load detected. Readiness penalty applied.</span>
+           ) : (
+              <span className="text-xs text-zinc-300 font-medium">Optimal integration. Minimal interference with primary strength goals.</span>
+           )}
+         </div>
+      </div>
+
+      <div className="mt-auto border-t border-volt/20 pt-4 relative z-10">
+        <div className="flex items-start gap-3">
+           <Zap className="text-volt shrink-0 mt-0.5" size={16} />
+           <div>
+             <span className="block text-[10px] font-black uppercase tracking-widest text-volt mb-1">Volt Arena AI Tip</span>
+             <p className="text-xs text-zinc-400">
+               {calibration.hasAerobicInterference 
+                 ? "You're accumulating too much systemic fatigue from extracurricular activities. Consider lowering the RPE of your tactical sessions or reducing duration to preserve force production for the barbell."
+                 : "Keep tactical sessions at an RPE of 7 or lower on days prior to lower-body training to prevent central nervous system fatigue."}
+             </p>
+           </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const WIDGET_COMPONENTS: Record<WidgetId, React.FC> = {
-  hero: HeroWidget,
   recovery: RecoveryWidget,
+  readiness: ReadinessWidget,
   pr: PRWidget,
   volume: VolumeWidget,
   macros: MacrosWidget,
@@ -964,7 +963,7 @@ interface AnalysisViewProps {
 
 export const AnalysisView = ({ onContinueSession, onViewHistory, isLifting }: AnalysisViewProps) => {
   const { t, experimentalFeatures } = useSettings();
-  const [widgets, setWidgets] = useState<WidgetId[]>(['hero', 'recovery', 'pr', 'volume', 'macros', 'logs', 'block']);
+  const [widgets, setWidgets] = useState<WidgetId[]>(['readiness', 'recovery', 'volume', 'pr', 'macros', 'logs', 'block']);
   const [activeId, setActiveId] = useState<WidgetId | null>(null);
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
   const [widgetToRemove, setWidgetToRemove] = useState<WidgetId | null>(null);
@@ -1032,8 +1031,8 @@ export const AnalysisView = ({ onContinueSession, onViewHistory, isLifting }: An
   });
 
   return (
-    <div className="relative w-full h-full flex flex-col lg:flex-row items-center">
-      <div className="w-full overflow-x-auto lg:overflow-x-auto overflow-y-auto lg:overflow-y-hidden custom-scrollbar pb-12 pt-8 lg:pt-24 px-2 lg:px-8">
+    <div className="relative w-full h-full flex flex-col items-center">
+      <div className="w-full overflow-y-auto custom-scrollbar pb-32 pt-8 lg:pt-24 px-4 lg:px-8">
         <DndContext 
           sensors={sensors}
           collisionDetection={closestCenter}
@@ -1041,10 +1040,10 @@ export const AnalysisView = ({ onContinueSession, onViewHistory, isLifting }: An
           onDragEnd={handleDragEnd}
           onDragCancel={handleDragCancel}
         >
-          <div className="flex flex-col lg:flex-wrap gap-6 lg:gap-8 min-w-full lg:min-w-max h-auto lg:h-[75vh] items-stretch content-start">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 xl:gap-8 max-w-[1600px] mx-auto auto-rows-min">
             <SortableContext 
               items={visibleWidgets}
-              strategy={horizontalListSortingStrategy}
+              strategy={verticalListSortingStrategy}
             >
               {visibleWidgets.map((id) => {
                 const widget = ALL_WIDGETS.find(w => w.id === id);

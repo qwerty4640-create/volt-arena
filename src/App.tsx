@@ -430,7 +430,7 @@ function AppContent() {
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="relative z-10 max-w-md w-full glass-panel p-8 md:p-10 border border-white/10 flex flex-col items-center text-center my-auto"
+          className="relative z-10 max-w-md w-full glass-panel px-4 py-10 md:p-10 border border-white/10 flex flex-col items-center text-center my-auto"
         >
           <div className="w-24 h-24 bg-surface-container-highest flex items-center justify-center mb-6 border border-volt/20 relative group overflow-hidden">
             <div className="absolute inset-0 bg-volt/5 animate-pulse" />
@@ -695,7 +695,7 @@ function AppContent() {
       </AnimatePresence>
 
       {/* Top App Bar Shell */}
-      <header className="fixed top-0 left-0 right-0 z-50 flex justify-center md:justify-between items-center px-2 md:px-10 py-4 md:py-8 bg-void/50 backdrop-blur-md md:bg-transparent">
+      <header className="fixed top-0 left-0 right-0 z-50 flex justify-center md:justify-between items-center px-4 md:px-10 py-4 md:py-8 bg-void/50 backdrop-blur-md md:bg-transparent">
         <div className="flex-1 hidden md:block" />
         
         <div className="flex flex-col items-center justify-center">

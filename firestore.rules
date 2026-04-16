@@ -75,6 +75,18 @@ service cloud.firestore {
              data.exercises is list && data.exercises.size() < 50;
     }
 
+    function isValidActiveRecovery(data) {
+      return hasRequiredFields(['id', 'uid', 'type', 'rpe', 'timestamp', 'durationMinutes', 'date']) &&
+             data.uid == request.auth.uid &&
+             data.id is string && data.id.size() < 100 &&
+             data.type in ['Running', 'Swimming', 'Cycling', 'Walking', 'Boxing', 'Muay Thai', 'Jiu Jitsu', 'Wrestling', 'MMA', 'Rucking', 'Tactical Drills', 'Parkour', 'Yoga', 'Pilates', 'Other'] &&
+             data.rpe is number && data.rpe >= 1 && data.rpe <= 10 &&
+             data.durationMinutes is number && data.durationMinutes > 0 &&
+             data.date is string && data.date.size() < 100 &&
+             data.timestamp is int &&
+             (data.get('note', '') == '' || (data.note is string && data.note.size() < 1000));
+    }
+
     // Default deny
     match /{document=**} {
       allow read, write: if false;
@@ -92,6 +104,14 @@ service cloud.firestore {
         allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
         allow create: if isOwner(userId) && isValidWorkout(request.resource.data);
         allow update: if isOwner(userId) && isValidWorkout(request.resource.data) &&
+                        areImmutableFieldsUnchanged(['uid', 'id']);
+        allow delete: if isOwner(userId) || isAdmin();
+      }
+
+      match /active_recovery/{recoveryId} {
+        allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+        allow create: if isOwner(userId) && isValidActiveRecovery(request.resource.data);
+        allow update: if isOwner(userId) && isValidActiveRecovery(request.resource.data) &&
                         areImmutableFieldsUnchanged(['uid', 'id']);
         allow delete: if isOwner(userId) || isAdmin();
       }

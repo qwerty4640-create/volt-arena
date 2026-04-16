@@ -50,15 +50,31 @@ export interface WorkoutSession {
   duration?: string;
   volume?: string;
   blockType?: BlockType;
+  blockLabel?: string;
   weekInBlock?: number;
   totalWeek?: number;
 }
 
+export type RecoveryType = 'Running' | 'Swimming' | 'Cycling' | 'Walking' | 'Boxing' | 'Muay Thai' | 'Jiu Jitsu' | 'Wrestling' | 'MMA' | 'Rucking' | 'Tactical Drills' | 'Parkour' | 'Yoga' | 'Pilates' | 'Other';
+
+export interface ActiveRecovery {
+  id: string;
+  uid: string;
+  type: RecoveryType;
+  rpe: number;
+  durationMinutes: number;
+  date: string;
+  timestamp: number;
+  note?: string;
+}
+
 interface WorkoutContextType {
   history: WorkoutSession[];
+  recoveryHistory: ActiveRecovery[];
   currentSession: WorkoutSession | null;
   startNewSession: (template?: WorkoutSession, readinessScore?: number, readinessModifier?: number, targetRpe?: number) => void;
   completeSession: (data: { rpe: number; note: string }) => void;
+  logActiveRecovery: (data: Omit<ActiveRecovery, 'id' | 'uid' | 'timestamp' | 'date'>) => Promise<void>;
   updateCurrentSession: (session: WorkoutSession) => void;
   addExerciseToSession: (exercises: Exercise[]) => void;
   replaceExerciseInSession: (oldExerciseId: string, newExercise: Exercise) => void;
@@ -68,6 +84,7 @@ interface WorkoutContextType {
     readiness: number;
     readinessModifier: number;
     recoveryModifier: number;
+    hasAerobicInterference: boolean;
     isDeload: boolean;
     isPeak: boolean;
     recommendedRpe: number;
@@ -186,16 +203,18 @@ const createSessionFromTemplate = (
   profile: UserProfile | null, 
   currentUnit: 'imperial' | 'metric',
   lastSession: WorkoutSession | null,
-  currentReadiness: number
+  currentReadiness: number,
+  hasAerobicInterference?: boolean
 ): WorkoutSession => {
+  const goal = profile?.trainingGoal || 'powerbuilding';
   const durationMonths = profile?.trainingDurationMonths || 3;
   const totalDurationWeeks = durationMonths * 4;
-  const { block, weekInBlock } = getBlockForWeek(week, totalDurationWeeks, profile?.trainingGoal || 'powerbuilding');
+  const { block, weekInBlock } = getBlockForWeek(week, totalDurationWeeks, goal);
   const templateIndex = (day - 1) % WORKOUT_TEMPLATES.length;
   const template = WORKOUT_TEMPLATES[templateIndex];
   
   // 1. Base Intensity from Block + Weekly Progression
-  const blockIntensity = block.baseIntensity + (weekInBlock - 1) * block.intensityIncrementPerWeek;
+  let blockIntensity = block.baseIntensity + (weekInBlock - 1) * block.intensityIncrementPerWeek;
   
   // 2. Readiness Adjustment
   let readinessModifier = 1.0;
@@ -215,13 +234,23 @@ const createSessionFromTemplate = (
     }
   }
 
-  // 4. Overshooting Intervention
-  // If the last 2 sessions were overshoots (Actual RPE > Target RPE), reduce volume
+  // 4. Volume and Goal-Specific Logic
   let volumeModifier = 1.0;
-  const recentSessions = lastSession ? [lastSession] : []; // In a real app we'd check history
+  const isFinalWeek = weekInBlock === block.durationWeeks;
+
+  if (goal === 'pure_strength' && block.type === BlockType.PEAKING && isFinalWeek) {
+    volumeModifier *= 0.6; // 40% drop in volume for fatigue dissipation
+  } else if (goal === 'peaking' && block.type === BlockType.COMPETITION) {
+    volumeModifier *= 0.5; // Drastic set reduction for realization
+  } else if (goal === 'longevity' && block.type === BlockType.REGENERATION) {
+    blockIntensity = Math.min(blockIntensity, 0.75); // Hard cap intensity
+  }
+
+  // If the last sessions were overshoots (Actual RPE > Target RPE), reduce volume further
+  const recentSessions = lastSession ? [lastSession] : []; 
   const overshoots = recentSessions.filter(s => s.rpe && s.targetRpe && s.rpe > s.targetRpe);
   if (overshoots.length >= 1) {
-    volumeModifier = 0.8; // 20% volume reduction
+    volumeModifier *= 0.8; 
   }
 
   const finalIntensity = blockIntensity * readinessModifier * recoveryModifier;
@@ -233,6 +262,7 @@ const createSessionFromTemplate = (
     title: `W${week}D${day}: ${template.title}`,
     startTime: Date.now(),
     blockType: block.type,
+    blockLabel: block.label,
     weekInBlock,
     totalWeek: week,
     exercises: template.exercises.map((ex, i) => {
@@ -241,6 +271,7 @@ const createSessionFromTemplate = (
       const isSquat = ex.name.toLowerCase().includes('squat');
       const isBench = ex.name.toLowerCase().includes('bench');
       const isDeadlift = ex.name.toLowerCase().includes('deadlift');
+      const isMainLift = isSquat || isBench || isDeadlift;
 
       const currentTier = profile ? calculateTier(
         profile.squatPR || 0,
@@ -250,7 +281,7 @@ const createSessionFromTemplate = (
         profile.gender || 'male'
       ) : 'untrained';
 
-      if (profile && (isSquat || isBench || isDeadlift)) {
+      if (profile && isMainLift) {
         let pr = 0;
         if (isSquat) pr = profile.squatPR || 0;
         if (isBench) pr = profile.benchPR || 0;
@@ -273,24 +304,69 @@ const createSessionFromTemplate = (
         weight = Math.round(estimated1RM * finalIntensity);
       }
 
-      // Adjust reps and sets based on block and volume modifier
-      const reps = (isSquat || isBench || isDeadlift) ? block.baseReps : ex.reps;
-      let sets = (isSquat || isBench || isDeadlift) ? block.baseSets : ex.sets;
+      // Apply penalty for high-intensity aerobic activity before lower body days
+      if (hasAerobicInterference && (isSquat || isDeadlift)) {
+        weight = Math.round((weight * 0.85) / 5) * 5;
+      }
+
+      // Adjust reps and sets
+      let reps = isMainLift ? block.baseReps : ex.reps;
+      let sets = isMainLift ? block.baseSets : ex.sets;
+      let exerciseName = ex.name;
       
       if (volumeModifier < 1.0) {
         sets = Math.max(1, Math.floor(sets * volumeModifier));
       }
 
+      // Longevity: Tempo/Pause work instead of weight increase
+      if (goal === 'longevity' && block.type === BlockType.REGENERATION && isMainLift) {
+        exerciseName = `${ex.name} (3s Tempo)`;
+      }
+
       return {
         id: `e${i}`,
-        name: ex.name,
-        sets: Array.from({ length: sets }).map((_, j) => ({
-          id: `s${i}-${j}`,
-          weight: weight.toString(),
-          reps: reps,
-          rpe: '',
-          isCompleted: false
-        }))
+        name: exerciseName,
+        sets: Array.from({ length: sets }).map((_, j) => {
+          let targetSetRpe = '';
+          
+          // Apply RPE Logic based on Goal
+          if (isMainLift) {
+            if (block.type === BlockType.PEAKING || block.type === BlockType.MAX_EFFORT || block.type === BlockType.OVERREACH || block.type === BlockType.COMPETITION) {
+              if (goal === 'pure_strength') {
+                targetSetRpe = isFinalWeek ? '10' : '9';
+              } else if (goal === 'hypertrophy') {
+                targetSetRpe = isFinalWeek ? '10' : '9.5';
+              } else if (goal === 'powerbuilding') {
+                targetSetRpe = j === 0 ? '9' : '8'; // Top set vs Back-off sets
+              } else if (goal === 'peaking') {
+                targetSetRpe = isFinalWeek ? '10' : '7'; // Low RPE during taper for recovery realization
+              } else if (goal === 'longevity') {
+                targetSetRpe = '7.5';
+              }
+            } else if (goal === 'longevity') {
+              targetSetRpe = '7.5';
+            }
+          } else {
+            // Accessories
+            if (block.type === BlockType.OVERREACH || block.type === BlockType.MAX_EFFORT) {
+              if (goal === 'hypertrophy') {
+                targetSetRpe = '9';
+              } else if (goal === 'powerbuilding') {
+                targetSetRpe = '7.5';
+              }
+            } else if (goal === 'longevity') {
+              targetSetRpe = '7.0';
+            }
+          }
+
+          return {
+            id: `s${i}-${j}`,
+            weight: weight.toString(),
+            reps: reps,
+            rpe: targetSetRpe,
+            isCompleted: false
+          };
+        })
       };
     })
   };
@@ -299,6 +375,7 @@ const createSessionFromTemplate = (
 export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { unit, profile, updateProfile } = useSettings();
   const [history, setHistory] = useState<WorkoutSession[]>([]);
+  const [recoveryHistory, setRecoveryHistory] = useState<ActiveRecovery[]>([]);
   const [currentSession, setCurrentSession] = useState<WorkoutSession | null>(null);
   const [mockWorkoutCount, setMockWorkoutCount] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -361,12 +438,31 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
       if (user) {
         const workoutsPath = `users/${user.uid}/workouts`;
+        const recoveryPath = `users/${user.uid}/active_recovery`;
+
         const q = query(
           collection(db, workoutsPath),
           orderBy('completedAt', 'desc')
         );
 
-        unsubscribeFirestore = onSnapshot(q, (snapshot) => {
+        const qRecovery = query(
+          collection(db, recoveryPath),
+          orderBy('timestamp', 'desc')
+        );
+
+        const unsubscribeRecovery = onSnapshot(qRecovery, (snapshot) => {
+          const recoveries = snapshot.docs.map(doc => ({
+            ...doc.data(),
+            id: doc.id
+          } as ActiveRecovery));
+          setRecoveryHistory(recoveries);
+        }, (error) => {
+          if (auth.currentUser) {
+            handleFirestoreError(error, OperationType.LIST, recoveryPath);
+          }
+        });
+
+        const unsubscribeWorkouts = onSnapshot(q, (snapshot) => {
           const workouts = snapshot.docs.map(doc => ({
             ...doc.data(),
             id: doc.id
@@ -374,8 +470,6 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
           setHistory(workouts);
           
           // Check for pending reflections
-          // A workout needs reflection if it was completed > 15 mins ago but < 24 hours ago
-          // and doesn't have an actualRpe yet.
           const now = Date.now();
           const fifteenMins = 15 * 60 * 1000;
           const twentyFourHours = 24 * 60 * 60 * 1000;
@@ -390,15 +484,20 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
           setPendingReflection(needsReflection || null);
           setIsLoading(false);
         }, (error) => {
-          // Only report error if we still have a user (to avoid reporting permission errors on logout)
           if (auth.currentUser) {
             console.error("Auth: Firestore workouts listener error:", error);
             handleFirestoreError(error, OperationType.LIST, workoutsPath);
           }
           setIsLoading(false);
         });
+
+        unsubscribeFirestore = () => {
+          unsubscribeRecovery();
+          unsubscribeWorkouts();
+        };
       } else {
         setHistory([]);
+        setRecoveryHistory([]);
         setIsLoading(false);
       }
     }, (error) => {
@@ -427,6 +526,26 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
       localStorage.removeItem('berserker_mock_count');
     }
   }, [mockWorkoutCount]);
+
+  const logActiveRecovery = async (data: Omit<ActiveRecovery, 'id' | 'uid' | 'timestamp' | 'date'>) => {
+    if (!auth.currentUser) return;
+
+    const recoveryPath = `users/${auth.currentUser.uid}/active_recovery`;
+    const docRef = doc(collection(db, recoveryPath));
+    const newRecovery: ActiveRecovery = {
+      ...data,
+      id: docRef.id,
+      uid: auth.currentUser.uid,
+      timestamp: Date.now(),
+      date: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+    };
+
+    try {
+      await setDoc(docRef, newRecovery);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.CREATE, recoveryPath);
+    }
+  };
 
   const getCalibrationStatus = () => {
     let currentReadiness = 85; // Default baseline
@@ -494,6 +613,11 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
       // Factor in the time since last session for acute recovery
       const lastSession = history[0];
       const hoursSinceLast = (now - (lastSession.completedAt || now)) / 3600000;
+      
+      // Factor in Active Recovery
+      const lastRecovery = recoveryHistory[0];
+      const hoursSinceRecovery = lastRecovery ? (now - lastRecovery.timestamp) / 3600000 : Infinity;
+      
       const acuteRecoveryFactor = Math.min(1.0, hoursSinceLast / 48); // Full acute recovery at 48 hours
       
       if (history.length < 3) {
@@ -507,6 +631,14 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
         currentReadiness = 60 + (20 * acuteRecoveryFactor); // 60-80
       } else {
         currentReadiness = 40 + (20 * acuteRecoveryFactor); // 40-60 (Danger zone)
+      }
+
+      // Penalty for high intensity cardio in the last 24 hours
+      const recentHighIntensityRecovery = recoveryHistory.find(r => 
+        (now - r.timestamp) / 3600000 < 24 && r.rpe >= 7
+      );
+      if (recentHighIntensityRecovery) {
+        currentReadiness = Math.round(currentReadiness * 0.85);
       }
       
       currentReadiness = Math.round(Math.max(0, Math.min(100, currentReadiness)));
@@ -552,10 +684,21 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
     }
 
+    // Heavy aerobic penalty modifier
+    const recentHighIntensityRecovery = recoveryHistory.find(r => 
+      (Date.now() - r.timestamp) / 3600000 < 24 && r.rpe >= 7
+    );
+    let hasAerobicInterference = false;
+    if (recentHighIntensityRecovery) {
+      recoveryModifier *= 0.85;
+      hasAerobicInterference = true;
+    }
+
     return {
       readiness: currentReadiness,
       readinessModifier,
       recoveryModifier,
+      hasAerobicInterference,
       isDeload: currentReadiness < 50,
       isPeak: currentReadiness >= 90,
       recommendedRpe
@@ -568,11 +711,13 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
       : history;
 
     const lastSession = filteredHistory.length > 0 ? filteredHistory[0] : null;
-    const currentReadiness = getCalibrationStatus().readiness;
+    const calibration = getCalibrationStatus();
+    const currentReadiness = calibration.readiness;
+    const hasAerobicInterference = calibration.hasAerobicInterference;
 
     if (filteredHistory.length === 0) {
       const startWeek = 1 + (profile?.trainingWeekOffset || 0);
-      return createSessionFromTemplate(startWeek, 1, profile, unit, null, currentReadiness);
+      return createSessionFromTemplate(startWeek, 1, profile, unit, null, currentReadiness, hasAerobicInterference);
     }
     
     const lastWorkout = filteredHistory[0];
@@ -596,7 +741,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
 
     const finalWeek = nextWeek + (profile?.trainingWeekOffset || 0);
-    return createSessionFromTemplate(finalWeek, nextDay, profile, unit, lastSession, currentReadiness);
+    return createSessionFromTemplate(finalWeek, nextDay, profile, unit, lastSession, currentReadiness, hasAerobicInterference);
   };
 
   const startNewSession = (template?: WorkoutSession, readinessScore?: number, readinessModifier?: number, targetRpe?: number) => {
@@ -788,9 +933,11 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
   return (
     <WorkoutContext.Provider value={{ 
       history, 
+      recoveryHistory,
       currentSession, 
       startNewSession, 
       completeSession, 
+      logActiveRecovery,
       updateCurrentSession,
       addExerciseToSession,
       replaceExerciseInSession,

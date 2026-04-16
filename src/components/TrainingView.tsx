@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { 
   Dumbbell, 
@@ -9,13 +9,15 @@ import {
   Clock,
   Flame,
   Zap,
-  TrendingUp
+  TrendingUp,
+  Plus
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useSettings } from '../contexts/SettingsContext';
 import { useWorkout, WorkoutSession } from '../contexts/WorkoutContext';
 import { calculateTier } from '../lib/strength';
 import { RecoveryWidget, LogsWidget, BlockWidget } from './AnalysisView';
+import { ActiveRecoveryModal } from './ActiveRecoveryModal';
 
 interface TrainingViewProps {
   onContinueSession?: () => void;
@@ -26,6 +28,7 @@ interface TrainingViewProps {
 export const TrainingView = ({ onContinueSession, isLifting, onViewHistory }: TrainingViewProps) => {
   const { t, unit, profile } = useSettings();
   const { currentSession, getNextWorkoutTemplate, history, getCalibrationStatus } = useWorkout();
+  const [isRecoveryModalOpen, setIsRecoveryModalOpen] = useState(false);
   const calibration = getCalibrationStatus();
   
   const nextWorkout = getNextWorkoutTemplate();
@@ -141,9 +144,9 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory }: Tr
   const sessionProgress = calculateProgress(currentSession);
 
   return (
-    <div className="relative w-full h-full flex flex-col lg:flex-row items-center">
-      <div className="w-full overflow-x-auto lg:overflow-x-auto overflow-y-auto lg:overflow-y-hidden custom-scrollbar pb-12 pt-8 lg:pt-24 px-2 lg:px-8">
-        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 min-w-full lg:min-w-max h-auto lg:h-[75vh] items-stretch">
+    <div className="relative w-full h-full flex flex-col items-center">
+      <div className="w-full overflow-y-auto custom-scrollbar pb-32 pt-8 lg:pt-24 px-4 lg:px-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 max-w-[1600px] mx-auto auto-rows-min">
           
           {/* Active/Next Session Module */}
           <motion.div 
@@ -151,7 +154,7 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory }: Tr
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.1 }}
             className={cn(
-              "w-full lg:w-[700px] xl:w-[850px] shrink-0 glass-panel p-8 relative overflow-hidden flex flex-col transition-all duration-500",
+              "col-span-1 md:col-span-2 lg:col-span-3 shrink-0 glass-panel p-8 relative overflow-hidden flex flex-col transition-all duration-500",
               isElite && "border-volt/50",
               isAdvanced && "border-yellow-500/30"
             )}
@@ -223,9 +226,20 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory }: Tr
                       </span>
                     </div>
                     {(calibration.readinessModifier !== 1 || calibration.recoveryModifier !== 1) && (
-                      <span className="text-[10px] font-black uppercase tracking-widest text-volt/60 mt-0.5">
-                        calibrated to {(calibration.readinessModifier * calibration.recoveryModifier * 100).toFixed(0)}%
-                      </span>
+                      <div className="flex flex-col mt-1">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-volt/60">
+                          calibrated to {(calibration.readinessModifier * calibration.recoveryModifier * 100).toFixed(0)}%
+                        </span>
+                        {calibration.hasAerobicInterference && (
+                          <div className="flex items-center gap-1 mt-1">
+                            <span className="relative flex h-2 w-2">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-crimson opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-2 w-2 bg-crimson"></span>
+                            </span>
+                            <span className="text-[8px] font-black uppercase tracking-widest text-crimson">Low Recovery Warning: Aerobic Interference</span>
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
@@ -271,13 +285,25 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory }: Tr
               </div>
             </div>
 
-            <button 
-              onClick={onContinueSession}
-              className="w-full px-8 py-4 bg-volt text-void font-headline text-xs md:text-sm font-black uppercase tracking-widest hover:bg-white transition-colors flex items-center justify-center gap-2 group"
-            >
-              <Play size={16} md:size={18} className="fill-void group-hover:scale-110 transition-transform" />
-              {isActiveSession ? t('analysis.continueSession') : t('analysis.startSession')}
-            </button>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <button 
+                onClick={onContinueSession}
+                className="flex-[2] px-8 py-4 bg-volt text-void font-headline text-xs md:text-sm font-black uppercase tracking-widest hover:bg-white transition-all flex items-center justify-center gap-2 group"
+              >
+                <Play size={16} md:size={18} className="fill-void group-hover:scale-110 transition-transform" />
+                {isActiveSession ? t('analysis.continueSession') : t('analysis.startSession')}
+              </button>
+              
+              {!isActiveSession && (
+                <button 
+                  onClick={() => setIsRecoveryModalOpen(true)}
+                  className="flex-1 px-8 py-4 bg-void/40 border border-white/10 text-white font-headline text-[10px] md:text-xs font-black uppercase tracking-widest hover:bg-white/5 transition-all flex items-center justify-center gap-2 group"
+                >
+                  <Plus size={14} className="group-hover:rotate-90 transition-transform" />
+                  Non-Program Activity
+                </button>
+              )}
+            </div>
 
             <div className="mt-4 flex justify-between items-center px-1 opacity-30">
               <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">SYS_STATUS: ACTIVE</span>
@@ -285,91 +311,19 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory }: Tr
             </div>
           </motion.div>
 
-              {/* Readiness Module */}
-              <motion.div 
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ delay: 0.2 }}
-                className="w-full lg:w-[350px] xl:w-[450px] shrink-0 glass-panel p-8 flex flex-col relative overflow-hidden"
-              >
-                <div className="flex items-center gap-3 mb-6 md:mb-8 relative z-10">
-                  <Activity className="text-volt" size={24} />
-                  <h3 className="font-headline text-xl md:text-2xl font-black uppercase italic tracking-tight">{t('analysis.readiness')}</h3>
-                </div>
+          {/* Modal */}
+          <ActiveRecoveryModal 
+            isOpen={isRecoveryModalOpen} 
+            onClose={() => setIsRecoveryModalOpen(false)} 
+          />
 
-                <div className="flex items-end gap-4 mb-2 relative z-10">
-                  <span className="text-5xl md:text-7xl font-black italic tracking-tighter leading-none">{readinessScore}</span>
-                  <span className="text-xl md:text-2xl font-black italic text-zinc-500 mb-1">%</span>
-                </div>
-                <span className="text-volt font-headline text-[10px] md:text-xs font-black uppercase tracking-widest mb-6 md:mb-8 relative z-10">
-                  {hasHistory ? t('analysis.optimalState') : t('analysis.awaitingData')}
-                </span>
-
-                {/* Readiness Graph */}
-                <div className="mt-auto pt-4 md:pt-8 relative z-10 w-full">
-                  {hasHistory ? (
-                    <div className="h-24 md:h-32 w-full relative">
-                      <svg className="w-full h-full overflow-visible" viewBox="0 0 100 40" preserveAspectRatio="none">
-                        <defs>
-                          <linearGradient id="readiness-grad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="var(--primary-color)" stopOpacity="0.4" />
-                            <stop offset="100%" stopColor="var(--primary-color)" stopOpacity="0" />
-                          </linearGradient>
-                        </defs>
-                        <path 
-                          d={`M0,35 L15,28 L30,32 L45,15 L60,20 L75,8 L100,${readinessY} L100,40 L0,40 Z`} 
-                          fill="url(#readiness-grad)" 
-                        />
-                        <polyline 
-                          points={`0,35 15,28 30,32 45,15 60,20 75,8 100,${readinessY}`} 
-                          fill="none" 
-                          stroke="var(--primary-color)" 
-                          strokeWidth="2"
-                          className="drop-shadow-[0_0_8px_var(--primary-glow)]"
-                          vectorEffect="non-scaling-stroke"
-                        />
-                        {/* Current point marker */}
-                        <circle cx="100" cy={readinessY} r="3" fill="var(--primary-color)" className="drop-shadow-[0_0_8px_var(--primary-glow)]" />
-                      </svg>
-                    </div>
-                  ) : (
-                    <div className="h-24 md:h-32 w-full flex items-center justify-center border-none bg-void/20">
-                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600 italic">
-                        {t('analysis.completeFirstWorkout')}
-                      </p>
-                    </div>
-                  )}
-                  <div className="flex justify-between mt-4 text-[8px] md:text-[10px] font-black uppercase tracking-widest text-zinc-500">
-                    <span>{t('analysis.7daysAgo')}</span>
-                    <span>{t('analysis.today')}</span>
-                  </div>
-                </div>
-
-                <div className="mt-4 flex justify-between items-center px-1 opacity-20">
-                  <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">READINESS_INDEX: {readinessScore}{readinessScore !== '–' ? '%' : ''}</span>
-                  <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">CALIBRATION: {calibration.readinessModifier.toFixed(2)}</span>
-                </div>
-              </motion.div>
-
-              {/* Block Progression Module */}
-              <motion.div 
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ delay: 0.25 }}
-                className="w-full lg:w-[700px] xl:w-[850px] shrink-0"
-              >
-                <BlockWidget />
-              </motion.div>
-
-              {/* My PRs Module */}
-              <motion.div 
-                initial={{ y: 20, opacity: 0 }}
+          {/* My PRs Module */}
+          <motion.div 
+            initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ delay: 0.3 }}
-                className="w-full lg:w-[700px] xl:w-[850px] shrink-0 glass-panel p-8 flex flex-col"
+                className="col-span-1 md:col-span-2 lg:col-span-3 shrink-0 glass-panel p-8 flex flex-col"
               >
                 <div className="flex items-center gap-3 mb-6 md:mb-10">
                   <Trophy className="text-volt" size={24} />
@@ -429,24 +383,13 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory }: Tr
                 </div>
               </motion.div>
 
-              {/* Recovery Score Module */}
-              <motion.div 
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ delay: 0.35 }}
-                className="w-full lg:w-[350px] xl:w-[450px] shrink-0"
-              >
-                <RecoveryWidget />
-              </motion.div>
-
               {/* Recent Logs Module */}
               <motion.div 
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ delay: 0.4 }}
-                className="w-full lg:w-[600px] xl:w-[700px] shrink-0"
+                className="col-span-1 md:col-span-2 lg:col-span-3 shrink-0"
               >
                 <LogsWidget onViewHistory={onViewHistory} />
               </motion.div>
