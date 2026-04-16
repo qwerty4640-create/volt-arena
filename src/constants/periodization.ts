@@ -6,16 +6,11 @@ export enum BlockType {
   STRENGTH = 'Strength',
   POWER = 'Power',
   PEAKING = 'Peaking',
-  DELOAD = 'Deload',
-  MAX_EFFORT = 'Max Effort',
-  OVERREACH = 'Overreach',
-  COMPETITION = 'Competition / Taper',
-  REGENERATION = 'Regeneration'
+  DELOAD = 'Deload'
 }
 
 export interface BlockDefinition {
   type: BlockType;
-  label: string;
   durationWeeks: number;
   baseIntensity: number; // 0.0 to 1.0
   baseReps: string;
@@ -25,14 +20,13 @@ export interface BlockDefinition {
 
 export const getPlanForDuration = (totalWeeks: number, goal: TrainingGoal = 'powerbuilding'): BlockDefinition[] => {
   const deloadWeeks = 1;
-  const peakingWeeks = goal === 'peaking' ? Math.max(4, Math.floor(totalWeeks * 0.33)) : Math.max(3, Math.floor(totalWeeks * 0.25));
+  const peakingWeeks = goal === 'peaking' ? Math.max(4, Math.floor(totalWeeks * 0.3)) : Math.max(2, Math.floor(totalWeeks * 0.15));
   const remainingWeeks = totalWeeks - deloadWeeks - peakingWeeks;
 
   // Define block templates
-  const blocks: Record<string, Partial<BlockDefinition>> = {
+  const blocks: Record<BlockType, BlockDefinition> = {
     [BlockType.FOUNDATION]: {
       type: BlockType.FOUNDATION,
-      label: 'Foundation',
       durationWeeks: 0,
       baseIntensity: 0.60,
       baseReps: '12',
@@ -41,7 +35,6 @@ export const getPlanForDuration = (totalWeeks: number, goal: TrainingGoal = 'pow
     },
     [BlockType.HYPERTROPHY]: {
       type: BlockType.HYPERTROPHY,
-      label: 'Hypertrophy',
       durationWeeks: 0,
       baseIntensity: 0.68,
       baseReps: '10',
@@ -50,7 +43,6 @@ export const getPlanForDuration = (totalWeeks: number, goal: TrainingGoal = 'pow
     },
     [BlockType.STRENGTH]: {
       type: BlockType.STRENGTH,
-      label: 'Strength',
       durationWeeks: 0,
       baseIntensity: 0.78,
       baseReps: '5',
@@ -59,7 +51,6 @@ export const getPlanForDuration = (totalWeeks: number, goal: TrainingGoal = 'pow
     },
     [BlockType.POWER]: {
       type: BlockType.POWER,
-      label: 'Power',
       durationWeeks: 0,
       baseIntensity: 0.85,
       baseReps: '3',
@@ -68,7 +59,6 @@ export const getPlanForDuration = (totalWeeks: number, goal: TrainingGoal = 'pow
     },
     [BlockType.PEAKING]: {
       type: BlockType.PEAKING,
-      label: 'Peaking',
       durationWeeks: peakingWeeks,
       baseIntensity: 0.90,
       baseReps: '1',
@@ -77,7 +67,6 @@ export const getPlanForDuration = (totalWeeks: number, goal: TrainingGoal = 'pow
     },
     [BlockType.DELOAD]: {
       type: BlockType.DELOAD,
-      label: 'Deload',
       durationWeeks: deloadWeeks,
       baseIntensity: 0.50,
       baseReps: '8',
@@ -86,57 +75,35 @@ export const getPlanForDuration = (totalWeeks: number, goal: TrainingGoal = 'pow
     }
   };
 
-  // Adjust durations and labels based on goal
+  // Adjust durations based on goal
   const plan: BlockDefinition[] = [];
 
   switch (goal) {
     case 'pure_strength':
-      plan.push({ ...blocks[BlockType.STRENGTH], durationWeeks: Math.floor(remainingWeeks * 0.6) } as BlockDefinition);
-      plan.push({ ...blocks[BlockType.POWER], durationWeeks: remainingWeeks - Math.floor(remainingWeeks * 0.6) } as BlockDefinition);
+      plan.push({ ...blocks[BlockType.STRENGTH], durationWeeks: Math.floor(remainingWeeks * 0.6) });
+      plan.push({ ...blocks[BlockType.POWER], durationWeeks: remainingWeeks - Math.floor(remainingWeeks * 0.6) });
       break;
     case 'hypertrophy':
-      plan.push({ ...blocks[BlockType.FOUNDATION], durationWeeks: Math.floor(remainingWeeks * 0.3) } as BlockDefinition);
-      plan.push({ ...blocks[BlockType.HYPERTROPHY], durationWeeks: remainingWeeks - Math.floor(remainingWeeks * 0.3) } as BlockDefinition);
+      plan.push({ ...blocks[BlockType.FOUNDATION], durationWeeks: Math.floor(remainingWeeks * 0.3) });
+      plan.push({ ...blocks[BlockType.HYPERTROPHY], durationWeeks: remainingWeeks - Math.floor(remainingWeeks * 0.3) });
       break;
     case 'peaking':
-      plan.push({ ...blocks[BlockType.STRENGTH], durationWeeks: Math.floor(remainingWeeks * 0.4) } as BlockDefinition);
-      plan.push({ ...blocks[BlockType.POWER], durationWeeks: remainingWeeks - Math.floor(remainingWeeks * 0.4) } as BlockDefinition);
+      plan.push({ ...blocks[BlockType.STRENGTH], durationWeeks: Math.floor(remainingWeeks * 0.4) });
+      plan.push({ ...blocks[BlockType.POWER], durationWeeks: remainingWeeks - Math.floor(remainingWeeks * 0.4) });
       break;
     case 'longevity':
-      plan.push({ ...blocks[BlockType.FOUNDATION], durationWeeks: Math.floor(remainingWeeks * 0.5) } as BlockDefinition);
-      plan.push({ ...blocks[BlockType.HYPERTROPHY], durationWeeks: remainingWeeks - Math.floor(remainingWeeks * 0.5) } as BlockDefinition);
+      plan.push({ ...blocks[BlockType.FOUNDATION], durationWeeks: Math.floor(remainingWeeks * 0.5) });
+      plan.push({ ...blocks[BlockType.HYPERTROPHY], durationWeeks: remainingWeeks - Math.floor(remainingWeeks * 0.5) });
       break;
     case 'powerbuilding':
     default:
-      plan.push({ ...blocks[BlockType.HYPERTROPHY], durationWeeks: Math.floor(remainingWeeks * 0.5) } as BlockDefinition);
-      plan.push({ ...blocks[BlockType.STRENGTH], durationWeeks: remainingWeeks - Math.floor(remainingWeeks * 0.5) } as BlockDefinition);
+      plan.push({ ...blocks[BlockType.HYPERTROPHY], durationWeeks: Math.floor(remainingWeeks * 0.5) });
+      plan.push({ ...blocks[BlockType.STRENGTH], durationWeeks: remainingWeeks - Math.floor(remainingWeeks * 0.5) });
       break;
   }
 
-  // Define Block 4 (Phase 4) label and config based on goal
-  let block4: BlockDefinition;
-  switch (goal) {
-    case 'pure_strength':
-      block4 = { ...blocks[BlockType.PEAKING], type: BlockType.PEAKING, label: 'PEAKING', baseReps: '2', baseIntensity: 0.92 } as BlockDefinition;
-      break;
-    case 'powerbuilding':
-      block4 = { ...blocks[BlockType.PEAKING], type: BlockType.MAX_EFFORT, label: 'MAX EFFORT', baseReps: '3', baseIntensity: 0.88 } as BlockDefinition;
-      break;
-    case 'hypertrophy':
-      block4 = { ...blocks[BlockType.PEAKING], type: BlockType.OVERREACH, label: 'OVERREACH', baseReps: '8', baseIntensity: 0.72, baseSets: 4, intensityIncrementPerWeek: 0.01 } as BlockDefinition;
-      break;
-    case 'peaking':
-      block4 = { ...blocks[BlockType.PEAKING], type: BlockType.COMPETITION, label: 'COMPETITION / TAPER', baseReps: '1', baseIntensity: 0.95, intensityIncrementPerWeek: 0.02 } as BlockDefinition;
-      break;
-    case 'longevity':
-      block4 = { ...blocks[BlockType.PEAKING], type: BlockType.REGENERATION, label: 'REGENERATION', baseIntensity: 0.60, baseReps: '12', baseSets: 3, intensityIncrementPerWeek: 0 } as BlockDefinition;
-      break;
-    default:
-      block4 = { ...blocks[BlockType.PEAKING], label: 'PEAKING' } as BlockDefinition;
-  }
-
-  plan.push(block4);
-  plan.push(blocks[BlockType.DELOAD] as BlockDefinition);
+  plan.push(blocks[BlockType.PEAKING]);
+  plan.push(blocks[BlockType.DELOAD]);
 
   return plan.filter(b => b.durationWeeks > 0);
 };

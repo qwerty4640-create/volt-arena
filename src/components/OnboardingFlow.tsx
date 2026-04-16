@@ -5,14 +5,14 @@ import { useSettings, UserProfile, TrainingGoal } from '../contexts/SettingsCont
 import { cn } from '../lib/utils';
 import { auth, logout } from '../firebase';
 
-type OnboardingStep = 'biometrics' | 'goals' | 'objective' | 'complete';
+type OnboardingStep = 'biometrics' | 'goals' | 'complete';
 
 export const OnboardingFlow = () => {
   const { profile, updateProfile, unit, setUnit, t } = useSettings();
   const [step, setStep] = useState<OnboardingStep>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('volt_onboarding_step');
-      if (saved && ['biometrics', 'goals', 'objective', 'complete'].includes(saved)) {
+      if (saved && ['biometrics', 'goals', 'complete'].includes(saved)) {
         return saved as OnboardingStep;
       }
     }
@@ -34,7 +34,6 @@ export const OnboardingFlow = () => {
     weight: '',
     age: '',
     trainingGoal: 'powerbuilding' as TrainingGoal,
-    trainingDurationMonths: 3,
     trainingFrequency: 4,
     trainingStyle: '' as string,
     trainingAge: 'untrained' as 'untrained' | 'novice' | 'intermediate' | 'advanced' | 'elite',
@@ -144,8 +143,6 @@ export const OnboardingFlow = () => {
     if (step === 'biometrics') {
       setStep('goals');
     } else if (step === 'goals') {
-      setStep('objective');
-    } else if (step === 'objective') {
       setLoading(true);
       try {
         const heightVal = unit === 'metric' 
@@ -163,7 +160,6 @@ export const OnboardingFlow = () => {
           height: heightVal,
           weight: parseFloat(formData.weight) || 0,
           trainingGoal: formData.trainingGoal,
-          trainingDurationMonths: formData.trainingDurationMonths,
           trainingFrequency: formData.trainingFrequency,
           level: formData.trainingAge,
           squatPR: parseFloat(formData.squat1RM) || 0,
@@ -256,9 +252,9 @@ export const OnboardingFlow = () => {
   return (
     <div 
       ref={scrollContainerRef}
-      className="fixed inset-0 z-[100] bg-void flex justify-center p-2 md:p-6 overflow-y-auto"
+      className="fixed inset-0 z-[100] bg-void flex justify-center p-4 overflow-y-auto"
     >
-      <div className="w-full max-w-2xl my-auto py-4 md:py-8">
+      <div className="w-full max-w-2xl my-auto py-8">
         <AnimatePresence mode="wait">
           {step === 'biometrics' && (
             <motion.div
@@ -266,7 +262,7 @@ export const OnboardingFlow = () => {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              className="glass-panel px-4 py-6 md:p-10 space-y-6 md:space-y-8"
+              className="glass-panel p-8 space-y-8"
             >
               <div className="flex items-center gap-6">
                 <button 
@@ -279,11 +275,31 @@ export const OnboardingFlow = () => {
                   <h2 className="font-headline text-3xl font-black uppercase italic tracking-tight text-white">{t('onboarding.title')}</h2>
                   <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">{t('onboarding.step2')}</p>
                 </div>
+                <div className="flex items-center gap-2 bg-surface-container-lowest border border-white/5 p-1">
+                  <button
+                    onClick={() => handleUnitChange('imperial')}
+                    className={cn(
+                      "px-2 py-1 text-[8px] font-black uppercase tracking-widest transition-all",
+                      unit === 'imperial' ? "bg-volt text-void" : "text-zinc-500 hover:text-white"
+                    )}
+                  >
+                    LB
+                  </button>
+                  <button
+                    onClick={() => handleUnitChange('metric')}
+                    className={cn(
+                      "px-2 py-1 text-[8px] font-black uppercase tracking-widest transition-all",
+                      unit === 'metric' ? "bg-volt text-void" : "text-zinc-500 hover:text-white"
+                    )}
+                  >
+                    KG
+                  </button>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('onboarding.firstName')}</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-2">{t('onboarding.firstName')}</label>
                   <input
                     type="text"
                     value={formData.firstName}
@@ -293,7 +309,7 @@ export const OnboardingFlow = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('onboarding.lastName')}</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-2">{t('onboarding.lastName')}</label>
                   <input
                     type="text"
                     value={formData.lastName}
@@ -306,7 +322,7 @@ export const OnboardingFlow = () => {
 
               <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('onboarding.gender')}</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-2">{t('onboarding.gender')}</label>
                   <div className="grid grid-cols-1 gap-2">
                     {(['male', 'female', 'other'] as const).map((g) => (
                       <button
@@ -323,7 +339,7 @@ export const OnboardingFlow = () => {
                   </div>
                 </div>
                 <div className="space-y-2 col-span-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('onboarding.age')}</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-2">{t('onboarding.age')}</label>
                   <input
                     type="number"
                     value={formData.age}
@@ -334,33 +350,10 @@ export const OnboardingFlow = () => {
                 </div>
               </div>
 
-              <div className="flex justify-start">
-                <div className="flex items-center gap-2 bg-surface-container-lowest border border-white/5 p-1">
-                  <button
-                    onClick={() => handleUnitChange('imperial')}
-                    className={cn(
-                      "px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all",
-                      unit === 'imperial' ? "bg-volt text-void" : "text-zinc-500 hover:text-white"
-                    )}
-                  >
-                    LB
-                  </button>
-                  <button
-                    onClick={() => handleUnitChange('metric')}
-                    className={cn(
-                      "px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all",
-                      unit === 'metric' ? "bg-volt text-void" : "text-zinc-500 hover:text-white"
-                    )}
-                  >
-                    KG
-                  </button>
-                </div>
-              </div>
-
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className={cn(
-                    "text-[10px] font-black uppercase tracking-widest transition-colors",
+                    "text-[10px] font-black uppercase tracking-widest ml-2 transition-colors",
                     isHeightError ? "text-crimson" : "text-zinc-500"
                   )}>
                     {t('onboarding.height')} ({unit === 'metric' ? 'cm' : 'ft/in'})
@@ -412,12 +405,12 @@ export const OnboardingFlow = () => {
                     )}
                   </div>
                   {isHeightError && (
-                    <p className="text-[8px] font-black uppercase tracking-widest text-crimson">{t('onboarding.invalidHeight')}</p>
+                    <p className="text-[8px] font-black uppercase tracking-widest text-crimson ml-2">{t('onboarding.invalidHeight')}</p>
                   )}
                 </div>
                 <div className="space-y-2">
                   <label className={cn(
-                    "text-[10px] font-black uppercase tracking-widest transition-colors",
+                    "text-[10px] font-black uppercase tracking-widest ml-2 transition-colors",
                     isWeightError ? "text-crimson" : "text-zinc-500"
                   )}>
                     {t('onboarding.weight')} ({unit === 'metric' ? 'kg' : 'lb'})
@@ -436,254 +429,13 @@ export const OnboardingFlow = () => {
                     />
                   </div>
                   {isWeightError && (
-                    <p className="text-[8px] font-black uppercase tracking-widest text-crimson">{t('onboarding.invalidWeight')}</p>
+                    <p className="text-[8px] font-black uppercase tracking-widest text-crimson ml-2">{t('onboarding.invalidWeight')}</p>
                   )}
-                </div>
-              </div>
-
-              <button
-                onClick={handleNext}
-                disabled={!formData.firstName || !formData.lastName || (unit === 'metric' ? !formData.height : (!formData.heightFeet || !formData.heightInches)) || !formData.weight || isHeightError || isWeightError}
-                className="w-full bg-volt text-void font-headline font-black uppercase tracking-widest p-5 flex items-center justify-center gap-2 rounded-none hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(0,182,255,0.3)] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {t('onboarding.nextProtocol')} <ChevronRight size={20} />
-              </button>
-            </motion.div>
-          )}
-
-          {step === 'goals' && (
-            <motion.div
-              key="goals"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="glass-panel px-4 py-6 md:p-10 space-y-6 md:space-y-8"
-            >
-              <div className="flex items-center gap-6">
-                <button 
-                  onClick={() => setStep('biometrics')}
-                  className="w-12 h-12 shrink-0 bg-surface-container-lowest border border-white/5 flex items-center justify-center text-zinc-400 hover:text-white hover:border-volt transition-all"
-                >
-                  <ArrowLeft size={24} />
-                </button>
-                <div className="space-y-1">
-                  <h2 className="font-headline text-3xl font-black uppercase italic tracking-tight text-white">{t('onboarding.title')}</h2>
-                  <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">{t('onboarding.step3')}</p>
-                </div>
-              </div>
-
-              <div className="space-y-6">
-                <div className="space-y-4">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('onboarding.experience')}</label>
-                  <div className="grid grid-cols-2 gap-3">
-                    {(['untrained', 'novice', 'intermediate', 'advanced', 'elite'] as const).map((level) => (
-                      <button
-                        key={level}
-                        onClick={() => setFormData({ ...formData, trainingAge: level })}
-                        className={cn(
-                          "p-3 border font-headline text-[10px] font-black uppercase tracking-widest transition-all",
-                          formData.trainingAge === level ? "bg-volt/10 border-volt text-white" : "bg-surface-variant border-white/5 text-zinc-500"
-                        )}
-                      >
-                        {t(`onboarding.level.${level}`)}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('onboarding.current1rm')}</label>
-                    <div className="flex items-center gap-2 bg-surface-container-lowest border border-white/5 p-1 w-fit">
-                      <button
-                        onClick={() => handleUnitChange('imperial')}
-                        className={cn(
-                          "px-2 py-1 text-[8px] font-black uppercase tracking-widest transition-all",
-                          unit === 'imperial' ? "bg-volt text-void" : "text-zinc-500 hover:text-white"
-                        )}
-                      >
-                        LB
-                      </button>
-                      <button
-                        onClick={() => handleUnitChange('metric')}
-                        className={cn(
-                          "px-2 py-1 text-[8px] font-black uppercase tracking-widest transition-all",
-                          unit === 'metric' ? "bg-volt text-void" : "text-zinc-500 hover:text-white"
-                        )}
-                      >
-                        KG
-                      </button>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="space-y-2">
-                      <label className={cn("text-[8px] font-black uppercase tracking-widest transition-colors", isSquatError ? "text-crimson" : "text-zinc-500")}>{t('onboarding.squat')}</label>
-                      <input
-                        type="number"
-                        value={formData.squat1RM}
-                        onChange={(e) => setFormData({ ...formData, squat1RM: e.target.value })}
-                        className={cn(
-                          "w-full bg-surface-container-lowest border-b-2 p-3 text-white outline-none transition-all text-center",
-                          isSquatError ? "border-crimson" : "border-white/5 focus:border-volt"
-                        )}
-                        placeholder="0"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className={cn("text-[8px] font-black uppercase tracking-widest transition-colors", isBenchError ? "text-crimson" : "text-zinc-500")}>{t('onboarding.bench')}</label>
-                      <input
-                        type="number"
-                        value={formData.bench1RM}
-                        onChange={(e) => setFormData({ ...formData, bench1RM: e.target.value })}
-                        className={cn(
-                          "w-full bg-surface-container-lowest border-b-2 p-3 text-white outline-none transition-all text-center",
-                          isBenchError ? "border-crimson" : "border-white/5 focus:border-volt"
-                        )}
-                        placeholder="0"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className={cn("text-[8px] font-black uppercase tracking-widest transition-colors", isDeadliftError ? "text-crimson" : "text-zinc-500")}>{t('onboarding.deadlift')}</label>
-                      <input
-                        type="number"
-                        value={formData.deadlift1RM}
-                        onChange={(e) => setFormData({ ...formData, deadlift1RM: e.target.value })}
-                        className={cn(
-                          "w-full bg-surface-container-lowest border-b-2 p-3 text-white outline-none transition-all text-center",
-                          isDeadliftError ? "border-crimson" : "border-white/5 focus:border-volt"
-                        )}
-                        placeholder="0"
-                      />
-                    </div>
-                  </div>
-                  {(isSquatError || isBenchError || isDeadliftError) && (
-                    <p className="text-[8px] font-black uppercase tracking-widest text-crimson">{t('onboarding.invalid1rm')}</p>
-                  )}
-                </div>
-
-                <div className="space-y-4">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('onboarding.gymAccess')}</label>
-                  <div className="grid grid-cols-1 gap-3">
-                    <button
-                      onClick={() => setFormData({ ...formData, gymProfile: 'powerlifting' })}
-                      className={cn(
-                        "p-3 border font-headline text-[10px] font-black uppercase tracking-widest transition-all text-left",
-                        formData.gymProfile === 'powerlifting' ? "bg-volt/10 border-volt text-white" : "bg-surface-variant border-white/5 text-zinc-500"
-                      )}
-                    >
-                      {t('onboarding.gymYes')}
-                    </button>
-                    <button
-                      onClick={() => setFormData({ ...formData, gymProfile: 'commercial' })}
-                      className={cn(
-                        "p-3 border font-headline text-[10px] font-black uppercase tracking-widest transition-all text-left",
-                        formData.gymProfile === 'commercial' ? "bg-volt/10 border-volt text-white" : "bg-surface-variant border-white/5 text-zinc-500"
-                      )}
-                    >
-                      {t('onboarding.gymNo')}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('onboarding.limitations')}</label>
-                  <div className="grid grid-cols-1 gap-2">
-                    {[
-                      { id: 'squat_conventional', label: t('onboarding.movement.squat') },
-                      { id: 'bench_flat', label: t('onboarding.movement.bench') },
-                      { id: 'deadlift_conventional', label: t('onboarding.movement.deadlift') }
-                    ].map((movement) => (
-                      <label key={movement.id} className="flex items-center gap-3 p-3 bg-surface-container-lowest border border-white/5 cursor-pointer hover:border-white/10 transition-all">
-                        <input
-                          type="checkbox"
-                          checked={formData.injuryNoGoList.includes(movement.id)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setFormData({ ...formData, injuryNoGoList: [...formData.injuryNoGoList, movement.id] });
-                            } else {
-                              setFormData({ ...formData, injuryNoGoList: formData.injuryNoGoList.filter(id => id !== movement.id) });
-                            }
-                          }}
-                          className="accent-volt w-4 h-4"
-                        />
-                        <span className="text-xs font-medium text-white">{movement.label}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('onboarding.trainingPeriod')}</label>
-                  <div className="grid grid-cols-4 gap-2">
-                    {[3, 6, 9, 12].map((m) => (
-                      <button
-                        key={m}
-                        onClick={() => setFormData({ ...formData, trainingDurationMonths: m })}
-                        className={cn(
-                          "py-3 border font-headline text-xs font-black uppercase tracking-widest transition-all",
-                          formData.trainingDurationMonths === m ? "bg-volt/10 border-volt text-white" : "bg-surface-variant border-white/5 text-zinc-500"
-                        )}
-                      >
-                        {m}{t('onboarding.months').charAt(0)}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('onboarding.frequency')}</label>
-                    <span className="text-volt font-headline text-xs font-black italic">{formData.trainingFrequency} {t('onboarding.daysPerWeek')}</span>
-                  </div>
-                  <input 
-                    type="range"
-                    min="3"
-                    max="7"
-                    step="1"
-                    value={formData.trainingFrequency}
-                    onChange={(e) => setFormData({ ...formData, trainingFrequency: parseInt(e.target.value) })}
-                    className="w-full accent-volt bg-surface-variant h-2 appearance-none cursor-pointer"
-                  />
-                  <div className="flex justify-between text-[8px] font-black text-zinc-600 uppercase tracking-widest">
-                    <span>3 {t('onboarding.days')}</span>
-                    <span>7 {t('onboarding.days')}</span>
-                  </div>
-                </div>
-              </div>
-
-              <button
-                onClick={handleNext}
-                disabled={loading || isSquatError || isBenchError || isDeadliftError}
-                className="w-full bg-volt text-void font-headline font-black uppercase tracking-widest p-5 flex items-center justify-center gap-2 rounded-none hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(0,182,255,0.3)] active:scale-[0.98] transition-all disabled:opacity-50"
-              >
-                {loading ? t('onboarding.calibrating') : t('onboarding.nextProtocol')} <ChevronRight size={20} />
-              </button>
-            </motion.div>
-          )}
-
-          {step === 'objective' && (
-            <motion.div
-              key="objective"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="glass-panel px-4 py-6 md:p-10 space-y-6 md:space-y-8"
-            >
-              <div className="flex items-center gap-6">
-                <button 
-                  onClick={() => setStep('goals')}
-                  className="w-12 h-12 shrink-0 bg-surface-container-lowest border border-white/5 flex items-center justify-center text-zinc-400 hover:text-white hover:border-volt transition-all"
-                >
-                  <ArrowLeft size={24} />
-                </button>
-                <div className="space-y-1">
-                  <h2 className="font-headline text-3xl font-black uppercase italic tracking-tight text-white">{t('onboarding.title')}</h2>
-                  <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">{t('onboarding.step4')}</p>
                 </div>
               </div>
 
               <div className="space-y-4">
-                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('onboarding.objective')}</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-2">{t('onboarding.objective')}</label>
                 <div className="grid grid-cols-1 gap-3">
                   {(['pure_strength', 'powerbuilding', 'hypertrophy', 'peaking', 'longevity'] as TrainingGoal[]).map((goal) => (
                     <button
@@ -728,10 +480,202 @@ export const OnboardingFlow = () => {
 
               <button
                 onClick={handleNext}
-                disabled={loading}
-                className="w-full bg-volt text-void font-headline font-black uppercase tracking-widest p-5 flex items-center justify-center gap-2 rounded-none hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(0,182,255,0.3)] active:scale-[0.98] transition-all disabled:opacity-50"
+                disabled={!formData.firstName || !formData.lastName || (unit === 'metric' ? !formData.height : (!formData.heightFeet || !formData.heightInches)) || !formData.weight || isHeightError || isWeightError}
+                className="w-full bg-volt text-void font-headline font-black uppercase tracking-widest p-5 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? t('onboarding.calibrating') : t('onboarding.analyzeProtocol')} <ChevronRight size={20} />
+                {t('onboarding.nextProtocol')} <ChevronRight size={20} />
+              </button>
+            </motion.div>
+          )}
+
+          {step === 'goals' && (
+            <motion.div
+              key="goals"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="glass-panel p-8 space-y-8"
+            >
+              <div className="flex items-center gap-6">
+                <button 
+                  onClick={() => setStep('biometrics')}
+                  className="w-12 h-12 shrink-0 bg-surface-container-lowest border border-white/5 flex items-center justify-center text-zinc-400 hover:text-white hover:border-volt transition-all"
+                >
+                  <ArrowLeft size={24} />
+                </button>
+                <div className="space-y-1">
+                  <h2 className="font-headline text-3xl font-black uppercase italic tracking-tight text-white">{t('onboarding.title')}</h2>
+                  <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">{t('onboarding.step3')}</p>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-2">{t('onboarding.experience')}</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {(['untrained', 'novice', 'intermediate', 'advanced', 'elite'] as const).map((level) => (
+                      <button
+                        key={level}
+                        onClick={() => setFormData({ ...formData, trainingAge: level })}
+                        className={cn(
+                          "p-3 border font-headline text-[10px] font-black uppercase tracking-widest transition-all",
+                          formData.trainingAge === level ? "bg-volt/10 border-volt text-white" : "bg-surface-variant border-white/5 text-zinc-500"
+                        )}
+                      >
+                        {t(`onboarding.level.${level}`)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-2">{t('onboarding.current1rm')}</label>
+                    <div className="flex items-center gap-2 bg-surface-container-lowest border border-white/5 p-1">
+                      <button
+                        onClick={() => handleUnitChange('imperial')}
+                        className={cn(
+                          "px-2 py-1 text-[8px] font-black uppercase tracking-widest transition-all",
+                          unit === 'imperial' ? "bg-volt text-void" : "text-zinc-500 hover:text-white"
+                        )}
+                      >
+                        LB
+                      </button>
+                      <button
+                        onClick={() => handleUnitChange('metric')}
+                        className={cn(
+                          "px-2 py-1 text-[8px] font-black uppercase tracking-widest transition-all",
+                          unit === 'metric' ? "bg-volt text-void" : "text-zinc-500 hover:text-white"
+                        )}
+                      >
+                        KG
+                      </button>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="space-y-2">
+                      <label className={cn("text-[8px] font-black uppercase tracking-widest ml-2 transition-colors", isSquatError ? "text-crimson" : "text-zinc-500")}>{t('onboarding.squat')}</label>
+                      <input
+                        type="number"
+                        value={formData.squat1RM}
+                        onChange={(e) => setFormData({ ...formData, squat1RM: e.target.value })}
+                        className={cn(
+                          "w-full bg-surface-container-lowest border-b-2 p-3 text-white outline-none transition-all text-center",
+                          isSquatError ? "border-crimson" : "border-white/5 focus:border-volt"
+                        )}
+                        placeholder="0"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className={cn("text-[8px] font-black uppercase tracking-widest ml-2 transition-colors", isBenchError ? "text-crimson" : "text-zinc-500")}>{t('onboarding.bench')}</label>
+                      <input
+                        type="number"
+                        value={formData.bench1RM}
+                        onChange={(e) => setFormData({ ...formData, bench1RM: e.target.value })}
+                        className={cn(
+                          "w-full bg-surface-container-lowest border-b-2 p-3 text-white outline-none transition-all text-center",
+                          isBenchError ? "border-crimson" : "border-white/5 focus:border-volt"
+                        )}
+                        placeholder="0"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className={cn("text-[8px] font-black uppercase tracking-widest ml-2 transition-colors", isDeadliftError ? "text-crimson" : "text-zinc-500")}>{t('onboarding.deadlift')}</label>
+                      <input
+                        type="number"
+                        value={formData.deadlift1RM}
+                        onChange={(e) => setFormData({ ...formData, deadlift1RM: e.target.value })}
+                        className={cn(
+                          "w-full bg-surface-container-lowest border-b-2 p-3 text-white outline-none transition-all text-center",
+                          isDeadliftError ? "border-crimson" : "border-white/5 focus:border-volt"
+                        )}
+                        placeholder="0"
+                      />
+                    </div>
+                  </div>
+                  {(isSquatError || isBenchError || isDeadliftError) && (
+                    <p className="text-[8px] font-black uppercase tracking-widest text-crimson ml-2">{t('onboarding.invalid1rm')}</p>
+                  )}
+                </div>
+
+                <div className="space-y-4">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-2">{t('onboarding.gymAccess')}</label>
+                  <div className="grid grid-cols-1 gap-3">
+                    <button
+                      onClick={() => setFormData({ ...formData, gymProfile: 'powerlifting' })}
+                      className={cn(
+                        "p-3 border font-headline text-[10px] font-black uppercase tracking-widest transition-all text-left",
+                        formData.gymProfile === 'powerlifting' ? "bg-volt/10 border-volt text-white" : "bg-surface-variant border-white/5 text-zinc-500"
+                      )}
+                    >
+                      {t('onboarding.gymYes')}
+                    </button>
+                    <button
+                      onClick={() => setFormData({ ...formData, gymProfile: 'commercial' })}
+                      className={cn(
+                        "p-3 border font-headline text-[10px] font-black uppercase tracking-widest transition-all text-left",
+                        formData.gymProfile === 'commercial' ? "bg-volt/10 border-volt text-white" : "bg-surface-variant border-white/5 text-zinc-500"
+                      )}
+                    >
+                      {t('onboarding.gymNo')}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-2">{t('onboarding.limitations')}</label>
+                  <div className="grid grid-cols-1 gap-2">
+                    {[
+                      { id: 'squat_conventional', label: t('onboarding.movement.squat') },
+                      { id: 'bench_flat', label: t('onboarding.movement.bench') },
+                      { id: 'deadlift_conventional', label: t('onboarding.movement.deadlift') }
+                    ].map((movement) => (
+                      <label key={movement.id} className="flex items-center gap-3 p-3 bg-surface-container-lowest border border-white/5 cursor-pointer hover:border-white/10 transition-all">
+                        <input
+                          type="checkbox"
+                          checked={formData.injuryNoGoList.includes(movement.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setFormData({ ...formData, injuryNoGoList: [...formData.injuryNoGoList, movement.id] });
+                            } else {
+                              setFormData({ ...formData, injuryNoGoList: formData.injuryNoGoList.filter(id => id !== movement.id) });
+                            }
+                          }}
+                          className="accent-volt w-4 h-4"
+                        />
+                        <span className="text-xs font-medium text-white">{movement.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-2">{t('onboarding.frequency')}</label>
+                    <span className="text-volt font-headline text-xs font-black italic">{formData.trainingFrequency} {t('onboarding.daysPerWeek')}</span>
+                  </div>
+                  <input 
+                    type="range"
+                    min="3"
+                    max="7"
+                    step="1"
+                    value={formData.trainingFrequency}
+                    onChange={(e) => setFormData({ ...formData, trainingFrequency: parseInt(e.target.value) })}
+                    className="w-full accent-volt bg-surface-variant h-2 appearance-none cursor-pointer"
+                  />
+                  <div className="flex justify-between text-[8px] font-black text-zinc-600 uppercase tracking-widest">
+                    <span>3 {t('onboarding.days')}</span>
+                    <span>7 {t('onboarding.days')}</span>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={handleNext}
+                disabled={loading || isSquatError || isBenchError || isDeadliftError}
+                className="w-full bg-volt text-void font-headline font-black uppercase tracking-widest p-5 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
+              >
+                {loading ? t('onboarding.calibrating') : t('onboarding.finalize')} <ChevronRight size={20} />
               </button>
             </motion.div>
           )}
@@ -739,77 +683,32 @@ export const OnboardingFlow = () => {
           {step === 'complete' && (
             <motion.div
               key="complete"
-              initial={{ opacity: 0, scale: 0.9, y: 30 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              transition={{ 
-                type: "spring", 
-                stiffness: 260, 
-                damping: 20,
-                duration: 0.6
-              }}
-              className="glass-panel px-6 py-10 md:p-12 text-center space-y-6 md:space-y-8 relative overflow-hidden"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="glass-panel p-12 text-center space-y-8"
             >
-              <div className="flex items-center gap-6 text-left mb-4">
-                <button 
-                  onClick={() => setStep('objective')}
-                  className="w-12 h-12 shrink-0 bg-surface-container-lowest border border-white/5 flex items-center justify-center text-zinc-400 hover:text-white hover:border-volt transition-all"
-                >
-                  <ArrowLeft size={24} />
-                </button>
-                <div className="space-y-1">
-                  <h2 className="font-headline text-3xl font-black uppercase italic tracking-tight text-white">{t('onboarding.protocolFinalized')}</h2>
-                  <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">{t('onboarding.step5')}</p>
+              <div className="w-24 h-24 bg-volt/20 flex items-center justify-center text-volt mx-auto">
+                <CheckCircle2 size={48} />
+              </div>
+
+              <div className="space-y-4">
+                <h2 className="font-headline text-4xl font-black uppercase italic tracking-tight text-white">{t('onboarding.systemsOnline')}</h2>
+                <div className="flex items-center justify-center gap-2 font-headline text-sm font-black uppercase tracking-widest px-4 py-2 border border-volt/50 text-volt bg-white/5 mx-auto w-fit shadow-[0_0_15px_var(--primary-glow)]">
+                  <Medal size={18} />
+                  {t('onboarding.protocol')}: {t(`goal.${formData.trainingGoal}`)}
                 </div>
+                <p className="text-zinc-500 text-sm font-medium uppercase tracking-widest leading-relaxed">
+                  {t('onboarding.syncComplete')}
+                </p>
               </div>
 
-              <motion.div 
-                initial={{ scale: 0, rotate: -180 }}
-                animate={{ scale: 1, rotate: 0 }}
-                transition={{ delay: 0.3, type: "spring", stiffness: 200 }}
-                className="w-24 h-24 bg-volt/10 flex items-center justify-center text-volt mx-auto border border-volt/20"
-              >
-                <CheckCircle2 size={48} className="drop-shadow-[0_0_15px_rgba(0,182,255,0.5)]" />
-              </motion.div>
-
-              <div className="space-y-6">
-                <motion.div 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.5 }}
-                  className="space-y-2"
-                >
-                  <h2 className="font-headline text-3xl md:text-4xl font-black uppercase italic tracking-tighter text-white text-glow-volt">
-                    {t('onboarding.systemsOnline')}
-                  </h2>
-                </motion.div>
-
-                <motion.div 
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.7 }}
-                  className="flex flex-col gap-4 items-center"
-                >
-                  <div className="flex items-center justify-center gap-3 font-headline text-sm font-black uppercase tracking-[0.2em] px-6 py-3 border border-volt/30 text-volt bg-volt/5 shadow-[0_0_20px_rgba(0,182,255,0.1)]">
-                    <Medal size={20} />
-                    {t(`goal.${formData.trainingGoal}`)}
-                  </div>
-                  
-                  <p className="text-zinc-400 text-[10px] md:text-xs font-black uppercase tracking-[0.2em] leading-relaxed max-w-sm mx-auto">
-                    {t('onboarding.syncComplete')}
-                  </p>
-                </motion.div>
-              </div>
-
-              <motion.button
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.9 }}
+              <button
                 onClick={handleComplete}
                 disabled={loading}
-                className="w-full bg-volt text-void font-headline font-black uppercase tracking-widest p-6 flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_0_40px_rgba(0,182,255,0.2)] disabled:opacity-50"
+                className="w-full bg-volt text-void font-headline font-black uppercase tracking-widest p-6 flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_0_30px_var(--primary-glow)] disabled:opacity-50"
               >
                 {loading ? t('onboarding.entering') : t('onboarding.enterArena')} <ChevronRight size={24} />
-              </motion.button>
+              </button>
             </motion.div>
           )}
         </AnimatePresence>

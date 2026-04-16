@@ -283,12 +283,12 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
             </>
           )}
 
-          {currentSession.blockLabel || currentSession.blockType ? (
+          {currentSession.blockType && (
             <>
               <div className="text-left">
               <div className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">{t('workout.currentBlock')}</div>
               <div className="font-headline text-lg md:text-xl font-black uppercase italic tracking-tight text-volt">
-                {currentSession.blockLabel || currentSession.blockType}
+                {currentSession.blockType}
               </div>
             </div>
             <div className="h-10 md:h-12 w-[1px] bg-white/10" />
@@ -299,7 +299,7 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
               </div>
             </div>
           </>
-        ) : null}
+        )}
       </div>
     </div>
 
@@ -537,7 +537,7 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
             if (level === 'untrained' || level === 'novice') limit = 3;
             else if (level === 'intermediate') limit = 4;
             const isAtLimit = additionalCount >= limit;
-            
+
             return (
               <>
                 <button 

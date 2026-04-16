@@ -10,9 +10,10 @@ import { calculateTier } from '../lib/strength';
 
 export const ProfileView = () => {
   const { profile, updateProfile, t, unit } = useSettings();
-  const { history, resetProgram } = useWorkout();
+  const { history, resetProgress } = useWorkout();
   const [showTierInfo, setShowTierInfo] = React.useState(false);
-  const [showProtocolModal, setShowProtocolModal] = React.useState(false);
+  const [showTimelineModal, setShowTimelineModal] = React.useState(false);
+  const [showFrequencyModal, setShowFrequencyModal] = React.useState(false);
   const [show1RMModal, setShow1RMModal] = React.useState(false);
   const [showBiometricsModal, setShowBiometricsModal] = React.useState(false);
   const [isEditing, setIsEditing] = React.useState(false);
@@ -31,7 +32,7 @@ export const ProfileView = () => {
   const lastWeekMatch = lastWorkout?.title.match(/W(\d+)/);
   const lastWeek = lastWeekMatch ? parseInt(lastWeekMatch[1]) : 1;
   const currentWeek = lastWeek + (profile?.trainingWeekOffset || 0);
-  const { block, weekInBlock, plan } = getBlockForWeek(currentWeek, (profile?.trainingDurationMonths || 3) * 4, profile?.trainingGoal || 'powerbuilding');
+  const { block, weekInBlock, plan } = getBlockForWeek(currentWeek, (profile?.trainingDurationMonths || 3) * 4);
 
   const handleUpdate1RM = async () => {
     setLoading(true);
@@ -56,24 +57,34 @@ export const ProfileView = () => {
     }
   };
 
-  const handleAdjustProtocol = async () => {
+  const handleAdjustTimeline = async () => {
     setLoading(true);
     try {
       // Calculate new competition date based on duration from now
       const newCompetitionDate = Date.now() + (adjustingDuration * 30 * 24 * 60 * 60 * 1000);
       
-      // If duration changed, we reset the program cycle
-      if (adjustingDuration !== profile?.trainingDurationMonths) {
-        await resetProgram();
-      }
+      // Reset all workout progress when timeline is recalibrated
+      await resetProgress();
       
       await updateProfile({ 
         trainingDurationMonths: adjustingDuration,
-        trainingFrequency: adjustingFrequency,
         competitionDate: newCompetitionDate,
         trainingWeekOffset: 0
       });
-      setShowProtocolModal(false);
+      setShowTimelineModal(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAdjustFrequency = async () => {
+    setLoading(true);
+    try {
+      await updateProfile({ 
+        trainingFrequency: adjustingFrequency,
+        trainingWeekOffset: 0
+      });
+      setShowFrequencyModal(false);
     } finally {
       setLoading(false);
     }
@@ -86,7 +97,6 @@ export const ProfileView = () => {
     heightFeet: Math.floor((profile?.height || 0) / 12),
     heightInches: Math.round((profile?.height || 0) % 12),
     trainingGoal: profile?.trainingGoal || 'powerbuilding' as TrainingGoal,
-    trainingDurationMonths: profile?.trainingDurationMonths || 3,
   });
 
   React.useEffect(() => {
@@ -99,7 +109,6 @@ export const ProfileView = () => {
         heightFeet: Math.floor((profile.height || 0) / 12),
         heightInches: Math.round((profile.height || 0) % 12),
         trainingGoal: profile.trainingGoal || 'powerbuilding',
-        trainingDurationMonths: profile.trainingDurationMonths || 3,
       });
     }
   }, [profile]);
@@ -135,18 +144,12 @@ export const ProfileView = () => {
         editData.gender
       );
 
-      // Reset program if goal or duration has changed to start fresh cycle
-      if (editData.trainingGoal !== profile?.trainingGoal || editData.trainingDurationMonths !== profile?.trainingDurationMonths) {
-        await resetProgram();
-      }
-
       await updateProfile({
         gender: editData.gender as any,
         age: editData.age,
         height: heightVal,
         weight: editData.weight,
         trainingGoal: editData.trainingGoal,
-        trainingDurationMonths: editData.trainingDurationMonths,
         level: newTier as any,
       });
       setShowBiometricsModal(false);
@@ -272,7 +275,7 @@ export const ProfileView = () => {
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
-          className="glass-panel px-4 py-8 md:p-8 space-y-6"
+          className="glass-panel p-6 space-y-6"
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -330,7 +333,7 @@ export const ProfileView = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="glass-panel px-4 py-8 md:p-8 space-y-6"
+          className="glass-panel p-6 space-y-6"
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -388,22 +391,22 @@ export const ProfileView = () => {
           </div>
         </motion.div>
 
-        {/* Timeline & Frequency */}
+        {/* Timeline */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="glass-panel px-4 py-8 md:p-6 border-white/5 relative overflow-hidden"
+          className="glass-panel p-6 border-white/5 relative overflow-hidden"
         >
           <div className="absolute top-0 right-0 w-32 h-32 bg-volt/5 rounded-full blur-3xl pointer-events-none" />
           
           <div className="flex items-center justify-between mb-6 relative z-10">
             <div className="flex items-center gap-3">
-              <Zap className="text-volt" size={20} />
-              <h3 className="font-headline text-sm font-black uppercase tracking-widest text-white">Timeline & Frequency</h3>
+              <BarChart3 className="text-volt" size={20} />
+              <h3 className="font-headline text-sm font-black uppercase tracking-widest text-white">Timeline</h3>
             </div>
             <button 
-              onClick={() => setShowProtocolModal(true)}
+              onClick={() => setShowTimelineModal(true)}
               className="p-2 bg-volt/10 border border-volt/30 text-volt hover:bg-volt/20 hover:border-volt transition-all shadow-[0_0_10px_rgba(0,182,255,0.1)]"
             >
               <Edit3 size={14} />
@@ -411,47 +414,70 @@ export const ProfileView = () => {
           </div>
 
           <div className="space-y-4 relative z-10">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="p-4 bg-void/40 border border-white/5">
-                <p className="text-[7px] font-black uppercase tracking-widest text-zinc-500 mb-1">Current Block</p>
-                <p className="text-xl font-headline font-black text-white italic uppercase truncate">{block.label || block.type}</p>
-                <div className="flex justify-between items-center mt-2">
-                  <span className="text-[8px] font-black italic text-zinc-400">Week {weekInBlock} / {block.durationWeeks}</span>
-                  <span className="text-[10px] font-black uppercase text-volt">Week {currentWeek}</span>
-                </div>
+            <div className="p-4 bg-void/40 border border-white/5">
+              <div className="flex flex-col mb-1">
+                <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500">Current Block</span>
+                <span className="text-[8px] font-black uppercase tracking-widest text-volt">{block.type}</span>
               </div>
-
-              <div className="p-4 bg-void/40 border border-white/5">
-                <p className="text-[7px] font-black uppercase tracking-widest text-zinc-500 mb-1">Training Load</p>
-                <p className="text-xl font-headline font-black text-white italic uppercase">{profile.trainingFrequency || 3} Sessions / Wk</p>
-                <div className="mt-4 space-y-1.5">
-                  <div className="flex justify-between text-[6px] font-black uppercase tracking-widest text-zinc-500">
-                    <span>Weekly Distribution</span>
-                    <span>{Math.round(((profile.trainingFrequency || 3) / 7) * 100)}%</span>
-                  </div>
-                  <div className="h-0.5 bg-white/5 overflow-hidden">
-                    <motion.div 
-                      animate={{ width: `${((profile.trainingFrequency || 3) / 7) * 100}%` }}
-                      className="h-full bg-volt shadow-[0_0_5px_var(--primary-glow)]"
-                    />
-                  </div>
-                </div>
+              <div className="flex flex-col">
+                <span className="text-xl font-headline font-black text-white italic uppercase">{block.type}</span>
+                <span className="text-[8px] font-black italic text-zinc-400">Week {weekInBlock} / {block.durationWeeks}</span>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
+              <div className="p-3 bg-void/40 border border-white/5 text-left">
+                <p className="text-[7px] font-black uppercase tracking-widest text-zinc-500 mb-1">Program Week</p>
+                <p className="text-base font-headline font-black text-white italic">WEEK {currentWeek}</p>
+              </div>
               <div className="p-3 bg-void/40 border border-white/5 text-left">
                 <p className="text-[7px] font-black uppercase tracking-widest text-zinc-500 mb-1">To Competition</p>
                 <p className="text-base font-headline font-black text-volt italic uppercase">
                   {profile.competitionDate ? Math.max(0, Math.ceil((profile.competitionDate - Date.now()) / (7 * 24 * 60 * 60 * 1000))) : (profile.trainingDurationMonths || 3) * 4} WKS
                 </p>
               </div>
-              <div className="p-3 bg-void/40 border border-white/5 text-left">
-                <p className="text-[7px] font-black uppercase tracking-widest text-zinc-500 mb-1">Total Duration</p>
-                <p className="text-base font-headline font-black text-white italic uppercase">
-                  {profile.trainingDurationMonths || 3} MONTHS
-                </p>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Frequency */}
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.2 }}
+          className="glass-panel p-6 flex flex-col justify-between"
+        >
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <Calendar className="text-volt" size={20} />
+                <h3 className="font-headline text-sm font-black uppercase tracking-widest text-white">Frequency</h3>
               </div>
+              <button 
+                onClick={() => setShowFrequencyModal(true)}
+                className="p-2 bg-volt/10 border border-volt/30 text-volt hover:bg-volt/20 hover:border-volt transition-all shadow-[0_0_10px_rgba(0,182,255,0.1)]"
+              >
+                <Edit3 size={14} />
+              </button>
+            </div>
+
+            <div className="p-4 bg-void/40 border border-white/5 mb-4">
+              <p className="text-[7px] font-black uppercase tracking-widest text-zinc-500 mb-1">Training Load</p>
+              <p className="text-xl font-headline font-black text-white italic uppercase">{profile.trainingFrequency || 3} Sessions / Week</p>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex justify-between text-[7px] font-black uppercase tracking-widest">
+              <span className="text-zinc-500">Weekly Distribution</span>
+              <span className="text-volt">{Math.round(((profile.trainingFrequency || 3) / 7) * 100)}%</span>
+            </div>
+            <div className="h-1 bg-white/5 overflow-hidden">
+              <motion.div 
+                initial={{ width: 0 }}
+                animate={{ width: `${((profile.trainingFrequency || 3) / 7) * 100}%` }}
+                className="h-full bg-volt shadow-[0_0_10px_var(--primary-glow)]"
+              />
             </div>
           </div>
         </motion.div>
@@ -607,6 +633,48 @@ export const ProfileView = () => {
                   </div>
                 </div>
 
+                {/* Tier Preview */}
+                <div className="p-4 bg-void/40 border border-white/5">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Projected Tier</span>
+                    <span className={cn(
+                      "text-[10px] font-black uppercase tracking-widest px-2 py-0.5",
+                      getTierStyle(calculateTier(
+                        profile.squatPR || 0,
+                        profile.benchPR || 0,
+                        profile.deadliftPR || 0,
+                        editData.weight,
+                        editData.gender
+                      )).bg,
+                      getTierStyle(calculateTier(
+                        profile.squatPR || 0,
+                        profile.benchPR || 0,
+                        profile.deadliftPR || 0,
+                        editData.weight,
+                        editData.gender
+                      )).color
+                    )}>
+                      {calculateTier(
+                        profile.squatPR || 0,
+                        profile.benchPR || 0,
+                        profile.deadliftPR || 0,
+                        editData.weight,
+                        editData.gender
+                      )}
+                    </span>
+                  </div>
+                  <p className="text-[8px] text-zinc-500 font-medium uppercase tracking-widest leading-relaxed">
+                    Based on your current PRs ({profile.squatPR || 0}/{profile.benchPR || 0}/{profile.deadliftPR || 0}), 
+                    your tier will be recalibrated to <span className="text-white font-bold">{calculateTier(
+                      profile.squatPR || 0,
+                      profile.benchPR || 0,
+                      profile.deadliftPR || 0,
+                      editData.weight,
+                      editData.gender
+                    )}</span>.
+                  </p>
+                </div>
+
                 <div className="flex gap-4">
                   <button 
                     onClick={() => {
@@ -631,36 +699,42 @@ export const ProfileView = () => {
         )}
       </AnimatePresence>
 
-      {/* Protocol Adjustment Modal */}
+      {/* Timeline Adjustment Modal */}
       <AnimatePresence>
-        {showProtocolModal && (
+        {showTimelineModal && (
           <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 overflow-y-auto custom-scrollbar">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setShowProtocolModal(false)}
+              onClick={() => setShowTimelineModal(false)}
               className="fixed inset-0 bg-void/80 backdrop-blur-sm"
             />
             <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-2xl glass-panel p-8 border-volt/30 shadow-2xl my-auto"
+              className="relative w-full max-w-md glass-panel p-8 border-volt/30 shadow-2xl my-auto"
             >
               <div className="flex items-center gap-4 mb-8">
                 <div className="p-4 bg-volt/10 text-volt">
-                  <Zap size={32} />
+                  <Trophy size={32} />
                 </div>
                 <div>
-                  <h3 className="font-headline text-2xl font-black uppercase italic tracking-tight text-white">Full Protocol</h3>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Recalibrate Timeline & Frequency</p>
+                  <h3 className="font-headline text-2xl font-black uppercase italic tracking-tight text-white">Recalibrate Goal</h3>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Redistribute Training Blocks</p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                {/* Timeline Column */}
-                <div className="space-y-6">
+              <div className="space-y-6">
+                <div className="p-4 bg-crimson/10 border border-crimson/20 flex gap-4">
+                  <AlertTriangle className="text-crimson shrink-0" size={20} />
+                  <p className="text-[10px] text-zinc-400 font-bold uppercase leading-relaxed">
+                    Changing your competition timeline will <span className="text-white">redistribute all training blocks</span>. Your current intensities and volume will be recalibrated for the new duration.
+                  </p>
+                </div>
+
+                <div className="space-y-4">
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-2">Months until Competition</label>
                     <div className="grid grid-cols-4 gap-2">
@@ -680,11 +754,11 @@ export const ProfileView = () => {
                   </div>
 
                   <div className="p-4 bg-void/40 border border-white/5">
-                    <p className="text-[8px] font-black uppercase tracking-widest text-zinc-500 mb-2">Block Redistribution ({adjustingDuration * 4} Weeks)</p>
-                    <div className="space-y-2">
-                      {getPlanForDuration(adjustingDuration * 4, profile?.trainingGoal || 'powerbuilding').map((b, i) => (
+                    <p className="text-[8px] font-black uppercase tracking-widest text-zinc-500 mb-2">New Plan Preview ({adjustingDuration * 4} Weeks)</p>
+                    <div className="flex flex-col gap-2">
+                      {getPlanForDuration(adjustingDuration * 4).map((b, i) => (
                         <div key={i} className="flex justify-between items-center text-[10px]">
-                          <span className="font-black uppercase text-zinc-400">{b.label || b.type}</span>
+                          <span className="font-black uppercase text-zinc-400">{b.type}</span>
                           <span className="font-bold text-volt">{b.durationWeeks} Weeks</span>
                         </div>
                       ))}
@@ -692,10 +766,58 @@ export const ProfileView = () => {
                   </div>
                 </div>
 
-                {/* Frequency Column */}
-                <div className="space-y-6">
+                <div className="flex gap-4">
+                  <button 
+                    onClick={() => setShowTimelineModal(false)}
+                    className="flex-1 py-4 bg-white/5 text-zinc-500 font-headline text-xs font-black uppercase tracking-widest hover:text-white transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={handleAdjustTimeline}
+                    disabled={loading}
+                    className="flex-1 py-4 bg-volt text-void font-headline text-xs font-black uppercase tracking-widest hover:bg-white hover:shadow-[0_0_20px_var(--primary-glow)] transition-all disabled:opacity-50"
+                  >
+                    {loading ? 'Recalculating...' : 'Confirm'}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Frequency Adjustment Modal */}
+      <AnimatePresence>
+        {showFrequencyModal && (
+          <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 overflow-y-auto custom-scrollbar">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowFrequencyModal(false)}
+              className="fixed inset-0 bg-void/80 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-md glass-panel p-8 border-volt/30 shadow-2xl my-auto"
+            >
+              <div className="flex items-center gap-4 mb-8">
+                <div className="p-4 bg-volt/10 text-volt">
+                  <Calendar size={32} />
+                </div>
+                <div>
+                  <h3 className="font-headline text-2xl font-black uppercase italic tracking-tight text-white">Training Frequency</h3>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Redistribute Weekly Volume</p>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                <div className="space-y-4">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-2">Training Frequency</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-2">Days per Week</label>
                     <div className="grid grid-cols-5 gap-2">
                       {[3, 4, 5, 6, 7].map((f) => (
                         <button
@@ -713,7 +835,7 @@ export const ProfileView = () => {
                   </div>
 
                   <div className="p-4 bg-void/40 border border-white/5">
-                    <p className="text-[8px] font-black uppercase tracking-widest text-zinc-500 mb-2">Weekly Volume Preview</p>
+                    <p className="text-[8px] font-black uppercase tracking-widest text-zinc-500 mb-2">Cycle Preview</p>
                     <p className="text-xs font-bold text-white uppercase tracking-widest">
                       {adjustingFrequency} Sessions / Week
                     </p>
@@ -722,33 +844,22 @@ export const ProfileView = () => {
                     </p>
                   </div>
                 </div>
-              </div>
 
-              <div className="p-4 bg-volt/10 border border-volt/30 mb-8">
-                <div className="flex items-start gap-3 text-left">
-                  <Info size={16} className="text-volt shrink-0 mt-0.5" />
-                  <p className="text-[10px] text-volt font-black uppercase tracking-widest leading-relaxed">
-                    Adjusting your protocol will recalibrate your training cycle. 
-                    {adjustingDuration !== profile.trainingDurationMonths && " Changing duration will restart your cycle from Week 1."}
-                    History and PRs are always preserved.
-                  </p>
+                <div className="flex gap-4">
+                  <button 
+                    onClick={() => setShowFrequencyModal(false)}
+                    className="flex-1 py-4 bg-white/5 text-zinc-500 font-headline text-xs font-black uppercase tracking-widest hover:text-white transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={handleAdjustFrequency}
+                    disabled={loading}
+                    className="flex-1 py-4 bg-volt text-void font-headline text-xs font-black uppercase tracking-widest hover:bg-white hover:shadow-[0_0_20px_var(--primary-glow)] transition-all disabled:opacity-50"
+                  >
+                    {loading ? 'Recalibrating...' : 'Confirm'}
+                  </button>
                 </div>
-              </div>
-
-              <div className="flex gap-4">
-                <button 
-                  onClick={() => setShowProtocolModal(false)}
-                  className="flex-1 py-4 bg-white/5 text-zinc-500 font-headline text-xs font-black uppercase tracking-widest hover:text-white transition-all"
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={handleAdjustProtocol}
-                  disabled={loading}
-                  className="flex-1 py-4 bg-volt text-void font-headline text-xs font-black uppercase tracking-widest hover:bg-white hover:shadow-[0_0_20px_var(--primary-glow)] transition-all disabled:opacity-50"
-                >
-                  {loading ? 'Recalculating...' : 'Confirm Protocol'}
-                </button>
               </div>
             </motion.div>
           </div>
