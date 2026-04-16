@@ -71,8 +71,32 @@ export const PostWorkoutSummary = ({ initialRpe, onFinish }: PostWorkoutSummaryP
               <Star size={14} className="text-volt md:w-4 md:h-4" />
               <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest">Session RPE</span>
             </div>
-            <span className="text-2xl md:text-3xl font-black italic text-volt">{rpe}</span>
+            <div className="flex items-baseline gap-4">
+              {currentSession?.targetRpe && (
+                <div className="text-right">
+                  <span className="block text-[8px] font-black text-zinc-600 uppercase tracking-widest">Target</span>
+                  <span className="text-lg font-black italic text-zinc-400">{currentSession.targetRpe}</span>
+                </div>
+              )}
+              <div className="text-right">
+                <span className="block text-[8px] font-black text-zinc-600 uppercase tracking-widest">Actual</span>
+                <span className="text-2xl md:text-3xl font-black italic text-volt">{rpe}</span>
+              </div>
+            </div>
           </div>
+          
+          {currentSession?.targetRpe && (
+            <div className={cn(
+              "p-3 text-[8px] font-black uppercase tracking-widest text-center",
+              rpe === currentSession.targetRpe ? "bg-volt/10 text-volt" :
+              rpe > currentSession.targetRpe ? "bg-crimson/10 text-crimson" : "bg-zinc-800 text-zinc-500"
+            )}>
+              {rpe === currentSession.targetRpe ? "Bullseye! Perfect intensity regulation." :
+               rpe > currentSession.targetRpe ? "Overshot target. Watch for fatigue accumulation." :
+               "Undershot target. Consider pushing harder if recovery allows."}
+            </div>
+          )}
+
           <div className="relative h-10 md:h-12 flex items-center">
             <input 
               type="range" 

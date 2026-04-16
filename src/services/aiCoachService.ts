@@ -11,7 +11,8 @@ export interface AICoachResponse {
 export const sendMessageToCoach = async (
   message: string,
   currentWorkoutTitle: string,
-  currentExercises: string[]
+  currentExercises: string[],
+  experimentalFeatures: boolean
 ): Promise<AICoachResponse> => {
   try {
     const response = await fetch('/api/ai-coach', {
@@ -22,7 +23,8 @@ export const sendMessageToCoach = async (
       body: JSON.stringify({
         message,
         currentWorkoutTitle,
-        currentExercises
+        currentExercises,
+        experimentalFeatures
       }),
     });
 

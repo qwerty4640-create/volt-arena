@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Activity, Brain, Battery, Moon, Heart, ChevronRight, AlertTriangle, Zap, ShieldCheck, Info, ArrowLeft } from 'lucide-react';
+import { Activity, Brain, Battery, Moon, Heart, ChevronRight, AlertTriangle, Zap, ShieldCheck, Info, ArrowLeft, Star } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useSettings } from '../contexts/SettingsContext';
+import { useWorkout } from '../contexts/WorkoutContext';
 
 interface ReadinessCheckProps {
-  onComplete: (score: number, modifier: number) => void;
+  onComplete: (score: number, modifier: number, targetRpe: number) => void;
   onCancel: () => void;
 }
 
@@ -49,13 +50,40 @@ const QUESTIONS = [
 
 export const ReadinessCheck = ({ onComplete, onCancel }: ReadinessCheckProps) => {
   const { t } = useSettings();
+  const { getCalibrationStatus } = useWorkout();
+  const { recommendedRpe: baselineRecommendedRpe } = getCalibrationStatus();
+  
   const [scores, setScores] = useState<Record<string, number>>({});
   const [showResult, setShowResult] = useState(false);
-  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
-
+  
   const totalScore = (Object.values(scores) as number[]).reduce((a, b) => a + b, 0);
   const isComplete = Object.keys(scores).length === QUESTIONS.length;
   const readinessPercentage = Math.round((totalScore / 25) * 100);
+
+  const adjustedRecommendedRpe = useMemo(() => {
+    if (!showResult) return baselineRecommendedRpe;
+    
+    let adjusted = baselineRecommendedRpe;
+    // Audible Rule: If readiness < 70 and baseline recommendation is high (>= 8), drop to 6
+    if (readinessPercentage < 70 && baselineRecommendedRpe >= 8) {
+      adjusted = 6;
+    } else if (readinessPercentage < 50) {
+      adjusted = 5;
+    } else if (readinessPercentage < 70 && adjusted > 6) {
+      adjusted = 6;
+    }
+    return adjusted;
+  }, [showResult, baselineRecommendedRpe, readinessPercentage]);
+
+  const [targetRpe, setTargetRpe] = useState(baselineRecommendedRpe);
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
+
+  // Update targetRpe when adjustedRecommendedRpe changes (e.g. after calculation or showResult)
+  useEffect(() => {
+    if (adjustedRecommendedRpe) {
+      setTargetRpe(adjustedRecommendedRpe);
+    }
+  }, [adjustedRecommendedRpe]);
 
   const getScenario = () => {
     if (totalScore >= 21) {
@@ -97,7 +125,7 @@ export const ReadinessCheck = ({ onComplete, onCancel }: ReadinessCheckProps) =>
   const scenario = getScenario();
 
   const handleComplete = () => {
-    onComplete(readinessPercentage, scenario.modifier);
+    onComplete(readinessPercentage, scenario.modifier, targetRpe);
   };
 
   // Scroll to top when view changes
@@ -196,43 +224,101 @@ export const ReadinessCheck = ({ onComplete, onCancel }: ReadinessCheckProps) =>
                 exit={{ opacity: 0, x: -20 }}
                 className="space-y-8 py-4"
               >
-                <div className="text-center space-y-2">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Readiness Score</p>
-                  <div className="flex items-baseline justify-center gap-1">
-                    <span className="font-headline text-6xl font-black italic text-white">{readinessPercentage}</span>
-                    <span className="font-headline text-2xl font-black text-volt">%</span>
+                <div className={cn("p-4 md:p-6 border flex items-center gap-6 md:gap-8", scenario.bg, scenario.border)}>
+                  <div className="text-center shrink-0">
+                    <div className="flex items-baseline justify-center gap-0.5">
+                      <span className="font-headline text-4xl md:text-6xl font-black italic text-white">{readinessPercentage}</span>
+                      <span className="font-headline text-lg md:text-2xl font-black text-volt">%</span>
+                    </div>
+                    <p className="text-[8px] font-black uppercase tracking-widest text-zinc-500 mt-1">Readiness</p>
                   </div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">({totalScore} / 25 Points)</p>
+
+                  <div className="w-[1px] h-12 bg-white/10" />
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3 mb-1">
+                      <div className={cn("p-2 bg-white/10", scenario.color)}>
+                        <scenario.icon size={16} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className={cn("font-headline text-base md:text-lg font-black uppercase italic tracking-tight truncate", scenario.color)}>
+                          {scenario.title}
+                        </h3>
+                        {scenario.type === 'red' && (
+                          <p className="text-[8px] font-black uppercase tracking-widest text-crimson">Intensity -10%</p>
+                        )}
+                        {scenario.type === 'green' && (
+                          <p className="text-[8px] font-black uppercase tracking-widest text-volt">Intensity +5%</p>
+                        )}
+                      </div>
+                    </div>
+                    <p className="text-[10px] md:text-xs text-zinc-400 leading-tight">
+                      {scenario.message}
+                    </p>
+                  </div>
                 </div>
 
-                <div className={cn("p-6 border", scenario.bg, scenario.border)}>
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className={cn("p-3 bg-white/10", scenario.color)}>
-                      <scenario.icon size={24} />
+                {/* Session Target RPE Selector */}
+                <div className="space-y-4 p-6 bg-surface-container-lowest border border-white/5">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <h3 className="font-headline text-sm font-black uppercase tracking-widest text-white">Session Target RPE</h3>
+                      <p className="text-[10px] text-zinc-500 uppercase font-bold">Self-Regulation Intensity Target</p>
                     </div>
-                    <div>
-                      <h3 className={cn("font-headline text-xl font-black uppercase italic tracking-tight", scenario.color)}>
-                        {scenario.title}
-                      </h3>
-                      {scenario.type === 'red' && (
-                        <p className="text-[10px] font-black uppercase tracking-widest text-crimson mt-1">Intensity Reduced by 10%</p>
-                      )}
-                      {scenario.type === 'green' && (
-                        <p className="text-[10px] font-black uppercase tracking-widest text-volt mt-1">Intensity Increased by 5%</p>
-                      )}
+                    <div className="font-headline text-3xl font-black italic text-volt">
+                      {targetRpe}
                     </div>
                   </div>
-                  <p className="text-sm text-zinc-300 leading-relaxed">
-                    {scenario.message}
-                  </p>
-                </div>
+                  
+                  <div className="flex gap-1">
+                    {[5, 6, 7, 8, 9, 10].map((val) => (
+                      <button
+                        key={val}
+                        onClick={() => setTargetRpe(val)}
+                        className={cn(
+                          "flex-1 py-3 border font-headline text-sm font-black transition-all relative",
+                          targetRpe === val 
+                            ? "bg-volt/20 border-volt text-volt shadow-[0_0_15px_var(--primary-glow)]" 
+                            : "bg-surface border-white/5 text-zinc-500 hover:border-white/20 hover:text-white"
+                        )}
+                      >
+                        {val}
+                        {val === adjustedRecommendedRpe && (
+                          <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-volt text-void text-[6px] font-black px-1 py-0.5 uppercase tracking-tighter whitespace-nowrap">
+                            Recommended
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex justify-between text-[8px] font-black uppercase tracking-widest text-zinc-600">
+                    <span>Technical / Speed</span>
+                    <span>Max Effort</span>
+                  </div>
 
-                {/* Trend Analysis Hint */}
-                <div className="p-4 bg-surface-container-lowest border border-white/5 flex gap-4">
-                  <Info className="text-zinc-500 shrink-0" size={16} />
-                  <p className="text-[10px] text-zinc-400 font-bold uppercase leading-relaxed">
-                    <span className="text-white">Trend Analysis:</span> Persistent high stress levels may trigger a Deload Week. Chronic high soreness may result in permanent volume reduction.
-                  </p>
+                  {/* The Audible Rule Warning */}
+                  {readinessPercentage < 70 && targetRpe >= 8 && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="p-4 bg-crimson/10 border border-crimson/30 flex gap-3"
+                    >
+                      <AlertTriangle className="text-crimson shrink-0" size={16} />
+                      <div className="space-y-1">
+                        <p className="text-[10px] text-crimson font-black uppercase tracking-widest">The Audible Rule Triggered</p>
+                        <p className="text-[10px] text-zinc-300 font-bold leading-relaxed">
+                          Your readiness is low today ({readinessPercentage}%). We recommend dropping your Target sRPE from <span className="text-white">{targetRpe}</span> to <span className="text-volt">6</span> to prioritize recovery and longevity.
+                        </p>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  <div className="p-3 bg-white/5 flex gap-3">
+                    <Info className="text-zinc-500 shrink-0" size={12} />
+                    <p className="text-[8px] text-zinc-500 font-bold uppercase leading-relaxed">
+                      <span className="text-zinc-300">Note:</span> Target sRPE is a <span className="text-white">ceiling</span>, not a floor. It is okay to finish under the target if your body isn't performing.
+                    </p>
+                  </div>
                 </div>
               </motion.div>
             )}

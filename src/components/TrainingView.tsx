@@ -9,32 +9,21 @@ import {
   Clock,
   Flame,
   Zap,
-  TrendingUp,
-  BarChart3,
-  Info
+  TrendingUp
 } from 'lucide-react';
-import { 
-  AreaChart, 
-  Area, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer,
-  ReferenceLine
-} from 'recharts';
 import { cn } from '../lib/utils';
 import { useSettings } from '../contexts/SettingsContext';
 import { useWorkout, WorkoutSession } from '../contexts/WorkoutContext';
-import { BlockType, getPlanForDuration } from '../constants/periodization';
 import { calculateTier } from '../lib/strength';
+import { RecoveryWidget, LogsWidget, BlockWidget } from './AnalysisView';
 
 interface TrainingViewProps {
   onContinueSession?: () => void;
   isLifting?: boolean;
+  onViewHistory?: (sessionId?: string) => void;
 }
 
-export const TrainingView = ({ onContinueSession, isLifting }: TrainingViewProps) => {
+export const TrainingView = ({ onContinueSession, isLifting, onViewHistory }: TrainingViewProps) => {
   const { t, unit, profile } = useSettings();
   const { currentSession, getNextWorkoutTemplate, history, getCalibrationStatus } = useWorkout();
   const calibration = getCalibrationStatus();
@@ -150,46 +139,6 @@ export const TrainingView = ({ onContinueSession, isLifting }: TrainingViewProps
     return totalSets > 0 ? Math.round((completedSets / totalSets) * 100) : 0;
   };
   const sessionProgress = calculateProgress(currentSession);
-
-  // Block Progression Data
-  const currentBlock = nextWorkout.blockType || BlockType.HYPERTROPHY;
-  const weekInBlock = nextWorkout.weekInBlock || 1;
-  const totalWeek = nextWorkout.totalWeek || 1;
-  const plan = getPlanForDuration((profile?.trainingDurationMonths || 3) * 4);
-  const cycleLength = plan.reduce((acc, b) => acc + b.durationWeeks, 0);
-  const currentCycleWeek = ((totalWeek - 1) % cycleLength) + 1;
-
-  const graphData = React.useMemo(() => {
-    const data = [];
-    let weekAcc = 0;
-    for (const block of plan) {
-      for (let w = 1; w <= block.durationWeeks; w++) {
-        weekAcc++;
-        const intensity = block.baseIntensity + (w - 1) * block.intensityIncrementPerWeek;
-        data.push({
-          week: weekAcc,
-          intensity: Math.round(intensity * 100),
-          block: block.type,
-          isCurrent: weekAcc === currentCycleWeek
-        });
-      }
-    }
-    return data;
-  }, [currentCycleWeek, plan]);
-
-  const CustomTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload;
-      return (
-        <div className="glass-panel p-3 border-volt/30 shadow-xl">
-          <p className="text-[10px] font-black uppercase tracking-widest text-volt mb-1">{data.block}</p>
-          <p className="text-xs font-bold text-white">Week {data.week}</p>
-          <p className="text-xs font-bold text-zinc-400">Intensity: {data.intensity}%</p>
-        </div>
-      );
-    }
-    return null;
-  };
 
   return (
     <div className="relative w-full h-full flex flex-col lg:flex-row items-center">
@@ -409,145 +358,9 @@ export const TrainingView = ({ onContinueSession, isLifting }: TrainingViewProps
                 animate={{ y: 0, opacity: 1 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ delay: 0.25 }}
-                className="w-full lg:w-[700px] xl:w-[850px] shrink-0 glass-panel p-8 flex flex-col relative overflow-hidden"
+                className="w-full lg:w-[700px] xl:w-[850px] shrink-0"
               >
-                <div className="flex items-center justify-between mb-6 md:mb-8 relative z-10">
-                  <div className="flex items-center gap-3">
-                    <BarChart3 className="text-volt" size={24} />
-                    <h3 className="font-headline text-xl md:text-2xl font-black uppercase italic tracking-tight">Block Progression</h3>
-                  </div>
-                  <div className="flex items-center gap-2 px-3 py-1 bg-volt/10 border border-volt/20">
-                    <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-volt">Week {totalWeek}</span>
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-6 md:gap-8 flex-1">
-                  {/* Detailed Block Info */}
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Training Cycle</span>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2">
-                        {plan.map((block, idx) => {
-                          const isCurrent = currentBlock === block.type;
-                          if (!isCurrent) return null;
-                          
-                          let accumulated = 0;
-                          for(let i=0; i<idx; i++) accumulated += plan[i].durationWeeks;
-                          const startWeek = accumulated + 1;
-                          const endWeek = accumulated + block.durationWeeks;
-                          
-                          return (
-                            <div 
-                              key={block.type}
-                              className={cn(
-                                "p-3 border-none transition-all duration-300",
-                                isCurrent 
-                                  ? "bg-white/10" 
-                                  : "bg-white/5 opacity-40"
-                              )}
-                            >
-                              <div className="flex justify-between items-center mb-1">
-                                <span className={cn(
-                                  "text-[10px] font-black uppercase tracking-widest",
-                                  isCurrent ? "text-volt" : "text-zinc-400"
-                                )}>
-                                  Block {idx + 1}: {block.type}
-                                </span>
-                                {isCurrent && <Zap size={10} className="text-volt" />}
-                              </div>
-                              <div className="flex justify-between items-end">
-                                <span className="text-[8px] font-bold text-zinc-500 uppercase tracking-widest">
-                                  Weeks {startWeek}-{endWeek}
-                                </span>
-                                {isCurrent && (
-                                  <span className="text-[10px] font-black italic text-white">
-                                    {weekInBlock} / {block.durationWeeks}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    <div className="p-4 bg-void/40 border-none mt-auto">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Info size={12} className="text-zinc-500" />
-                        <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500">Current Focus</span>
-                      </div>
-                      <p className="text-[10px] text-zinc-400 leading-relaxed font-bold uppercase tracking-widest">
-                        {currentBlock === BlockType.HYPERTROPHY && "Building muscle mass and work capacity."}
-                        {currentBlock === BlockType.STRENGTH && "Developing maximal strength and neural drive."}
-                        {currentBlock === BlockType.PEAKING && "Realizing strength and preparing for 1RM."}
-                        {currentBlock === BlockType.DELOAD && "Dissipating fatigue and recovery."}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Intensity Graph */}
-                  <div className="flex flex-col">
-                    <div className="flex justify-between items-end mb-4">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Intensity Curve</span>
-                      <span className="text-[10px] font-black uppercase tracking-widest text-volt">{cycleLength}-Week Cycle</span>
-                    </div>
-                    
-                    <div className="flex-1 min-h-[180px] md:min-h-[200px] w-full">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={graphData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                          <defs>
-                            <linearGradient id="intensity-grad" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="var(--primary-color)" stopOpacity={0.3}/>
-                              <stop offset="95%" stopColor="var(--primary-color)" stopOpacity={0}/>
-                            </linearGradient>
-                          </defs>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
-                          <XAxis 
-                            dataKey="week" 
-                            axisLine={false}
-                            tickLine={false}
-                            tick={{ fill: '#71717a', fontSize: 10, fontWeight: 900 }}
-                            interval={0}
-                          />
-                          <YAxis 
-                            axisLine={false}
-                            tickLine={false}
-                            tick={{ fill: '#71717a', fontSize: 10, fontWeight: 900 }}
-                            domain={[40, 100]}
-                          />
-                          <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'var(--primary-color)', strokeWidth: 1, strokeDasharray: '4 4' }} />
-                          <Area 
-                            type="monotone" 
-                            dataKey="intensity" 
-                            stroke="var(--primary-color)" 
-                            strokeWidth={3}
-                            fillOpacity={1} 
-                            fill="url(#intensity-grad)" 
-                            animationDuration={1500}
-                          />
-                          <ReferenceLine x={currentCycleWeek} stroke="var(--primary-color)" strokeDasharray="3 3" label={{ position: 'top', value: 'NOW', fill: 'var(--primary-color)', fontSize: 8, fontWeight: 900 }} />
-                        </AreaChart>
-                      </ResponsiveContainer>
-                    </div>
-
-                    <div className="mt-4 flex justify-between items-center px-2">
-                      <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-2 h-2 bg-volt" />
-                          <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500">Intensity %</span>
-                        </div>
-                      </div>
-                      <span className="text-[8px] font-black uppercase tracking-widest text-zinc-600 italic">
-                        *Based on 1RM Percentage
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-4 flex justify-between items-center px-1 opacity-20">
-                  <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">BLOCK_TYPE: {currentBlock}</span>
-                  <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">CYCLE_WEEK: {currentCycleWeek}/{cycleLength}</span>
-                </div>
+                <BlockWidget />
               </motion.div>
 
               {/* My PRs Module */}
@@ -614,6 +427,28 @@ export const TrainingView = ({ onContinueSession, isLifting }: TrainingViewProps
                   <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">PR_DATABASE: SYNCED</span>
                   <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">RECORDS: {hasHistory ? '3' : '0'}</span>
                 </div>
+              </motion.div>
+
+              {/* Recovery Score Module */}
+              <motion.div 
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ delay: 0.35 }}
+                className="w-full lg:w-[350px] xl:w-[450px] shrink-0"
+              >
+                <RecoveryWidget />
+              </motion.div>
+
+              {/* Recent Logs Module */}
+              <motion.div 
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ delay: 0.4 }}
+                className="w-full lg:w-[600px] xl:w-[700px] shrink-0"
+              >
+                <LogsWidget onViewHistory={onViewHistory} />
               </motion.div>
 
             </div>

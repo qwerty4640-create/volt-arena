@@ -62,7 +62,8 @@ service cloud.firestore {
              (data.get('deadliftPR', null) == null || data.deadliftPR is number) &&
              (data.get('trainingGoal', null) == null || data.trainingGoal in ['pure_strength', 'powerbuilding', 'hypertrophy', 'peaking', 'longevity', 'strength', 'strength_size']) &&
              (data.get('onboardingCompleted', null) == null || data.onboardingCompleted is bool) &&
-             (data.get('createdAt', null) == null || data.createdAt is int);
+             (data.get('createdAt', null) == null || data.createdAt is int) &&
+             (data.get('role', null) == null || data.role in ['user', 'admin', 'engineer']);
     }
 
     function isValidWorkout(data) {

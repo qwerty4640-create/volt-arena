@@ -13,9 +13,9 @@ interface Message {
 
 export const AICoach = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
   const { currentSession, updateCurrentSession } = useWorkout();
-  const { isVoiceActive } = useSettings();
+  const { isVoiceActive, t, experimentalFeatures } = useSettings();
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'coach', text: "Tactical Coach online. What's the status of your session?" }
+    { role: 'coach', text: t('coach.greeting') }
   ]);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -106,12 +106,12 @@ export const AICoach = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
           exercises: [...routineExercises, ...(pendingAction.exercises || [])]
         };
         updateCurrentSession(updatedSession);
-        setMessages(prev => [...prev, { role: 'coach', text: "Tactical override complete. Additional routine updated. Maintain focus." }]);
+        setMessages(prev => [...prev, { role: 'coach', text: t('coach.overrideComplete') }]);
         setPendingAction(null);
         return;
       } else if (!isSurpriseRequest) {
         // Only abort if it's not a new surprise request
-        setMessages(prev => [...prev, { role: 'coach', text: "Tactical override aborted. Maintaining current routine." }]);
+        setMessages(prev => [...prev, { role: 'coach', text: t('coach.overrideAborted') }]);
         setPendingAction(null);
         return;
       }
@@ -123,12 +123,12 @@ export const AICoach = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
 
     try {
       const exerciseNames = (currentSession.exercises || []).map(ex => ex.name);
-      const response = await sendMessageToCoach(userMessage, currentSession.title, exerciseNames);
+      const response = await sendMessageToCoach(userMessage, currentSession.title, exerciseNames, experimentalFeatures);
 
       if (userMessage.toLowerCase().includes('surprise') && response.action) {
         setMessages(prev => [...prev, { 
           role: 'coach', 
-          text: `${response.text}\n\nShould I replace your current exercises with this surprise routine? (Yes/No)` 
+          text: `${response.text}\n\n${t('coach.surprisePrompt')}` 
         }]);
         setPendingAction(response.action);
       } else {
@@ -147,7 +147,7 @@ export const AICoach = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
         }
       }
     } catch (error) {
-      setMessages(prev => [...prev, { role: 'coach', text: "Communication link unstable. Maintain focus on the iron." }]);
+      setMessages(prev => [...prev, { role: 'coach', text: t('coach.error') }]);
     } finally {
       setIsTyping(false);
     }
@@ -170,10 +170,10 @@ export const AICoach = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
                   <Bot size={18} />
                 </div>
                 <div>
-                  <h4 className="font-headline text-xs font-black uppercase tracking-widest text-white">AI Tactical Coach</h4>
+                  <h4 className="font-headline text-xs font-black uppercase tracking-widest text-white">{t('coach.title')}</h4>
                   <div className="flex items-center gap-1">
                     <div className="w-1.5 h-1.5 rounded-full bg-volt animate-pulse" />
-                    <span className="text-[8px] font-black uppercase tracking-widest text-volt">Active Link</span>
+                    <span className="text-[8px] font-black uppercase tracking-widest text-volt">{t('coach.active')}</span>
                   </div>
                 </div>
               </div>
@@ -211,19 +211,19 @@ export const AICoach = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
                           onClick={() => handleSend("Yes")}
                           className="px-3 py-1 bg-volt text-void text-[8px] font-black uppercase tracking-widest hover:bg-white transition-all"
                         >
-                          Confirm
+                          {t('coach.confirm')}
                         </button>
                         <button 
                           onClick={() => handleSend("No")}
                           className="px-3 py-1 bg-white/10 text-white text-[8px] font-black uppercase tracking-widest hover:bg-white/20 transition-all"
                         >
-                          Cancel
+                          {t('coach.cancel')}
                         </button>
                       </div>
                     )}
                   </div>
                   <span className="text-[8px] font-black uppercase tracking-widest text-zinc-600 mt-1">
-                    {msg.role === 'user' ? 'Athlete' : 'Tactical Coach'}
+                    {msg.role === 'user' ? t('coach.athlete') : t('coach.coach')}
                   </span>
                 </div>
               ))}
@@ -247,7 +247,7 @@ export const AICoach = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
                     value={inputText}
                     onChange={(e) => setInputText(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSend(inputText)}
-                    placeholder="Awaiting command..."
+                    placeholder={t('coach.awaiting')}
                     className="w-full bg-void border border-white/10 px-4 py-3 pr-10 text-xs text-white placeholder:text-zinc-700 focus:border-volt outline-none transition-all"
                   />
                   <button 
@@ -274,19 +274,19 @@ export const AICoach = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
                     onClick={() => handleSend("Surprise me")}
                     className="px-3 py-1.5 bg-volt/10 border border-volt/30 text-volt text-[8px] font-black uppercase tracking-widest hover:bg-volt hover:text-void transition-all"
                   >
-                    Surprise Me
+                    {t('coach.surpriseMe')}
                   </button>
                   <button 
                     onClick={() => handleSend("How is my form?")}
                     className="px-3 py-1.5 bg-white/5 border border-white/10 text-zinc-400 text-[8px] font-black uppercase tracking-widest hover:bg-white/10 hover:text-white transition-all"
                   >
-                    Form Check
+                    {t('coach.formCheck')}
                   </button>
                 </div>
                 {isVoiceActive && (
                   <div className="flex items-center gap-1.5">
                     <div className="w-1.5 h-1.5 rounded-full bg-volt animate-pulse" />
-                    <span className="text-[8px] font-black uppercase tracking-widest text-volt">Voice Active</span>
+                    <span className="text-[8px] font-black uppercase tracking-widest text-volt">{t('coach.voiceActive')}</span>
                   </div>
                 )}
               </div>

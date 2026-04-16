@@ -16,8 +16,20 @@ import {
   Activity,
   Zap,
   History,
-  Dumbbell
+  Dumbbell,
+  Info,
+  BarChart3
 } from 'lucide-react';
+import { 
+  AreaChart, 
+  Area, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer,
+  ReferenceLine
+} from 'recharts';
 import { cn } from '../lib/utils';
 import { useSettings } from '../contexts/SettingsContext';
 import {
@@ -107,9 +119,9 @@ const HeroWidget = ({ onContinueSession, isLifting }: { onContinueSession?: () =
 
   const displayTitle = activeOrNext.title;
   const getFocusText = (workout: any) => {
-    if (workout.title.includes('Foundation')) return "Focusing on structural integrity and movement patterns.";
-    if (workout.title.includes('Power')) return "Focusing on maximal force production and explosive concentric phases.";
-    if (workout.title.includes('Hypertrophy')) return "Focusing on metabolic stress and muscle fiber recruitment.";
+    if (workout.title.includes('Foundation')) return t('analysis.focusFoundation');
+    if (workout.title.includes('Power')) return t('analysis.focusPower');
+    if (workout.title.includes('Hypertrophy')) return t('analysis.focusHypertrophy');
     return t('analysis.focusingOn');
   };
   const focusText = getFocusText(activeOrNext);
@@ -208,7 +220,7 @@ const HeroWidget = ({ onContinueSession, isLifting }: { onContinueSession?: () =
               </div>
               {(calibration.readinessModifier !== 1 || calibration.recoveryModifier !== 1) && (
                 <span className="text-[10px] font-black uppercase tracking-widest text-volt/60 mt-0.5">
-                  calibrated to {(calibration.readinessModifier * calibration.recoveryModifier * 100).toFixed(0)}%
+                  {t('analysis.calibratedTo')} {(calibration.readinessModifier * calibration.recoveryModifier * 100).toFixed(0)}%
                 </span>
               )}
             </div>
@@ -263,7 +275,7 @@ const HeroWidget = ({ onContinueSession, isLifting }: { onContinueSession?: () =
   );
 };
 
-const RecoveryWidget = () => {
+export const RecoveryWidget = () => {
   const { t } = useSettings();
   const { history, getCalibrationStatus } = useWorkout();
   const hasHistory = history.length > 0;
@@ -339,8 +351,8 @@ const RecoveryWidget = () => {
   );
 };
 
-const BlockWidget = () => {
-  const { profile } = useSettings();
+export const BlockWidget = () => {
+  const { t, profile } = useSettings();
   const { history, getNextWorkoutTemplate } = useWorkout();
   const nextWorkout = getNextWorkoutTemplate();
   const currentBlock = nextWorkout.blockType || BlockType.HYPERTROPHY;
@@ -351,56 +363,196 @@ const BlockWidget = () => {
   const blockDef = plan.find(b => b.type === currentBlock);
   const totalWeeks = blockDef?.durationWeeks || 4;
   const progress = (weekInBlock / totalWeeks) * 100;
+  const cycleLength = plan.reduce((acc, b) => acc + b.durationWeeks, 0);
+  const currentCycleWeek = ((totalWeek - 1) % cycleLength) + 1;
+
+  const graphData = React.useMemo(() => {
+    const data = [];
+    let weekAcc = 0;
+    for (const block of plan) {
+      for (let w = 1; w <= block.durationWeeks; w++) {
+        weekAcc++;
+        const intensity = block.baseIntensity + (w - 1) * block.intensityIncrementPerWeek;
+        data.push({
+          week: weekAcc,
+          intensity: Math.round(intensity * 100),
+          block: block.type,
+          isCurrent: weekAcc === currentCycleWeek
+        });
+      }
+    }
+    return data;
+  }, [currentCycleWeek, plan]);
+
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div className="glass-panel p-3 border-volt/30 shadow-xl">
+          <p className="text-[10px] font-black uppercase tracking-widest text-volt mb-1">{data.block}</p>
+          <p className="text-xs font-bold text-white">Week {data.week}</p>
+          <p className="text-xs font-bold text-zinc-400">Intensity: {data.intensity}%</p>
+        </div>
+      );
+    }
+    return null;
+  };
 
   return (
     <div className="glass-panel p-6 xl:p-8 border-none flex flex-col justify-between h-full relative overflow-hidden">
       <div className="absolute top-0 right-0 w-24 h-24 bg-volt/5 blur-[40px] -z-10" />
       
-      <div className="flex justify-between items-center mb-6 bg-white/5 border border-white/5 p-4">
-        <div className="flex items-center gap-2">
-          <Zap size={16} className="text-volt" />
-          <span className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500">Block Progress</span>
+      <div className="flex items-center justify-between mb-6 md:mb-8 relative z-10">
+        <div className="flex items-center gap-3">
+          <BarChart3 className="text-volt" size={24} />
+          <h3 className="font-headline text-xl md:text-2xl font-black uppercase italic tracking-tight">Block Progression</h3>
         </div>
-        <span className="text-[10px] font-black uppercase tracking-widest text-volt bg-volt/10 px-2 py-1 border border-volt/20">
-          {currentBlock}
-        </span>
-      </div>
-
-      <div className="space-y-6">
-        <div className="flex flex-col gap-4">
-          <div className="space-y-1">
-            <span className="block text-[10px] font-black uppercase tracking-widest text-zinc-500">Current Week</span>
-            <span className="text-3xl font-black italic text-white">Week {totalWeek}</span>
-          </div>
-          <div className="space-y-1">
-            <span className="block text-[10px] font-black uppercase tracking-widest text-zinc-500">Block Week</span>
-            <span className="text-xl font-black italic text-zinc-400">{weekInBlock} / {totalWeeks}</span>
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <div className="w-full h-2 bg-void overflow-hidden border border-white/5">
-            <motion.div 
-              initial={{ width: 0 }}
-              animate={{ width: `${progress}%` }}
-              className="h-full bg-volt shadow-[0_0_10px_var(--primary-glow)]"
-            />
-          </div>
-          <div className="flex justify-between text-[8px] font-black uppercase tracking-widest text-zinc-600">
-            <span>Start</span>
-            <span>{Math.round(progress)}% Complete</span>
-            <span>Peak</span>
-          </div>
+        <div className="flex items-center gap-2 px-3 py-1 bg-volt/10 border border-volt/20">
+          <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-volt">Week {totalWeek}</span>
         </div>
       </div>
 
-      <div className="mt-4 pt-4 border-t border-white/5">
-        <p className="text-[10px] text-zinc-500 leading-relaxed font-bold uppercase tracking-widest">
-          {currentBlock === BlockType.HYPERTROPHY && "Focus: Building muscle mass and work capacity."}
-          {currentBlock === BlockType.STRENGTH && "Focus: Developing maximal strength and neural drive."}
-          {currentBlock === BlockType.PEAKING && "Focus: Realizing strength and preparing for 1RM."}
-          {currentBlock === BlockType.DELOAD && "Focus: Dissipating fatigue and recovery."}
-        </p>
+      <div className="flex flex-col gap-6 md:gap-8 flex-1">
+        {/* Detailed Block Info */}
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Training Cycle</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2">
+              {plan.map((block, idx) => {
+                const isCurrent = currentBlock === block.type;
+                if (!isCurrent) return null;
+                
+                let accumulated = 0;
+                for(let i=0; i<idx; i++) accumulated += plan[i].durationWeeks;
+                const startWeek = accumulated + 1;
+                const endWeek = accumulated + block.durationWeeks;
+                
+                return (
+                  <div 
+                    key={block.type}
+                    className={cn(
+                      "p-3 border-none transition-all duration-300",
+                      isCurrent 
+                        ? "bg-white/10" 
+                        : "bg-white/5 opacity-40"
+                    )}
+                  >
+                    <div className="flex justify-between items-center mb-1">
+                      <span className={cn(
+                        "text-[10px] font-black uppercase tracking-widest",
+                        isCurrent ? "text-volt" : "text-zinc-400"
+                      )}>
+                        Block {idx + 1}: {block.type}
+                      </span>
+                      {isCurrent && <Zap size={10} className="text-volt" />}
+                    </div>
+                    <div className="flex justify-between items-end">
+                      <span className="text-[8px] font-bold text-zinc-500 uppercase tracking-widest">
+                        Weeks {startWeek}-{endWeek}
+                      </span>
+                      {isCurrent && (
+                        <span className="text-[10px] font-black italic text-white">
+                          {weekInBlock} / {block.durationWeeks}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="w-full h-2 bg-void overflow-hidden border border-white/5">
+              <motion.div 
+                initial={{ width: 0 }}
+                animate={{ width: `${progress}%` }}
+                className="h-full bg-volt shadow-[0_0_10px_var(--primary-glow)]"
+              />
+            </div>
+            <div className="flex justify-between text-[8px] font-black uppercase tracking-widest text-zinc-600">
+              <span>{t('analysis.start')}</span>
+              <span>{Math.round(progress)}% {t('analysis.complete')}</span>
+              <span>{t('analysis.peak')}</span>
+            </div>
+          </div>
+
+          <div className="p-4 bg-void/40 border-none mt-auto">
+            <div className="flex items-center gap-2 mb-2">
+              <Info size={12} className="text-zinc-500" />
+              <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500">Current Focus</span>
+            </div>
+            <p className="text-[10px] text-zinc-400 leading-relaxed font-bold uppercase tracking-widest">
+              {currentBlock === BlockType.HYPERTROPHY && "Building muscle mass and work capacity."}
+              {currentBlock === BlockType.STRENGTH && "Developing maximal strength and neural drive."}
+              {currentBlock === BlockType.PEAKING && "Realizing strength and preparing for 1RM."}
+              {currentBlock === BlockType.DELOAD && "Dissipating fatigue and recovery."}
+            </p>
+          </div>
+        </div>
+
+        {/* Intensity Graph */}
+        <div className="flex flex-col">
+          <div className="flex justify-between items-end mb-4">
+            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Intensity Curve</span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-volt">{cycleLength}-Week Cycle</span>
+          </div>
+          
+          <div className="flex-1 min-h-[180px] md:min-h-[200px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={graphData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="intensity-grad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="var(--primary-color)" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="var(--primary-color)" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
+                <XAxis 
+                  dataKey="week" 
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: '#71717a', fontSize: 10, fontWeight: 900 }}
+                  interval={0}
+                />
+                <YAxis 
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: '#71717a', fontSize: 10, fontWeight: 900 }}
+                  domain={[40, 100]}
+                />
+                <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'var(--primary-color)', strokeWidth: 1, strokeDasharray: '4 4' }} />
+                <Area 
+                  type="monotone" 
+                  dataKey="intensity" 
+                  stroke="var(--primary-color)" 
+                  strokeWidth={3}
+                  fillOpacity={1} 
+                  fill="url(#intensity-grad)" 
+                  animationDuration={1500}
+                />
+                <ReferenceLine x={currentCycleWeek} stroke="var(--primary-color)" strokeDasharray="3 3" label={{ position: 'top', value: 'NOW', fill: 'var(--primary-color)', fontSize: 8, fontWeight: 900 }} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="mt-4 flex justify-between items-center px-2">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-1.5">
+                <div className="w-2 h-2 bg-volt" />
+                <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500">Intensity %</span>
+              </div>
+            </div>
+            <span className="text-[8px] font-black uppercase tracking-widest text-zinc-600 italic">
+              *Based on 1RM Percentage
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4 flex justify-between items-center px-1 opacity-20">
+        <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">BLOCK_TYPE: {currentBlock}</span>
+        <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">CYCLE_WEEK: {currentCycleWeek}/{cycleLength}</span>
       </div>
     </div>
   );
@@ -442,11 +594,14 @@ const PRWidget = () => {
     />
     <div className="absolute inset-0 p-6 xl:p-8 flex flex-col justify-between">
       <div className="space-y-2 xl:space-y-4">
-        <div className="flex items-center gap-2 text-white/80">
-          <Star size={14} fill={hasHistory ? "currentColor" : "none"} />
-          <span className="text-[10px] font-black uppercase tracking-[0.3em]">
-            {hasHistory ? t('analysis.newPersonalRecord') : t('analysis.personalRecord')}
-          </span>
+        <div className="flex items-center justify-between text-white/80">
+          <div className="flex items-center gap-2">
+            <Star size={14} fill={hasHistory ? "currentColor" : "none"} />
+            <span className="text-[10px] font-black uppercase tracking-[0.3em]">
+              {hasHistory ? t('analysis.newPersonalRecord') : t('analysis.personalRecord')}
+            </span>
+          </div>
+          <span className="text-[8px] font-black uppercase tracking-widest text-white bg-white/10 px-1.5 py-0.5 border border-white/20">EXP</span>
         </div>
         <h3 className="font-headline text-xl md:text-2xl font-black uppercase italic tracking-tight leading-none">
           {hasHistory ? (
@@ -586,7 +741,10 @@ const MacrosWidget = () => {
   return (
   <div className="glass-panel p-6 xl:p-8 border-none space-y-4 xl:space-y-8 h-full flex flex-col">
     <div className="flex justify-between items-center">
-      <span className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500">{t('analysis.macroDistribution')}</span>
+      <div className="flex items-center gap-2">
+        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500">{t('analysis.macroDistribution')}</span>
+        <span className="text-[8px] font-black uppercase tracking-widest text-volt bg-volt/10 px-1.5 py-0.5 border border-volt/20">EXP</span>
+      </div>
       <Utensils size={18} className="text-zinc-500" />
     </div>
 
@@ -630,27 +788,19 @@ const MacrosWidget = () => {
   );
 };
 
-const LogsWidget = ({ onViewHistory }: { onViewHistory?: (sessionId?: string) => void }) => {
+export const LogsWidget = ({ onViewHistory }: { onViewHistory?: (sessionId?: string) => void }) => {
   const { t, unit } = useSettings();
   const { history } = useWorkout();
   const hasHistory = (history?.length || 0) > 0;
   const weightUnit = unit === 'metric' ? 'Kg' : 'lbs';
   
-  const recentLogs = [...history].reverse().slice(0, 2);
+  const recentLogs = [...history].reverse().slice(0, 3);
 
   return (
   <div className="glass-panel p-8 border-none h-full overflow-y-auto custom-scrollbar">
     <div className="space-y-6">
       <div className="flex justify-between items-end">
         <h3 className="font-headline text-xl md:text-2xl font-black uppercase italic tracking-tight">{t('analysis.recentLogs')}</h3>
-        {hasHistory && (
-          <button 
-            onClick={() => onViewHistory?.()}
-            className="text-[10px] font-black uppercase tracking-[0.3em] text-volt hover:text-white transition-colors"
-          >
-            {t('analysis.viewFullHistory')}
-          </button>
-        )}
       </div>
 
       <div className="space-y-4">
@@ -684,11 +834,11 @@ const LogsWidget = ({ onViewHistory }: { onViewHistory?: (sessionId?: string) =>
               <div 
                 key={log.id}
                 onClick={() => onViewHistory?.(log.id)}
-                className="glass-panel p-6 border-white/5 flex items-center justify-between group hover:bg-white/5 transition-colors cursor-pointer"
+                className="glass-panel p-4 md:p-6 border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-0 group hover:bg-white/5 transition-colors cursor-pointer"
               >
                 <div className="flex items-center gap-4 sm:gap-6">
-                  <div className="w-14 h-14 shrink-0 bg-zinc-900 flex items-center justify-center border border-white/5">
-                    <span className="text-2xl font-black italic text-zinc-700">{day}</span>
+                  <div className="w-12 h-12 md:w-14 md:h-14 shrink-0 bg-zinc-900 flex items-center justify-center border border-white/5">
+                    <span className="text-xl md:text-2xl font-black italic text-zinc-700">{day}</span>
                   </div>
                   <div className="min-w-0">
                     <h4 className="text-lg sm:text-xl font-black uppercase italic leading-tight group-hover:text-volt transition-colors truncate">
@@ -700,14 +850,14 @@ const LogsWidget = ({ onViewHistory }: { onViewHistory?: (sessionId?: string) =>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4 sm:gap-12 shrink-0 ml-4">
-                  <div className="text-right">
+                <div className="flex items-center justify-between md:justify-end gap-4 sm:gap-12 shrink-0 md:ml-4 pt-4 md:pt-0 border-t border-white/5 md:border-t-0">
+                  <div className="text-left md:text-right">
                     <span className="block text-[8px] font-black uppercase tracking-widest text-zinc-600 mb-1">
                       {log.blockType === BlockType.PEAKING ? t('analysis.peakIntensity') : t('analysis.topSet')}
                     </span>
-                    <div className="flex flex-col items-end">
+                    <div className="flex flex-row md:flex-col items-baseline md:items-end gap-2 md:gap-0">
                       <span className="text-sm font-black uppercase text-volt">{peakWeight} {weightUnit}</span>
-                      <span className="text-[10px] font-black uppercase text-white/80 truncate max-w-[80px]">{peakExercise}</span>
+                      <span className="text-[10px] font-black uppercase text-white/80 truncate max-w-[120px] md:max-w-[80px]">{peakExercise}</span>
                     </div>
                   </div>
                   <ChevronRight size={20} className="text-zinc-700 group-hover:text-volt transition-colors" />
@@ -717,6 +867,15 @@ const LogsWidget = ({ onViewHistory }: { onViewHistory?: (sessionId?: string) =>
           })
         )}
       </div>
+
+      {hasHistory && (
+        <button 
+          onClick={() => onViewHistory?.()}
+          className="w-full py-4 mt-2 border border-white/5 bg-white/5 hover:bg-volt hover:text-void text-[10px] font-black uppercase tracking-[0.3em] text-volt transition-all"
+        >
+          {t('analysis.viewFullHistory')}
+        </button>
+      )}
     </div>
   </div>
   );
@@ -865,6 +1024,12 @@ export const AnalysisView = ({ onContinueSession, onViewHistory, isLifting }: An
   };
 
   const availableWidgets = ALL_WIDGETS.filter(w => !widgets.includes(w.id));
+  const visibleWidgets = widgets.filter(id => {
+    if (id === 'macros' || id === 'pr') {
+      return experimentalFeatures;
+    }
+    return true;
+  });
 
   return (
     <div className="relative w-full h-full flex flex-col lg:flex-row items-center">
@@ -878,10 +1043,10 @@ export const AnalysisView = ({ onContinueSession, onViewHistory, isLifting }: An
         >
           <div className="flex flex-col lg:flex-wrap gap-6 lg:gap-8 min-w-full lg:min-w-max h-auto lg:h-[75vh] items-stretch content-start">
             <SortableContext 
-              items={widgets}
+              items={visibleWidgets}
               strategy={horizontalListSortingStrategy}
             >
-              {widgets.map((id) => {
+              {visibleWidgets.map((id) => {
                 const widget = ALL_WIDGETS.find(w => w.id === id);
                 if (!widget) return null;
                 return (
@@ -923,7 +1088,7 @@ export const AnalysisView = ({ onContinueSession, onViewHistory, isLifting }: An
 
         {/* Spatial Widget Library Menu - Moved to end of flow */}
         {experimentalFeatures && (
-          <div className="mt-12 mb-8 flex flex-col items-center gap-4 shrink-0">
+          <div className="mt-12 mb-8 flex flex-col items-center gap-4 shrink-0 px-2 lg:px-0">
             <AnimatePresence>
               {isLibraryOpen && (
                   <motion.div
@@ -931,7 +1096,7 @@ export const AnalysisView = ({ onContinueSession, onViewHistory, isLifting }: An
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 40, scale: 0.8 }}
                     transition={{ type: "spring", damping: 20, stiffness: 300 }}
-                    className="glass-panel p-2 border-volt/20 flex gap-2 shadow-[0_0_60px_var(--primary-glow)]"
+                    className="glass-panel p-2 border-volt/20 flex flex-wrap justify-center gap-2 shadow-[0_0_60px_var(--primary-glow)] max-w-full"
                   >
                     {availableWidgets.length > 0 ? (
                       availableWidgets.map((w, i) => {
@@ -943,19 +1108,19 @@ export const AnalysisView = ({ onContinueSession, onViewHistory, isLifting }: An
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: i * 0.05 }}
                             onClick={() => addWidget(w.id)}
-                            className="flex flex-col items-center gap-2 p-4 hover:bg-volt text-zinc-400 hover:text-void transition-all group relative"
+                            className="flex flex-col items-center gap-2 p-3 md:p-4 hover:bg-volt text-zinc-400 hover:text-void transition-all group relative min-w-[70px] md:min-w-[80px]"
                           >
-                            <div className="w-12 h-12 flex items-center justify-center transition-transform group-hover:scale-110">
-                              <Icon size={24} />
+                            <div className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center transition-transform group-hover:scale-110">
+                              <Icon size={24} className="md:w-6 md:h-6 w-5 h-5" />
                             </div>
-                            <span className="text-[8px] font-black uppercase tracking-widest opacity-60 group-hover:opacity-100">
+                            <span className="text-[7px] md:text-[8px] font-black uppercase tracking-widest opacity-60 group-hover:opacity-100 text-center">
                               {t(w.label).split(' ')[0]}
                             </span>
                           </motion.button>
                         );
                       })
                     ) : (
-                      <div className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-zinc-500 italic">
+                      <div className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-zinc-500 italic text-center">
                         {t('analysis.allModulesDeployed')}
                       </div>
                     )}

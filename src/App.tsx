@@ -49,6 +49,7 @@ import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { Mail, Lock, UserPlus, Languages } from 'lucide-react';
 
 import { ReadinessCheck } from './components/ReadinessCheck';
+import { ReflectionModal } from './components/ReflectionModal';
 
 declare global {
   interface Window {
@@ -100,8 +101,26 @@ const VoltLogo = ({ className, size = 40 }: { className?: string; size?: number 
 );
 
 function AppContent() {
-  const { t, language, setLanguage, isVoiceActive, setIsVoiceActive, immersionMode, setImmersionMode, showExperimentalMenus, profile, updateProfile, isProfileLoading, setLastVoiceCommand, lastVoiceCommand } = useSettings();
-  const { currentSession, startNewSession, completeSession, discardSession, history, mockWorkoutCount, isLoading: isWorkoutLoading } = useWorkout();
+  const { 
+    t, language, setLanguage, 
+    isVoiceActive, setIsVoiceActive, 
+    immersionMode, setImmersionMode, 
+    showExperimentalMenus, 
+    experimentalFeatures,
+    profile, updateProfile, isProfileLoading, 
+    setLastVoiceCommand, lastVoiceCommand 
+  } = useSettings();
+  const { 
+    currentSession, 
+    startNewSession, 
+    completeSession, 
+    discardSession, 
+    history, 
+    mockWorkoutCount, 
+    isLoading: isWorkoutLoading,
+    pendingReflection,
+    saveReflection
+  } = useWorkout();
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [activeView, setActiveView] = useState<ViewType>(() => {
@@ -310,7 +329,7 @@ function AppContent() {
       }
     };
 
-    if (isVoiceActive) {
+    if (isVoiceActive && experimentalFeatures) {
       recognition.start();
     } else {
       recognition.stop();
@@ -353,13 +372,13 @@ function AppContent() {
           // Frontend validation
           const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
           if (!emailRegex.test(email)) {
-            throw new Error("Invalid email format");
+            throw new Error(t('auth.invalidEmail'));
           }
           if (password !== confirmPassword) {
-            throw new Error("Passwords do not match");
+            throw new Error(t('auth.passwordsMismatch'));
           }
           if (password.length < 6) {
-            throw new Error("Password must be at least 6 characters");
+            throw new Error(t('auth.passwordTooShort'));
           }
           await signUpWithEmail(email, password);
         } else {
@@ -367,7 +386,7 @@ function AppContent() {
         }
       } catch (error: any) {
         console.error("Auth: Email/Password flow failed:", error);
-        setAuthError(error.message || "Authentication failed");
+        setAuthError(error.message || t('auth.failed'));
       } finally {
         setIsEmailAuthLoading(false);
       }
@@ -396,9 +415,9 @@ function AppContent() {
         }
 
         if (error.code === 'auth/unauthorized-domain') {
-          setAuthError("This domain is not authorized for Google Sign-In. Please ensure you are using the correct App URL or contact support to allowlist this domain in Firebase.");
+          setAuthError(t('auth.googleUnauthorized'));
         } else {
-          setAuthError(`${error.code}: ${error.message || "Google Sign-In failed"}`);
+          setAuthError(`${error.code}: ${error.message || t('auth.googleFailed')}`);
         }
       } finally {
         setIsGoogleAuthLoading(false);
@@ -582,6 +601,10 @@ function AppContent() {
       />;
       case 'training': return <TrainingView 
         isLifting={isLifting}
+        onViewHistory={(sessionId) => {
+          setSelectedHistoryWorkoutId(sessionId || null);
+          setActiveView('workout-history');
+        }}
         onContinueSession={() => {
           if (!currentSession) {
             setShowReadinessCheck(true);
@@ -672,10 +695,10 @@ function AppContent() {
       </AnimatePresence>
 
       {/* Top App Bar Shell */}
-      <header className="fixed top-0 left-0 right-0 z-50 flex justify-between items-center px-2 md:px-10 py-4 md:py-8 bg-void/50 backdrop-blur-md md:bg-transparent">
+      <header className="fixed top-0 left-0 right-0 z-50 flex justify-center md:justify-between items-center px-2 md:px-10 py-4 md:py-8 bg-void/50 backdrop-blur-md md:bg-transparent">
         <div className="flex-1 hidden md:block" />
         
-        <div className="flex flex-col items-start md:items-center">
+        <div className="flex flex-col items-center justify-center">
           <div className="flex items-center gap-3">
             <VoltLogo size={32} className="text-volt hidden md:block" />
             <div className="text-2xl md:text-5xl font-black italic text-volt tracking-tighter uppercase font-headline text-glow-volt leading-none">
@@ -683,13 +706,13 @@ function AppContent() {
             </div>
           </div>
           <div className="font-headline text-[8px] md:text-[10px] font-black uppercase tracking-[0.4em] text-zinc-500 mt-1">
-            {profile?.trainingGoal ? t(`goal.${profile.trainingGoal}`) : "TRAINING SYSTEM"}
+            {profile?.trainingGoal ? t(`goal.${profile.trainingGoal}`) : t('auth.trainingSystem')}
           </div>
         </div>
 
-        <div className="flex items-center gap-3 md:gap-6 flex-1 justify-end">
-          <div className="flex gap-2 md:gap-4">
-            {SHOW_EXPERIMENTAL_FEATURES && (
+        <div className="hidden md:flex items-center gap-3 md:gap-6 flex-1 justify-end">
+          <div className="hidden md:flex gap-2 md:gap-4">
+            {experimentalFeatures && (
               <>
                 <button 
                   onClick={() => {
@@ -700,6 +723,7 @@ function AppContent() {
                 >
                   <Zap size={14} className="group-hover:animate-bounce md:w-4 md:h-4" />
                   <span className="font-headline text-[8px] md:text-[10px] font-black uppercase tracking-widest">{t('app.detectLift')}</span>
+                  <span className="absolute -top-2 -right-2 bg-volt text-void text-[6px] font-black px-1 py-0.5 uppercase tracking-widest border border-void">EXP</span>
                 </button>
               </>
             )}
@@ -709,7 +733,7 @@ function AppContent() {
           <button 
             onClick={() => setActiveView('profile')}
             className={cn(
-              "w-8 h-8 md:w-10 md:h-10 border-2 overflow-hidden bg-surface-high transition-all",
+              "hidden md:block w-8 h-8 md:w-10 md:h-10 border-2 overflow-hidden bg-surface-high transition-all",
               activeView === 'profile' ? "border-volt scale-110 shadow-[0_0_15px_var(--primary-glow)]" : "border-volt/30 hover:border-volt/60"
             )}
           >
@@ -816,12 +840,42 @@ function AppContent() {
             </button>
           );
         })}
+        <button
+          onClick={() => setActiveView('settings')}
+          className={cn(
+            "flex flex-col items-center gap-1 transition-all",
+            activeView === 'settings' ? "text-volt" : "text-zinc-500"
+          )}
+        >
+          <Settings size={20} strokeWidth={activeView === 'settings' ? 3 : 2} />
+          <span className="text-[8px] font-black uppercase tracking-widest">SETTINGS</span>
+        </button>
+        <button
+          onClick={() => setActiveView('profile')}
+          className={cn(
+            "flex flex-col items-center gap-1 transition-all",
+            activeView === 'profile' ? "text-volt" : "text-zinc-500"
+          )}
+        >
+          <div className={cn(
+            "w-5 h-5 rounded-full overflow-hidden border transition-all",
+            activeView === 'profile' ? "border-volt" : "border-zinc-500"
+          )}>
+            <img 
+              src={user?.photoURL || "https://picsum.photos/seed/athlete/100/100"} 
+              alt={user?.displayName || "Athlete"} 
+              className="w-full h-full object-cover"
+              referrerPolicy="no-referrer"
+            />
+          </div>
+          <span className="text-[8px] font-black uppercase tracking-widest">PROFILE</span>
+        </button>
       </nav>
 
       {/* Main Content Area */}
       <main 
         ref={mainRef}
-        className="flex-1 relative h-full flex items-start justify-center pt-16 md:pt-32 pb-24 md:pb-12 px-2 md:px-8 overflow-y-auto custom-scrollbar"
+        className="flex-1 relative h-full flex items-start justify-center pt-24 md:pt-32 pb-24 md:pb-12 px-4 md:px-8 overflow-y-auto custom-scrollbar"
       >
         <AnimatePresence mode="wait">
           <motion.div
@@ -830,7 +884,7 @@ function AppContent() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.98 }}
             transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-            className="w-full flex items-start justify-center max-w-full mx-auto px-2 md:px-12"
+            className="w-full flex items-start justify-center max-w-full mx-auto px-0 md:px-12"
           >
             {renderView()}
           </motion.div>
@@ -866,13 +920,23 @@ function AppContent() {
       <AnimatePresence>
         {showReadinessCheck && (
           <ReadinessCheck
-            onComplete={(score, modifier) => {
-              startNewSession(undefined, score, modifier);
+            onComplete={(score, modifier, targetRpe) => {
+              startNewSession(undefined, score, modifier, targetRpe);
               setShowReadinessCheck(false);
               setIsLifting(true);
               setActiveView('workout-log');
             }}
             onCancel={() => setShowReadinessCheck(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Reflection Modal */}
+      <AnimatePresence>
+        {pendingReflection && (
+          <ReflectionModal 
+            session={pendingReflection}
+            onSave={(actualRpe) => saveReflection(pendingReflection.id, actualRpe)}
           />
         )}
       </AnimatePresence>

@@ -243,7 +243,7 @@ export const StageView = ({ immersionMode = 'immersive', isVoiceActive = false, 
                     </button>
                     <div className="text-center min-w-[80px] md:min-w-[100px]">
                       <span className="text-2xl md:text-3xl font-black italic text-volt leading-none">{lift.weight.toFixed(1)}</span>
-                      <span className="text-[10px] font-black text-zinc-500 ml-1 uppercase italic">KG</span>
+                      <span className="text-[10px] font-black text-zinc-500 ml-1 uppercase italic">{t('stage.kg')}</span>
                     </div>
                     <button 
                       onClick={() => updateWeight(index, 2.5)}
@@ -427,7 +427,7 @@ export const StageView = ({ immersionMode = 'immersive', isVoiceActive = false, 
               <span className="font-headline text-zinc-500 text-[8px] md:text-[10px] tracking-[0.4em] font-black uppercase">{t('stage.targetLoad')}</span>
               <div className="flex items-baseline gap-2 md:gap-3">
                 <span className="font-headline text-4xl md:text-7xl font-black italic tracking-tighter text-white">{currentLift.weight.toFixed(1)}</span>
-                <span className="font-headline text-lg md:text-2xl font-black text-volt italic">KG</span>
+                <span className="font-headline text-lg md:text-2xl font-black text-volt italic">{t('stage.kg')}</span>
               </div>
             </div>
 
@@ -483,7 +483,7 @@ export const StageView = ({ immersionMode = 'immersive', isVoiceActive = false, 
               <p className="font-headline text-[7px] md:text-[8px] tracking-[0.2em] text-zinc-500 uppercase font-black mb-2 md:mb-3">{t('stage.bodyTemp')}</p>
               <div className="flex items-baseline gap-2">
                 <span className="font-headline text-xl md:text-3xl font-black italic text-white">37.2</span>
-                <span className="font-headline text-[8px] md:text-[10px] font-bold text-zinc-500 uppercase">°C</span>
+                <span className="font-headline text-[8px] md:text-[10px] font-bold text-zinc-500 uppercase">{t('stage.celsius')}</span>
               </div>
               <div className="mt-2 h-1 w-full bg-zinc-900 overflow-hidden">
                 <div className="h-full bg-white/40 w-1/2" />

@@ -14,7 +14,8 @@ import {
   Search,
   PlusCircle,
   Bot,
-  Zap
+  Zap,
+  AlertTriangle
 } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
 import { cn } from '../lib/utils';
@@ -30,9 +31,9 @@ interface WorkoutLogProps {
 }
 
 export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps) => {
-  const { t, unit, profile, lastVoiceCommand } = useSettings();
+  const { t, unit, profile, lastVoiceCommand, experimentalFeatures } = useSettings();
   const { currentSession, updateCurrentSession, history } = useWorkout();
-  const weightUnit = unit === 'metric' ? 'Kg' : 'lbs';
+  const weightUnit = unit === 'metric' ? t('workout.kg') : t('workout.lbs');
 
   const [isCompleting, setIsCompleting] = useState(false);
   const [isEndConfirmOpen, setIsEndConfirmOpen] = useState(false);
@@ -44,18 +45,25 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
   const [selectedCircuitExercises, setSelectedCircuitExercises] = useState<string[]>([]);
   const [circuitTitle, setCircuitTitle] = useState('');
   const [isAICoachOpen, setIsAICoachOpen] = useState(false);
+  const [showIntensityWarning, setShowIntensityWarning] = useState(false);
+
+  if (!currentSession) return null;
+
+  const exercises = currentSession.exercises || [];
+  const completedSets = exercises.flatMap(ex => ex.sets || []).filter(s => s.isCompleted);
+  const currentAvgRpe = completedSets.length > 0 
+    ? completedSets.reduce((acc, s) => acc + parseFloat(s.rpe || '0'), 0) / completedSets.length
+    : 0;
 
   // Voice command listener for AI Coach
   React.useEffect(() => {
-    if (lastVoiceCommand) {
+    if (lastVoiceCommand && experimentalFeatures) {
       const text = lastVoiceCommand.text.toLowerCase();
       if (text.includes('coach') || text.includes('surprise me') || text.includes('help')) {
         setIsAICoachOpen(true);
       }
     }
-  }, [lastVoiceCommand]);
-
-  if (!currentSession) return null;
+  }, [lastVoiceCommand, experimentalFeatures]);
 
   const handleSwap = (exerciseId: string, newName: string) => {
     setExercises(prev => prev.map(ex => {
@@ -85,8 +93,6 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
 
     return `${bestSet.weight}${weightUnit} x ${bestSet.reps}`;
   };
-
-  const exercises = currentSession.exercises || [];
 
   const setExercises = (updater: (prev: Exercise[]) => Exercise[]) => {
     const newExercises = updater(exercises);
@@ -172,15 +178,28 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
   };
 
   const toggleSetCompletion = (exerciseId: string, setId: string) => {
-    setExercises(prev => prev.map(ex => {
-      if (ex.id === exerciseId) {
-        return {
-          ...ex,
-          sets: ex.sets.map(s => s.id === setId ? { ...s, isCompleted: !s.isCompleted } : s)
-        };
+    setExercises(prev => {
+      const newExercises = prev.map(ex => {
+        if (ex.id === exerciseId) {
+          return {
+            ...ex,
+            sets: ex.sets.map(s => s.id === setId ? { ...s, isCompleted: !s.isCompleted } : s)
+          };
+        }
+        return ex;
+      });
+
+      // Set-Level Overrides: Check if first completed set of session is high RPE
+      const allCompletedSets = newExercises.flatMap(ex => ex.sets).filter(s => s.isCompleted);
+      if (allCompletedSets.length === 1 && !showIntensityWarning) {
+        const firstSet = allCompletedSets[0];
+        if (parseFloat(firstSet.rpe || '0') >= 9) {
+          setShowIntensityWarning(true);
+        }
       }
-      return ex;
-    }));
+
+      return newExercises;
+    });
   };
 
   const updateSet = (exerciseId: string, setId: string, field: keyof WorkoutSet, value: string) => {
@@ -240,9 +259,33 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
           </div>
         </div>
 
-        {currentSession.blockType && (
-          <div className="flex items-center gap-4 self-start md:self-auto">
-            <div className="text-left">
+        <div className="flex items-center gap-4 self-start md:self-auto">
+          {currentSession.targetRpe && (
+            <>
+              <div className="text-right">
+                <div className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">Target RPE</div>
+                <div className="font-headline text-lg md:text-xl font-black uppercase italic tracking-tight text-volt">
+                  {currentSession.targetRpe}
+                </div>
+              </div>
+              <div className="h-10 md:h-12 w-[1px] bg-white/10" />
+              <div className="text-right">
+                <div className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">Current RPE</div>
+                <div className={cn(
+                  "font-headline text-lg md:text-xl font-black uppercase italic tracking-tight transition-colors",
+                  currentAvgRpe > (currentSession.targetRpe + 0.5) ? "text-crimson" : 
+                  currentAvgRpe < (currentSession.targetRpe - 0.5) ? "text-zinc-400" : "text-white"
+                )}>
+                  {currentAvgRpe > 0 ? currentAvgRpe.toFixed(1) : '–'}
+                </div>
+              </div>
+              <div className="h-10 md:h-12 w-[1px] bg-white/10" />
+            </>
+          )}
+
+          {currentSession.blockType && (
+            <>
+              <div className="text-left">
               <div className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">{t('workout.currentBlock')}</div>
               <div className="font-headline text-lg md:text-xl font-black uppercase italic tracking-tight text-volt">
                 {currentSession.blockType}
@@ -255,9 +298,40 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
                 {t('workout.week')} {currentSession.weekInBlock}
               </div>
             </div>
-          </div>
+          </>
         )}
       </div>
+    </div>
+
+      {/* Intensity Warning Banner */}
+      <AnimatePresence>
+        {showIntensityWarning && (
+          <motion.div 
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="mb-8 overflow-hidden"
+          >
+            <div className="p-4 bg-crimson/10 border border-crimson/30 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <AlertTriangle className="text-crimson shrink-0" size={20} />
+                <div className="space-y-1">
+                  <p className="text-[10px] text-crimson font-black uppercase tracking-widest">High Intensity Detected</p>
+                  <p className="text-[10px] text-zinc-300 font-bold uppercase">
+                    First set RPE is high. We recommend lowering your Session Target to prioritize recovery.
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowIntensityWarning(false)}
+                className="p-2 text-zinc-500 hover:text-white transition-colors"
+              >
+                <Check size={16} />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Exercise List */}
       <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 md:pr-4 space-y-8 md:space-y-12 pb-12">
@@ -572,21 +646,23 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
       />
 
       {/* AI Coach Floating Button */}
-      <motion.button
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
-        onClick={() => setIsAICoachOpen(true)}
-        className="fixed bottom-24 right-6 md:right-10 w-14 h-14 md:w-16 md:h-16 bg-volt text-void shadow-[0_0_30px_var(--primary-glow)] flex items-center justify-center z-40 group"
-      >
-        <Bot size={28} className="md:w-8 md:h-8 group-hover:rotate-12 transition-transform" />
-        <div className="absolute -top-1 -right-1 w-4 h-4 bg-white rounded-full flex items-center justify-center">
-          <Zap size={10} className="text-volt fill-volt" />
-        </div>
-      </motion.button>
+      {experimentalFeatures && (
+        <>
+          <motion.button
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={() => setIsAICoachOpen(true)}
+            className="fixed bottom-24 right-6 md:right-10 w-14 h-14 md:w-16 md:h-16 bg-volt text-void shadow-[0_0_30px_var(--primary-glow)] flex items-center justify-center z-40 group"
+          >
+            <Bot size={28} className="md:w-8 md:h-8 group-hover:rotate-12 transition-transform" />
+            <span className="absolute -top-2 -right-2 bg-void text-volt text-[8px] font-black px-1.5 py-0.5 uppercase tracking-widest border border-volt">EXP</span>
+          </motion.button>
 
-      <AICoach isOpen={isAICoachOpen} onClose={() => setIsAICoachOpen(false)} />
+          <AICoach isOpen={isAICoachOpen} onClose={() => setIsAICoachOpen(false)} />
+        </>
+      )}
 
       {/* Swap Exercise Modal */}
       <AnimatePresence>
@@ -794,7 +870,7 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
               {isCircuitMode && selectedCircuitExercises.length > 0 && (
                 <div className="mt-6 pt-6 border-t border-white/5">
                   <button 
-                    onClick={() => addExercises(selectedCircuitExercises, circuitTitle || 'Tactical Circuit')}
+                    onClick={() => addExercises(selectedCircuitExercises, circuitTitle || t('workout.tacticalCircuit'))}
                     className="w-full py-4 bg-volt text-void font-headline text-sm font-black uppercase italic tracking-widest hover:bg-white transition-all flex items-center justify-center gap-3"
                   >
                     <PlusCircle size={20} />

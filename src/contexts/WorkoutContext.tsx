@@ -43,6 +43,8 @@ export interface WorkoutSession {
   startTime?: number;
   completedAt?: number;
   rpe?: number;
+  targetRpe?: number;
+  actualRpe?: number; // Post-session reflection
   readiness?: number;
   note?: string;
   duration?: string;
@@ -55,7 +57,7 @@ export interface WorkoutSession {
 interface WorkoutContextType {
   history: WorkoutSession[];
   currentSession: WorkoutSession | null;
-  startNewSession: (template?: WorkoutSession, readinessScore?: number, readinessModifier?: number) => void;
+  startNewSession: (template?: WorkoutSession, readinessScore?: number, readinessModifier?: number, targetRpe?: number) => void;
   completeSession: (data: { rpe: number; note: string }) => void;
   updateCurrentSession: (session: WorkoutSession) => void;
   addExerciseToSession: (exercises: Exercise[]) => void;
@@ -68,12 +70,15 @@ interface WorkoutContextType {
     recoveryModifier: number;
     isDeload: boolean;
     isPeak: boolean;
+    recommendedRpe: number;
   };
   mockWorkoutCount: number | null;
   setMockWorkoutCount: (count: number | null) => void;
   resetProgress: () => Promise<void>;
   resetProgram: () => Promise<void>;
   updateHistoryWorkout: (workout: WorkoutSession) => Promise<void>;
+  saveReflection: (workoutId: string, actualRpe: number) => Promise<void>;
+  pendingReflection: WorkoutSession | null;
   isLoading: boolean;
 }
 
@@ -210,6 +215,15 @@ const createSessionFromTemplate = (
     }
   }
 
+  // 4. Overshooting Intervention
+  // If the last 2 sessions were overshoots (Actual RPE > Target RPE), reduce volume
+  let volumeModifier = 1.0;
+  const recentSessions = lastSession ? [lastSession] : []; // In a real app we'd check history
+  const overshoots = recentSessions.filter(s => s.rpe && s.targetRpe && s.rpe > s.targetRpe);
+  if (overshoots.length >= 1) {
+    volumeModifier = 0.8; // 20% volume reduction
+  }
+
   const finalIntensity = blockIntensity * readinessModifier * recoveryModifier;
 
   return {
@@ -259,9 +273,13 @@ const createSessionFromTemplate = (
         weight = Math.round(estimated1RM * finalIntensity);
       }
 
-      // Adjust reps and sets based on block
+      // Adjust reps and sets based on block and volume modifier
       const reps = (isSquat || isBench || isDeadlift) ? block.baseReps : ex.reps;
-      const sets = (isSquat || isBench || isDeadlift) ? block.baseSets : ex.sets;
+      let sets = (isSquat || isBench || isDeadlift) ? block.baseSets : ex.sets;
+      
+      if (volumeModifier < 1.0) {
+        sets = Math.max(1, Math.floor(sets * volumeModifier));
+      }
 
       return {
         id: `e${i}`,
@@ -284,6 +302,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [currentSession, setCurrentSession] = useState<WorkoutSession | null>(null);
   const [mockWorkoutCount, setMockWorkoutCount] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [pendingReflection, setPendingReflection] = useState<WorkoutSession | null>(null);
 
   // Load current session from localStorage on mount
   useEffect(() => {
@@ -353,6 +372,22 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
             id: doc.id
           } as WorkoutSession));
           setHistory(workouts);
+          
+          // Check for pending reflections
+          // A workout needs reflection if it was completed > 15 mins ago but < 24 hours ago
+          // and doesn't have an actualRpe yet.
+          const now = Date.now();
+          const fifteenMins = 15 * 60 * 1000;
+          const twentyFourHours = 24 * 60 * 60 * 1000;
+          
+          const needsReflection = workouts.find(s => 
+            s.completedAt && 
+            !s.actualRpe && 
+            (now - s.completedAt) > fifteenMins && 
+            (now - s.completedAt) < twentyFourHours
+          );
+          
+          setPendingReflection(needsReflection || null);
           setIsLoading(false);
         }, (error) => {
           // Only report error if we still have a user (to avoid reporting permission errors on logout)
@@ -477,13 +512,36 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
       currentReadiness = Math.round(Math.max(0, Math.min(100, currentReadiness)));
     }
 
+    // Calculate Recommended RPE
+    let recommendedRpe = 7; // Baseline
+    if (currentReadiness >= 90) recommendedRpe = 8;
+    else if (currentReadiness < 50) recommendedRpe = 5;
+    else if (currentReadiness < 70) recommendedRpe = 6;
+
+    // Adjust based on recent intensity (last 7 days)
+    const last7Days = history.filter(s => {
+      const daysAgo = (Date.now() - (s.completedAt || 0)) / (24 * 60 * 60 * 1000);
+      return daysAgo <= 7;
+    });
+
+    if (last7Days.length > 0) {
+      const avgRecentRpe = last7Days.reduce((acc, s) => acc + (s.rpe || 7), 0) / last7Days.length;
+      if (avgRecentRpe >= 8.5) recommendedRpe = Math.max(5, recommendedRpe - 1);
+      if (avgRecentRpe <= 6.0 && currentReadiness > 80) recommendedRpe = Math.min(9, recommendedRpe + 1);
+    }
+
+    // CNS Recovery check (Last session intensity)
+    const lastSession = history.length > 0 ? history[0] : null;
+    if (lastSession && lastSession.rpe && lastSession.rpe >= 9) {
+      recommendedRpe = Math.max(5, recommendedRpe - 1);
+    }
+
     let readinessModifier = 1.0;
     if (currentReadiness >= 90) readinessModifier = 1.05;
     else if (currentReadiness < 70 && currentReadiness >= 50) readinessModifier = 0.90;
     else if (currentReadiness < 50) readinessModifier = 0.80;
 
     let recoveryModifier = 1.0;
-    const lastSession = history.length > 0 ? history[0] : null;
     if (lastSession) {
       if (lastSession.rpe && lastSession.rpe >= 9) {
         recoveryModifier *= 0.95;
@@ -499,7 +557,8 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
       readinessModifier,
       recoveryModifier,
       isDeload: currentReadiness < 50,
-      isPeak: currentReadiness >= 90
+      isPeak: currentReadiness >= 90,
+      recommendedRpe
     };
   };
 
@@ -540,13 +599,14 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return createSessionFromTemplate(finalWeek, nextDay, profile, unit, lastSession, currentReadiness);
   };
 
-  const startNewSession = (template?: WorkoutSession, readinessScore?: number, readinessModifier?: number) => {
+  const startNewSession = (template?: WorkoutSession, readinessScore?: number, readinessModifier?: number, targetRpe?: number) => {
     if (template) {
       setCurrentSession(template);
     } else {
       const newSession = getNextWorkoutTemplate();
       if (readinessScore !== undefined && readinessModifier !== undefined) {
         newSession.readiness = readinessScore;
+        newSession.targetRpe = targetRpe;
         
         // Apply the modifier to the weights
         newSession.exercises = (newSession.exercises || []).map(ex => {
@@ -708,6 +768,23 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
+  const saveReflection = async (workoutId: string, actualRpe: number) => {
+    if (!auth.currentUser) return;
+    const workout = history.find(s => s.id === workoutId);
+    if (!workout) return;
+
+    const workoutPath = `users/${auth.currentUser.uid}/workouts/${workoutId}`;
+    try {
+      await setDoc(doc(db, workoutPath), {
+        ...workout,
+        actualRpe
+      });
+      setPendingReflection(null);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, workoutPath);
+    }
+  };
+
   return (
     <WorkoutContext.Provider value={{ 
       history, 
@@ -725,6 +802,8 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
       resetProgress,
       resetProgram,
       updateHistoryWorkout,
+      saveReflection,
+      pendingReflection,
       isLoading
     }}>
       {children}

@@ -28,7 +28,11 @@ async function startServer() {
   // Gemini AI Coach Endpoint
   app.post("/api/ai-coach", async (req, res) => {
     try {
-      const { message, currentWorkoutTitle, currentExercises } = req.body;
+      const { message, currentWorkoutTitle, currentExercises, experimentalFeatures } = req.body;
+
+      if (!experimentalFeatures) {
+        return res.status(403).json({ error: "AI features are disabled. Please enable them in settings." });
+      }
 
       // Basic input validation
       if (!message || typeof message !== 'string' || message.length > 1000) {

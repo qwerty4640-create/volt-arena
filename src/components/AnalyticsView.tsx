@@ -27,9 +27,9 @@ export const AnalyticsView = () => {
   const [selectedLifts, setSelectedLifts] = useState<string[]>(['Squat', 'Bench Press', 'Deadlift']);
 
   const liftOptions = [
-    { id: 'Squat', label: 'Squat', color: '#00B6FF' },
-    { id: 'Bench Press', label: 'Bench Press', color: '#FF7162' },
-    { id: 'Deadlift', label: 'Deadlift', color: '#FFFFFF' }
+    { id: 'Squat', label: t('analytics.squat'), color: '#00B6FF' },
+    { id: 'Bench Press', label: t('analytics.bench'), color: '#FF7162' },
+    { id: 'Deadlift', label: t('analytics.deadlift'), color: '#FFFFFF' }
   ];
 
   const filteredData = useMemo(() => {
@@ -130,12 +130,12 @@ export const AnalyticsView = () => {
           <div className="absolute top-0 left-0 w-1 h-full bg-volt" />
           <div className="space-y-4">
             <div>
-              <p className="text-[8px] font-black uppercase tracking-[0.3em] text-zinc-500 mb-1">Volume Telemetry</p>
-              <p className="text-xs font-black italic uppercase text-white">Week of {data.week}</p>
+              <p className="text-[8px] font-black uppercase tracking-[0.3em] text-zinc-500 mb-1">{t('analysis.volumeTelemetry')}</p>
+              <p className="text-xs font-black italic uppercase text-white">{t('analysis.weekOf')} {data.week}</p>
             </div>
             <div className="pt-3 border-t border-white/5">
               <div className="flex items-center justify-between gap-4">
-                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Total Volume</span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">{t('analysis.totalVolume')}</span>
                 <span className="text-sm font-black italic text-white">
                   {data.volume.toLocaleString()} <span className="text-[8px] uppercase not-italic text-zinc-500">{weightUnit}</span>
                 </span>
@@ -158,7 +158,7 @@ export const AnalyticsView = () => {
           
           <div className="space-y-4">
             <div>
-              <p className="text-[8px] font-black uppercase tracking-[0.3em] text-zinc-500 mb-1">Telemetry Log</p>
+              <p className="text-[8px] font-black uppercase tracking-[0.3em] text-zinc-500 mb-1">{t('analysis.telemetryLog')}</p>
               <p className="text-xs font-black italic uppercase text-white">{data.fullDate}</p>
               <p className="text-[10px] font-black uppercase tracking-tight text-volt mt-1">{data.title}</p>
             </div>
@@ -197,11 +197,11 @@ export const AnalyticsView = () => {
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-1.5 h-1.5 bg-volt animate-tactical-pulse" />
-                <span className="text-[10px] font-black uppercase tracking-widest text-volt">Performance Telemetry</span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-volt">{t('analysis.performanceTelemetry')}</span>
               </div>
               <h2 className="font-headline text-3xl md:text-5xl font-black uppercase italic tracking-tight mb-2">{t('analysis.strengthTrend')}</h2>
               <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed mb-8">
-                Tracking maximal force production across primary movement patterns. Data points represent peak weight per session.
+                {t('analysis.strengthTrendDesc')}
               </p>
               <div className="flex flex-wrap gap-4">
                 {liftOptions.map(lift => (
@@ -274,7 +274,7 @@ export const AnalyticsView = () => {
             ) : (
               <div className="h-full flex flex-col items-center justify-center text-zinc-600 space-y-4">
                 <BarChart3 size={48} strokeWidth={1} />
-                <p className="text-[10px] font-black uppercase tracking-[0.2em]">Insufficient data for selected filters</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em]">{t('analysis.insufficientData')}</p>
               </div>
             )}
           </div>
@@ -291,7 +291,7 @@ export const AnalyticsView = () => {
           <div>
             <div className="flex items-center gap-2 mb-4">
               <div className="w-1.5 h-1.5 bg-volt" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Intensity Metrics</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('analysis.intensityMetrics')}</span>
             </div>
             <h3 className="font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tight mb-2">{t('analysis.peakIntensity')}</h3>
             <p className="text-zinc-400 text-xs font-medium leading-relaxed">{t('analysis.peakIntensityDesc')}</p>
@@ -324,11 +324,11 @@ export const AnalyticsView = () => {
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-1.5 h-1.5 bg-volt animate-tactical-pulse" />
-                <span className="text-[10px] font-black uppercase tracking-widest text-volt">Volume Accumulation</span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-volt">{t('analysis.volumeAccumulation')}</span>
               </div>
-              <h2 className="font-headline text-3xl md:text-5xl font-black uppercase italic tracking-tight mb-2">Weekly Volume Trend</h2>
+              <h2 className="font-headline text-3xl md:text-5xl font-black uppercase italic tracking-tight mb-2">{t('analysis.weeklyVolumeTrend')}</h2>
               <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed">
-                Aggregated tonnage across all movement patterns per microcycle.
+                {t('analysis.weeklyVolumeTrendDesc')}
               </p>
             </div>
           </div>
@@ -370,7 +370,7 @@ export const AnalyticsView = () => {
             ) : (
               <div className="h-full flex flex-col items-center justify-center text-zinc-600 space-y-4">
                 <TrendingUp size={48} strokeWidth={1} />
-                <p className="text-[10px] font-black uppercase tracking-[0.2em]">Insufficient data for volume trend</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em]">{t('analysis.insufficientVolumeData')}</p>
               </div>
             )}
           </div>
@@ -388,10 +388,10 @@ export const AnalyticsView = () => {
           </div>
           <div className="flex items-center gap-2 mb-4">
             <div className="w-1.5 h-1.5 bg-crimson" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Growth Analysis</span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('analysis.growthAnalysis')}</span>
           </div>
           <h3 className="font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tight mb-12">
-            Estimated 1RM Growth
+            {t('analysis.est1rmGrowth')}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
             {liftOptions.map((lift, i) => {
