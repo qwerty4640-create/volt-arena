@@ -890,7 +890,7 @@ export const ExternalActivityWidget = () => {
   }
 
   return (
-    <div className="glass-panel p-8 border-none h-full flex flex-col relative overflow-hidden group/module">
+    <div className="glass-panel p-4 md:p-8 border-none h-full flex flex-col relative overflow-hidden group/module w-full">
       {/* Tactical Grid Background overlay */}
       <div className="absolute inset-0 opacity-[0.03] pointer-events-none group-hover/module:opacity-[0.05] transition-opacity duration-700" 
            style={{ backgroundImage: 'radial-gradient(var(--primary-color) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
@@ -1119,7 +1119,7 @@ export const AnalysisView = ({ onContinueSession, onViewHistory, isLifting }: An
 
   return (
     <div className="relative w-full h-full flex flex-col items-center">
-      <div className="w-full overflow-y-auto custom-scrollbar pb-32 pt-8 lg:pt-24 px-4 lg:px-8">
+      <div className="w-full overflow-y-auto custom-scrollbar pb-32 pt-8 lg:pt-24 px-4 sm:px-6 lg:px-8">
         <DndContext 
           sensors={sensors}
           collisionDetection={closestCenter}
@@ -1127,7 +1127,7 @@ export const AnalysisView = ({ onContinueSession, onViewHistory, isLifting }: An
           onDragEnd={handleDragEnd}
           onDragCancel={handleDragCancel}
         >
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 xl:gap-8 max-w-[1600px] mx-auto auto-rows-min">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 xl:gap-8 max-w-[1600px] mx-auto auto-rows-min w-full">
             <SortableContext 
               items={visibleWidgets}
               strategy={verticalListSortingStrategy}

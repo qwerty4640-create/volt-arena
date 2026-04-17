@@ -7,17 +7,19 @@ import { useWorkout } from '../contexts/WorkoutContext';
 interface BerserkerHUDProps {
   onComplete: () => void;
   onAddActivity: () => void;
+  viewType?: 'training' | 'analysis';
 }
 
-export const BerserkerHUD = ({ onComplete, onAddActivity }: BerserkerHUDProps) => {
+export const BerserkerHUD = ({ onComplete, onAddActivity, viewType = 'training' }: BerserkerHUDProps) => {
   const { t } = useSettings();
   const { currentSession } = useWorkout();
   
   const isRedline = currentSession?.isRedline;
+  const layoutPadding = viewType === 'analysis' ? 'px-4 sm:px-6' : 'px-3 sm:px-6 mx-[-8px] sm:mx-0 w-[calc(100%+16px)] sm:w-full';
 
   return (
     <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
-      <div className="relative z-10 w-full max-w-[1600px] px-3 sm:px-6 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center mx-auto">
+      <div className={`relative z-10 max-w-[1600px] grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center mx-auto ${layoutPadding}`}>
         {/* Left: Aggression Metrics */}
         <div className="col-span-3 flex flex-col gap-8">
           <motion.div 

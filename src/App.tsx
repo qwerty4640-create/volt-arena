@@ -51,6 +51,7 @@ import { Mail, Lock, UserPlus, Languages } from 'lucide-react';
 
 import { ReadinessCheck } from './components/ReadinessCheck';
 import { ReflectionModal } from './components/ReflectionModal';
+import { InstallPrompt } from './components/InstallPrompt';
 
 declare global {
   interface Window {
@@ -652,6 +653,7 @@ function AppContent() {
         }}
       />;
       case 'berserker': return <BerserkerHUD 
+        viewType="training"
         onAddActivity={() => setIsRecoveryModalOpen(true)}
         onComplete={() => {
         setIsLifting(false);
@@ -971,6 +973,7 @@ function AppContent() {
         isOpen={isRecoveryModalOpen}
         onClose={() => setIsRecoveryModalOpen(false)}
       />
+      <InstallPrompt />
       <div id="a11y-live-region" className="sr-only" aria-live="polite" aria-atomic="true"></div>
     </div>
   );
