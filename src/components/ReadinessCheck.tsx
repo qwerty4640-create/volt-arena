@@ -51,7 +51,8 @@ const QUESTIONS = [
 export const ReadinessCheck = ({ onComplete, onCancel }: ReadinessCheckProps) => {
   const { t } = useSettings();
   const { getCalibrationStatus } = useWorkout();
-  const { recommendedRpe: baselineRecommendedRpe } = getCalibrationStatus();
+  const calibration = getCalibrationStatus();
+  const { recommendedRpe: baselineRecommendedRpe, isRedline } = calibration;
   
   const [scores, setScores] = useState<Record<string, number>>({});
   const [showResult, setShowResult] = useState(false);
@@ -241,14 +242,20 @@ export const ReadinessCheck = ({ onComplete, onCancel }: ReadinessCheckProps) =>
                         <scenario.icon size={16} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className={cn("font-headline text-base md:text-lg font-black uppercase italic tracking-tight truncate", scenario.color)}>
-                          {scenario.title}
+                        <h3 className={cn("font-headline text-base md:text-lg font-black uppercase italic tracking-tight truncate", isRedline ? "text-crimson" : scenario.color)}>
+                          {isRedline ? "Redline Status Detected" : scenario.title}
                         </h3>
-                        {scenario.type === 'red' && (
-                          <p className="text-[8px] font-black uppercase tracking-widest text-crimson">Intensity -10%</p>
-                        )}
-                        {scenario.type === 'green' && (
-                          <p className="text-[8px] font-black uppercase tracking-widest text-volt">Intensity +5%</p>
+                        {isRedline ? (
+                           <p className="text-[8px] font-black uppercase tracking-widest text-crimson">Overridden by Redline Safety (-25%)</p>
+                        ) : (
+                          <>
+                            {scenario.type === 'red' && (
+                              <p className="text-[8px] font-black uppercase tracking-widest text-crimson">Intensity -10%</p>
+                            )}
+                            {scenario.type === 'green' && (
+                              <p className="text-[8px] font-black uppercase tracking-widest text-volt">Intensity +5%</p>
+                            )}
+                          </>
                         )}
                       </div>
                     </div>

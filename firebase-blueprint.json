@@ -75,6 +75,22 @@
         }
       },
       "required": ["id", "uid", "title", "completedAt", "exercises"]
+    },
+    "ActiveRecovery": {
+      "title": "ActiveRecovery",
+      "description": "Cardio or active recovery session logged outside the main program.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique recovery session ID." },
+        "uid": { "type": "string", "description": "The user who performed the activity." },
+        "type": { "type": "string", "enum": ["Running", "Swimming", "Cycling", "Walking", "Boxing", "Muay Thai", "Jiu Jitsu", "Wrestling", "MMA", "Rucking", "Tactical Drills", "Parkour", "Yoga", "Pilates", "Other"], "description": "The type of activity." },
+        "rpe": { "type": "number", "description": "Rate of Perceived Exertion (1-10)." },
+        "durationMinutes": { "type": "number", "description": "Duration in minutes." },
+        "date": { "type": "string", "description": "Human-readable date." },
+        "timestamp": { "type": "integer", "description": "Timestamp of when the activity was performed." },
+        "note": { "type": "string", "description": "User notes." }
+      },
+      "required": ["id", "uid", "type", "rpe", "timestamp"]
     }
   },
   "firestore": {
@@ -85,6 +101,10 @@
     "/users/{userId}/workouts/{workoutId}": {
       "schema": "WorkoutSession",
       "description": "Individual workout sessions for a user."
+    },
+    "/users/{userId}/active_recovery/{recoveryId}": {
+      "schema": "ActiveRecovery",
+      "description": "External cardio/recovery sessions."
     }
   }
 }

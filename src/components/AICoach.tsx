@@ -12,11 +12,30 @@ interface Message {
 }
 
 export const AICoach = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
-  const { currentSession, updateCurrentSession } = useWorkout();
-  const { isVoiceActive, t, experimentalFeatures } = useSettings();
+  const { currentSession, updateCurrentSession, recoveryHistory } = useWorkout();
+  const { isVoiceActive, t, experimentalFeatures, profile } = useSettings();
   const [messages, setMessages] = useState<Message[]>([
     { role: 'coach', text: t('coach.greeting') }
   ]);
+  
+  // Tactical Alert Logic
+  useEffect(() => {
+    if (!profile || profile.trainingGoal !== 'pure_strength') return;
+
+    const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    const highIntensitySessions = recoveryHistory.filter(r => 
+      r.timestamp > oneWeekAgo && r.rpe >= 7
+    );
+
+    if (highIntensitySessions.length > 3) {
+      const alertMsg = "TACTICAL ALERT: Heavy aerobic load detected. This may interfere with neurological force production for your upcoming block. Consider reducing cardio frequency to preserve Peaking effectiveness.";
+      // Check if alert was already sent recently (to avoid spamming)
+      setMessages(prev => {
+        if (prev.some(m => m.text.includes("TACTICAL ALERT"))) return prev;
+        return [...prev, { role: 'coach', text: alertMsg }];
+      });
+    }
+  }, [profile, recoveryHistory]);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [isListening, setIsListening] = useState(false);

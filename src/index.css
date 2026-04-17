@@ -7,7 +7,7 @@
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 
   --color-volt: var(--primary-color);
-  --color-crimson: #FF7162;
+  --color-crimson: #FF8D7A;
   --color-void: #0D0F0B;
   --color-surface: #131313;
   --color-surface-container-lowest: #0e0e0e;
@@ -28,8 +28,8 @@
 }
 
 [data-tier="elite"] {
-  --primary-color: #C084FC;
-  --primary-glow: rgba(192, 132, 252, 0.6);
+  --primary-color: #C692FF;
+  --primary-glow: rgba(198, 146, 255, 0.6);
 }
 
 .tier-untrained, .tier-novice, .tier-newbie, .tier-intermediate {
@@ -43,8 +43,8 @@
 }
 
 .tier-elite {
-  --primary-color: #C084FC;
-  --primary-glow: rgba(192, 132, 252, 0.6);
+  --primary-color: #C692FF;
+  --primary-glow: rgba(198, 146, 255, 0.6);
 }
 
 @keyframes flaming {
@@ -97,7 +97,7 @@
   }
 
   .text-glow-crimson {
-    text-shadow: 0 0 15px rgba(255, 113, 98, 0.6);
+    text-shadow: 0 0 15px rgba(255, 141, 122, 0.6);
   }
 
   .custom-scrollbar::-webkit-scrollbar {

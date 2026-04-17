@@ -47,14 +47,6 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
   const [isAICoachOpen, setIsAICoachOpen] = useState(false);
   const [showIntensityWarning, setShowIntensityWarning] = useState(false);
 
-  if (!currentSession) return null;
-
-  const exercises = currentSession.exercises || [];
-  const completedSets = exercises.flatMap(ex => ex.sets || []).filter(s => s.isCompleted);
-  const currentAvgRpe = completedSets.length > 0 
-    ? completedSets.reduce((acc, s) => acc + parseFloat(s.rpe || '0'), 0) / completedSets.length
-    : 0;
-
   // Voice command listener for AI Coach
   React.useEffect(() => {
     if (lastVoiceCommand && experimentalFeatures) {
@@ -64,6 +56,14 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
       }
     }
   }, [lastVoiceCommand, experimentalFeatures]);
+
+  if (!currentSession) return null;
+
+  const exercises = currentSession.exercises || [];
+  const completedSets = exercises.flatMap(ex => ex.sets || []).filter(s => s.isCompleted);
+  const currentAvgRpe = completedSets.length > 0 
+    ? completedSets.reduce((acc, s) => acc + parseFloat(s.rpe || '0'), 0) / completedSets.length
+    : 0;
 
   const handleSwap = (exerciseId: string, newName: string) => {
     setExercises(prev => prev.map(ex => {
@@ -96,7 +96,22 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
 
   const setExercises = (updater: (prev: Exercise[]) => Exercise[]) => {
     const newExercises = updater(exercises);
-    updateCurrentSession({ ...currentSession, exercises: newExercises });
+    
+    // Derived tracking for HUD and TrainingView
+    let currentExIdx = 0;
+    const foundIdx = newExercises.findIndex(ex => ex.sets.some(s => !s.isCompleted));
+    currentExIdx = foundIdx !== -1 ? foundIdx : Math.max(0, newExercises.length - 1);
+    
+    const currentSets = newExercises[currentExIdx]?.sets || [];
+    const foundSetIdx = currentSets.findIndex(s => !s.isCompleted);
+    const currentSetIdx = foundSetIdx !== -1 ? foundSetIdx : Math.max(0, currentSets.length - 1);
+
+    updateCurrentSession({ 
+      ...currentSession, 
+      exercises: newExercises,
+      currentExerciseIndex: currentExIdx,
+      currentSetIndex: currentSetIdx
+    });
   };
 
   const addExercises = (exerciseNames: string[], groupTitle?: string) => {
@@ -283,12 +298,12 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
             </>
           )}
 
-          {currentSession.blockType && (
+          {currentSession.blockLabel || currentSession.blockType ? (
             <>
               <div className="text-left">
               <div className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">{t('workout.currentBlock')}</div>
               <div className="font-headline text-lg md:text-xl font-black uppercase italic tracking-tight text-volt">
-                {currentSession.blockType}
+                {currentSession.blockLabel || currentSession.blockType}
               </div>
             </div>
             <div className="h-10 md:h-12 w-[1px] bg-white/10" />
@@ -299,7 +314,7 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
               </div>
             </div>
           </>
-        )}
+        ) : null}
       </div>
     </div>
 
@@ -537,7 +552,7 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
             if (level === 'untrained' || level === 'novice') limit = 3;
             else if (level === 'intermediate') limit = 4;
             const isAtLimit = additionalCount >= limit;
-
+            
             return (
               <>
                 <button 

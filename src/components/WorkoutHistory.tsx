@@ -111,16 +111,14 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
                       <h3 className="text-xl font-black italic uppercase tracking-tight group-hover:text-volt transition-colors">
                         {workout.title}
                       </h3>
-                      {workout.blockType && (
-                        <div className="flex items-center gap-2">
-                          <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 bg-volt/10 text-volt border-none">
-                            {workout.blockType}
-                          </span>
-                          <span className="text-[8px] font-black uppercase tracking-widest text-zinc-600">
-                            {t('workout.week')} {workout.weekInBlock}
-                          </span>
-                        </div>
-                      )}
+            <div className="flex gap-2">
+              <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 bg-volt/10 text-volt border-none">
+                {workout.blockLabel || workout.blockType}
+              </span>
+              <span className="text-[8px] font-black uppercase tracking-widest text-zinc-600">
+                {t('workout.week')} {workout.weekInBlock}
+              </span>
+            </div>
                     </div>
                     <div className="flex flex-col items-end">
                       <span className="text-xs font-black italic text-volt">RPE {(workout.rpe || 0).toFixed(1)}</span>
@@ -240,18 +238,18 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
                       <span className="block text-[7px] md:text-[8px] font-black uppercase tracking-widest text-zinc-600 mb-1">{t('analysis.avgRpe')}</span>
                       <span className="text-xs md:text-sm font-black italic text-volt">{(selectedWorkout.rpe || 0).toFixed(1)}</span>
                     </div>
-                    {selectedWorkout.blockType && (
+                    {selectedWorkout.blockLabel || selectedWorkout.blockType ? (
                       <div className="col-span-2 md:col-span-3 bg-volt/5 p-3 md:p-4 border-none flex justify-between items-center">
                         <div>
                           <span className="block text-[7px] md:text-[8px] font-black uppercase tracking-widest text-volt/60 mb-1">{t('analysis.periodizationBlock')}</span>
-                          <span className="text-xs md:text-sm font-black italic text-volt uppercase">{selectedWorkout.blockType}</span>
+                          <span className="text-xs md:text-sm font-black italic text-volt uppercase">{selectedWorkout.blockLabel || selectedWorkout.blockType}</span>
                         </div>
                         <div className="text-right">
                           <span className="block text-[7px] md:text-[8px] font-black uppercase tracking-widest text-volt/60 mb-1">{t('analysis.progression')}</span>
                           <span className="text-xs md:text-sm font-black italic text-white uppercase tracking-tight">W{selectedWorkout.weekInBlock}</span>
                         </div>
                       </div>
-                    )}
+                    ) : null}
                   </div>
 
                   <div className="flex-1 overflow-y-auto custom-scrollbar space-y-6">
@@ -359,7 +357,7 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
               {/* Modal Content */}
               <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-10 bg-surface-container-low custom-scrollbar">
                 <div className="space-y-4">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('analysis.workoutTitle')}</label>
+                  <label className="text-[10px] font-black uppercase tracking-normal text-zinc-500">{t('analysis.workoutTitle')}</label>
                   <input 
                     type="text"
                     value={editWorkout.title}
@@ -511,7 +509,7 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
                 </div>
 
                 <div className="space-y-4">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('analysis.sessionNotes')}</label>
+                  <label className="text-[10px] font-black uppercase tracking-normal text-zinc-500">{t('analysis.sessionNotes')}</label>
                   <textarea 
                     value={editWorkout.note || ''}
                     onChange={(e) => setEditWorkout({ ...editWorkout, note: e.target.value })}

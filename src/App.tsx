@@ -39,6 +39,7 @@ import { OnboardingFlow } from './components/OnboardingFlow';
 import { WorkoutLog } from './components/WorkoutLog';
 import { PostWorkoutSummary } from './components/PostWorkoutSummary';
 import { WorkoutHistory } from './components/WorkoutHistory';
+import { ActiveRecoveryModal } from './components/ActiveRecoveryModal';
 import { cn } from './lib/utils';
 
 import { useSettings } from './contexts/SettingsContext';
@@ -139,6 +140,7 @@ function AppContent() {
   const [selectedHistoryWorkoutId, setSelectedHistoryWorkoutId] = useState<string | null>(null);
   const [isSafetyActive, setIsSafetyActive] = useState(false);
   const [isLifting, setIsLifting] = useState(false);
+  const [isRecoveryModalOpen, setIsRecoveryModalOpen] = useState(false);
   const [voiceFeedback, setVoiceFeedback] = useState<string | null>(null);
   const [isExitModalOpen, setIsExitModalOpen] = useState(false);
   const [sessionRpe, setSessionRpe] = useState(8.0);
@@ -430,7 +432,7 @@ function AppContent() {
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="relative z-10 max-w-md w-full glass-panel p-8 md:p-10 border border-white/10 flex flex-col items-center text-center my-auto"
+          className="relative z-10 max-w-md w-full glass-panel px-4 py-10 md:p-10 border border-white/10 flex flex-col items-center text-center my-auto"
         >
           <div className="w-24 h-24 bg-surface-container-highest flex items-center justify-center mb-6 border border-volt/20 relative group overflow-hidden">
             <div className="absolute inset-0 bg-volt/5 animate-pulse" />
@@ -605,6 +607,7 @@ function AppContent() {
           setSelectedHistoryWorkoutId(sessionId || null);
           setActiveView('workout-history');
         }}
+        onAddActivity={() => setIsRecoveryModalOpen(true)}
         onContinueSession={() => {
           if (!currentSession) {
             setShowReadinessCheck(true);
@@ -626,20 +629,31 @@ function AppContent() {
           setSessionRpe(avgRpe);
           setActiveView('post-workout');
         }}
-        onEndSession={() => {
-          discardSession();
-          setActiveView('training');
+        onEndSession={async () => {
+          try {
+            await discardSession();
+          } finally {
+            setIsLifting(false);
+            setActiveView('training');
+          }
         }}
       />;
       case 'post-workout': return <PostWorkoutSummary 
         initialRpe={sessionRpe}
-        onFinish={(data) => {
-          completeSession(data);
-          setIsLifting(false);
-          setActiveView('analysis');
+        onFinish={async (data) => {
+          try {
+            await completeSession(data);
+          } catch (e) {
+            console.error("Failed to complete session:", e);
+          } finally {
+            setIsLifting(false);
+            setActiveView('analysis');
+          }
         }}
       />;
-      case 'berserker': return <BerserkerHUD onComplete={() => {
+      case 'berserker': return <BerserkerHUD 
+        onAddActivity={() => setIsRecoveryModalOpen(true)}
+        onComplete={() => {
         setIsLifting(false);
         setActiveView('analysis');
       }} />;
@@ -684,7 +698,7 @@ function AppContent() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="fixed top-32 left-1/2 -translate-x-1/2 z-[60] flex items-center gap-3 px-6 py-3 bg-void/80 backdrop-blur-xl border border-volt/30 shadow-2xl"
+            className="fixed top-32 left-1/2 -translate-x-1/2 z-[60] flex items-center gap-3 px-3 sm:px-6 py-3 bg-void/80 backdrop-blur-xl border border-volt/30 shadow-2xl"
           >
             <Volume2 size={16} className="text-volt" />
             <span className="font-headline text-[10px] font-black uppercase tracking-widest text-white">
@@ -695,7 +709,7 @@ function AppContent() {
       </AnimatePresence>
 
       {/* Top App Bar Shell */}
-      <header className="fixed top-0 left-0 right-0 z-50 flex justify-center md:justify-between items-center px-2 md:px-10 py-4 md:py-8 bg-void/50 backdrop-blur-md md:bg-transparent">
+      <header className="fixed top-0 left-0 right-0 z-50 flex justify-center md:justify-between items-center px-4 md:px-10 py-4 md:py-8 bg-void/50 backdrop-blur-md md:bg-transparent">
         <div className="flex-1 hidden md:block" />
         
         <div className="flex flex-col items-center justify-center">
@@ -875,7 +889,7 @@ function AppContent() {
       {/* Main Content Area */}
       <main 
         ref={mainRef}
-        className="flex-1 relative h-full flex items-start justify-center pt-24 md:pt-32 pb-24 md:pb-12 px-4 md:px-8 overflow-y-auto custom-scrollbar"
+        className="flex-1 relative h-full flex flex-col items-center mx-auto pt-24 md:pt-32 pb-24 md:pb-12 px-0 sm:px-6 overflow-y-auto custom-scrollbar w-full"
       >
         <AnimatePresence mode="wait">
           <motion.div
@@ -884,7 +898,7 @@ function AppContent() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.98 }}
             transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-            className="w-full flex items-start justify-center max-w-full mx-auto px-0 md:px-12"
+            className="w-full flex flex-col items-center justify-start max-w-none sm:max-w-full m-0 sm:mx-auto px-0 md:px-12"
           >
             {renderView()}
           </motion.div>
@@ -953,6 +967,11 @@ function AppContent() {
         }}
         onCancel={() => setIsExitModalOpen(false)}
       />
+      <ActiveRecoveryModal 
+        isOpen={isRecoveryModalOpen}
+        onClose={() => setIsRecoveryModalOpen(false)}
+      />
+      <div id="a11y-live-region" className="sr-only" aria-live="polite" aria-atomic="true"></div>
     </div>
   );
 }

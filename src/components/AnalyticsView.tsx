@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Trophy, Target, TrendingUp, BarChart3, Calendar, Filter, ChevronDown } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
 import { useWorkout } from '../contexts/WorkoutContext';
+import { ExternalActivityWidget } from './AnalysisView';
 import { 
   LineChart, 
   Line, 
@@ -416,6 +417,16 @@ export const AnalyticsView = () => {
               );
             })}
           </div>
+        </motion.div>
+
+        {/* Tactical Integration Analytics */}
+        <motion.div 
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.4 }}
+          className="col-span-12 glass-panel p-0 overflow-hidden border-none"
+        >
+          <ExternalActivityWidget />
         </motion.div>
       </div>
     </div>

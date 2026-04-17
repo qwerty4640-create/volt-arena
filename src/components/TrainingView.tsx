@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { 
   Dumbbell, 
@@ -9,21 +9,24 @@ import {
   Clock,
   Flame,
   Zap,
-  TrendingUp
+  TrendingUp,
+  Plus,
+  AlertTriangle
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useSettings } from '../contexts/SettingsContext';
 import { useWorkout, WorkoutSession } from '../contexts/WorkoutContext';
 import { calculateTier } from '../lib/strength';
-import { RecoveryWidget, LogsWidget, BlockWidget } from './AnalysisView';
+import { LogsWidget, BlockWidget } from './AnalysisView';
 
 interface TrainingViewProps {
   onContinueSession?: () => void;
   isLifting?: boolean;
   onViewHistory?: (sessionId?: string) => void;
+  onAddActivity?: () => void;
 }
 
-export const TrainingView = ({ onContinueSession, isLifting, onViewHistory }: TrainingViewProps) => {
+export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAddActivity }: TrainingViewProps) => {
   const { t, unit, profile } = useSettings();
   const { currentSession, getNextWorkoutTemplate, history, getCalibrationStatus } = useWorkout();
   const calibration = getCalibrationStatus();
@@ -69,7 +72,12 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory }: Tr
     workout.exercises.forEach((ex: any) => {
       if (!ex.sets) return;
       ex.sets.forEach((s: any) => {
-        total += (parseFloat(s.weight) || 0) * (parseInt(s.reps) || 0);
+        let w = parseFloat(s.weight) || 0;
+        // Preview scaling for Redline
+        if (!isActiveSession && calibration.isRedline) {
+          w = Math.round((w * 0.75) / 5) * 5;
+        }
+        total += w * (parseInt(s.reps) || 0);
       });
     });
     return total.toLocaleString();
@@ -83,11 +91,25 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory }: Tr
     return t('analysis.focusingOn');
   };
   const focusText = getFocusText(activeOrNext);
-  const firstExercise = activeOrNext?.exercises?.[0];
-  const firstExerciseName = firstExercise?.name || t('analysis.barbellSquat');
-  const firstExerciseSets = firstExercise?.sets?.length || 5;
-  const firstExerciseTarget = firstExercise?.sets?.[0]?.weight || '0';
-  const firstExerciseReps = firstExercise?.sets?.[0]?.reps || '0';
+  
+  // Dynamic Exercise & Set Tracking
+  const currentExIdx = isActiveSession && currentSession ? (currentSession.currentExerciseIndex || 0) : 0;
+  const currentEx = (isActiveSession && currentSession) 
+    ? currentSession.exercises[currentExIdx] 
+    : activeOrNext?.exercises?.[0];
+    
+  const exName = currentEx?.name || t('analysis.barbellSquat');
+  const totalSets = currentEx?.sets?.length || 5;
+  const currentSetIdx = isActiveSession && currentSession ? (currentSession.currentSetIndex || 0) : 0;
+  
+  const currentTargetRaw = currentEx?.sets?.[currentSetIdx]?.weight || '0';
+  const currentTargetValue = parseFloat(currentTargetRaw) || 0;
+  const currentTargetWeight = !isActiveSession && calibration.isRedline 
+    ? (Math.round((currentTargetValue * 0.75) / 5) * 5).toString()
+    : currentTargetRaw;
+
+  const currentReps = currentEx?.sets?.[currentSetIdx]?.reps || '0';
+
   const hasHistory = (history?.length || 0) > 0;
   
   // Use current session readiness if available, otherwise use dynamic calibration readiness
@@ -141,9 +163,9 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory }: Tr
   const sessionProgress = calculateProgress(currentSession);
 
   return (
-    <div className="relative w-full h-full flex flex-col lg:flex-row items-center">
-      <div className="w-full overflow-x-auto lg:overflow-x-auto overflow-y-auto lg:overflow-y-hidden custom-scrollbar pb-12 pt-8 lg:pt-24 px-2 lg:px-8">
-        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 min-w-full lg:min-w-max h-auto lg:h-[75vh] items-stretch">
+    <main className="relative w-full h-full flex flex-col items-center">
+      <div className="w-full overflow-y-auto custom-scrollbar pb-32 pt-8 lg:pt-24 px-3 sm:px-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 max-w-[1600px] mx-auto auto-rows-min">
           
           {/* Active/Next Session Module */}
           <motion.div 
@@ -151,7 +173,7 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory }: Tr
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.1 }}
             className={cn(
-              "w-full lg:w-[700px] xl:w-[850px] shrink-0 glass-panel p-8 relative overflow-hidden flex flex-col transition-all duration-500",
+              "col-span-1 md:col-span-2 lg:col-span-3 shrink-0 glass-panel p-4 relative overflow-hidden flex flex-col transition-all duration-500 w-full",
               isElite && "border-volt/50",
               isAdvanced && "border-yellow-500/30"
             )}
@@ -165,26 +187,65 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory }: Tr
                         <span className="animate-tactical-pulse relative inline-flex h-3 w-3 bg-volt"></span>
                       </span>
                       <span className="text-volt font-headline text-[10px] font-black uppercase tracking-widest">{t('analysis.activeSession')}</span>
+                      {currentSession?.penaltyType && (
+                        <span className="text-zinc-500 font-headline text-[10px] font-black uppercase tracking-widest px-2 border-l border-white/10">
+                          {currentSession.penaltyType === 'REDLINE' ? 'REDLINE OVERRIDE' : 'RECOVERY LIMIT'}
+                        </span>
+                      )}
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">
-                      <div className={cn(
+                       <div className={cn(
                         "w-1.5 h-1.5 animate-tactical-pulse",
-                        calibration.readiness >= 90 ? "bg-emerald-500" : calibration.readiness >= 70 ? "bg-volt" : "bg-crimson"
+                        calibration.isRedline ? "bg-crimson" : calibration.readiness >= 90 ? "bg-emerald-500" : calibration.readiness >= 70 ? "bg-volt" : "bg-crimson"
                       )} />
                       <span className={cn(
                         "text-[10px] font-black uppercase tracking-widest",
-                        calibration.readiness >= 90 ? "text-emerald-500" : "text-zinc-500"
+                        calibration.isRedline ? "text-crimson" : calibration.readiness >= 90 ? "text-emerald-500" : "text-zinc-500"
                       )}>
-                        {calibration.readiness >= 90 ? t('analysis.primeCondition') : t('analysis.readiness')}: {hasHistory ? `${calibration.readiness}%` : '–'}
+                        {calibration.isRedline 
+                          ? 'Overridden by Redline Safety' 
+                          : `${calibration.readiness >= 90 ? t('analysis.primeCondition') : t('analysis.readiness')}: ${hasHistory ? `${calibration.readiness}%` : '–'}`}
                       </span>
                     </div>
                   )}
                 </div>
-                <h2 className="font-headline text-3xl md:text-5xl font-black uppercase italic tracking-tight mb-2">{displayTitle}</h2>
+                <h1 className="font-headline text-2xl sm:text-3xl md:text-5xl font-black uppercase italic tracking-tight mb-2">{displayTitle}</h1>
                 <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed">
                   {focusText}
                 </p>
+
+                {/* Authoritative Warning Banner - Context Driven */}
+                {(isActiveSession ? currentSession?.penaltyType === 'REDLINE' : calibration.isRedline) && (
+                  <div 
+                    aria-live="assertive"
+                    className="mt-4 bg-crimson/10 border border-crimson/30 p-4 flex items-start gap-4 transition-all animate-in fade-in slide-in-from-top-2 duration-500 w-full"
+                  >
+                    <AlertTriangle className="text-crimson shrink-0" size={18} />
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-crimson">Redline Safety Override Active</span>
+                      <p className="text-[9px] font-bold uppercase tracking-wider text-zinc-400 leading-[1.4]">
+                        Mechanical failure risk detected. System has enforced a 25% load reduction. 
+                        Readiness scores have been suppressed in favor of structural integrity.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {(isActiveSession ? currentSession?.penaltyType === 'AEROBIC' : (calibration.hasAerobicInterference && !calibration.isRedline)) && (
+                   <div 
+                    aria-live="assertive"
+                    className="mt-4 bg-crimson/10 border border-crimson/30 p-4 flex items-start gap-4 transition-all animate-in fade-in slide-in-from-top-2 duration-500 w-full"
+                   >
+                    <Activity className="text-crimson shrink-0" size={18} />
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-crimson">Aerobic Interference Active</span>
+                      <p className="text-[9px] font-bold uppercase tracking-wider text-zinc-400 leading-[1.4]">
+                        Recent high-intensity recovery activity detected. System has applied a 15% CNS tax.
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="md:text-right">
                 <div className="flex items-center gap-2 text-zinc-400 mb-1 md:justify-end">
@@ -219,14 +280,11 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory }: Tr
                   <div className="flex flex-col">
                     <div className="flex items-baseline gap-1">
                       <span className="text-2xl md:text-3xl font-black italic text-volt">
-                        {hasHistory ? `${firstExerciseSets}x${firstExerciseReps} @ ${firstExerciseTarget}${weightUnit}` : '–'}
+                        {hasHistory ? `${totalSets}x${currentReps} @ ${currentTargetWeight}${weightUnit}` : '–'}
                       </span>
                     </div>
-                    {(calibration.readinessModifier !== 1 || calibration.recoveryModifier !== 1) && (
-                      <span className="text-[10px] font-black uppercase tracking-widest text-volt/60 mt-0.5">
-                        calibrated to {(calibration.readinessModifier * calibration.recoveryModifier * 100).toFixed(0)}%
-                      </span>
-                    )}
+
+                    {/* Safety Override Messaging handled in header */}
                   </div>
                 </div>
                 <div className="space-y-1">
@@ -241,7 +299,7 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory }: Tr
 
             {/* Current Movement */}
             <div className={cn(
-              "bg-void/40 p-4 md:p-6 border border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 md:gap-6 mt-auto mb-6 transition-all duration-500",
+              "w-full bg-void/40 p-4 md:p-6 border border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 md:gap-6 mt-auto mb-6 transition-all duration-500",
               isElite && "border-volt/20"
             )}>
               <div className="flex items-center gap-4 md:gap-6">
@@ -255,125 +313,97 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory }: Tr
                   )}>
                     {isActiveSession ? t('analysis.currentExercise') : t('analysis.firstExercise')}
                   </span>
-                  <h3 className="font-headline text-xl md:text-2xl font-black uppercase italic tracking-tight">{firstExerciseName}</h3>
-                  <span className="text-zinc-400 text-[10px] md:text-xs font-medium">
-                    {isActiveSession ? t('analysis.set4of5') : `${firstExerciseSets} ${t('analysis.5sets').split(' ')[1]}`}
+                  <h2 className="font-headline text-lg sm:text-xl md:text-2xl font-black uppercase italic tracking-tight">{exName}</h2>
+                  <span aria-live="polite" className="text-zinc-400 text-[10px] md:text-xs font-medium uppercase tracking-widest">
+                    {isActiveSession 
+                      ? <span aria-live="assertive">Set {currentSetIdx + 1} of {totalSets}{sessionProgress > 0 ? ' • 3 Mins Rest Remaining' : ''}</span> 
+                      : `${totalSets} ${t('analysis.5sets').split(' ')[1]}`}
                   </span>
                 </div>
               </div>
               <div className="sm:text-right">
                 <span className="block text-[8px] md:text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">{t('analysis.target')}</span>
                 <div className="flex items-baseline gap-1 sm:justify-end">
-                  <span className="text-3xl md:text-4xl font-black italic tracking-tighter">{firstExerciseTarget}</span>
+                  <span className="text-3xl md:text-4xl font-black italic tracking-tighter">{currentTargetWeight}</span>
                   <span className="text-[10px] md:text-xs font-black uppercase text-zinc-400">{weightUnit}</span>
-                  <span className="text-lg md:text-xl font-black italic tracking-tighter ml-2 text-zinc-600">x {firstExerciseReps}</span>
+                  <span className="text-lg md:text-xl font-black italic tracking-tighter ml-2 text-zinc-400">x {currentReps}</span>
                 </div>
+                {(isActiveSession ? currentSession?.penaltyType === 'REDLINE' : calibration.isRedline) && (
+                  <div className="text-[8px] font-black uppercase tracking-widest text-crimson mt-1 flex items-center gap-1 justify-end">
+                    <Zap size={8} /> 25% Redline Adjustment Applied
+                  </div>
+                )}
+                {(isActiveSession ? currentSession?.penaltyType === 'AEROBIC' : (calibration.hasAerobicInterference && !calibration.isRedline)) && (
+                  <div className="text-[8px] font-black uppercase tracking-widest text-crimson mt-1 flex items-center gap-1 justify-end">
+                    <Activity size={8} /> 15% Recovery Adjustment Applied
+                  </div>
+                )}
               </div>
             </div>
 
-            <button 
-              onClick={onContinueSession}
-              className="w-full px-8 py-4 bg-volt text-void font-headline text-xs md:text-sm font-black uppercase tracking-widest hover:bg-white transition-colors flex items-center justify-center gap-2 group"
-            >
-              <Play size={16} md:size={18} className="fill-void group-hover:scale-110 transition-transform" />
-              {isActiveSession ? t('analysis.continueSession') : t('analysis.startSession')}
-            </button>
+            <div className="flex flex-col sm:flex-row gap-4 w-full mt-auto">
+              {!isActiveSession && calibration.isRedline ? (
+                <div className="flex flex-col gap-4 w-full">
+                  <div className="flex flex-col sm:flex-row gap-4 w-full">
+                    <button 
+                      onClick={onContinueSession}
+                      className="flex-[2] w-full min-h-[44px] px-4 sm:px-8 py-4 bg-crimson text-void font-headline text-xs md:text-sm font-black uppercase tracking-widest hover:bg-white hover:text-void transition-all flex flex-col items-center justify-center gap-1 group shadow-[0_0_30px_rgba(255,113,98,0.2)]"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Play size={16} md:size={18} className="fill-white group-hover:scale-110 transition-transform" />
+                        <span>Continue Training Anyway</span>
+                      </div>
+                      <span className="text-[8px] opacity-70 italic font-black uppercase tracking-widest">25% Intensity Safety Penalty Applied</span>
+                    </button>
+                    <button 
+                      onClick={onAddActivity}
+                      className="flex-1 w-full min-h-[44px] px-4 sm:px-8 py-4 bg-void/40 border border-white/10 text-white font-headline text-[10px] md:text-xs font-black uppercase tracking-widest hover:bg-white/5 transition-all flex items-center justify-center gap-2 group"
+                    >
+                      <Plus size={14} className="group-hover:rotate-90 transition-transform" />
+                      Log Non-Program Activity
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <button 
+                    onClick={onContinueSession}
+                    className="flex-[2] w-full min-h-[44px] px-4 sm:px-8 py-4 bg-volt text-void font-headline text-xs md:text-sm font-black uppercase tracking-widest hover:bg-white transition-all flex items-center justify-center gap-2 group"
+                  >
+                    <Play size={16} md:size={18} className="fill-void group-hover:scale-110 transition-transform" />
+                    {isActiveSession ? t('analysis.continueSession') : t('analysis.startSession')}
+                  </button>
+                  
+                  <button 
+                    onClick={onAddActivity}
+                    className="flex-1 w-full min-h-[44px] px-4 sm:px-8 py-4 bg-void/40 border border-white/10 text-white font-headline text-[10px] md:text-xs font-black uppercase tracking-widest hover:bg-white/5 transition-all flex items-center justify-center gap-2 group"
+                  >
+                    <Plus size={14} className="group-hover:rotate-90 transition-transform" />
+                    Log Non-Program Activity
+                  </button>
+                </>
+              )}
+            </div>
 
-            <div className="mt-4 flex justify-between items-center px-1 opacity-30">
-              <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">SYS_STATUS: ACTIVE</span>
+            <div className="mt-4 flex justify-between items-center px-1 opacity-60">
+              <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">
+                SYS_STATUS: ACTIVE {currentSession?.penaltyType ? '[RECOVERY_RESTRICTED]' : ''}
+              </span>
               <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">REF_ID: {activeOrNext.id}</span>
             </div>
           </motion.div>
 
-              {/* Readiness Module */}
-              <motion.div 
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ delay: 0.2 }}
-                className="w-full lg:w-[350px] xl:w-[450px] shrink-0 glass-panel p-8 flex flex-col relative overflow-hidden"
-              >
-                <div className="flex items-center gap-3 mb-6 md:mb-8 relative z-10">
-                  <Activity className="text-volt" size={24} />
-                  <h3 className="font-headline text-xl md:text-2xl font-black uppercase italic tracking-tight">{t('analysis.readiness')}</h3>
-                </div>
-
-                <div className="flex items-end gap-4 mb-2 relative z-10">
-                  <span className="text-5xl md:text-7xl font-black italic tracking-tighter leading-none">{readinessScore}</span>
-                  <span className="text-xl md:text-2xl font-black italic text-zinc-500 mb-1">%</span>
-                </div>
-                <span className="text-volt font-headline text-[10px] md:text-xs font-black uppercase tracking-widest mb-6 md:mb-8 relative z-10">
-                  {hasHistory ? t('analysis.optimalState') : t('analysis.awaitingData')}
-                </span>
-
-                {/* Readiness Graph */}
-                <div className="mt-auto pt-4 md:pt-8 relative z-10 w-full">
-                  {hasHistory ? (
-                    <div className="h-24 md:h-32 w-full relative">
-                      <svg className="w-full h-full overflow-visible" viewBox="0 0 100 40" preserveAspectRatio="none">
-                        <defs>
-                          <linearGradient id="readiness-grad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="var(--primary-color)" stopOpacity="0.4" />
-                            <stop offset="100%" stopColor="var(--primary-color)" stopOpacity="0" />
-                          </linearGradient>
-                        </defs>
-                        <path 
-                          d={`M0,35 L15,28 L30,32 L45,15 L60,20 L75,8 L100,${readinessY} L100,40 L0,40 Z`} 
-                          fill="url(#readiness-grad)" 
-                        />
-                        <polyline 
-                          points={`0,35 15,28 30,32 45,15 60,20 75,8 100,${readinessY}`} 
-                          fill="none" 
-                          stroke="var(--primary-color)" 
-                          strokeWidth="2"
-                          className="drop-shadow-[0_0_8px_var(--primary-glow)]"
-                          vectorEffect="non-scaling-stroke"
-                        />
-                        {/* Current point marker */}
-                        <circle cx="100" cy={readinessY} r="3" fill="var(--primary-color)" className="drop-shadow-[0_0_8px_var(--primary-glow)]" />
-                      </svg>
-                    </div>
-                  ) : (
-                    <div className="h-24 md:h-32 w-full flex items-center justify-center border-none bg-void/20">
-                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600 italic">
-                        {t('analysis.completeFirstWorkout')}
-                      </p>
-                    </div>
-                  )}
-                  <div className="flex justify-between mt-4 text-[8px] md:text-[10px] font-black uppercase tracking-widest text-zinc-500">
-                    <span>{t('analysis.7daysAgo')}</span>
-                    <span>{t('analysis.today')}</span>
-                  </div>
-                </div>
-
-                <div className="mt-4 flex justify-between items-center px-1 opacity-20">
-                  <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">READINESS_INDEX: {readinessScore}{readinessScore !== '–' ? '%' : ''}</span>
-                  <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">CALIBRATION: {calibration.readinessModifier.toFixed(2)}</span>
-                </div>
-              </motion.div>
-
-              {/* Block Progression Module */}
-              <motion.div 
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ delay: 0.25 }}
-                className="w-full lg:w-[700px] xl:w-[850px] shrink-0"
-              >
-                <BlockWidget />
-              </motion.div>
-
-              {/* My PRs Module */}
-              <motion.div 
-                initial={{ y: 20, opacity: 0 }}
+          {/* My PRs Module */}
+          <motion.div 
+            initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ delay: 0.3 }}
-                className="w-full lg:w-[700px] xl:w-[850px] shrink-0 glass-panel p-8 flex flex-col"
+                className="col-span-1 md:col-span-2 lg:col-span-3 shrink-0 glass-panel p-4 flex flex-col w-full"
               >
                 <div className="flex items-center gap-3 mb-6 md:mb-10">
                   <Trophy className="text-volt" size={24} />
-                  <h3 className="font-headline text-xl md:text-2xl font-black uppercase italic tracking-tight">{t('analysis.myPRs')}</h3>
+                  <h2 className="font-headline text-lg sm:text-xl md:text-2xl font-black uppercase italic tracking-tight">{t('analysis.myPRs')}</h2>
                 </div>
                 
                 {hasHistory ? (
@@ -383,7 +413,12 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory }: Tr
                       { lift: t('stage.benchPress'), weight: benchPR.weight, date: benchPR.date, image: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?q=80&w=1000' },
                       { lift: t('stage.deadlift'), weight: deadliftPR.weight, date: deadliftPR.date, image: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=1000' }
                     ].map((pr, i) => (
-                      <div key={i} className="bg-void/40 p-6 md:p-8 border-none relative group overflow-hidden transition-all hover:bg-white/5 flex flex-col h-full">
+                      <div 
+                        key={i} 
+                        tabIndex={0}
+                        aria-label={`${pr.lift} personal record: ${pr.weight} ${weightUnit} on ${pr.date}`}
+                        className="bg-void/40 p-4 border-none relative group overflow-hidden transition-all hover:bg-white/5 flex flex-col h-full focus-visible:outline-volt focus-visible:outline-offset-2"
+                      >
                         {/* Background Image */}
                         <img 
                           src={pr.image} 
@@ -423,21 +458,10 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory }: Tr
                   </div>
                 )}
 
-                <div className="mt-4 flex justify-between items-center px-1 opacity-20">
+                <div className="mt-4 flex justify-between items-center px-1 opacity-60">
                   <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">PR_DATABASE: SYNCED</span>
                   <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">RECORDS: {hasHistory ? '3' : '0'}</span>
                 </div>
-              </motion.div>
-
-              {/* Recovery Score Module */}
-              <motion.div 
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ delay: 0.35 }}
-                className="w-full lg:w-[350px] xl:w-[450px] shrink-0"
-              >
-                <RecoveryWidget />
               </motion.div>
 
               {/* Recent Logs Module */}
@@ -446,13 +470,13 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory }: Tr
                 animate={{ y: 0, opacity: 1 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ delay: 0.4 }}
-                className="w-full lg:w-[600px] xl:w-[700px] shrink-0"
+                className="col-span-1 md:col-span-2 lg:col-span-3 shrink-0 w-full"
               >
                 <LogsWidget onViewHistory={onViewHistory} />
               </motion.div>
 
             </div>
           </div>
-        </div>
+        </main>
       );
     };
