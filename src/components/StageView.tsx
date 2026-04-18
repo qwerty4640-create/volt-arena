@@ -163,7 +163,7 @@ export const StageView = ({ immersionMode = 'immersive', isVoiceActive = false, 
       <div className="col-span-12 mb-4 md:mb-8 flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <Trophy className="text-volt" size={24} />
-          <span className="font-headline text-[10px] md:text-xs font-black uppercase tracking-[0.2em] md:tracking-[0.4em] text-volt">
+          <span className="font-sans text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] md:tracking-[0.4em] text-volt">
             {t('stage.stepCount', { step: setupStep, total: 3 })}: {setupStep === 1 ? t('stage.selectArena') : setupStep === 2 ? t('stage.enterWeights') : t('stage.safetyProtocol')}
           </span>
         </div>
@@ -199,7 +199,7 @@ export const StageView = ({ immersionMode = 'immersive', isVoiceActive = false, 
                   <div className="absolute inset-0 bg-gradient-to-t from-void via-void/40 to-transparent" />
                   <div className="absolute bottom-6 left-6 text-left">
                     <span className={cn(
-                      "font-headline text-sm font-black uppercase tracking-widest",
+                      "font-sans text-sm font-bold uppercase tracking-widest",
                       selectedStage === stage.id ? "text-volt" : "text-white"
                     )}>
                       {t(stage.label)}
@@ -213,7 +213,7 @@ export const StageView = ({ immersionMode = 'immersive', isVoiceActive = false, 
               onClick={() => setSetupStep(2)}
               className="w-full px-8 py-4 bg-volt text-void flex items-center justify-center gap-4 hover:scale-[1.02] transition-all shadow-[0_0_40px_var(--primary-glow)] group"
             >
-              <span className="font-headline text-lg font-black uppercase tracking-[0.2em]">{t('stage.nextStep')}</span>
+              <span className="font-sans text-lg font-bold uppercase tracking-[0.2em]">{t('stage.nextStep')}</span>
               <ArrowRight size={24} className="group-hover:translate-x-2 transition-transform" />
             </button>
           </section>
@@ -230,8 +230,8 @@ export const StageView = ({ immersionMode = 'immersive', isVoiceActive = false, 
                   className="flex flex-col sm:flex-row sm:items-center justify-between p-4 md:p-6 bg-white/5 border-none gap-4"
                 >
                   <div>
-                    <span className="font-headline text-[8px] font-black text-zinc-600 uppercase tracking-widest block mb-1">{t('stage.lift')} {index + 1}</span>
-                    <span className="font-headline text-lg md:text-xl font-black italic uppercase text-white leading-none">{t(lift.name)}</span>
+                    <span className="font-sans text-[8px] font-bold text-zinc-600 uppercase tracking-widest block mb-1">{t('stage.lift')} {index + 1}</span>
+                    <span className="font-sans text-lg md:text-xl font-black italic uppercase text-white leading-none">{t(lift.name)}</span>
                   </div>
                   
                   <div className="flex items-center justify-between sm:justify-end gap-4">
@@ -259,7 +259,7 @@ export const StageView = ({ immersionMode = 'immersive', isVoiceActive = false, 
             <div className="flex flex-col sm:flex-row gap-4">
               <button
                 onClick={() => setSetupStep(1)}
-                className="flex-1 px-6 py-3 border-none text-zinc-500 font-headline text-base md:text-lg font-black uppercase tracking-[0.2em] hover:bg-white/5 transition-all"
+                className="flex-1 px-6 py-3 border-none text-zinc-500 font-sans text-base md:text-lg font-bold uppercase tracking-[0.2em] hover:bg-white/5 transition-all"
               >
                 {t('stage.back')}
               </button>
@@ -267,7 +267,7 @@ export const StageView = ({ immersionMode = 'immersive', isVoiceActive = false, 
                 onClick={() => setSetupStep(3)}
                 className="flex-[2] px-8 py-4 bg-volt text-void flex items-center justify-center gap-4 hover:scale-[1.02] transition-all shadow-[0_0_40px_var(--primary-glow)] group"
               >
-                <span className="font-headline text-base md:text-lg font-black uppercase tracking-[0.2em]">{t('stage.nextStep')}</span>
+                <span className="font-sans text-base md:text-lg font-bold uppercase tracking-[0.2em]">{t('stage.nextStep')}</span>
                 <ArrowRight size={20} className="group-hover:translate-x-2 transition-transform" />
               </button>
             </div>
@@ -294,9 +294,9 @@ export const StageView = ({ immersionMode = 'immersive', isVoiceActive = false, 
                   )}
                 >
                   <div className="flex flex-col items-start">
-                    <span className="font-headline text-[10px] md:text-xs font-black uppercase tracking-widest">{t(item)}</span>
+                    <span className="font-sans text-[10px] md:text-xs font-bold uppercase tracking-widest">{t(item)}</span>
                     {hoveredChecklistItem === item && !checkedItems.includes(item) && isVoiceActive && (
-                      <span className="text-[8px] font-black text-volt/60 uppercase tracking-widest mt-1 animate-pulse">{t('stage.voiceReady')}</span>
+                      <span className="text-[8px] font-bold text-volt/60 uppercase tracking-widest mt-1 animate-pulse">{t('stage.voiceReady')}</span>
                     )}
                   </div>
                   {checkedItems.includes(item) ? (
@@ -330,13 +330,13 @@ export const StageView = ({ immersionMode = 'immersive', isVoiceActive = false, 
                 )}
                 <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 relative z-10">
                   <div className={cn(
-                    "px-2 md:px-3 py-1 font-headline text-[10px] font-black italic flex items-center gap-2",
+                    "px-2 md:px-3 py-1 font-sans text-[10px] font-bold italic flex items-center gap-2",
                     isSetupComplete ? "bg-void/20 text-void" : "bg-white/5 text-zinc-500"
                   )}>
                     <span className="text-xs md:text-sm">{checkedItems.length}/{CHECKLIST_ITEMS.length}</span>
                     <span className="uppercase tracking-widest opacity-60 hidden sm:inline">{t('stage.verified')}</span>
                   </div>
-                  <span className="font-headline text-base md:text-lg font-black uppercase tracking-[0.1em] md:tracking-[0.2em]">{t('stage.startCompetition')}</span>
+                  <span className="font-sans text-base md:text-lg font-bold uppercase tracking-[0.1em] md:tracking-[0.2em]">{t('stage.startCompetition')}</span>
                 </div>
                 <ArrowRight size={20} className="relative z-10 group-hover:translate-x-2 transition-transform" />
               </button>
@@ -366,14 +366,14 @@ export const StageView = ({ immersionMode = 'immersive', isVoiceActive = false, 
             
             <div className="flex flex-col gap-4 md:gap-6">
               <div>
-                <p className="font-headline text-[8px] md:text-[10px] tracking-[0.3em] text-volt uppercase font-black mb-2">{t('stage.currentPhase')}</p>
-                <h2 className="font-headline text-2xl md:text-4xl font-black italic tracking-tight text-white uppercase">{t(currentLift.name)}</h2>
+                <p className="font-sans text-[8px] md:text-[10px] tracking-[0.2em] text-volt uppercase font-bold mb-2">{t('stage.currentPhase')}</p>
+                <h2 className="font-sans text-2xl md:text-4xl font-black italic tracking-tight text-white uppercase">{t(currentLift.name)}</h2>
               </div>
 
               <div>
                 <div className="flex justify-between items-center mb-2">
-                  <p className="font-headline text-[8px] md:text-[10px] tracking-[0.2em] text-zinc-500 uppercase font-black">{t('stage.stabilityLock')}</p>
-                  <span className="font-headline text-[8px] md:text-[10px] font-black text-volt">98%</span>
+                  <p className="font-sans text-[8px] md:text-[10px] tracking-[0.2em] text-zinc-500 uppercase font-bold">{t('stage.stabilityLock')}</p>
+                  <span className="font-sans text-[8px] md:text-[10px] font-bold text-volt">98%</span>
                 </div>
                 <div className="h-1.5 w-full bg-zinc-800/50 overflow-hidden">
                   <div 
@@ -384,8 +384,8 @@ export const StageView = ({ immersionMode = 'immersive', isVoiceActive = false, 
               </div>
 
               <div className="flex justify-between items-center pt-2">
-                <p className="font-headline text-[8px] md:text-[10px] tracking-[0.2em] text-zinc-500 uppercase font-black">{t('stage.gripTension')}</p>
-                <span className="font-headline text-[8px] md:text-[10px] font-black text-volt uppercase tracking-widest italic">{t('stage.active')}</span>
+                <p className="font-sans text-[8px] md:text-[10px] tracking-[0.2em] text-zinc-500 uppercase font-bold">{t('stage.gripTension')}</p>
+                <span className="font-sans text-[8px] md:text-[10px] font-bold text-volt uppercase tracking-widest italic">{t('stage.active')}</span>
               </div>
             </div>
           </div>
@@ -395,7 +395,7 @@ export const StageView = ({ immersionMode = 'immersive', isVoiceActive = false, 
             className="flex items-center gap-2 text-zinc-500 hover:text-white transition-colors group"
           >
             <ChevronRight size={14} className="rotate-180 group-hover:-translate-x-1 transition-transform" />
-            <span className="font-headline text-[8px] md:text-[10px] font-black uppercase tracking-widest">{t('stage.backProtocol')}</span>
+            <span className="font-sans text-[8px] md:text-[10px] font-bold uppercase tracking-widest">{t('stage.backProtocol')}</span>
           </button>
         </motion.div>
 
@@ -418,16 +418,16 @@ export const StageView = ({ immersionMode = 'immersive', isVoiceActive = false, 
               }}
               className="px-8 md:px-16 py-4 md:py-6 border-2 border-volt/40 bg-volt/5 backdrop-blur-xl"
             >
-              <h1 className="font-headline text-3xl md:text-6xl font-black italic tracking-[0.2em] md:tracking-[0.4em] text-volt text-glow-volt text-center translate-x-[0.1em] md:translate-x-[0.2em]">
+              <h1 className="font-sans text-3xl md:text-6xl font-black italic tracking-[0.2em] md:tracking-[0.4em] text-volt text-glow-volt text-center translate-x-[0.1em] md:translate-x-[0.2em]">
                 {t('stage.ready')}
               </h1>
             </motion.div>
 
             <div className="flex flex-col items-center gap-1 md:gap-2">
-              <span className="font-headline text-zinc-500 text-[8px] md:text-[10px] tracking-[0.4em] font-black uppercase">{t('stage.targetLoad')}</span>
+              <span className="font-sans text-zinc-500 text-[8px] md:text-[10px] tracking-[0.2em] font-bold uppercase">{t('stage.targetLoad')}</span>
               <div className="flex items-baseline gap-2 md:gap-3">
-                <span className="font-headline text-4xl md:text-7xl font-black italic tracking-tighter text-white">{currentLift.weight.toFixed(1)}</span>
-                <span className="font-headline text-lg md:text-2xl font-black text-volt italic">{t('stage.kg')}</span>
+                <span className="font-sans text-4xl md:text-7xl font-black italic tracking-tighter text-white">{currentLift.weight.toFixed(1)}</span>
+                <span className="font-sans text-lg md:text-2xl font-bold text-volt italic">{t('stage.kg')}</span>
               </div>
             </div>
 
@@ -437,7 +437,7 @@ export const StageView = ({ immersionMode = 'immersive', isVoiceActive = false, 
                   key={lift.name}
                   onClick={() => setCurrentLiftIndex(i)}
                   className={cn(
-                    "px-3 md:px-4 py-1.5 md:py-2 font-headline text-[7px] md:text-[8px] font-black uppercase tracking-widest transition-all",
+                    "px-3 md:px-4 py-1.5 md:py-2 font-sans text-[7px] md:text-[8px] font-bold uppercase tracking-widest transition-all",
                     currentLiftIndex === i 
                       ? "bg-volt text-void shadow-[0_0_15px_var(--primary-glow)]" 
                       : "bg-white/5 text-zinc-500 hover:bg-white/10"
@@ -458,10 +458,10 @@ export const StageView = ({ immersionMode = 'immersive', isVoiceActive = false, 
           {/* Biometric Data Grid */}
           <div className="grid grid-cols-2 md:grid-cols-2 gap-3 md:gap-4 w-full max-w-xs md:w-auto">
             <div className="glass-panel p-4 md:p-6 w-full md:w-40 shadow-xl border-white/5">
-              <p className="font-headline text-[7px] md:text-[8px] tracking-[0.2em] text-zinc-500 uppercase font-black mb-2 md:mb-3">{t('stage.heartRate')}</p>
+              <p className="font-sans text-[7px] md:text-[8px] tracking-[0.2em] text-zinc-500 uppercase font-bold mb-2 md:mb-3">{t('stage.heartRate')}</p>
               <div className="flex items-baseline gap-2">
-                <span className="font-headline text-xl md:text-3xl font-black italic text-white">142</span>
-                <span className="font-headline text-[8px] md:text-[10px] font-bold text-zinc-500 uppercase">{t('stage.bpm')}</span>
+                <span className="font-sans text-xl md:text-3xl font-black italic text-white">142</span>
+                <span className="font-sans text-[8px] md:text-[10px] font-bold text-zinc-500 uppercase">{t('stage.bpm')}</span>
               </div>
               <div className="mt-2 h-1 w-full bg-zinc-900 overflow-hidden">
                 <div className="h-full bg-crimson w-3/4 shadow-[0_0_10px_rgba(255,0,0,0.3)]" />
@@ -469,10 +469,10 @@ export const StageView = ({ immersionMode = 'immersive', isVoiceActive = false, 
             </div>
 
             <div className="glass-panel p-4 md:p-6 w-full md:w-40 shadow-xl border-white/5">
-              <p className="font-headline text-[7px] md:text-[8px] tracking-[0.2em] text-zinc-500 uppercase font-black mb-2 md:mb-3">{t('stage.vo2Max')}</p>
+              <p className="font-sans text-[7px] md:text-[8px] tracking-[0.2em] text-zinc-500 uppercase font-bold mb-2 md:mb-3">{t('stage.vo2Max')}</p>
               <div className="flex items-baseline gap-2">
-                <span className="font-headline text-xl md:text-3xl font-black italic text-white">58.2</span>
-                <span className="font-headline text-[8px] md:text-[10px] font-bold text-zinc-500 uppercase italic">{t('stage.peak')}</span>
+                <span className="font-sans text-xl md:text-3xl font-black italic text-white">58.2</span>
+                <span className="font-sans text-[8px] md:text-[10px] font-bold text-zinc-500 uppercase italic">{t('stage.peak')}</span>
               </div>
               <div className="mt-2 h-1 w-full bg-zinc-900 overflow-hidden">
                 <div className="h-full bg-volt w-4/5 shadow-[0_0_10px_var(--primary-glow)]" />
@@ -480,10 +480,10 @@ export const StageView = ({ immersionMode = 'immersive', isVoiceActive = false, 
             </div>
 
             <div className="glass-panel p-4 md:p-6 w-full md:w-40 shadow-xl border-white/5">
-              <p className="font-headline text-[7px] md:text-[8px] tracking-[0.2em] text-zinc-500 uppercase font-black mb-2 md:mb-3">{t('stage.bodyTemp')}</p>
+              <p className="font-sans text-[7px] md:text-[8px] tracking-[0.2em] text-zinc-500 uppercase font-bold mb-2 md:mb-3">{t('stage.bodyTemp')}</p>
               <div className="flex items-baseline gap-2">
-                <span className="font-headline text-xl md:text-3xl font-black italic text-white">37.2</span>
-                <span className="font-headline text-[8px] md:text-[10px] font-bold text-zinc-500 uppercase">{t('stage.celsius')}</span>
+                <span className="font-sans text-xl md:text-3xl font-black italic text-white">37.2</span>
+                <span className="font-sans text-[8px] md:text-[10px] font-bold text-zinc-500 uppercase">{t('stage.celsius')}</span>
               </div>
               <div className="mt-2 h-1 w-full bg-zinc-900 overflow-hidden">
                 <div className="h-full bg-white/40 w-1/2" />
@@ -491,10 +491,10 @@ export const StageView = ({ immersionMode = 'immersive', isVoiceActive = false, 
             </div>
 
             <div className="glass-panel p-4 md:p-6 w-full md:w-40 shadow-xl border-white/5">
-              <p className="font-headline text-[7px] md:text-[8px] tracking-[0.2em] text-zinc-500 uppercase font-black mb-2 md:mb-3">{t('stage.bloodOxygen')}</p>
+              <p className="font-sans text-[7px] md:text-[8px] tracking-[0.2em] text-zinc-500 uppercase font-bold mb-2 md:mb-3">{t('stage.bloodOxygen')}</p>
               <div className="flex items-baseline gap-2">
-                <span className="font-headline text-xl md:text-3xl font-black italic text-white">99</span>
-                <span className="font-headline text-[8px] md:text-[10px] font-bold text-zinc-500 uppercase">%</span>
+                <span className="font-sans text-xl md:text-3xl font-black italic text-white">99</span>
+                <span className="font-sans text-[8px] md:text-[10px] font-bold text-zinc-500 uppercase">%</span>
               </div>
               <div className="mt-2 h-1 w-full bg-zinc-900 overflow-hidden">
                 <div className="h-full bg-volt w-[99%]" />
@@ -561,7 +561,7 @@ export const StageView = ({ immersionMode = 'immersive', isVoiceActive = false, 
           >
             <button
               onClick={() => setIsWithdrawModalOpen(true)}
-              className="px-8 py-3 bg-crimson/10 border border-crimson/20 text-crimson font-headline text-[10px] font-black uppercase tracking-[0.3em] hover:bg-crimson hover:text-void transition-all shadow-lg backdrop-blur-md"
+              className="px-8 py-3 bg-crimson/10 border border-crimson/20 text-crimson font-sans text-[10px] font-bold uppercase tracking-[0.3em] hover:bg-crimson hover:text-void transition-all shadow-lg backdrop-blur-md"
             >
               {t('stage.withdrawCompetition')}
             </button>
@@ -603,49 +603,49 @@ export const StageView = ({ immersionMode = 'immersive', isVoiceActive = false, 
 
                 <div className="flex-1 overflow-y-auto pr-2 md:pr-4 space-y-6 md:space-y-8 custom-scrollbar mb-6 md:mb-8 scroll-smooth text-xs md:text-sm">
                   <div className="space-y-4">
-                    <h4 className="font-headline text-xs font-black uppercase tracking-widest text-volt">1. {t('stage.terms.1.title')}</h4>
+                    <h4 className="font-sans text-xs font-bold uppercase tracking-widest text-volt">1. {t('stage.terms.1.title')}</h4>
                     <p className="text-zinc-400 text-sm leading-relaxed">
                       {t('stage.terms.1.content')}
                     </p>
                   </div>
 
                   <div className="space-y-4">
-                    <h4 className="font-headline text-xs font-black uppercase tracking-widest text-volt">2. {t('stage.terms.2.title')}</h4>
+                    <h4 className="font-sans text-xs font-bold uppercase tracking-widest text-volt">2. {t('stage.terms.2.title')}</h4>
                     <p className="text-zinc-400 text-sm leading-relaxed">
                       {t('stage.terms.2.content')}
                     </p>
                   </div>
 
                   <div className="space-y-4">
-                    <h4 className="font-headline text-xs font-black uppercase tracking-widest text-volt">3. {t('stage.terms.3.title')}</h4>
+                    <h4 className="font-sans text-xs font-bold uppercase tracking-widest text-volt">3. {t('stage.terms.3.title')}</h4>
                     <p className="text-zinc-400 text-sm leading-relaxed">
                       {t('stage.terms.3.content')}
                     </p>
                   </div>
 
                   <div className="space-y-4">
-                    <h4 className="font-headline text-xs font-black uppercase tracking-widest text-volt">4. {t('stage.terms.4.title')}</h4>
+                    <h4 className="font-sans text-xs font-bold uppercase tracking-widest text-volt">4. {t('stage.terms.4.title')}</h4>
                     <p className="text-zinc-400 text-sm leading-relaxed">
                       {t('stage.terms.4.content')}
                     </p>
                   </div>
 
                   <div className="space-y-4">
-                    <h4 className="font-headline text-xs font-black uppercase tracking-widest text-volt">5. {t('stage.terms.5.title')}</h4>
+                    <h4 className="font-sans text-xs font-bold uppercase tracking-widest text-volt">5. {t('stage.terms.5.title')}</h4>
                     <p className="text-zinc-400 text-sm leading-relaxed">
                       {t('stage.terms.5.content')}
                     </p>
                   </div>
 
                   <div className="space-y-4">
-                    <h4 className="font-headline text-xs font-black uppercase tracking-widest text-volt">6. {t('stage.terms.6.title')}</h4>
+                    <h4 className="font-sans text-xs font-bold uppercase tracking-widest text-volt">6. {t('stage.terms.6.title')}</h4>
                     <p className="text-zinc-400 text-sm leading-relaxed">
                       {t('stage.terms.6.content')}
                     </p>
                   </div>
 
                   <div className="space-y-4">
-                    <h4 className="font-headline text-xs font-black uppercase tracking-widest text-volt">7. {t('stage.terms.7.title')}</h4>
+                    <h4 className="font-sans text-xs font-bold uppercase tracking-widest text-volt">7. {t('stage.terms.7.title')}</h4>
                     <p className="text-zinc-400 text-sm leading-relaxed">
                       {t('stage.terms.7.content')}
                     </p>
@@ -655,7 +655,7 @@ export const StageView = ({ immersionMode = 'immersive', isVoiceActive = false, 
                 <div className="flex gap-4 pt-6 border-t border-white/5 shrink-0">
                   <button
                     onClick={() => setIsTermsModalOpen(false)}
-                    className="flex-1 py-5 border border-crimson/20 bg-crimson/5 text-crimson font-headline text-sm font-black uppercase tracking-widest hover:bg-crimson hover:text-void transition-all"
+                    className="flex-1 py-5 border border-crimson/20 bg-crimson/5 text-crimson font-sans text-sm font-bold uppercase tracking-widest hover:bg-crimson hover:text-void transition-all"
                   >
                     {t('stage.decline')}
                   </button>
@@ -664,7 +664,7 @@ export const StageView = ({ immersionMode = 'immersive', isVoiceActive = false, 
                       setIsTermsModalOpen(false);
                       setIsReady(true);
                     }}
-                    className="flex-[2] py-5 bg-volt text-void font-headline text-sm font-black uppercase tracking-widest hover:scale-[1.02] transition-all shadow-lg shadow-volt/20"
+                    className="flex-[2] py-5 bg-volt text-void font-sans text-sm font-bold uppercase tracking-widest hover:scale-[1.02] transition-all shadow-lg shadow-volt/20"
                   >
                     {t('stage.acceptStart')}
                   </button>
@@ -719,13 +719,13 @@ export const StageView = ({ immersionMode = 'immersive', isVoiceActive = false, 
                       ]);
                       setIsWithdrawModalOpen(false);
                     }}
-                    className="w-full py-5 bg-crimson text-void font-headline text-sm font-black uppercase tracking-widest hover:scale-[1.02] transition-all shadow-lg shadow-crimson/20"
+                    className="w-full py-5 bg-crimson text-void font-sans text-sm font-bold uppercase tracking-widest hover:scale-[1.02] transition-all shadow-lg shadow-crimson/20"
                   >
                     {t('stage.yesWithdraw')}
                   </button>
                   <button
                     onClick={() => setIsWithdrawModalOpen(false)}
-                    className="w-full py-5 border border-white/10 text-zinc-500 font-headline text-sm font-black uppercase tracking-widest hover:bg-white/5 transition-all"
+                    className="w-full py-5 border border-white/10 text-zinc-500 font-sans text-sm font-bold uppercase tracking-widest hover:bg-white/5 transition-all"
                   >
                     {t('stage.cancel')}
                   </button>

@@ -67,7 +67,7 @@ export const TacticalChart: React.FC<TacticalChartProps> = ({ data }) => {
       <ResponsiveContainer width="100%" height={250}>
         <ComposedChart
           data={data}
-          margin={{ top: 20, right: 10, bottom: 0, left: -20 }}
+          margin={{ top: 10, right: 10, bottom: 0, left: -20 }}
           style={{ userSelect: 'none' }}
         >
           <defs>
@@ -88,7 +88,7 @@ export const TacticalChart: React.FC<TacticalChartProps> = ({ data }) => {
             fontSize={10}
             tickLine={false}
             axisLine={false}
-            tick={{ fill: '#52525b', fontSize: 10, fontFamily: 'Space Grotesk', fontWeight: 900 }}
+            tick={{ fill: '#52525b', fontSize: 10, fontFamily: 'Inter', fontWeight: 900 }}
             dy={10}
             padding={{ left: 10, right: 10 }}
           />
@@ -96,7 +96,7 @@ export const TacticalChart: React.FC<TacticalChartProps> = ({ data }) => {
           <YAxis 
             yAxisId="left" 
             stroke="#52525b" 
-            tick={{ fill: '#52525b', fontSize: 9, fontFamily: 'Space Grotesk', fontWeight: 900 }}
+            tick={{ fill: '#52525b', fontSize: 9, fontFamily: 'Inter', fontWeight: 900 }}
             tickLine={false}
             axisLine={false}
             dx={-10}
@@ -106,7 +106,7 @@ export const TacticalChart: React.FC<TacticalChartProps> = ({ data }) => {
             yAxisId="right" 
             orientation="right" 
             stroke="#52525b"
-            tick={{ fill: '#52525b', fontSize: 9, fontFamily: 'Space Grotesk', fontWeight: 900 }}
+            tick={{ fill: '#52525b', fontSize: 9, fontFamily: 'Inter', fontWeight: 900 }}
             tickLine={false}
             axisLine={false}
             domain={[0, 'auto']}

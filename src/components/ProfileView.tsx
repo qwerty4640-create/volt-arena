@@ -232,7 +232,7 @@ export const ProfileView = () => {
 
         <div className="text-left space-y-2">
           <div className="flex flex-col md:flex-row items-center justify-start gap-2 md:gap-3">
-            <h2 className="font-headline text-3xl md:text-5xl font-black uppercase italic tracking-tight text-white">
+            <h2 className="font-sans text-3xl md:text-5xl font-black uppercase italic tracking-tight text-white">
               {profile.firstName} {profile.lastName}
             </h2>
             <div className={cn(
@@ -277,7 +277,7 @@ export const ProfileView = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Trophy className="text-volt" size={20} />
-              <h3 className="font-headline text-sm font-black uppercase tracking-widest text-white">Performance Metrics</h3>
+              <h3 className="font-sans text-sm font-bold uppercase tracking-widest text-white">Performance Metrics</h3>
             </div>
             <button 
               onClick={() => {
@@ -296,9 +296,9 @@ export const ProfileView = () => {
 
           <div className="space-y-4">
             <div className="p-8 bg-void/60 border-l-4 border-volt relative overflow-hidden">
-              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500 mb-4 relative z-10">Total Lift Weight</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-500 mb-4 relative z-10">Total Lift Weight</p>
               <div className="flex items-baseline gap-4 relative z-10">
-                <span className="text-7xl font-headline font-black text-volt italic tracking-tighter drop-shadow-[0_0_30px_rgba(0,182,255,0.4)]">
+                <span className="text-7xl font-sans font-black text-volt italic tracking-tighter drop-shadow-[0_0_30px_rgba(0,182,255,0.4)]">
                   {(profile.squatPR || 0) + (profile.benchPR || 0) + (profile.deadliftPR || 0)}
                 </span>
                 <span className="text-sm font-black text-zinc-400 uppercase tracking-[0.2em]">{unit === 'metric' ? 'kg' : 'lb'}</span>
@@ -316,7 +316,7 @@ export const ProfileView = () => {
                     <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 group-hover/item:text-zinc-300">{stat.label}</span>
                   </div>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-lg font-headline font-black text-white italic">{stat.value}</span>
+                    <span className="text-lg font-sans font-black text-white italic">{stat.value}</span>
                     <span className="text-[8px] font-bold text-zinc-400 uppercase">{unit === 'metric' ? 'kg' : 'lb'}</span>
                   </div>
                 </div>
@@ -335,7 +335,7 @@ export const ProfileView = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Activity className="text-volt" size={20} />
-              <h3 className="font-headline text-sm font-black uppercase tracking-widest text-white">Biometrics</h3>
+              <h3 className="font-sans text-sm font-bold uppercase tracking-widest text-white">Biometrics</h3>
             </div>
             <button 
               onClick={() => setShowBiometricsModal(true)}
@@ -400,7 +400,7 @@ export const ProfileView = () => {
           <div className="flex items-center justify-between mb-6 relative z-10">
             <div className="flex items-center gap-3">
               <Zap className="text-volt" size={20} />
-              <h3 className="font-headline text-sm font-black uppercase tracking-widest text-white">Timeline & Frequency</h3>
+              <h3 className="font-sans text-sm font-bold uppercase tracking-widest text-white">Timeline & Frequency</h3>
             </div>
             <button 
               onClick={() => setShowProtocolModal(true)}
@@ -413,17 +413,17 @@ export const ProfileView = () => {
           <div className="space-y-4 relative z-10">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="p-4 bg-void/40 border border-white/5">
-                <p className="text-[7px] font-black uppercase tracking-widest text-zinc-500 mb-1">Current Block</p>
-                <p className="text-xl font-headline font-black text-white italic uppercase truncate">{block.label || block.type}</p>
+                <p className="text-[7px] font-bold uppercase tracking-widest text-zinc-500 mb-1">Current Block</p>
+                <p className="text-xl font-sans font-black text-white italic uppercase truncate">{block.label || block.type}</p>
                 <div className="flex justify-between items-center mt-2">
-                  <span className="text-[8px] font-black italic text-zinc-400">Week {weekInBlock} / {block.durationWeeks}</span>
-                  <span className="text-[10px] font-black uppercase text-volt">Week {currentWeek}</span>
+                  <span className="text-[8px] font-bold italic text-zinc-400">Week {weekInBlock} / {block.durationWeeks}</span>
+                  <span className="text-[10px] font-bold uppercase text-volt">Week {currentWeek}</span>
                 </div>
               </div>
 
               <div className="p-4 bg-void/40 border border-white/5">
-                <p className="text-[7px] font-black uppercase tracking-widest text-zinc-500 mb-1">Training Load</p>
-                <p className="text-xl font-headline font-black text-white italic uppercase">{profile.trainingFrequency || 3} Sessions / Wk</p>
+                <p className="text-[7px] font-bold uppercase tracking-widest text-zinc-500 mb-1">Training Load</p>
+                <p className="text-xl font-sans font-black text-white italic uppercase">{profile.trainingFrequency || 3} Sessions / Wk</p>
                 <div className="mt-4 space-y-1.5">
                   <div className="flex justify-between text-[6px] font-black uppercase tracking-widest text-zinc-500">
                     <span>Weekly Distribution</span>
@@ -441,14 +441,14 @@ export const ProfileView = () => {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="p-3 bg-void/40 border border-white/5 text-left">
-                <p className="text-[7px] font-black uppercase tracking-widest text-zinc-500 mb-1">To Competition</p>
-                <p className="text-base font-headline font-black text-volt italic uppercase">
+                <p className="text-[7px] font-bold uppercase tracking-widest text-zinc-500 mb-1">To Competition</p>
+                <p className="text-base font-sans font-black text-volt italic uppercase">
                   {profile.competitionDate ? Math.max(0, Math.ceil((profile.competitionDate - Date.now()) / (7 * 24 * 60 * 60 * 1000))) : (profile.trainingDurationMonths || 3) * 4} WKS
                 </p>
               </div>
               <div className="p-3 bg-void/40 border border-white/5 text-left">
-                <p className="text-[7px] font-black uppercase tracking-widest text-zinc-500 mb-1">Total Duration</p>
-                <p className="text-base font-headline font-black text-white italic uppercase">
+                <p className="text-[7px] font-bold uppercase tracking-widest text-zinc-500 mb-1">Total Duration</p>
+                <p className="text-base font-sans font-black text-white italic uppercase">
                   {profile.trainingDurationMonths || 3} MONTHS
                 </p>
               </div>
@@ -482,8 +482,8 @@ export const ProfileView = () => {
                   <User size={32} />
                 </div>
                 <div>
-                  <h3 className="font-headline text-2xl font-black uppercase italic tracking-tight text-white">Biometrics</h3>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Update Physical Data</p>
+                  <h3 className="font-sans text-2xl font-black uppercase italic tracking-tight text-white">Biometrics</h3>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Update Physical Data</p>
                 </div>
               </div>
 
@@ -491,11 +491,11 @@ export const ProfileView = () => {
                 <div className="space-y-4">
                   {/* Gender */}
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-normal text-zinc-500 ml-2">Gender</label>
+                    <label className="text-[10px] font-bold uppercase tracking-normal text-zinc-500 ml-2">Gender</label>
                     <select
                       value={editData.gender}
                       onChange={(e) => setEditData({ ...editData, gender: e.target.value as any })}
-                      className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-headline text-xl font-black italic focus:border-volt outline-none transition-all"
+                      className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black italic focus:border-volt outline-none transition-all"
                     >
                       <option value="male">Male</option>
                       <option value="female">Female</option>
@@ -505,7 +505,7 @@ export const ProfileView = () => {
 
                   {/* Age */}
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-normal text-zinc-500 ml-2">Age</label>
+                    <label className="text-[10px] font-bold uppercase tracking-normal text-zinc-500 ml-2">Age</label>
                     <input
                       type="number"
                       step="1"
@@ -520,27 +520,27 @@ export const ProfileView = () => {
                         }
                       }}
                       className={cn(
-                        "w-full bg-surface-container-lowest border-b-2 p-4 text-white font-headline text-xl font-black italic outline-none transition-all text-center",
+                        "w-full bg-surface-container-lowest border-b-2 p-4 text-white font-sans text-xl font-black italic outline-none transition-all text-center",
                         ageError ? "border-crimson text-crimson" : "border-white/5 focus:border-volt"
                       )}
                     />
                     {ageError && (
-                      <p className="text-[8px] font-black uppercase tracking-widest text-crimson mt-1 text-center">{ageError}</p>
+                      <p className="text-[8px] font-bold uppercase tracking-widest text-crimson mt-1 text-center">{ageError}</p>
                     )}
                   </div>
 
                   {/* Height */}
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-normal text-zinc-500 ml-2">Height</label>
+                    <label className="text-[10px] font-bold uppercase tracking-normal text-zinc-500 ml-2">Height</label>
                     {unit === 'metric' ? (
                       <div className="flex items-center gap-2">
                         <input
                           type="number"
                           value={editData.height}
                           onChange={(e) => setEditData({ ...editData, height: parseFloat(e.target.value) || 0 })}
-                          className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-headline text-xl font-black italic focus:border-volt outline-none transition-all text-center"
+                          className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black italic focus:border-volt outline-none transition-all text-center"
                         />
-                        <span className="text-xs font-black text-zinc-500">CM</span>
+                        <span className="text-xs font-bold text-zinc-500">CM</span>
                       </div>
                     ) : (
                       <div className="flex gap-4">
@@ -549,18 +549,18 @@ export const ProfileView = () => {
                             type="number"
                             value={editData.heightFeet}
                             onChange={(e) => setEditData({ ...editData, heightFeet: parseInt(e.target.value) || 0 })}
-                            className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-headline text-xl font-black italic focus:border-volt outline-none transition-all text-center"
+                            className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black italic focus:border-volt outline-none transition-all text-center"
                           />
-                          <p className="text-[8px] font-black text-zinc-500 text-center uppercase">Feet</p>
+                          <p className="text-[8px] font-bold text-zinc-500 text-center uppercase">Feet</p>
                         </div>
                         <div className="flex-1 space-y-1">
                           <input
                             type="number"
                             value={editData.heightInches}
                             onChange={(e) => setEditData({ ...editData, heightInches: parseInt(e.target.value) || 0 })}
-                            className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-headline text-xl font-black italic focus:border-volt outline-none transition-all text-center"
+                            className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black italic focus:border-volt outline-none transition-all text-center"
                           />
-                          <p className="text-[8px] font-black text-zinc-500 text-center uppercase">Inches</p>
+                          <p className="text-[8px] font-bold text-zinc-500 text-center uppercase">Inches</p>
                         </div>
                       </div>
                     )}
@@ -568,18 +568,18 @@ export const ProfileView = () => {
 
                   {/* Weight */}
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-normal text-zinc-500 ml-2">Weight ({unit === 'metric' ? 'kg' : 'lb'})</label>
+                    <label className="text-[10px] font-bold uppercase tracking-normal text-zinc-500 ml-2">Weight ({unit === 'metric' ? 'kg' : 'lb'})</label>
                     <input
                       type="number"
                       value={editData.weight}
                       onChange={(e) => setEditData({ ...editData, weight: parseFloat(e.target.value) || 0 })}
-                      className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-headline text-xl font-black italic focus:border-volt outline-none transition-all text-center"
+                      className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black italic focus:border-volt outline-none transition-all text-center"
                     />
                   </div>
 
                   {/* Training Goal */}
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-normal text-zinc-500 ml-2">Training Objective</label>
+                    <label className="text-[10px] font-bold uppercase tracking-normal text-zinc-500 ml-2">Training Objective</label>
                     <div className="grid grid-cols-1 gap-2">
                       {(['pure_strength', 'powerbuilding', 'hypertrophy', 'peaking', 'longevity'] as TrainingGoal[]).map(goal => (
                         <button
@@ -593,7 +593,7 @@ export const ProfileView = () => {
                           )}
                         >
                           <div className="flex items-center justify-between">
-                            <span className="font-headline text-[10px] font-black uppercase tracking-widest">{t(`goal.${goal}`)}</span>
+                            <span className="font-sans text-[10px] font-bold uppercase tracking-widest">{t(`goal.${goal}`)}</span>
                             {editData.trainingGoal === goal && (
                               <CheckCircle2 size={12} className="text-volt" />
                             )}
@@ -613,14 +613,14 @@ export const ProfileView = () => {
                       setShowBiometricsModal(false);
                       setAgeError(null);
                     }}
-                    className="flex-1 py-4 bg-white/5 text-zinc-500 font-headline text-xs font-black uppercase tracking-widest hover:text-white transition-all"
+                    className="flex-1 py-4 bg-white/5 text-zinc-500 font-sans text-xs font-bold uppercase tracking-widest hover:text-white transition-all"
                   >
                     Cancel
                   </button>
                   <button 
                     onClick={handleSave}
                     disabled={loading || !!ageError}
-                    className="flex-1 py-4 bg-volt text-void font-headline text-xs font-black uppercase tracking-widest hover:bg-white hover:shadow-[0_0_20px_var(--primary-glow)] transition-all disabled:opacity-50"
+                    className="flex-1 py-4 bg-volt text-void font-sans text-xs font-bold uppercase tracking-widest hover:bg-white hover:shadow-[0_0_20px_var(--primary-glow)] transition-all disabled:opacity-50"
                   >
                     {loading ? 'Saving...' : 'Confirm'}
                   </button>
@@ -653,8 +653,8 @@ export const ProfileView = () => {
                   <Zap size={32} />
                 </div>
                 <div>
-                  <h3 className="font-headline text-2xl font-black uppercase italic tracking-tight text-white">Full Protocol</h3>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Recalibrate Timeline & Frequency</p>
+                  <h3 className="font-sans text-2xl font-black uppercase italic tracking-tight text-white">Full Protocol</h3>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Recalibrate Timeline & Frequency</p>
                 </div>
               </div>
 
@@ -662,14 +662,14 @@ export const ProfileView = () => {
                 {/* Timeline Column */}
                 <div className="space-y-6">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-normal text-zinc-500 ml-2">Months until Competition</label>
+                    <label className="text-[10px] font-bold uppercase tracking-normal text-zinc-500 ml-2">Months until Competition</label>
                     <div className="grid grid-cols-4 gap-2">
                       {[3, 6, 9, 12].map((m) => (
                         <button
                           key={m}
                           onClick={() => setAdjustingDuration(m)}
                           className={cn(
-                            "py-3 border font-headline text-xs font-black uppercase tracking-widest transition-all",
+                            "py-3 border font-sans text-xs font-bold uppercase tracking-widest transition-all",
                             adjustingDuration === m ? "bg-volt/10 border-volt text-white" : "bg-surface-variant border-white/5 text-zinc-500"
                           )}
                         >
@@ -680,11 +680,11 @@ export const ProfileView = () => {
                   </div>
 
                   <div className="p-4 bg-void/40 border border-white/5">
-                    <p className="text-[8px] font-black uppercase tracking-widest text-zinc-500 mb-2">Block Redistribution ({adjustingDuration * 4} Weeks)</p>
+                    <p className="text-[8px] font-bold uppercase tracking-widest text-zinc-500 mb-2">Block Redistribution ({adjustingDuration * 4} Weeks)</p>
                     <div className="space-y-2">
                       {getPlanForDuration(adjustingDuration * 4, profile?.trainingGoal || 'powerbuilding').map((b, i) => (
                         <div key={i} className="flex justify-between items-center text-[10px]">
-                          <span className="font-black uppercase text-zinc-400">{b.label || b.type}</span>
+                          <span className="font-bold uppercase text-zinc-400">{b.label || b.type}</span>
                           <span className="font-bold text-volt">{b.durationWeeks} Weeks</span>
                         </div>
                       ))}
@@ -695,14 +695,14 @@ export const ProfileView = () => {
                 {/* Frequency Column */}
                 <div className="space-y-6">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-normal text-zinc-500 ml-2">Training Frequency</label>
+                    <label className="text-[10px] font-bold uppercase tracking-normal text-zinc-500 ml-2">Training Frequency</label>
                     <div className="grid grid-cols-5 gap-2">
                       {[3, 4, 5, 6, 7].map((f) => (
                         <button
                           key={f}
                           onClick={() => setAdjustingFrequency(f)}
                           className={cn(
-                            "py-3 border font-headline text-xs font-black uppercase tracking-widest transition-all",
+                            "py-3 border font-sans text-xs font-bold uppercase tracking-widest transition-all",
                             adjustingFrequency === f ? "bg-volt/10 border-volt text-white" : "bg-surface-variant border-white/5 text-zinc-500"
                           )}
                         >
@@ -713,7 +713,7 @@ export const ProfileView = () => {
                   </div>
 
                   <div className="p-4 bg-void/40 border border-white/5">
-                    <p className="text-[8px] font-black uppercase tracking-widest text-zinc-500 mb-2">Weekly Volume Preview</p>
+                    <p className="text-[8px] font-bold uppercase tracking-widest text-zinc-500 mb-2">Weekly Volume Preview</p>
                     <p className="text-xs font-bold text-white uppercase tracking-widest">
                       {adjustingFrequency} Sessions / Week
                     </p>
@@ -727,7 +727,7 @@ export const ProfileView = () => {
               <div className="p-4 bg-volt/10 border border-volt/30 mb-8">
                 <div className="flex items-start gap-3 text-left">
                   <Info size={16} className="text-volt shrink-0 mt-0.5" />
-                  <p className="text-[10px] text-volt font-black uppercase tracking-widest leading-relaxed">
+                  <p className="text-[10px] text-volt font-bold uppercase tracking-widest leading-relaxed">
                     Adjusting your protocol will recalibrate your training cycle. 
                     {adjustingDuration !== profile.trainingDurationMonths && " Changing duration will restart your cycle from Week 1."}
                     History and PRs are always preserved.
@@ -738,14 +738,14 @@ export const ProfileView = () => {
               <div className="flex gap-4">
                 <button 
                   onClick={() => setShowProtocolModal(false)}
-                  className="flex-1 py-4 bg-white/5 text-zinc-500 font-headline text-xs font-black uppercase tracking-widest hover:text-white transition-all"
+                  className="flex-1 py-4 bg-white/5 text-zinc-500 font-sans text-xs font-bold uppercase tracking-widest hover:text-white transition-all"
                 >
                   Cancel
                 </button>
                 <button 
                   onClick={handleAdjustProtocol}
                   disabled={loading}
-                  className="flex-1 py-4 bg-volt text-void font-headline text-xs font-black uppercase tracking-widest hover:bg-white hover:shadow-[0_0_20px_var(--primary-glow)] transition-all disabled:opacity-50"
+                  className="flex-1 py-4 bg-volt text-void font-sans text-xs font-bold uppercase tracking-widest hover:bg-white hover:shadow-[0_0_20px_var(--primary-glow)] transition-all disabled:opacity-50"
                 >
                   {loading ? 'Recalculating...' : 'Confirm Protocol'}
                 </button>
@@ -777,38 +777,38 @@ export const ProfileView = () => {
                   <Dumbbell size={32} />
                 </div>
                 <div>
-                  <h3 className="font-headline text-2xl font-black uppercase italic tracking-tight text-white">Update 1RM</h3>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Current Maxes</p>
+                  <h3 className="font-sans text-2xl font-black uppercase italic tracking-tight text-white">Update 1RM</h3>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Current Maxes</p>
                 </div>
               </div>
 
               <div className="space-y-6">
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-normal text-zinc-500 ml-2">Squat ({unit === 'metric' ? 'kg' : 'lb'})</label>
+                    <label className="text-[10px] font-bold uppercase tracking-normal text-zinc-500 ml-2">Squat ({unit === 'metric' ? 'kg' : 'lb'})</label>
                     <input
                       type="number"
                       value={edit1RMData.squatPR || ''}
                       onChange={(e) => setEdit1RMData({ ...edit1RMData, squatPR: parseFloat(e.target.value) || 0 })}
-                      className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-headline text-xl font-black italic focus:border-volt outline-none transition-all text-center"
+                      className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black italic focus:border-volt outline-none transition-all text-center"
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-normal text-zinc-500 ml-2">Bench ({unit === 'metric' ? 'kg' : 'lb'})</label>
+                    <label className="text-[10px] font-bold uppercase tracking-normal text-zinc-500 ml-2">Bench ({unit === 'metric' ? 'kg' : 'lb'})</label>
                     <input
                       type="number"
                       value={edit1RMData.benchPR || ''}
                       onChange={(e) => setEdit1RMData({ ...edit1RMData, benchPR: parseFloat(e.target.value) || 0 })}
-                      className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-headline text-xl font-black italic focus:border-volt outline-none transition-all text-center"
+                      className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black italic focus:border-volt outline-none transition-all text-center"
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-normal text-zinc-500 ml-2">Deadlift ({unit === 'metric' ? 'kg' : 'lb'})</label>
+                    <label className="text-[10px] font-bold uppercase tracking-normal text-zinc-500 ml-2">Deadlift ({unit === 'metric' ? 'kg' : 'lb'})</label>
                     <input
                       type="number"
                       value={edit1RMData.deadliftPR || ''}
                       onChange={(e) => setEdit1RMData({ ...edit1RMData, deadliftPR: parseFloat(e.target.value) || 0 })}
-                      className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-headline text-xl font-black italic focus:border-volt outline-none transition-all text-center"
+                      className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black italic focus:border-volt outline-none transition-all text-center"
                     />
                   </div>
                 </div>
@@ -858,14 +858,14 @@ export const ProfileView = () => {
                 <div className="flex gap-4">
                   <button 
                     onClick={() => setShow1RMModal(false)}
-                    className="flex-1 py-4 bg-white/5 text-zinc-500 font-headline text-xs font-black uppercase tracking-widest hover:text-white transition-all"
+                    className="flex-1 py-4 bg-white/5 text-zinc-500 font-sans text-xs font-bold uppercase tracking-widest hover:text-white transition-all"
                   >
                     Cancel
                   </button>
                   <button 
                     onClick={handleUpdate1RM}
                     disabled={loading}
-                    className="flex-1 py-4 bg-volt text-void font-headline text-xs font-black uppercase tracking-widest hover:bg-white hover:shadow-[0_0_20px_var(--primary-glow)] transition-all disabled:opacity-50"
+                    className="flex-1 py-4 bg-volt text-void font-sans text-xs font-bold uppercase tracking-widest hover:bg-white hover:shadow-[0_0_20px_var(--primary-glow)] transition-all disabled:opacity-50"
                   >
                     {loading ? 'Saving...' : 'Confirm'}
                   </button>
@@ -907,8 +907,8 @@ export const ProfileView = () => {
                   <ListOrdered size={32} />
                 </div>
                 <div>
-                  <h3 className="font-headline text-2xl font-black uppercase italic tracking-tight text-white">Strength Standards</h3>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Tier Designation Logic</p>
+                  <h3 className="font-sans text-2xl font-black uppercase italic tracking-tight text-white">Strength Standards</h3>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Tier Designation Logic</p>
                 </div>
               </div>
 
@@ -938,7 +938,7 @@ export const ProfileView = () => {
                             <tier.icon size={16} className={cn(tier.color, tier.glow)} />
                           </div>
                         </div>
-                        <span className={cn("font-headline text-sm font-black uppercase tracking-widest", tier.color)}>
+                        <span className={cn("font-sans text-sm font-black uppercase tracking-widest", tier.color)}>
                           {tier.name}
                         </span>
                       </div>

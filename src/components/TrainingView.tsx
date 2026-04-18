@@ -163,17 +163,14 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
   const sessionProgress = calculateProgress(currentSession);
 
   return (
-    <main className="relative w-full h-full flex flex-col items-center">
-      <div className="w-full overflow-y-auto custom-scrollbar pb-32 pt-8 lg:pt-24 px-3 sm:px-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 max-w-[1600px] mx-auto auto-rows-min">
-          
-          {/* Active/Next Session Module */}
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 auto-rows-min w-full">
+      {/* Active/Next Session Module */}
           <motion.div 
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.1 }}
             className={cn(
-              "col-span-1 md:col-span-2 lg:col-span-3 shrink-0 glass-panel p-4 relative overflow-hidden flex flex-col transition-all duration-500 w-full",
+              "col-span-1 md:col-span-2 lg:col-span-3 shrink-0 glass-panel px-4 py-6 md:p-8 relative overflow-hidden flex flex-col transition-all duration-500 w-full",
               isElite && "border-volt/50",
               isAdvanced && "border-yellow-500/30"
             )}
@@ -184,11 +181,11 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
                   {isActiveSession ? (
                     <div className="flex items-center gap-2">
                       <span className="relative flex h-3 w-3">
-                        <span className="animate-tactical-pulse relative inline-flex h-3 w-3 bg-volt"></span>
+                        <span className="relative inline-flex h-3 w-3 bg-volt"></span>
                       </span>
                       <span className="text-volt font-headline text-[10px] font-black uppercase tracking-widest">{t('analysis.activeSession')}</span>
                       {currentSession?.penaltyType && (
-                        <span className="text-zinc-500 font-headline text-[10px] font-black uppercase tracking-widest px-2 border-l border-white/10">
+                        <span className="text-zinc-400 font-headline text-[10px] font-black uppercase tracking-widest px-2 border-l border-white/10">
                           {currentSession.penaltyType === 'REDLINE' ? 'REDLINE OVERRIDE' : 'RECOVERY LIMIT'}
                         </span>
                       )}
@@ -196,12 +193,12 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
                   ) : (
                     <div className="flex items-center gap-2">
                        <div className={cn(
-                        "w-1.5 h-1.5 animate-tactical-pulse",
+                        "w-1.5 h-1.5",
                         calibration.isRedline ? "bg-crimson" : calibration.readiness >= 90 ? "bg-emerald-500" : calibration.readiness >= 70 ? "bg-volt" : "bg-crimson"
                       )} />
                       <span className={cn(
                         "text-[10px] font-black uppercase tracking-widest",
-                        calibration.isRedline ? "text-crimson" : calibration.readiness >= 90 ? "text-emerald-500" : "text-zinc-500"
+                        calibration.isRedline ? "text-crimson" : calibration.readiness >= 90 ? "text-emerald-500" : "text-zinc-400"
                       )}>
                         {calibration.isRedline 
                           ? 'Overridden by Redline Safety' 
@@ -474,9 +471,6 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
               >
                 <LogsWidget onViewHistory={onViewHistory} />
               </motion.div>
-
-            </div>
-          </div>
-        </main>
-      );
-    };
+    </div>
+  );
+};

@@ -45,11 +45,18 @@ export interface UserProfile {
   role?: 'user' | 'admin' | 'engineer';
 }
 
+export type Theme = 'light' | 'dark';
+export type LightColorScheme = 'default' | 'ocean' | 'neon' | 'solar' | 'monochrome';
+
 interface SettingsContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
   unit: Unit;
   setUnit: (unit: Unit) => void;
+  theme: Theme;
+  setTheme: (theme: Theme) => void;
+  lightColorScheme: LightColorScheme;
+  setLightColorScheme: (scheme: LightColorScheme) => void;
   isVoiceActive: boolean;
   setIsVoiceActive: (active: boolean) => void;
   immersionMode: ImmersionMode;
@@ -2729,6 +2736,12 @@ const SettingsContext = createContext<SettingsContextType | undefined>(undefined
 export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<Language>('en');
   const [unit, setUnitState] = useState<Unit>('imperial');
+  const [theme, setThemeState] = useState<Theme>(
+    (localStorage.getItem('volt_theme') as Theme) || 'dark'
+  );
+  const [lightColorScheme, setLightColorSchemeState] = useState<LightColorScheme>(
+    (localStorage.getItem('volt_light_scheme') as LightColorScheme) || 'default'
+  );
   const [isVoiceActive, setIsVoiceActiveState] = useState(false);
   const [immersionMode, setImmersionModeState] = useState<ImmersionMode>('immersive');
   const [showExperimentalMenus, setShowExperimentalMenusState] = useState(false);
@@ -2969,6 +2982,23 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
     }
   };
 
+  const setTheme = (t: Theme) => {
+    setThemeState(t);
+    localStorage.setItem('volt_theme', t);
+    document.documentElement.setAttribute('data-theme', t);
+  };
+
+  const setLightColorScheme = (sc: LightColorScheme) => {
+    setLightColorSchemeState(sc);
+    localStorage.setItem('volt_light_scheme', sc);
+    document.documentElement.setAttribute('data-light-scheme', sc);
+  };
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    document.documentElement.setAttribute('data-light-scheme', lightColorScheme);
+  }, []);
+
   const t = (key: string): string => {
     return translations[language][key] || translations['en'][key] || key;
   };
@@ -2977,6 +3007,8 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
     <SettingsContext.Provider value={{ 
       language, setLanguage, 
       unit, setUnit, 
+      theme, setTheme,
+      lightColorScheme, setLightColorScheme,
       isVoiceActive, setIsVoiceActive,
       immersionMode, setImmersionMode,
       showExperimentalMenus, setShowExperimentalMenus,

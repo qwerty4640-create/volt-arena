@@ -185,19 +185,19 @@ export const AnalyticsView = () => {
   };
 
   return (
-    <div className="w-full max-w-screen-2xl space-y-12 pb-20">
+    <div className="w-full space-y-12">
       <div className="grid grid-cols-12 gap-8">
         {/* Strength Trend Chart */}
         <motion.div 
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.1 }}
-          className="col-span-12 lg:col-span-8 glass-panel p-6 md:p-10 border-none bg-surface-container-high flex flex-col"
+          className="col-span-12 lg:col-span-8 glass-panel px-4 py-6 md:p-8 flex flex-col"
         >
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-1.5 h-1.5 bg-volt animate-tactical-pulse" />
+                <div className="w-1.5 h-1.5 bg-volt" />
                 <span className="text-[10px] font-black uppercase tracking-widest text-volt">{t('analysis.performanceTelemetry')}</span>
               </div>
               <h2 className="font-headline text-3xl md:text-5xl font-black uppercase italic tracking-tight mb-2">{t('analysis.strengthTrend')}</h2>
@@ -248,13 +248,13 @@ export const AnalyticsView = () => {
                     dataKey="displayDate" 
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fill: '#52525b', fontSize: 10, fontWeight: 900, textTransform: 'uppercase' }}
+                    tick={{ fill: '#52525b', fontSize: 10, fontWeight: 900, textTransform: 'uppercase', fontFamily: 'Inter' }}
                     dy={10}
                   />
                   <YAxis 
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fill: '#52525b', fontSize: 10, fontWeight: 900 }}
+                    tick={{ fill: '#52525b', fontSize: 10, fontWeight: 900, fontFamily: 'Inter' }}
                   />
                   <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#00B6FF', strokeWidth: 1, strokeDasharray: '4 4' }} />
                   {liftOptions.map(lift => selectedLifts.includes(lift.id) && (
@@ -286,7 +286,7 @@ export const AnalyticsView = () => {
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.2 }}
-          className="col-span-12 lg:col-span-4 glass-panel p-10 flex flex-col justify-between relative overflow-hidden border-none bg-surface-container-high"
+          className="col-span-12 lg:col-span-4 glass-panel px-4 py-6 md:p-8 flex flex-col justify-between relative overflow-hidden"
         >
           <div className="absolute top-0 right-0 w-32 h-32 bg-volt/5 blur-[60px] -z-10" />
           <div>
@@ -319,12 +319,12 @@ export const AnalyticsView = () => {
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.25 }}
-          className="col-span-12 glass-panel p-10 border-none bg-surface-container-high flex flex-col"
+          className="col-span-12 glass-panel px-4 py-6 md:p-8 flex flex-col"
         >
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-1.5 h-1.5 bg-volt animate-tactical-pulse" />
+                <div className="w-1.5 h-1.5 bg-volt" />
                 <span className="text-[10px] font-black uppercase tracking-widest text-volt">{t('analysis.volumeAccumulation')}</span>
               </div>
               <h2 className="font-headline text-3xl md:text-5xl font-black uppercase italic tracking-tight mb-2">{t('analysis.weeklyVolumeTrend')}</h2>
@@ -349,13 +349,13 @@ export const AnalyticsView = () => {
                     dataKey="week" 
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fill: '#52525b', fontSize: 10, fontWeight: 900, textTransform: 'uppercase' }}
+                    tick={{ fill: '#52525b', fontSize: 10, fontWeight: 900, textTransform: 'uppercase', fontFamily: 'Inter' }}
                     dy={10}
                   />
                   <YAxis 
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fill: '#52525b', fontSize: 10, fontWeight: 900 }}
+                    tick={{ fill: '#52525b', fontSize: 10, fontWeight: 900, fontFamily: 'Inter' }}
                   />
                   <Tooltip content={<VolumeTooltip />} cursor={{ stroke: '#00B6FF', strokeWidth: 1, strokeDasharray: '4 4' }} />
                   <Area 
@@ -382,7 +382,7 @@ export const AnalyticsView = () => {
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.3 }}
-          className="col-span-12 glass-panel p-10 relative overflow-hidden border-none bg-surface-container-high"
+          className="col-span-12 glass-panel px-4 py-6 md:p-8 relative overflow-hidden"
         >
           <div className="absolute top-0 right-0 p-8 opacity-5">
             <Trophy size={200} />

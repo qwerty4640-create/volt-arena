@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Settings, Globe, Scale, CheckCircle2, Terminal, Mic, MicOff, Eye, Box, Zap, Trash2, Loader2, AlertTriangle, Power, Target, RotateCcw } from 'lucide-react';
+import { Settings, Globe, Scale, CheckCircle2, Terminal, Mic, MicOff, Eye, Box, Zap, Trash2, Loader2, AlertTriangle, Power, Target, RotateCcw, Monitor, Sun, Moon, Paintbrush } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useSettings, TrainingGoal } from '../contexts/SettingsContext';
 import { useWorkout } from '../contexts/WorkoutContext';
@@ -30,6 +30,8 @@ export const SettingsView = ({ onExit }: { onExit?: () => void }) => {
     showExperimentalMenus, setShowExperimentalMenus,
     experimentalFeatures, setExperimentalFeatures,
     profile, updateProfile,
+    theme, setTheme,
+    lightColorScheme, setLightColorScheme,
     t 
   } = useSettings();
   const { mockWorkoutCount, setMockWorkoutCount, history, resetProgress, resetProgram } = useWorkout();
@@ -54,23 +56,13 @@ export const SettingsView = ({ onExit }: { onExit?: () => void }) => {
   };
 
   return (
-    <div className="w-full max-w-7xl space-y-6 md:space-y-8 pb-20">
-      <div className="flex items-center gap-3 md:gap-4 mb-8 md:mb-12">
-        <div className="w-12 h-12 md:w-16 md:h-16 bg-volt/10 flex items-center justify-center text-volt shrink-0">
-          <Settings className="w-6 h-6 md:w-8 md:h-8" />
-        </div>
-        <div>
-          <h2 className="font-headline text-2xl md:text-4xl font-black uppercase italic tracking-tight text-white">{t('settings.title')}</h2>
-          <p className="text-zinc-500 text-[10px] md:text-sm font-medium uppercase tracking-widest mt-1">{t('settings.subtitle')}</p>
-        </div>
-      </div>
-
+    <div className="w-full max-w-7xl space-y-6 md:space-y-8 pb-20 pt-8">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Language Settings */}
         <motion.div 
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="glass-panel p-6 md:p-8 flex flex-col"
+          className="glass-panel px-4 py-6 md:p-8 flex flex-col"
         >
           <div className="flex items-center gap-3 mb-6 md:mb-8">
             <Globe className="text-volt" size={20} />
@@ -100,7 +92,7 @@ export const SettingsView = ({ onExit }: { onExit?: () => void }) => {
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.1 }}
-          className="glass-panel p-6 md:p-8 flex flex-col"
+          className="glass-panel px-4 py-6 md:p-8 flex flex-col"
         >
           <div className="flex items-center gap-3 mb-6 md:mb-8">
             <Scale className="text-volt" size={20} />
@@ -125,13 +117,77 @@ export const SettingsView = ({ onExit }: { onExit?: () => void }) => {
           </div>
         </motion.div>
 
+        {/* Theme Settings */}
+        <motion.div 
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.12 }}
+          className="glass-panel px-4 py-6 md:p-8 flex flex-col md:col-span-2 border-b border-white/5"
+        >
+          <div className="flex items-center gap-3 mb-6 md:mb-8">
+            <Monitor className="text-volt" size={20} />
+            <h3 className="font-headline text-lg md:text-2xl font-black uppercase tracking-widest text-zinc-100">Visual Output</h3>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+            {/* Theme Toggle */}
+            <div className="space-y-4">
+              <span className="font-sans text-[10px] font-bold uppercase tracking-widest text-zinc-500">Interface Theme</span>
+              <div className="flex bg-surface-lowest p-1 border border-white/5">
+                {(['dark', 'light'] as const).map(tOpt => (
+                  <button
+                    key={tOpt}
+                    onClick={() => setTheme(tOpt)}
+                    className={cn(
+                      "flex-1 flex items-center justify-center gap-2 py-3 transition-colors",
+                      theme === tOpt 
+                        ? "bg-volt text-void font-bold" 
+                        : "text-zinc-500 hover:text-zinc-300"
+                    )}
+                  >
+                    {tOpt === 'dark' ? <Moon size={16} /> : <Sun size={16} />}
+                    <span className="font-headline text-xs font-black uppercase tracking-widest">{tOpt}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Light Color Scheme */}
+            {theme === 'light' && (
+              <div className="space-y-4">
+                <span className="font-sans text-[10px] font-bold uppercase tracking-widest text-zinc-500">Active Scheme (Light Mode)</span>
+                <div className="grid grid-cols-1 gap-2">
+                  {(['default', 'ocean', 'neon', 'solar', 'monochrome'] as const).map(scheme => (
+                    <button
+                      key={scheme}
+                      onClick={() => setLightColorScheme(scheme)}
+                      className={cn(
+                        "flex items-center justify-between p-3 transition-all",
+                        lightColorScheme === scheme 
+                          ? "bg-volt/10 text-volt border-l-[3px] border-volt" 
+                          : "bg-surface-variant text-zinc-400 hover:bg-white/5 hover:text-zinc-200 border-l-[3px] border-white/5"
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Paintbrush size={16} className={lightColorScheme === scheme ? "text-volt" : "text-zinc-500"} />
+                        <span className="font-headline text-sm font-black uppercase tracking-widest">{scheme}</span>
+                      </div>
+                      {lightColorScheme === scheme && <CheckCircle2 size={16} className="text-volt" />}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </motion.div>
+
         {/* Experience Settings */}
         {(profile?.role === 'admin' || profile?.role === 'engineer') && (
           <motion.div 
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.15 }}
-            className="glass-panel p-6 md:p-8 flex flex-col md:col-span-2"
+            className="glass-panel px-4 py-6 md:p-8 flex flex-col md:col-span-2"
           >
             <div className="flex items-center gap-3 mb-6 md:mb-8">
               <Zap className="text-volt" size={20} />
@@ -208,7 +264,7 @@ export const SettingsView = ({ onExit }: { onExit?: () => void }) => {
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.18 }}
-          className="glass-panel p-6 md:p-8 flex flex-col md:col-span-2"
+          className="glass-panel px-4 py-6 md:p-8 flex flex-col md:col-span-2"
         >
           <div className="flex items-center gap-3 mb-6 md:mb-8">
             <Target className="text-volt" size={20} />
@@ -237,7 +293,7 @@ export const SettingsView = ({ onExit }: { onExit?: () => void }) => {
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.2 }}
-          className="glass-panel p-6 md:p-8 flex flex-col md:col-span-2"
+          className="glass-panel px-4 py-6 md:p-8 flex flex-col md:col-span-2"
         >
           <div className="flex items-center gap-3 mb-6 md:mb-8">
             <Settings className="text-volt" size={20} />
@@ -268,7 +324,7 @@ export const SettingsView = ({ onExit }: { onExit?: () => void }) => {
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.2 }}
-          className="glass-panel p-6 md:p-8 border-none"
+          className="glass-panel px-4 py-6 md:p-8 border-none"
         >
           <div className="flex items-center gap-3 mb-6 md:mb-8">
             <Terminal className="text-volt" size={20} />

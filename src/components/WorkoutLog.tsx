@@ -268,9 +268,9 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
           <div>
             <div className="flex items-center gap-3 mb-1">
               <ClipboardList className="text-volt" size={16} />
-              <span className="text-volt font-headline text-[8px] md:text-[10px] font-black uppercase tracking-widest">{t('workout.log')}</span>
+              <span className="text-volt font-sans text-[8px] md:text-[10px] font-bold uppercase tracking-widest">{t('workout.log')}</span>
             </div>
-            <h1 className="font-headline text-2xl md:text-4xl font-black uppercase italic tracking-tight">{currentSession.title}</h1>
+            <h1 className="font-sans text-2xl md:text-4xl font-black uppercase italic tracking-tight">{currentSession.title}</h1>
           </div>
         </div>
 
@@ -278,16 +278,16 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
           {currentSession.targetRpe && (
             <>
               <div className="text-right">
-                <div className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">Target RPE</div>
-                <div className="font-headline text-lg md:text-xl font-black uppercase italic tracking-tight text-volt">
+                <div className="text-[8px] md:text-[10px] font-bold uppercase tracking-widest text-zinc-500 mb-1">Target RPE</div>
+                <div className="font-sans text-lg md:text-xl font-black uppercase italic tracking-tight text-volt">
                   {currentSession.targetRpe}
                 </div>
               </div>
               <div className="h-10 md:h-12 w-[1px] bg-white/10" />
               <div className="text-right">
-                <div className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">Current RPE</div>
+                <div className="text-[8px] md:text-[10px] font-bold uppercase tracking-widest text-zinc-500 mb-1">Current RPE</div>
                 <div className={cn(
-                  "font-headline text-lg md:text-xl font-black uppercase italic tracking-tight transition-colors",
+                  "font-sans text-lg md:text-xl font-black uppercase italic tracking-tight transition-colors",
                   currentAvgRpe > (currentSession.targetRpe + 0.5) ? "text-crimson" : 
                   currentAvgRpe < (currentSession.targetRpe - 0.5) ? "text-zinc-400" : "text-white"
                 )}>
@@ -301,15 +301,15 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
           {currentSession.blockLabel || currentSession.blockType ? (
             <>
               <div className="text-left">
-              <div className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">{t('workout.currentBlock')}</div>
-              <div className="font-headline text-lg md:text-xl font-black uppercase italic tracking-tight text-volt">
+              <div className="text-[8px] md:text-[10px] font-bold uppercase tracking-widest text-zinc-500 mb-1">{t('workout.currentBlock')}</div>
+              <div className="font-sans text-lg md:text-xl font-black uppercase italic tracking-tight text-volt">
                 {currentSession.blockLabel || currentSession.blockType}
               </div>
             </div>
             <div className="h-10 md:h-12 w-[1px] bg-white/10" />
             <div className="text-left">
-              <div className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">{t('workout.progression')}</div>
-              <div className="font-headline text-lg md:text-xl font-black uppercase italic tracking-tight text-white">
+              <div className="text-[8px] md:text-[10px] font-bold uppercase tracking-widest text-zinc-500 mb-1">{t('workout.progression')}</div>
+              <div className="font-sans text-lg md:text-xl font-black uppercase italic tracking-tight text-white">
                 {t('workout.week')} {currentSession.weekInBlock}
               </div>
             </div>
@@ -371,7 +371,7 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
                 {isGrouped && (
                   <div className="flex items-center gap-3 mb-8">
                     <RefreshCw className="text-volt animate-spin-slow" size={20} />
-                    <h2 className="font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tight text-volt">
+                    <h2 className="font-sans text-2xl md:text-3xl font-black uppercase italic tracking-tight text-volt">
                       {t('workout.circuit')}: {exercise.groupTitle || t('workout.tacticalGroup')}
                     </h2>
                   </div>
@@ -385,7 +385,7 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
                           <div className="w-8 h-8 md:w-10 md:h-10 bg-volt/10 flex items-center justify-center text-volt">
                             <Dumbbell size={16} className="md:w-5 md:h-5" />
                           </div>
-                          <h3 className="font-headline text-xl md:text-2xl font-black uppercase italic tracking-tight">{ex.name}</h3>
+                          <h3 className="font-sans text-xl md:text-2xl font-black uppercase italic tracking-tight">{ex.name}</h3>
                           <div className="flex items-center gap-2">
                             <button 
                               onClick={() => setSwappingExerciseId(ex.id)}
@@ -393,7 +393,7 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
                               title={t('workout.swapExercise')}
                             >
                               <RefreshCw size={12} className="md:w-3.5 md:h-3.5 group-hover:rotate-180 transition-transform duration-500" />
-                              <span className="text-[7px] md:text-[8px] font-black uppercase tracking-widest">{t('workout.swap')}</span>
+                              <span className="text-[7px] md:text-[8px] font-bold uppercase tracking-widest">{t('workout.swap')}</span>
                             </button>
                             <button 
                               onClick={() => setExerciseToRemove(ex.id)}
@@ -401,19 +401,19 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
                               title={t('workout.removeExerciseTitle')}
                             >
                               <Trash2 size={12} className="md:w-3.5 md:h-3.5" />
-                              <span className="text-[7px] md:text-[8px] font-black uppercase tracking-widest">{t('workout.remove')}</span>
+                              <span className="text-[7px] md:text-[8px] font-bold uppercase tracking-widest">{t('workout.remove')}</span>
                             </button>
                           </div>
                         </div>
                         <div className="flex items-center gap-2 text-zinc-500">
                           <Info size={12} className="md:w-3.5 md:h-3.5" />
-                          <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest">
+                          <span className="text-[8px] md:text-[10px] font-bold uppercase tracking-widest">
                             {t('workout.history')}: {getExerciseHistory(ex.name) || '–'}
                           </span>
                         </div>
                       </div>
 
-                      <div className="hidden md:grid md:grid-cols-[60px_1fr_1fr_1fr_60px_60px] gap-4 px-4 text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                      <div className="hidden md:grid md:grid-cols-[60px_1fr_1fr_1fr_60px_60px] gap-4 px-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500">
                         <div className="text-center">{t('workout.set')}</div>
                         <div>{t('workout.weight')} ({weightUnit})</div>
                         <div>{t('workout.reps')}</div>
@@ -439,34 +439,34 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
                               )}
                             >
                               <div className="flex items-center justify-between w-full md:w-auto md:justify-center">
-                                <div className="md:hidden text-[8px] font-black uppercase tracking-widest text-zinc-500">{t('workout.set')}</div>
-                                <div className="font-mono text-sm md:text-sm font-bold text-zinc-500">
+                                <div className="md:hidden text-[8px] font-bold uppercase tracking-widest text-zinc-500">{t('workout.set')}</div>
+                                <div className="font-sans text-sm md:text-sm font-bold text-zinc-500">
                                   {index + 1}
                                 </div>
                               </div>
                               
                               <div className="flex flex-col w-full md:w-auto gap-1">
-                                <div className="md:hidden text-[8px] font-black uppercase tracking-widest text-zinc-500 ml-1">{t('workout.weight')} ({weightUnit})</div>
+                                <div className="md:hidden text-[8px] font-bold uppercase tracking-widest text-zinc-500 ml-1">{t('workout.weight')} ({weightUnit})</div>
                                 <input 
                                   type="text" 
                                   value={set.weight}
                                   onChange={(e) => updateSet(ex.id, set.id, 'weight', e.target.value)}
-                                  className="bg-surface-container-lowest border-none px-4 py-2.5 md:py-3 font-mono text-base md:text-lg font-black text-white focus:outline-none focus:border-volt/50 transition-colors w-full"
+                                  className="bg-surface-container-lowest border-none px-4 py-2.5 md:py-3 font-sans text-base md:text-lg font-black text-white focus:outline-none focus:border-volt/50 transition-colors w-full"
                                 />
                               </div>
                               
                               <div className="flex flex-col w-full md:w-auto gap-1">
-                                <div className="md:hidden text-[8px] font-black uppercase tracking-widest text-zinc-500 ml-1">{t('workout.reps')}</div>
+                                <div className="md:hidden text-[8px] font-bold uppercase tracking-widest text-zinc-500 ml-1">{t('workout.reps')}</div>
                                 <input 
                                   type="text" 
                                   value={set.reps}
                                   onChange={(e) => updateSet(ex.id, set.id, 'reps', e.target.value)}
-                                  className="bg-surface-container-lowest border-none px-4 py-2.5 md:py-3 font-mono text-base md:text-lg font-black text-white focus:outline-none focus:border-volt/50 transition-colors w-full"
+                                  className="bg-surface-container-lowest border-none px-4 py-2.5 md:py-3 font-sans text-base md:text-lg font-black text-white focus:outline-none focus:border-volt/50 transition-colors w-full"
                                 />
                               </div>
                               
                               <div className="flex flex-col w-full md:w-auto gap-1">
-                                <div className="md:hidden text-[8px] font-black uppercase tracking-widest text-zinc-500 ml-1">{t('workout.rpe')}</div>
+                                <div className="md:hidden text-[8px] font-bold uppercase tracking-widest text-zinc-500 ml-1">{t('workout.rpe')}</div>
                                 <div className="relative">
                                   <input 
                                     type="text" 
@@ -480,14 +480,14 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
                                     }}
                                     placeholder="1-10"
                                     className={cn(
-                                      "bg-surface-container-lowest border-none px-4 py-2.5 md:py-3 font-mono text-base md:text-lg font-black text-white focus:outline-none transition-all w-full",
+                                      "bg-surface-container-lowest border-none px-4 py-2.5 md:py-3 font-sans text-base md:text-lg font-black text-white focus:outline-none transition-all w-full",
                                       (set.rpe !== '' && (parseInt(set.rpe) < 1 || parseInt(set.rpe) > 10))
                                         ? "border-crimson text-crimson focus:border-crimson shadow-[0_0_15px_rgba(220,38,38,0.2)]" 
                                         : "border-transparent focus:border-volt/50"
                                     )}
                                   />
                                   {set.rpe !== '' && (parseInt(set.rpe) < 1 || parseInt(set.rpe) > 10) && (
-                                    <div className="absolute -bottom-5 left-0 right-0 text-[8px] font-black text-crimson uppercase tracking-widest text-center whitespace-nowrap">
+                                    <div className="absolute -bottom-5 left-0 right-0 text-[8px] font-bold text-crimson uppercase tracking-widest text-center whitespace-nowrap">
                                       {t('workout.enterRpe')}
                                     </div>
                                   )}
@@ -495,7 +495,7 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
                               </div>
 
                               <div className="flex items-center justify-between w-full md:w-auto md:justify-center mt-2 md:mt-0">
-                                <div className="md:hidden text-[8px] font-black uppercase tracking-widest text-zinc-500">{t('workout.status')}</div>
+                                <div className="md:hidden text-[8px] font-bold uppercase tracking-widest text-zinc-500">{t('workout.status')}</div>
                                 <div className="flex items-center gap-4">
                                   <button 
                                     onClick={() => toggleSetCompletion(ex.id, set.id)}
@@ -559,7 +559,7 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
                   onClick={() => !isAtLimit && setIsAddExerciseOpen(true)}
                   disabled={isAtLimit}
                   className={cn(
-                    "px-8 py-4 border-none transition-all flex items-center gap-3 font-headline text-xs font-black uppercase tracking-widest group",
+                    "px-8 py-4 border-none transition-all flex items-center gap-3 font-sans text-xs font-bold uppercase tracking-widest group",
                     isAtLimit 
                       ? "bg-zinc-800/50 text-zinc-600 cursor-not-allowed" 
                       : "bg-volt/10 text-volt hover:bg-volt hover:text-void"
@@ -569,7 +569,7 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
                   <span>{t('workout.addExercise')} {limit !== Infinity && `(${additionalCount}/${limit})`}</span>
                 </button>
                 {isAtLimit && (
-                  <p className="text-[8px] font-black uppercase tracking-widest text-crimson animate-pulse">
+                  <p className="text-[8px] font-bold uppercase tracking-widest text-crimson animate-pulse">
                     {t('workout.maxExercises').replace('{level}', t(`onboarding.level.${level}`))}
                   </p>
                 )}
@@ -584,7 +584,7 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => setIsEndConfirmOpen(true)}
-            className="w-full md:w-auto px-8 py-4 md:py-5 bg-crimson/10 border-none text-crimson hover:bg-crimson hover:text-void transition-all flex items-center justify-center gap-3 font-headline text-xs md:text-sm font-black uppercase italic tracking-widest"
+            className="w-full md:w-auto px-8 py-4 md:py-5 bg-crimson/10 border-none text-crimson hover:bg-crimson hover:text-void transition-all flex items-center justify-center gap-3 font-sans text-xs md:text-sm font-bold uppercase italic tracking-widest"
           >
             <XCircle size={18} className="md:w-5 md:h-5" />
             <span>{t('workout.endSession')}</span>
@@ -606,7 +606,7 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
             onClick={handleComplete}
             disabled={isCompleting || hasRpeErrors}
             className={cn(
-              "group relative w-full md:w-auto px-8 md:px-12 py-4 md:py-5 font-headline text-base md:text-lg font-black uppercase italic tracking-widest transition-all flex items-center justify-center gap-4 overflow-hidden",
+              "group relative w-full md:w-auto px-8 md:px-12 py-4 md:py-5 font-sans text-base md:text-lg font-black uppercase italic tracking-widest transition-all flex items-center justify-center gap-4 overflow-hidden",
               (isCompleting || hasRpeErrors) ? "bg-zinc-800 text-zinc-500 cursor-not-allowed" : "bg-volt text-void hover:bg-white shadow-[0_0_30px_var(--primary-glow)]"
             )}
           >
@@ -672,7 +672,7 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
             className="fixed bottom-24 right-6 md:right-10 w-14 h-14 md:w-16 md:h-16 bg-volt text-void shadow-[0_0_30px_var(--primary-glow)] flex items-center justify-center z-40 group"
           >
             <Bot size={28} className="md:w-8 md:h-8 group-hover:rotate-12 transition-transform" />
-            <span className="absolute -top-2 -right-2 bg-void text-volt text-[8px] font-black px-1.5 py-0.5 uppercase tracking-widest border border-volt">EXP</span>
+            <span className="absolute -top-2 -right-2 bg-void text-volt text-[8px] font-bold px-1.5 py-0.5 uppercase tracking-widest border border-volt">EXP</span>
           </motion.button>
 
           <AICoach isOpen={isAICoachOpen} onClose={() => setIsAICoachOpen(false)} />
@@ -698,7 +698,7 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
             >
               <div className="flex items-center gap-3 mb-6">
                 <RefreshCw className="text-volt" size={24} />
-                <h2 className="font-headline text-2xl font-black uppercase italic tracking-tight">{t('workout.swapExercise')}</h2>
+                <h2 className="font-sans text-2xl font-black uppercase italic tracking-tight">{t('workout.swapExercise')}</h2>
               </div>
               
               <p className="text-zinc-400 text-sm mb-8">
@@ -712,7 +712,7 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
                     onClick={() => handleSwap(swappingExerciseId, alt.name)}
                     className="w-full p-4 bg-surface-container-low border-none hover:bg-surface-container-high text-left transition-all group"
                   >
-                    <div className="font-headline text-lg font-black uppercase italic tracking-tight group-hover:text-volt transition-colors">
+                    <div className="font-sans text-lg font-black uppercase italic tracking-tight group-hover:text-volt transition-colors">
                       {alt.name}
                     </div>
                   </button>
@@ -726,7 +726,7 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
 
               <button 
                 onClick={() => setSwappingExerciseId(null)}
-                className="w-full mt-8 py-4 border-none text-zinc-500 font-headline text-[10px] font-black uppercase tracking-widest hover:bg-surface-container-high transition-all"
+                className="w-full mt-8 py-4 border-none text-zinc-500 font-sans text-[10px] font-bold uppercase tracking-widest hover:bg-surface-container-high transition-all"
               >
                 {t('workout.cancel')}
               </button>
@@ -755,7 +755,7 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
                   <PlusCircle className="text-volt" size={24} />
-                  <h2 className="font-headline text-2xl font-black uppercase italic tracking-tight">
+                  <h2 className="font-sans text-2xl font-black uppercase italic tracking-tight">
                     {isCircuitMode ? t('workout.createCircuit') : t('workout.addExercise')}
                   </h2>
                 </div>

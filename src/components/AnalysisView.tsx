@@ -61,7 +61,7 @@ import { getTacticalImpact } from '../utils/analyticsEngine';
 import { useWorkout, WorkoutSession } from '../contexts/WorkoutContext';
 import { BlockType, getPlanForDuration } from '../constants/periodization';
 
-type WidgetId = 'recovery' | 'readiness' | 'pr' | 'volume' | 'macros' | 'logs' | 'block';
+type WidgetId = 'recovery-analysis' | 'pr' | 'macros' | 'logs' | 'block';
 
 interface Widget {
   id: WidgetId;
@@ -71,90 +71,221 @@ interface Widget {
 }
 
 const ALL_WIDGETS: Widget[] = [
-  { id: 'readiness', label: 'analysis.readiness', icon: Activity, span: 'col-span-1' },
-  { id: 'recovery', label: 'analysis.recoveryScore', icon: TrendingUp, span: 'col-span-1' },
-  { id: 'volume', label: 'analysis.weeklyVolume', icon: Activity, span: 'col-span-1' },
-  { id: 'pr', label: 'analysis.personalRecord', icon: Star, span: 'col-span-1' },
-  { id: 'macros', label: 'analysis.macroDistribution', icon: Utensils, span: 'col-span-1 md:col-span-2' },
-  { id: 'logs', label: 'analysis.recentLogs', icon: History, span: 'col-span-1 md:col-span-3' },
-  { id: 'block', label: 'Block Progression', icon: Zap, span: 'col-span-1 md:col-span-3' },
+  { id: 'recovery-analysis', label: 'Recovery Analysis', icon: Activity, span: 'col-span-1 md:col-span-2 xl:col-span-3' },
+  { id: 'pr', label: 'analysis.personalRecord', icon: Star, span: 'col-span-1 md:col-span-2 xl:col-span-1' },
+  { id: 'macros', label: 'analysis.macroDistribution', icon: Utensils, span: 'col-span-1 md:col-span-2 xl:col-span-2' },
+  { id: 'logs', label: 'analysis.recentLogs', icon: History, span: 'col-span-1 md:col-span-2 xl:col-span-3' },
+  { id: 'block', label: 'Block Progression', icon: Zap, span: 'col-span-1 md:col-span-2 xl:col-span-3' },
 ];
 
 
-export const ReadinessWidget = () => {
-  const { t } = useSettings();
+export const RecoveryAnalysisWidget = () => {
+  const { t, unit } = useSettings();
   const { history, getCalibrationStatus } = useWorkout();
   
   const hasHistory = history && history.length > 0;
   const calibration = getCalibrationStatus();
+  
+  // Readiness Data
   const readinessScore = hasHistory ? calibration.readiness : '–';
-  const readinessY = hasHistory ? 40 - (calibration.readiness / 100) * 32 : 35; // Map 0-100 to 40-8
+  
+  // Recovery Data
+  const recoveryScoreValue = hasHistory ? calibration.readiness : 0;
+  const recoveryScore = hasHistory ? recoveryScoreValue : '–';
+  const getStatusColorText = (val: number) => {
+    if (!hasHistory) return "text-zinc-500";
+    if (val >= 85) return "text-emerald-500";
+    if (val >= 60) return "text-amber-500";
+    return "text-crimson";
+  };
+  const getStatusColorBg = (val: number) => {
+    if (!hasHistory) return "bg-zinc-800";
+    if (val >= 85) return "bg-emerald-500";
+    if (val >= 60) return "bg-amber-500";
+    return "bg-crimson";
+  };
+  const statusColor = getStatusColorText(recoveryScoreValue);
+  const statusBg = getStatusColorBg(recoveryScoreValue);
+  const statusBorderClass = hasHistory 
+    ? (recoveryScoreValue >= 85 ? "border-emerald-500/30" : recoveryScoreValue >= 60 ? "border-amber-500/30" : "border-crimson/30") 
+    : "border-zinc-800";
+  
+  // Volume Data
+  const volumeData = React.useMemo(() => {
+    if (!hasHistory) return [];
+
+    const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+    const now = new Date();
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - now.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const weekData = days.map(day => ({ day, val: 0, active: false }));
+
+    history.forEach(session => {
+      const sessionDate = session.completedAt ? new Date(session.completedAt) : new Date(session.date);
+      if (sessionDate >= startOfWeek) {
+        const dayIndex = sessionDate.getDay();
+        let sessionVolume = 0;
+        session.exercises?.forEach(ex => {
+          ex.sets?.forEach(s => {
+            if (s.isCompleted) {
+              sessionVolume += (parseFloat(s.weight) || 0) * (parseInt(s.reps) || 0);
+            }
+          });
+        });
+        weekData[dayIndex].val += sessionVolume;
+        if (sessionDate.toDateString() === now.toDateString()) {
+          weekData[dayIndex].active = true;
+        }
+      }
+    });
+
+    const maxVolume = Math.max(...weekData.map(d => d.val), 1);
+    return weekData.map(d => ({
+      ...d,
+      val: (d.val / maxVolume) * 100,
+      displayVal: d.val
+    }));
+  }, [history, hasHistory]);
+
+  const orderedVolumeData = React.useMemo(() => {
+    if (volumeData.length === 0) return [];
+    return [...volumeData.slice(1), volumeData[0]];
+  }, [volumeData]);
+
+  const totalWeeklyVolume = React.useMemo(() => {
+    return orderedVolumeData.reduce((acc, curr) => acc + curr.displayVal, 0);
+  }, [orderedVolumeData]);
+
+  // Shared Box Container for Graphs
+  const GraphContainer = ({ children }: { children: React.ReactNode }) => (
+    <div className="w-full relative h-28 md:h-32 bg-surface-container-lowest border border-white/5 flex items-end justify-between p-3 mt-auto">
+       {!hasHistory && (
+         <div className="absolute inset-0 flex items-center justify-center p-4">
+           <span className="text-[10px] font-black uppercase tracking-widest text-zinc-600 italic">Awaiting Data</span>
+         </div>
+       )}
+       {children}
+    </div>
+  );
 
   return (
-    <div className="w-full h-full glass-panel p-8 flex flex-col relative overflow-hidden group/module min-h-[300px]">
-      {/* Tactical Grid Background overlay */}
+    <div className="w-full h-full glass-panel px-4 py-6 md:p-8 flex flex-col relative overflow-hidden group/module min-h-[400px]">
       <div className="absolute inset-0 opacity-[0.03] pointer-events-none group-hover/module:opacity-[0.05] transition-opacity duration-700" 
            style={{ backgroundImage: 'radial-gradient(var(--primary-color) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
       
-      <div className="flex items-center justify-between mb-6 md:mb-8 relative z-10">
-        <div className="flex items-center gap-3">
-          <h2 className="font-headline text-xl md:text-2xl font-black uppercase italic tracking-tight">{t('analysis.readiness')}</h2>
-        </div>
+      <div className="flex items-center justify-start mb-6 md:mb-10 relative z-10 w-full">
+        <h2 className="font-headline text-3xl font-black uppercase italic tracking-tight text-left">Recovery Analysis</h2>
       </div>
 
-      <div className="flex items-end gap-3 mb-2 relative z-10">
-        <span className="text-6xl md:text-8xl font-black italic tracking-tighter leading-none text-white transition-all scale-100 group-hover/module:scale-[1.02] duration-500">
-          {readinessScore}
-        </span>
-        <span className="text-xl md:text-3xl font-black italic text-zinc-600 mb-2">%</span>
-      </div>
-      <span className="text-volt font-headline text-[10px] md:text-xs font-black uppercase tracking-[0.3em] mb-6 md:mb-8 relative z-10 border-l-2 border-volt/30 pl-3">
-        {hasHistory ? t('analysis.optimalState') : t('analysis.awaitingData')}
-      </span>
-
-      {/* Readiness Graph */}
-      <div className="mt-auto pt-4 md:pt-8 relative z-10 w-full overflow-hidden flex-1 flex flex-col justify-end">
-        {hasHistory ? (
-          <div className="h-24 md:h-32 w-full relative">
-            <svg className="w-full h-full overflow-visible" viewBox="0 0 100 40" preserveAspectRatio="none">
-              <defs>
-                <linearGradient id="readiness-grad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="var(--primary-color)" stopOpacity="0.4" />
-                  <stop offset="100%" stopColor="var(--primary-color)" stopOpacity="0" />
-                </linearGradient>
-              </defs>
-              <path 
-                d={`M0,35 L15,28 L30,32 L45,15 L60,20 L75,8 L100,${readinessY} L100,40 L0,40 Z`} 
-                fill="url(#readiness-grad)" 
-              />
-              <polyline 
-                points={`0,35 15,28 30,32 45,15 60,20 75,8 100,${readinessY}`} 
-                fill="none" 
-                stroke="var(--primary-color)" 
-                strokeWidth="2"
-                className="drop-shadow-[0_0_8px_var(--primary-glow)]"
-                vectorEffect="non-scaling-stroke"
-              />
-              {/* Current point marker */}
-              <circle cx="100" cy={readinessY} r="3" fill="var(--primary-color)" className="drop-shadow-[0_0_8px_var(--primary-glow)]" />
-            </svg>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 md:gap-12 relative z-10 w-full flex-1">
+        
+        {/* Readiness Section */}
+        <div className="flex flex-col h-full border-b lg:border-b-0 lg:border-r border-white/5 pb-8 lg:pb-0 lg:pr-8 text-left justify-start items-start">
+          <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-4 block w-full">{t('analysis.readiness')}</span>
+          <div className="flex items-end gap-3 mb-2 justify-start w-full">
+            <span className="text-6xl md:text-7xl font-black italic tracking-tighter leading-none text-white">
+              {readinessScore}
+            </span>
+            <span className="text-xl md:text-2xl font-black italic text-zinc-600 mb-1">%</span>
           </div>
-        ) : (
-          <div className="h-24 md:h-32 w-full flex items-center justify-center border-none bg-void/20">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600 italic">
-              {t('analysis.completeFirstWorkout')}
-            </p>
-          </div>
-        )}
-        <div className="flex justify-between mt-4 text-[8px] md:text-[10px] font-black uppercase tracking-widest text-zinc-500">
-          <span>-7D</span>
-          <span className="text-volt">CURRENT_PHASE</span>
+          <span className="text-volt font-headline text-[10px] md:text-xs font-black uppercase tracking-widest border-l-2 border-volt/30 pl-3 block mb-6">
+            {hasHistory ? t('analysis.optimalState') : 'AWAITING DATA'}
+          </span>
+          
+          <GraphContainer>
+            {hasHistory && (
+              <div className="w-full h-full flex flex-col justify-end pb-1 gap-2">
+                <div className="w-full h-6 md:h-10 bg-zinc-800/50 relative overflow-hidden transform -skew-x-12">
+                  <motion.div initial={{width:0}} animate={{width: `${readinessScore}%`}} className="h-full bg-volt shadow-[0_0_20px_var(--primary-glow)]" />
+                </div>
+                <div className="flex justify-between w-full text-[8px] font-black tracking-widest text-zinc-500 uppercase">
+                  <span>0%</span>
+                  <span>100%</span>
+                </div>
+              </div>
+            )}
+          </GraphContainer>
         </div>
-      </div>
 
-      <div className="mt-4 flex justify-between items-center px-1 opacity-20 relative z-10">
-        <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">READINESS_INDEX: {readinessScore}{readinessScore !== '–' ? '%' : ''}</span>
-        <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">CALIBRATION: {calibration.readinessModifier.toFixed(2)}</span>
+        {/* Recovery Score Section */}
+        <div className="flex flex-col h-full border-b lg:border-b-0 lg:border-r border-white/5 pb-8 lg:pb-0 lg:pr-8 lg:pl-4 text-left justify-start items-start">
+          <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-4 block w-full">{t('analysis.recoveryScore')}</span>
+          <div className="flex items-end gap-3 mb-2 justify-start w-full">
+            <span className="text-6xl md:text-7xl font-black italic tracking-tighter leading-none text-white">
+              {recoveryScore}
+            </span>
+            <span className="text-xl md:text-2xl font-black italic text-zinc-600 mb-1">%</span>
+          </div>
+          <span className={cn("font-headline text-[10px] md:text-xs font-black uppercase tracking-widest border-l-2 pl-3 block mb-6 transition-colors", hasHistory ? statusColor : "text-zinc-600", statusBorderClass)}>
+            {hasHistory ? t('analysis.cnsReady') : 'AWAITING DATA'}
+          </span>
+          
+          <GraphContainer>
+            {hasHistory && (
+               <div className="w-full h-full flex flex-col justify-end pb-1 gap-2">
+                <div className="w-full h-6 md:h-10 bg-zinc-800/50 relative overflow-hidden transform -skew-x-12">
+                  <motion.div
+                    initial={{width:0}}
+                    animate={{width: `${recoveryScoreValue}%`}}
+                    className={cn("h-full", statusBg)}
+                    style={{ boxShadow: `0 0 20px var(--primary-glow)` }}
+                  />
+                </div>
+                <div className="flex justify-between w-full text-[8px] font-black tracking-widest text-zinc-500 uppercase">
+                  <span>0%</span>
+                  <span>100%</span>
+                </div>
+              </div>
+            )}
+          </GraphContainer>
+        </div>
+
+        {/* Volume Section */}
+        <div className="flex flex-col h-full text-left justify-start items-start lg:pl-8">
+          <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-4 block w-full">{t('analysis.weeklyAccumulatedVolume')}</span>
+           <div className="flex items-end gap-3 mb-2 justify-start w-full">
+            <span className="text-6xl md:text-7xl font-black italic tracking-tighter leading-none text-white">
+              {hasHistory ? totalWeeklyVolume.toLocaleString() : '–'}
+            </span>
+            <span className="text-xl md:text-2xl font-black italic text-zinc-600 mb-1">{unit === 'metric' ? 'kg' : 'lbs'}</span>
+          </div>
+          <span className="text-zinc-300 font-headline text-[10px] md:text-xs font-black uppercase tracking-widest border-l-2 border-zinc-600/30 pl-3 block mb-6">
+            {hasHistory ? '7-DAY LOAD' : 'AWAITING DATA'}
+          </span>
+
+          <GraphContainer>
+            {hasHistory && (
+              <div className="w-full h-full flex items-end justify-between gap-1 md:gap-2 pb-1 relative z-10 w-full overflow-hidden">
+                {orderedVolumeData.map((d, i) => (
+                  <div key={i} className="flex-1 flex flex-col items-center h-full group/bar justify-end relative z-10">
+                    <div className="w-full relative flex items-end justify-center h-full mb-1 border-b border-white/5 pb-1">
+                      <motion.div
+                        initial={{ height: 0 }}
+                        animate={{ height: `${Math.max(d.val, 5)}%` }}
+                        className={cn(
+                          "w-full max-w-[24px] transition-all duration-500 transform -skew-x-6",
+                          d.active ? "bg-volt shadow-[0_0_15px_var(--primary-glow)]" : "bg-zinc-700 group-hover/bar:bg-zinc-600"
+                        )}
+                      />
+                      <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-void border border-white/10 px-2 py-1 flex items-center justify-center opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none z-50">
+                        <span className="text-[8px] font-black text-white whitespace-nowrap leading-none">{d.displayVal.toLocaleString()} {unit === 'metric' ? 'kg' : 'lbs'}</span>
+                      </div>
+                    </div>
+                    <span className={cn(
+                      "text-[8px] font-black tracking-widest transition-colors",
+                      d.active ? "text-volt" : "text-zinc-600"
+                    )}>
+                      {d.day.charAt(0)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </GraphContainer>
+        </div>
+
       </div>
     </div>
   );
@@ -286,7 +417,7 @@ export const BlockWidget = () => {
       
       <div className="flex items-center justify-between mb-6 md:mb-8 relative z-10">
         <div className="flex items-center gap-3">
-          <h3 className="font-headline text-xl md:text-2xl font-black uppercase italic tracking-tight">Block Progression</h3>
+          <h3 className="font-headline text-3xl font-black uppercase italic tracking-tight">Block Progression</h3>
         </div>
         <div className="flex items-center gap-2 px-3 py-1 bg-volt/10 border border-volt/20">
           <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-volt">Week {totalWeek}</span>
@@ -398,13 +529,13 @@ export const BlockWidget = () => {
                   dataKey="week" 
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: '#71717a', fontSize: 10, fontWeight: 900 }}
+                  tick={{ fill: '#71717a', fontSize: 10, fontWeight: 900, fontFamily: 'Inter' }}
                   interval={0}
                 />
                 <YAxis 
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: '#71717a', fontSize: 10, fontWeight: 900 }}
+                  tick={{ fill: '#71717a', fontSize: 10, fontWeight: 900, fontFamily: 'Inter' }}
                   domain={[40, 100]}
                 />
                 <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'var(--primary-color)', strokeWidth: 1, strokeDasharray: '4 4' }} />
@@ -478,7 +609,7 @@ const PRWidget = () => {
       className="w-full h-full object-cover opacity-20 group-hover:scale-110 transition-transform duration-1000"
       referrerPolicy="no-referrer"
     />
-    <div className="absolute inset-0 p-4 py-6 md:p-8 flex flex-col justify-between">
+    <div className="absolute inset-0 px-4 py-6 md:p-8 flex flex-col justify-between">
       <div className="space-y-2 xl:space-y-4">
         <div className="flex items-center justify-between text-white/80">
           <div className="flex items-center gap-2">
@@ -488,7 +619,7 @@ const PRWidget = () => {
           </div>
           <span className="text-[8px] font-black uppercase tracking-widest text-white bg-white/10 px-1.5 py-0.5 border border-white/20">EXP</span>
         </div>
-        <h2 className="font-headline text-xl md:text-2xl font-black uppercase italic tracking-tight">
+        <h2 className="font-headline text-3xl font-black uppercase italic tracking-tight">
           {hasHistory ? (
             <>
               {bestLift.name}: <br />
@@ -694,10 +825,10 @@ export const LogsWidget = ({ onViewHistory }: { onViewHistory?: (sessionId?: str
   };
 
   return (
-  <div className="glass-panel p-8 border-none h-full overflow-y-auto custom-scrollbar">
+  <div className="glass-panel px-4 py-6 md:p-8 border-none h-full overflow-y-auto custom-scrollbar">
     <div className="space-y-6">
       <div className="flex justify-between items-end">
-        <h2 className="font-headline text-xl md:text-2xl font-black uppercase italic tracking-tight">{t('analysis.recentLogs')}</h2>
+        <h2 className="font-headline text-3xl font-black uppercase italic tracking-tight">{t('analysis.recentLogs')}</h2>
       </div>
 
       <div className="space-y-4">
@@ -890,13 +1021,13 @@ export const ExternalActivityWidget = () => {
   }
 
   return (
-    <div className="glass-panel p-4 md:p-8 border-none h-full flex flex-col relative overflow-hidden group/module w-full">
+    <div className="glass-panel px-4 py-6 md:p-8 border-none h-full flex flex-col relative overflow-hidden group/module w-full">
       {/* Tactical Grid Background overlay */}
       <div className="absolute inset-0 opacity-[0.03] pointer-events-none group-hover/module:opacity-[0.05] transition-opacity duration-700" 
            style={{ backgroundImage: 'radial-gradient(var(--primary-color) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
       
       <div className="flex items-center gap-3 mb-6 md:mb-8 relative z-10">
-        <h2 className="font-headline text-xl md:text-2xl font-black uppercase italic tracking-tight">Tactical Integration</h2>
+        <h2 className="font-headline text-3xl font-black uppercase italic tracking-tight">Tactical Integration</h2>
       </div>
       
       <div className="grid grid-cols-3 gap-4 mb-6 relative z-10 w-full max-w-sm">
@@ -967,11 +1098,9 @@ export const ExternalActivityWidget = () => {
   );
 };
 
-const WIDGET_COMPONENTS: Record<WidgetId, React.FC> = {
-  recovery: RecoveryWidget,
-  readiness: ReadinessWidget,
+const WIDGET_COMPONENTS: Record<WidgetId, React.FC<any>> = {
+  'recovery-analysis': RecoveryAnalysisWidget,
   pr: PRWidget,
-  volume: VolumeWidget,
   macros: MacrosWidget,
   logs: LogsWidget,
   block: BlockWidget,
@@ -1050,7 +1179,7 @@ interface AnalysisViewProps {
 
 export const AnalysisView = ({ onContinueSession, onViewHistory, isLifting }: AnalysisViewProps) => {
   const { t, experimentalFeatures } = useSettings();
-  const [widgets, setWidgets] = useState<WidgetId[]>(['readiness', 'recovery', 'volume', 'pr', 'macros', 'logs', 'block']);
+  const [widgets, setWidgets] = useState<WidgetId[]>(['recovery-analysis', 'pr', 'macros', 'logs', 'block']);
   const [activeId, setActiveId] = useState<WidgetId | null>(null);
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
   const [widgetToRemove, setWidgetToRemove] = useState<WidgetId | null>(null);
@@ -1118,16 +1247,15 @@ export const AnalysisView = ({ onContinueSession, onViewHistory, isLifting }: An
   });
 
   return (
-    <div className="relative w-full h-full flex flex-col items-center">
-      <div className="w-full overflow-y-auto custom-scrollbar pb-32 pt-8 lg:pt-24 px-4 sm:px-6 lg:px-8">
-        <DndContext 
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragStart={handleDragStart}
-          onDragEnd={handleDragEnd}
-          onDragCancel={handleDragCancel}
-        >
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 xl:gap-8 max-w-[1600px] mx-auto auto-rows-min w-full">
+    <>
+      <DndContext 
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+        onDragCancel={handleDragCancel}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 xl:gap-8 auto-rows-min w-full">
             <SortableContext 
               items={visibleWidgets}
               strategy={verticalListSortingStrategy}
@@ -1227,7 +1355,6 @@ export const AnalysisView = ({ onContinueSession, onViewHistory, isLifting }: An
             </button>
           </div>
         )}
-      </div>
 
       <ConfirmationModal 
         isOpen={!!widgetToRemove}
@@ -1238,7 +1365,7 @@ export const AnalysisView = ({ onContinueSession, onViewHistory, isLifting }: An
         onConfirm={confirmRemoveWidget}
         onCancel={cancelRemoveWidget}
       />
-    </div>
+    </>
   );
 };
 

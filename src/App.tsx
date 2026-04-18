@@ -247,18 +247,18 @@ function AppContent() {
       case 'advanced': 
         return { 
           icon: Trophy, 
-          color: 'text-[#FFD700]', 
-          glow: 'drop-shadow-[0_0_15px_#ff4500]', 
+          color: 'text-tier-advanced', 
+          glow: 'drop-shadow-[0_0_15px_var(--theme-tier-advanced)]', 
           animation: '',
-          bgGlow: 'bg-[#FFD700]'
+          bgGlow: 'bg-tier-advanced'
         };
       case 'elite': 
         return { 
           icon: Skull, 
-          color: 'text-[#9333EA]', 
-          glow: 'drop-shadow-[0_0_20px_#3b82f6]', 
+          color: 'text-tier-elite', 
+          glow: 'drop-shadow-[0_0_20px_var(--theme-tier-elite)]', 
           animation: '',
-          bgGlow: 'bg-[#9333EA]'
+          bgGlow: 'bg-tier-elite'
         };
       default: 
         return { 
@@ -345,7 +345,7 @@ function AppContent() {
     return (
       <div className="h-screen w-screen bg-void flex flex-col items-center justify-center gap-6">
         <Loader2 className="text-volt animate-spin" size={48} />
-        <div className="font-headline text-xs font-black uppercase tracking-[0.3em] text-volt animate-pulse">
+        <div className="font-sans text-xs font-bold uppercase tracking-[0.3em] text-volt animate-pulse">
           {t('app.loading')}...
         </div>
       </div>
@@ -444,10 +444,10 @@ function AppContent() {
             <VoltLogo size={64} className="text-volt relative z-10" />
           </div>
           
-          <h1 className="text-3xl font-black italic text-white tracking-tighter uppercase font-headline mb-1">
+          <h1 className="font-sans font-black tracking-tighter uppercase italic text-2xl text-white mb-1">
             {t('app.title')}
           </h1>
-          <p className="font-headline text-[8px] font-black uppercase tracking-[0.4em] text-zinc-500 mb-8">
+          <p className="font-sans font-bold text-[10px] tracking-[0.2em] uppercase text-zinc-500 mb-8">
             {t('auth.trainingSystem')}
           </p>
 
@@ -498,7 +498,7 @@ function AppContent() {
             <button 
               type="submit"
               disabled={isEmailAuthLoading || isGoogleAuthLoading}
-              className="w-full bg-volt text-void py-4 font-headline text-xs font-black uppercase tracking-widest hover:bg-white transition-all duration-300 shadow-xl disabled:opacity-50"
+              className="w-full bg-volt text-void py-4 font-sans font-bold uppercase tracking-widest hover:bg-white transition-all duration-300 shadow-xl disabled:opacity-50"
             >
               {isEmailAuthLoading ? (
                 <Loader2 className="animate-spin mx-auto" size={18} />
@@ -510,7 +510,7 @@ function AppContent() {
 
           <div className="w-full flex items-center gap-4 mb-6">
             <div className="h-px flex-1 bg-white/5" />
-            <span className="text-[8px] font-black text-zinc-600 uppercase tracking-widest">{t('auth.or')}</span>
+            <span className="text-[8px] font-bold text-zinc-600 uppercase tracking-widest">{t('auth.or')}</span>
             <div className="h-px flex-1 bg-white/5" />
           </div>
 
@@ -518,7 +518,7 @@ function AppContent() {
             type="button"
             onClick={handleGoogleSignIn}
             disabled={isEmailAuthLoading || isGoogleAuthLoading}
-            className="w-full flex items-center justify-center gap-3 bg-white/5 border border-white/10 text-white py-4 font-headline text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all duration-300 disabled:opacity-50"
+            className="w-full flex items-center justify-center gap-3 bg-white/5 border border-white/10 text-white py-4 font-sans text-[10px] font-bold uppercase tracking-widest hover:bg-white/10 transition-all duration-300 disabled:opacity-50"
           >
             {isGoogleAuthLoading ? (
               <Loader2 className="animate-spin" size={16} />
@@ -703,7 +703,7 @@ function AppContent() {
             className="fixed top-32 left-1/2 -translate-x-1/2 z-[60] flex items-center gap-3 px-3 sm:px-6 py-3 bg-void/80 backdrop-blur-xl border border-volt/30 shadow-2xl"
           >
             <Volume2 size={16} className="text-volt" />
-            <span className="font-headline text-[10px] font-black uppercase tracking-widest text-white">
+            <span className="font-sans text-[10px] font-bold uppercase tracking-widest text-white">
               {t('app.recognized')}: <span className="text-volt">"{voiceFeedback}"</span>
             </span>
           </motion.div>
@@ -717,11 +717,11 @@ function AppContent() {
         <div className="flex flex-col items-center justify-center">
           <div className="flex items-center gap-3">
             <VoltLogo size={32} className="text-volt hidden md:block" />
-            <div className="text-2xl md:text-5xl font-black italic text-volt tracking-tighter uppercase font-headline text-glow-volt leading-none">
+            <div className="text-2xl md:text-5xl font-black italic text-volt tracking-tighter uppercase font-sans text-glow-volt leading-none">
               {t('app.title')}
             </div>
           </div>
-          <div className="font-headline text-[8px] md:text-[10px] font-black uppercase tracking-[0.4em] text-zinc-500 mt-1">
+          <div className="font-sans font-bold text-[8px] md:text-[10px] uppercase tracking-[0.2em] text-zinc-500 mt-1">
             {profile?.trainingGoal ? t(`goal.${profile.trainingGoal}`) : t('auth.trainingSystem')}
           </div>
         </div>
@@ -738,7 +738,7 @@ function AppContent() {
                   className="group relative flex items-center gap-2 bg-volt/10 text-volt px-3 md:px-4 py-1.5 md:py-2 border border-volt/20 hover:bg-volt hover:text-void transition-all"
                 >
                   <Zap size={14} className="group-hover:animate-bounce md:w-4 md:h-4" />
-                  <span className="font-headline text-[8px] md:text-[10px] font-black uppercase tracking-widest">{t('app.detectLift')}</span>
+                  <span className="font-sans text-[8px] md:text-[10px] font-bold uppercase tracking-widest">{t('app.detectLift')}</span>
                   <span className="absolute -top-2 -right-2 bg-volt text-void text-[6px] font-black px-1 py-0.5 uppercase tracking-widest border border-void">EXP</span>
                 </button>
               </>
@@ -820,7 +820,7 @@ function AppContent() {
                   <Icon size={22} strokeWidth={isActive ? 3 : 2} />
                 </div>
                 <span className={cn(
-                  "font-headline text-[7px] font-black uppercase tracking-[0.2em] transition-colors",
+                  "font-sans text-[7px] font-bold uppercase tracking-[0.2em] transition-colors",
                   isActive ? "text-volt" : "text-zinc-500 group-hover:text-zinc-300"
                 )}>
                   {t(item.label).split(' ')[0]}
@@ -891,7 +891,7 @@ function AppContent() {
       {/* Main Content Area */}
       <main 
         ref={mainRef}
-        className="flex-1 relative h-full flex flex-col items-center mx-auto pt-24 md:pt-32 pb-24 md:pb-12 px-0 sm:px-6 overflow-y-auto custom-scrollbar w-full"
+        className="flex-1 w-full max-w-[var(--app-max-width)] mx-auto px-[var(--app-gutter)] relative h-full flex flex-col items-center pt-24 md:pt-32 pb-24 md:pb-12 overflow-y-auto custom-scrollbar"
       >
         <AnimatePresence mode="wait">
           <motion.div
@@ -900,7 +900,7 @@ function AppContent() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.98 }}
             transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-            className="w-full flex flex-col items-center justify-start max-w-none sm:max-w-full m-0 sm:mx-auto px-0 md:px-12"
+            className="w-full flex flex-col items-center justify-start"
           >
             {renderView()}
           </motion.div>

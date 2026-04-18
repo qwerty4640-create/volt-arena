@@ -272,7 +272,7 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
                             </div>
                             <div className="space-y-2 pl-11">
                               {ex.sets?.map((set, sIdx) => (
-                                <div key={sIdx} className="flex justify-between items-center text-[10px] font-mono">
+                                <div key={sIdx} className="flex justify-between items-center text-[10px] font-sans">
                                   <span className="text-zinc-500">{t('workout.set')} {sIdx + 1}</span>
                                   <span className="font-bold text-zinc-300">{set.weight}{unit === 'metric' ? 'kg' : 'lbs'} x {set.reps} @ RPE {set.rpe}</span>
                                 </div>

@@ -1,25 +1,85 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;900&family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap');
 @import "tailwindcss";
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-headline: "Space Grotesk", sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-display: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-headline: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Inter", ui-monospace, SFMono-Regular, monospace;
 
   --color-volt: var(--primary-color);
-  --color-crimson: #FF8D7A;
-  --color-void: #0D0F0B;
-  --color-surface: #131313;
-  --color-surface-container-lowest: #0e0e0e;
-  --color-surface-container-low: #121410;
-  --color-surface-container-high: #1E201B;
-  --color-surface-container-highest: #353534;
-  --color-surface-variant: #242721;
+  --color-crimson: var(--theme-crimson);
+  --color-void: var(--theme-void);
+  --color-surface: var(--theme-surface);
+  --color-surface-container-lowest: var(--theme-surface-container-lowest);
+  --color-surface-container-low: var(--theme-surface-container-low);
+  --color-surface-container-high: var(--theme-surface-container-high);
+  --color-surface-container-highest: var(--theme-surface-container-highest);
+  --color-surface-variant: var(--theme-surface-variant);
+
+  --color-white: var(--theme-white);
+  --color-black: var(--theme-black);
+
+  --color-zinc-50: var(--theme-zinc-50);
+  --color-zinc-100: var(--theme-zinc-100);
+  --color-zinc-200: var(--theme-zinc-200);
+  --color-zinc-300: var(--theme-zinc-300);
+  --color-zinc-400: var(--theme-zinc-400);
+  --color-zinc-500: var(--theme-zinc-500);
+  --color-zinc-600: var(--theme-zinc-600);
+  --color-zinc-700: var(--theme-zinc-700);
+  --color-zinc-800: var(--theme-zinc-800);
+  --color-zinc-900: var(--theme-zinc-900);
+  --color-zinc-950: var(--theme-zinc-950);
+
+  --color-tier-advanced: var(--theme-tier-advanced);
+  --color-tier-elite: var(--theme-tier-elite);
 }
 
 :root {
+  --font-primary: 'Inter', system-ui, -apple-system, sans-serif;
   --primary-color: #00b6ff;
   --primary-glow: rgba(0, 182, 255, 0.6);
+  --app-gutter: 1rem;
+  --app-max-width: 1600px;
+  
+  --theme-crimson: #FF8D7A;
+  --theme-void: #0D0F0B;
+  --theme-surface: #131313;
+  --theme-surface-container-lowest: #0e0e0e;
+  --theme-surface-container-low: #121410;
+  --theme-surface-container-high: #1E201B;
+  --theme-surface-container-highest: #353534;
+  --theme-surface-variant: #242721;
+  --theme-white: #ffffff;
+  --theme-black: #000000;
+
+  --theme-zinc-50: #fafafa;
+  --theme-zinc-100: #f4f4f5;
+  --theme-zinc-200: #e4e4e7;
+  --theme-zinc-300: #d4d4d8;
+  --theme-zinc-400: #a1a1aa;
+  --theme-zinc-500: #71717a;
+  --theme-zinc-600: #52525b;
+  --theme-zinc-700: #3f3f46;
+  --theme-zinc-800: #27272a;
+  --theme-zinc-900: #18181b;
+  --theme-zinc-950: #09090b;
+
+  --theme-tier-advanced: #FFD700;
+  --theme-tier-elite: #9333EA;
+}
+
+@media (min-width: 640px) {
+  :root {
+    --app-gutter: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --app-gutter: 2rem;
+  }
 }
 
 [data-tier="advanced"] {
@@ -71,7 +131,14 @@
   }
 
   body {
-    @apply bg-void text-white font-sans antialiased overflow-hidden;
+    font-family: var(--font-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    @apply bg-void text-white overflow-hidden;
+  }
+
+  .font-mono, .font-headline, .font-display, .tracking-tighter {
+    font-family: var(--font-primary) !important;
   }
 
   button, a, [role="button"], input[type="submit"], input[type="button"], select {
@@ -116,3 +183,91 @@
   }
 }
 
+:root[data-theme="light"] {
+  --theme-void: #f4f4f5;
+  --theme-surface: #e4e4e7;
+  --theme-surface-container-lowest: #ffffff;
+  --theme-surface-container-low: #fafafa;
+  --theme-surface-container-high: #d4d4d8;
+  --theme-surface-container-highest: #a1a1aa;
+  --theme-surface-variant: #e4e4e7;
+  
+  --theme-white: #09090b;
+  --theme-black: #ffffff;
+  --theme-crimson: #c62828;
+  
+  --theme-zinc-50: #09090b;
+  --theme-zinc-100: #18181b;
+  --theme-zinc-200: #27272a;
+  --theme-zinc-300: #3f3f46;
+  --theme-zinc-400: #52525b;
+  --theme-zinc-500: #71717a;
+  --theme-zinc-600: #a1a1aa;
+  --theme-zinc-700: #d4d4d8;
+  --theme-zinc-800: #e4e4e7;
+  --theme-zinc-900: #f4f4f5;
+  --theme-zinc-950: #ffffff;
+
+  --theme-tier-advanced: #8a6500;
+  --theme-tier-elite: #550a8a;
+}
+
+:root[data-theme="light"][data-light-scheme="default"],
+[data-theme="light"][data-light-scheme="default"] [data-tier],
+[data-theme="light"][data-light-scheme="default"] .tier-untrained,
+[data-theme="light"][data-light-scheme="default"] .tier-novice,
+[data-theme="light"][data-light-scheme="default"] .tier-newbie,
+[data-theme="light"][data-light-scheme="default"] .tier-intermediate,
+[data-theme="light"][data-light-scheme="default"] .tier-advanced,
+[data-theme="light"][data-light-scheme="default"] .tier-elite {
+  --primary-color: #00478f !important;
+  --primary-glow: rgba(0, 71, 143, 0.4) !important;
+}
+
+:root[data-theme="light"][data-light-scheme="ocean"],
+[data-theme="light"][data-light-scheme="ocean"] [data-tier],
+[data-theme="light"][data-light-scheme="ocean"] .tier-untrained,
+[data-theme="light"][data-light-scheme="ocean"] .tier-novice,
+[data-theme="light"][data-light-scheme="ocean"] .tier-newbie,
+[data-theme="light"][data-light-scheme="ocean"] .tier-intermediate,
+[data-theme="light"][data-light-scheme="ocean"] .tier-advanced,
+[data-theme="light"][data-light-scheme="ocean"] .tier-elite {
+  --primary-color: #005080 !important;
+  --primary-glow: rgba(0, 80, 128, 0.4) !important;
+}
+
+:root[data-theme="light"][data-light-scheme="neon"],
+[data-theme="light"][data-light-scheme="neon"] [data-tier],
+[data-theme="light"][data-light-scheme="neon"] .tier-untrained,
+[data-theme="light"][data-light-scheme="neon"] .tier-novice,
+[data-theme="light"][data-light-scheme="neon"] .tier-newbie,
+[data-theme="light"][data-light-scheme="neon"] .tier-intermediate,
+[data-theme="light"][data-light-scheme="neon"] .tier-advanced,
+[data-theme="light"][data-light-scheme="neon"] .tier-elite {
+  --primary-color: #b30080 !important;
+  --primary-glow: rgba(179, 0, 128, 0.4) !important;
+}
+
+:root[data-theme="light"][data-light-scheme="solar"],
+[data-theme="light"][data-light-scheme="solar"] [data-tier],
+[data-theme="light"][data-light-scheme="solar"] .tier-untrained,
+[data-theme="light"][data-light-scheme="solar"] .tier-novice,
+[data-theme="light"][data-light-scheme="solar"] .tier-newbie,
+[data-theme="light"][data-light-scheme="solar"] .tier-intermediate,
+[data-theme="light"][data-light-scheme="solar"] .tier-advanced,
+[data-theme="light"][data-light-scheme="solar"] .tier-elite {
+  --primary-color: #aa3300 !important;
+  --primary-glow: rgba(170, 51, 0, 0.4) !important;
+}
+
+:root[data-theme="light"][data-light-scheme="monochrome"],
+[data-theme="light"][data-light-scheme="monochrome"] [data-tier],
+[data-theme="light"][data-light-scheme="monochrome"] .tier-untrained,
+[data-theme="light"][data-light-scheme="monochrome"] .tier-novice,
+[data-theme="light"][data-light-scheme="monochrome"] .tier-newbie,
+[data-theme="light"][data-light-scheme="monochrome"] .tier-intermediate,
+[data-theme="light"][data-light-scheme="monochrome"] .tier-advanced,
+[data-theme="light"][data-light-scheme="monochrome"] .tier-elite {
+  --primary-color: #000000 !important;
+  --primary-glow: rgba(0, 0, 0, 0.2) !important;
+}
