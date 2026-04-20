@@ -273,50 +273,7 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
             <h1 className="font-sans text-2xl md:text-4xl font-black uppercase italic tracking-tight">{currentSession.title}</h1>
           </div>
         </div>
-
-        <div className="flex items-center gap-4 self-start md:self-auto">
-          {currentSession.targetRpe && (
-            <>
-              <div className="text-right">
-                <div className="text-[8px] md:text-[10px] font-bold uppercase tracking-widest text-zinc-500 mb-1">Target RPE</div>
-                <div className="font-sans text-lg md:text-xl font-black uppercase italic tracking-tight text-volt">
-                  {currentSession.targetRpe}
-                </div>
-              </div>
-              <div className="h-10 md:h-12 w-[1px] bg-white/10" />
-              <div className="text-right">
-                <div className="text-[8px] md:text-[10px] font-bold uppercase tracking-widest text-zinc-500 mb-1">Current RPE</div>
-                <div className={cn(
-                  "font-sans text-lg md:text-xl font-black uppercase italic tracking-tight transition-colors",
-                  currentAvgRpe > (currentSession.targetRpe + 0.5) ? "text-crimson" : 
-                  currentAvgRpe < (currentSession.targetRpe - 0.5) ? "text-zinc-400" : "text-white"
-                )}>
-                  {currentAvgRpe > 0 ? currentAvgRpe.toFixed(1) : '–'}
-                </div>
-              </div>
-              <div className="h-10 md:h-12 w-[1px] bg-white/10" />
-            </>
-          )}
-
-          {currentSession.blockLabel || currentSession.blockType ? (
-            <>
-              <div className="text-left">
-              <div className="text-[8px] md:text-[10px] font-bold uppercase tracking-widest text-zinc-500 mb-1">{t('workout.currentBlock')}</div>
-              <div className="font-sans text-lg md:text-xl font-black uppercase italic tracking-tight text-volt">
-                {currentSession.blockLabel || currentSession.blockType}
-              </div>
-            </div>
-            <div className="h-10 md:h-12 w-[1px] bg-white/10" />
-            <div className="text-left">
-              <div className="text-[8px] md:text-[10px] font-bold uppercase tracking-widest text-zinc-500 mb-1">{t('workout.progression')}</div>
-              <div className="font-sans text-lg md:text-xl font-black uppercase italic tracking-tight text-white">
-                {t('workout.week')} {currentSession.weekInBlock}
-              </div>
-            </div>
-          </>
-        ) : null}
-      </div>
-    </div>
+        </div>
 
       {/* Intensity Warning Banner */}
       <AnimatePresence>

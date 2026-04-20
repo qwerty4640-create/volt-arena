@@ -121,6 +121,7 @@ function AppContent() {
     mockWorkoutCount, 
     isLoading: isWorkoutLoading,
     pendingReflection,
+    setPendingReflection,
     saveReflection
   } = useWorkout();
   const [user, setUser] = useState<FirebaseUser | null>(null);
@@ -936,6 +937,7 @@ function AppContent() {
       <AnimatePresence>
         {showReadinessCheck && (
           <ReadinessCheck
+            key="readiness-check"
             onComplete={(score, modifier, targetRpe) => {
               startNewSession(undefined, score, modifier, targetRpe);
               setShowReadinessCheck(false);
@@ -951,8 +953,10 @@ function AppContent() {
       <AnimatePresence>
         {pendingReflection && (
           <ReflectionModal 
+            key="reflection-modal"
             session={pendingReflection}
             onSave={(actualRpe) => saveReflection(pendingReflection.id, actualRpe)}
+            onClose={() => setPendingReflection(null)}
           />
         )}
       </AnimatePresence>

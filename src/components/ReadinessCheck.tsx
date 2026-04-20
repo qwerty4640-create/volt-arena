@@ -8,6 +8,7 @@ import { useWorkout } from '../contexts/WorkoutContext';
 interface ReadinessCheckProps {
   onComplete: (score: number, modifier: number, targetRpe: number) => void;
   onCancel: () => void;
+  key?: React.Key;
 }
 
 const QUESTIONS = [

@@ -130,11 +130,14 @@
     border-radius: 0 !important;
   }
 
-  body {
+  html, body {
+    max-width: 100%;
+    overflow-x: hidden;
+    position: relative;
     font-family: var(--font-primary);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    @apply bg-void text-white overflow-hidden;
+    @apply bg-void text-white;
   }
 
   .font-mono, .font-headline, .font-display, .tracking-tighter {

@@ -67,12 +67,15 @@ service cloud.firestore {
     }
 
     function isValidWorkout(data) {
-      return hasRequiredFields(['id', 'uid', 'title', 'completedAt', 'exercises']) &&
-             data.uid == request.auth.uid &&
+      return data.uid == request.auth.uid &&
              data.id is string && data.id.size() < 100 &&
-             data.title is string && data.title.size() < 200 &&
-             data.completedAt is int &&
-             data.exercises is list && data.exercises.size() < 50;
+             (data.get('title', '') is string || data.title == null) &&
+             (data.get('completedAt', 0) is int || data.completedAt == null) &&
+             (data.get('exercises', []) is list || data.exercises == null);
+    }
+    
+    function isWorkoutComplete(data) {
+      return hasRequiredFields(['id', 'uid', 'title', 'completedAt', 'exercises']);
     }
 
     function isValidActiveRecovery(data) {
@@ -102,7 +105,7 @@ service cloud.firestore {
 
       match /workouts/{workoutId} {
         allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
-        allow create: if isOwner(userId) && isValidWorkout(request.resource.data);
+        allow create: if isOwner(userId) && isValidWorkout(request.resource.data) && isWorkoutComplete(request.resource.data);
         allow update: if isOwner(userId) && isValidWorkout(request.resource.data) &&
                         areImmutableFieldsUnchanged(['uid', 'id']);
         allow delete: if isOwner(userId) || isAdmin();

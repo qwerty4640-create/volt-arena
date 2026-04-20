@@ -6,11 +6,27 @@ import { WorkoutSession } from '../contexts/WorkoutContext';
 
 interface ReflectionModalProps {
   session: WorkoutSession;
-  onSave: (rpe: number) => void;
+  onSave: (rpe: number) => Promise<void>;
+  onClose: () => void;
+  key?: React.Key;
 }
 
-export const ReflectionModal = ({ session, onSave }: ReflectionModalProps) => {
+export const ReflectionModal = ({ session, onSave, onClose }: ReflectionModalProps) => {
   const [rpe, setRpe] = useState(session.rpe || 7);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSaveReflection = async () => {
+    setIsSaving(true);
+    try {
+      await onSave(rpe);
+      localStorage.setItem(`reflected_${session.id}`, 'true');
+    } catch (err) {
+      console.error('Data sync failed, closing UI.', err);
+    } finally {
+      setIsSaving(false);
+      onClose();
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
@@ -18,7 +34,8 @@ export const ReflectionModal = ({ session, onSave }: ReflectionModalProps) => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="absolute inset-0 bg-void/95 backdrop-blur-xl"
+        onClick={onClose}
+        className="absolute inset-0 bg-void/95 backdrop-blur-xl cursor-default"
       />
       
       <motion.div
@@ -72,10 +89,11 @@ export const ReflectionModal = ({ session, onSave }: ReflectionModalProps) => {
             <motion.button 
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              onClick={() => onSave(rpe)}
-              className="w-full py-5 bg-volt text-void font-headline text-sm font-black uppercase italic tracking-widest hover:bg-white transition-all shadow-[0_0_30px_var(--primary-glow)] flex items-center justify-center gap-3"
+              onClick={handleSaveReflection}
+              disabled={isSaving}
+              className="w-full py-5 bg-volt text-void font-headline text-sm font-black uppercase italic tracking-widest hover:bg-white transition-all shadow-[0_0_30px_var(--primary-glow)] flex items-center justify-center gap-3 disabled:opacity-50"
             >
-              <span>Save Reflection</span>
+              <span>{isSaving ? 'Saving...' : 'Save Reflection'}</span>
               <ChevronRight size={18} />
             </motion.button>
           </div>

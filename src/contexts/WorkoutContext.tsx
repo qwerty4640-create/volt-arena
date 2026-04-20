@@ -8,7 +8,8 @@ import {
   addDoc, 
   serverTimestamp,
   doc,
-  setDoc
+  setDoc,
+  updateDoc
 } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { db, auth, handleFirestoreError, OperationType } from '../firebase';
@@ -109,6 +110,7 @@ interface WorkoutContextType {
   updateHistoryWorkout: (workout: WorkoutSession) => Promise<void>;
   saveReflection: (workoutId: string, actualRpe: number) => Promise<void>;
   pendingReflection: WorkoutSession | null;
+  setPendingReflection: (workout: WorkoutSession | null) => void;
   isLoading: boolean;
 }
 
@@ -1104,22 +1106,37 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
-  const saveReflection = async (workoutId: string, actualRpe: number) => {
-    if (!auth.currentUser) return;
-    const workout = history.find(s => s.id === workoutId);
-    if (!workout) return;
+  const saveReflection = async (workout: any, actualRpe: number) => {
+  if (!user?.uid || !workout?.id) return;
 
-    const workoutPath = `users/${auth.currentUser.uid}/workouts/${workoutId}`;
-    try {
-      await setDoc(doc(db, workoutPath), {
-        ...workout,
-        actualRpe
-      });
-      setPendingReflection(null);
-    } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, workoutPath);
+  const docRef = doc(db, 'users', user.uid, 'workouts', workout.id);
+
+  try {
+    // We send ONLY the two fields we want to change.
+    // We do NOT spread the workout object.
+    await updateDoc(docRef, {
+      actualRpe: Number(actualRpe),
+      reflectionSaved: true
+    });
+
+    setPendingReflection(null);
+  } catch (error) {
+    // If it still fails, we MUST close the modal locally 
+    // so you can actually use the app.
+    setPendingReflection(null);
+  }
+};
+
+
+  useEffect(() => {
+    // If history updates and the pending workout is now reflected, kill the modal
+    if (pendingReflection) {
+      const isStillPending = history.find(w => w.id === pendingReflection.id && !w.reflectionSaved);
+      if (!isStillPending) {
+        setPendingReflection(null);
+      }
     }
-  };
+  }, [history, pendingReflection]);
 
   return (
     <WorkoutContext.Provider value={{ 
@@ -1144,6 +1161,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
       updateHistoryWorkout,
       saveReflection,
       pendingReflection,
+      setPendingReflection,
       isLoading
     }}>
       {children}
