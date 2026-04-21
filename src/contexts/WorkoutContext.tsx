@@ -1107,9 +1107,9 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const saveReflection = async (workout: any, actualRpe: number) => {
-  if (!user?.uid || !workout?.id) return;
+  if (!auth.currentUser?.uid || !workout?.id) return;
 
-  const docRef = doc(db, 'users', user.uid, 'workouts', workout.id);
+  const docRef = doc(db, 'users', auth.currentUser.uid, 'workouts', workout.id);
 
   try {
     // We send ONLY the two fields we want to change.

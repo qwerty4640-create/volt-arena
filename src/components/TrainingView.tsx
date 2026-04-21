@@ -123,6 +123,7 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
   const getPR = (exerciseName: string) => {
     let maxWeight = 0;
     let prDate = '–';
+    let prWorkoutId = null;
     
     history.forEach(session => {
       session.exercises?.forEach(ex => {
@@ -132,13 +133,14 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
             if (w > maxWeight) {
               maxWeight = w;
               prDate = session.date;
+              prWorkoutId = session.id;
             }
           });
         }
       });
     });
     
-    return { weight: maxWeight > 0 ? maxWeight.toString() : '–', date: prDate };
+    return { weight: maxWeight > 0 ? maxWeight.toString() : '–', date: prDate, workoutId: prWorkoutId };
   };
 
   const squatPR = getPR(t('stage.squat'));
@@ -406,9 +408,9 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
                 {hasHistory ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 flex-1">
                     {[
-                      { lift: t('stage.squat'), weight: squatPR.weight, date: squatPR.date, image: 'https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?q=80&w=1000' },
-                      { lift: t('stage.benchPress'), weight: benchPR.weight, date: benchPR.date, image: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?q=80&w=1000' },
-                      { lift: t('stage.deadlift'), weight: deadliftPR.weight, date: deadliftPR.date, image: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=1000' }
+                      { lift: t('stage.squat'), weight: squatPR.weight, date: squatPR.date, workoutId: squatPR.workoutId, image: 'https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?q=80&w=1000' },
+                      { lift: t('stage.benchPress'), weight: benchPR.weight, date: benchPR.date, workoutId: benchPR.workoutId, image: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?q=80&w=1000' },
+                      { lift: t('stage.deadlift'), weight: deadliftPR.weight, date: deadliftPR.date, workoutId: deadliftPR.workoutId, image: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=1000' }
                     ].map((pr, i) => (
                       <div 
                         key={i} 
@@ -437,9 +439,9 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
                         <div className="flex items-center justify-between mt-auto relative z-10">
                           <span className="text-[10px] md:text-xs font-medium text-zinc-400">{pr.date}</span>
                           
-                          <button className="flex items-center gap-2 bg-white/10 hover:bg-volt hover:text-void transition-colors px-6 py-3 border-none group/btn backdrop-blur-sm">
+                          <button onClick={() => onViewHistory?.(pr.workoutId)} className="flex items-center gap-2 bg-white/10 hover:bg-volt hover:text-void transition-colors px-6 py-3 border-none group/btn backdrop-blur-sm">
                             <Video size={12} md:size={14} className="text-volt group-hover/btn:text-void transition-colors" />
-                            <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest">{t('analysis.replay')}</span>
+                            <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest">View Log</span>
                           </button>
                         </div>
                       </div>
