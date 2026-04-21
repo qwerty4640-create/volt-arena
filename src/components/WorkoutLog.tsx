@@ -273,7 +273,47 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
             <h1 className="font-sans text-2xl md:text-4xl font-black uppercase italic tracking-tight">{currentSession.title}</h1>
           </div>
         </div>
+
+        <div className="flex flex-wrap items-center gap-4 self-start md:self-auto">
+          {currentSession.targetRpe && (
+            <>
+              <div className="text-right">
+                <div className="text-[8px] font-bold uppercase tracking-widest text-zinc-500 mb-0.5">T.RPE</div>
+                <div className="font-sans text-lg font-black uppercase italic tracking-tight text-volt">
+                  {currentSession.targetRpe}
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-[8px] font-bold uppercase tracking-widest text-zinc-500 mb-0.5">C.RPE</div>
+                <div className={cn(
+                  "font-sans text-lg font-black uppercase italic tracking-tight transition-colors",
+                  currentAvgRpe > (currentSession.targetRpe + 0.5) ? "text-crimson" : 
+                  currentAvgRpe < (currentSession.targetRpe - 0.5) ? "text-zinc-400" : "text-white"
+                )}>
+                  {currentAvgRpe > 0 ? currentAvgRpe.toFixed(1) : '–'}
+                </div>
+              </div>
+            </>
+          )}
+
+          {currentSession.blockLabel || currentSession.blockType ? (
+            <>
+              <div className="text-left">
+                <div className="text-[8px] font-bold uppercase tracking-widest text-zinc-500 mb-0.5">BLK</div>
+                <div className="font-sans text-lg font-black uppercase italic tracking-tight text-volt">
+                  {currentSession.blockLabel || currentSession.blockType}
+                </div>
+              </div>
+              <div className="text-left">
+                <div className="text-[8px] font-bold uppercase tracking-widest text-zinc-500 mb-0.5">WK</div>
+                <div className="font-sans text-lg font-black uppercase italic tracking-tight text-white">
+                  {currentSession.weekInBlock}
+                </div>
+              </div>
+            </>
+          ) : null}
         </div>
+    </div>
 
       {/* Intensity Warning Banner */}
       <AnimatePresence>

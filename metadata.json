@@ -1,6 +1,6 @@
 {
-  "name": "Volt Arena",
-  "description": "The ultimate tactical performance tracker for high intensity training and recovery, backed by science and logic.",
+  "name": "Volt Arena: Spatial Powerlifting",
+  "description": "An immersive, high-performance powerlifting HUD and analysis suite designed for Apple Vision Pro, featuring real-time telemetry, safety alerts, and competition stage visualization.",
   "requestFramePermissions": [
     "camera",
     "microphone"
