@@ -125,6 +125,7 @@ function AppContent() {
     saveReflection
   } = useWorkout();
   const [user, setUser] = useState<FirebaseUser | null>(null);
+  const [isGuestMode, setIsGuestMode] = useState(() => localStorage.getItem('volt_guest_mode') === 'true');
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [activeView, setActiveView] = useState<ViewType>(() => {
     if (typeof window !== 'undefined') {
@@ -353,15 +354,12 @@ function AppContent() {
     );
   }
 
-  if (!user) {
+  if (!user && !isGuestMode) {
     const languages: { code: any; label: string }[] = [
       { code: 'en', label: 'English' },
       { code: 'zh', label: '中文' },
       { code: 'ko', label: '한국어' },
-      { code: 'ja', label: '日本語' },
       { code: 'es', label: 'Español' },
-      { code: 'hi', label: 'हिन्दी' },
-      { code: 'nl', label: 'Nederlands' },
     ];
 
     const handleAuth = async (e: React.FormEvent) => {
@@ -385,8 +383,10 @@ function AppContent() {
             throw new Error(t('auth.passwordTooShort'));
           }
           await signUpWithEmail(email, password);
+          setActiveView('analysis');
         } else {
           await signInWithEmail(email, password);
+          setActiveView('analysis');
         }
       } catch (error: any) {
         console.error("Auth: Email/Password flow failed:", error);
@@ -408,6 +408,7 @@ function AppContent() {
           console.log("SSO: Flow completed, user returned:", user.email);
           // Manually update state just in case the listener is slow
           setUser(user);
+          setActiveView('analysis');
         } else {
           console.warn("SSO: Flow completed but no user returned");
         }
@@ -539,6 +540,20 @@ function AppContent() {
             className="mt-6 w-full py-4 border border-volt/30 text-[10px] font-black text-volt uppercase tracking-widest hover:bg-volt/5 hover:border-volt transition-all duration-300"
           >
             {isSigningUp ? t('auth.signInPrompt') : t('auth.signUpPrompt')}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setIsGuestMode(true);
+              localStorage.setItem('volt_guest_mode', 'true');
+              if (localStorage.getItem('volt_ghost_profile')) {
+                 setActiveView('analysis');
+              }
+            }}
+            className="w-full mt-4 flex items-center justify-center gap-2 bg-transparent text-zinc-400 py-3 font-sans text-[10px] font-bold uppercase tracking-widest hover:text-white transition-colors duration-300"
+          >
+            Start Training (Guest Mode) →
           </button>
 
           {/* Language Selector */}
@@ -712,7 +727,7 @@ function AppContent() {
       </AnimatePresence>
 
       {/* Top App Bar Shell */}
-      <header className="fixed top-0 left-0 right-0 z-50 flex justify-center md:justify-between items-center px-4 md:px-10 py-4 md:py-8 bg-void/50 backdrop-blur-md md:bg-transparent">
+      <header className="fixed top-0 left-0 right-0 z-50 flex justify-center md:justify-between items-center px-4 md:px-10 pb-4 md:pb-8 bg-void/50 backdrop-blur-md md:bg-transparent app-header">
         <div className="flex-1 hidden md:block" />
         
         <div className="flex flex-col items-center justify-center">
@@ -755,8 +770,8 @@ function AppContent() {
             )}
           >
             <img 
-              src={user.photoURL || "https://picsum.photos/seed/athlete/100/100"} 
-              alt={user.displayName || "Athlete"} 
+              src={user?.photoURL || "https://picsum.photos/seed/athlete/100/100"} 
+              alt={user?.displayName || "Athlete"} 
               className="w-full h-full object-cover"
               referrerPolicy="no-referrer"
             />
@@ -834,7 +849,7 @@ function AppContent() {
 
       {/* Bottom Navigation for Mobile */}
       <nav className={cn(
-        "fixed bottom-0 left-0 right-0 z-50 md:hidden bg-void/80 backdrop-blur-xl border-t border-white/5 px-3 py-4 flex justify-between items-center transition-all duration-500",
+        "fixed bottom-0 left-0 right-0 z-50 md:hidden bg-void/80 backdrop-blur-xl border-t border-white/5 px-4 py-5 flex justify-between items-center transition-all duration-500",
         (activeView === 'berserker') ? "translate-y-full" : "translate-y-0"
       )}>
         {NAV_ITEMS.map((item) => {

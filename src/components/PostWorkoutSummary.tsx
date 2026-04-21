@@ -108,9 +108,9 @@ export const PostWorkoutSummary = ({ initialRpe, onFinish }: PostWorkoutSummaryP
               className="w-full h-2 bg-void appearance-none cursor-pointer accent-volt border border-white/5"
             />
             <div className="absolute -bottom-6 left-0 right-0 flex justify-between text-[7px] md:text-[8px] font-black text-zinc-600 uppercase tracking-widest">
-              <span>Easy (1)</span>
-              <span>Moderate (5)</span>
-              <span>Max Effort (10)</span>
+              <span>{t('workout.easy')}</span>
+              <span>{t('workout.moderate')}</span>
+              <span>{t('workout.maxEffort')}</span>
             </div>
           </div>
         </div>
@@ -119,7 +119,7 @@ export const PostWorkoutSummary = ({ initialRpe, onFinish }: PostWorkoutSummaryP
         <div className="space-y-4">
           <div className="flex items-center gap-2 text-zinc-400">
             <MessageSquare size={16} />
-            <span className="text-[10px] font-black uppercase tracking-widest">Workout Notes</span>
+            <span className="text-[10px] font-black uppercase tracking-widest">{t('workout.workoutNotes')}</span>
           </div>
           <textarea 
             value={note}
@@ -136,7 +136,7 @@ export const PostWorkoutSummary = ({ initialRpe, onFinish }: PostWorkoutSummaryP
           onClick={handleFinish}
           className="w-full py-6 bg-volt text-void font-headline text-lg font-black uppercase italic tracking-widest hover:bg-white transition-all shadow-[0_0_30px_var(--primary-glow)] flex items-center justify-center gap-3 group"
         >
-          <span>Save & Finish</span>
+          <span>{t('workout.saveAndFinish')}</span>
           <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
         </motion.button>
       </div>

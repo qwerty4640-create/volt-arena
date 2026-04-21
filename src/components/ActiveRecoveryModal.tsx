@@ -124,8 +124,8 @@ export const ActiveRecoveryModal = ({ isOpen, onClose, initialData }: ActiveReco
                   <Activity size={24} />
                 </div>
                 <div>
-                  <h3 className="font-headline text-xl font-black uppercase italic tracking-tighter text-white">Non-Program Activity</h3>
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-volt/70">External Tactical Integration Log</p>
+                  <h3 className="font-headline text-xl font-black uppercase italic tracking-tighter text-white">{t('Non-Program Activity')}</h3>
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-volt/70">{t('Tactical Integration Log')}</p>
                 </div>
               </div>
               <button onClick={onClose} className="p-2 hover:bg-white/10 text-zinc-500 hover:text-white transition-colors">
@@ -136,7 +136,7 @@ export const ActiveRecoveryModal = ({ isOpen, onClose, initialData }: ActiveReco
             <div className="p-8 space-y-8 overflow-y-auto max-h-[60vh] custom-scrollbar">
               {/* Temporal Anchor */}
               <div className="space-y-4">
-                <label htmlFor="performedAt" className="block text-[10px] font-black uppercase tracking-normal text-zinc-500">Performed At</label>
+                <label htmlFor="performedAt" className="block text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('Performed At')}</label>
                 <div className="relative">
                   <input
                     id="performedAt"
@@ -154,7 +154,7 @@ export const ActiveRecoveryModal = ({ isOpen, onClose, initialData }: ActiveReco
 
               {/* Activity Type */}
               <div className="space-y-4">
-                <label className="block text-[10px] font-black uppercase tracking-normal text-zinc-500">Activity</label>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('Activity')}</label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {activityTypes.map((t) => (
                     <button
@@ -183,7 +183,7 @@ export const ActiveRecoveryModal = ({ isOpen, onClose, initialData }: ActiveReco
               {/* RPE Selector */}
               <div className="space-y-4">
                 <div className="flex justify-between items-end">
-                  <label htmlFor="intensity-range" className="block text-[10px] font-black uppercase tracking-normal text-zinc-500">Intensity (RPE)</label>
+                  <label htmlFor="intensity-range" className="block text-[10px] font-black uppercase tracking-widest text-zinc-500">Intensity (RPE)</label>
                   <span className="text-3xl font-black italic text-volt">{rpe}</span>
                 </div>
                 <input
@@ -205,7 +205,7 @@ export const ActiveRecoveryModal = ({ isOpen, onClose, initialData }: ActiveReco
               {/* Duration */}
               <div className="space-y-4">
                 <div className="flex justify-between items-end">
-                  <label className="block text-[10px] font-black uppercase tracking-normal text-zinc-500">Duration (Minutes)</label>
+                  <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500">Duration (Minutes)</label>
                   <span className="text-2xl font-black italic">{duration}</span>
                 </div>
                 <div className="flex gap-2">

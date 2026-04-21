@@ -22,7 +22,7 @@ type TimeFrame = '1M' | '3M' | '6M' | 'ALL';
 export const AnalyticsView = () => {
   const { t, unit } = useSettings();
   const { history } = useWorkout();
-  const weightUnit = unit === 'metric' ? 'KG' : 'LB';
+  const weightUnit = unit === 'metric' ? 'KG' : 'LBS';
 
   const [timeFrame, setTimeFrame] = useState<TimeFrame>('6M');
   const [selectedLifts, setSelectedLifts] = useState<string[]>(['Squat', 'Bench Press', 'Deadlift']);
@@ -196,10 +196,12 @@ export const AnalyticsView = () => {
         >
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6">
             <div>
+              {/* 
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-1.5 h-1.5 bg-volt" />
                 <span className="text-[10px] font-black uppercase tracking-widest text-volt">{t('analysis.performanceTelemetry')}</span>
               </div>
+              */}
               <h2 className="font-headline text-3xl md:text-5xl font-black uppercase italic tracking-tight mb-2">{t('analysis.strengthTrend')}</h2>
               <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed mb-8">
                 {t('analysis.strengthTrendDesc')}
@@ -290,10 +292,12 @@ export const AnalyticsView = () => {
         >
           <div className="absolute top-0 right-0 w-32 h-32 bg-volt/5 blur-[60px] -z-10" />
           <div>
+            {/* 
             <div className="flex items-center gap-2 mb-4">
               <div className="w-1.5 h-1.5 bg-volt" />
               <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('analysis.intensityMetrics')}</span>
             </div>
+            */}
             <h3 className="font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tight mb-2">{t('analysis.peakIntensity')}</h3>
             <p className="text-zinc-400 text-xs font-medium leading-relaxed">{t('analysis.peakIntensityDesc')}</p>
           </div>
@@ -323,11 +327,13 @@ export const AnalyticsView = () => {
         >
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6">
             <div>
+              {/* 
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-1.5 h-1.5 bg-volt" />
                 <span className="text-[10px] font-black uppercase tracking-widest text-volt">{t('analysis.volumeAccumulation')}</span>
               </div>
-              <h2 className="font-headline text-3xl md:text-5xl font-black uppercase italic tracking-tight mb-2">{t('analysis.weeklyVolumeTrend')}</h2>
+              */}
+              <h2 className="font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tight mb-2">{t('analysis.weeklyVolumeTrend')}</h2>
               <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed">
                 {t('analysis.weeklyVolumeTrendDesc')}
               </p>
@@ -384,13 +390,18 @@ export const AnalyticsView = () => {
           transition={{ delay: 0.3 }}
           className="col-span-12 glass-panel px-4 py-6 md:p-8 relative overflow-hidden"
         >
+        
           <div className="absolute top-0 right-0 p-8 opacity-5">
-            <Trophy size={200} />
+          
+           <Trophy size={200} />
+          
           </div>
+          {/* 
           <div className="flex items-center gap-2 mb-4">
             <div className="w-1.5 h-1.5 bg-crimson" />
             <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('analysis.growthAnalysis')}</span>
           </div>
+          */}
           <h3 className="font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tight mb-12">
             {t('analysis.est1rmGrowth')}
           </h3>

@@ -48,28 +48,25 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
               variant === 'danger' ? 'bg-crimson' : variant === 'warning' ? 'bg-volt' : 'bg-white'
             }`} />
 
-            <div className="relative z-10 space-y-6">
-              <div className="flex items-center gap-4">
-                <div className={`w-12 h-12 flex items-center justify-center ${
-                  variant === 'danger' ? 'bg-crimson/10 text-crimson' : variant === 'warning' ? 'bg-volt/10 text-volt' : 'bg-white/10 text-white'
-                }`}>
-                  <AlertTriangle size={24} />
-                </div>
-                <div>
-                  <h3 className="text-2xl font-black italic uppercase tracking-tighter leading-none">{title}</h3>
-                </div>
+             <div className="relative z-10 flex flex-col items-center text-center">
+              <div className={`w-16 h-16 flex items-center justify-center mb-6 border ${
+                variant === 'danger' ? 'bg-crimson/10 border-crimson/20 text-crimson' : variant === 'warning' ? 'bg-volt/10 border-volt/20 text-volt' : 'bg-white/10 border-white/20 text-white'
+              }`}>
+                <AlertTriangle size={32} />
               </div>
-
+              
+              <h3 className="text-2xl font-black italic uppercase tracking-tighter mb-4 text-white">{title}</h3>
+              
               {message && (
-                <p className="text-zinc-400 font-medium leading-relaxed">
+                <p className="text-zinc-400 text-sm font-medium leading-relaxed mb-8">
                   {message}
                 </p>
               )}
 
-              <div className="flex gap-4 pt-4">
+              <div className="flex w-full gap-4 pt-4 border-t border-white/5">
                 <button
                   onClick={onCancel}
-                  className="flex-1 py-4 border-none bg-surface-container-low text-zinc-500 font-headline text-[10px] font-black uppercase tracking-widest hover:bg-surface-container-high transition-all"
+                  className="flex-1 py-4 border-none bg-surface-container-low text-zinc-500 font-headline text-[10px] font-black uppercase tracking-widest hover:bg-surface-container-high hover:text-white transition-all"
                 >
                   {cancelLabel}
                 </button>
@@ -77,7 +74,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                   onClick={onConfirm}
                   className={`flex-1 py-4 font-headline text-[10px] font-black uppercase tracking-widest transition-all shadow-lg ${
                     variant === 'danger' 
-                      ? 'bg-crimson text-void hover:bg-white hover:text-void' 
+                      ? 'btn-destructive' 
                       : variant === 'warning'
                       ? 'bg-volt text-void hover:bg-white'
                       : 'bg-white text-void hover:bg-zinc-200'

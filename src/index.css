@@ -161,6 +161,23 @@
   .volt-glow {
     box-shadow: 0 0 20px var(--primary-glow);
   }
+
+  .app-header {
+    padding-top: 1rem;
+  }
+
+  @media (min-width: 768px) {
+    .app-header {
+      padding-top: 2rem;
+    }
+  }
+
+  /* Conditional logic for mobile devices with notches */
+  @supports (padding-top: env(safe-area-inset-top)) {
+    .app-header {
+      padding-top: max(1rem, env(safe-area-inset-top));
+    }
+  }
   
   .text-glow-volt {
     text-shadow: 0 0 15px var(--primary-glow);
@@ -273,4 +290,44 @@
 [data-theme="light"][data-light-scheme="monochrome"] .tier-elite {
   --primary-color: #000000 !important;
   --primary-glow: rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Primary Button Global Overrides for Light Themes */
+:root[data-theme="light"] button.bg-volt,
+:root[data-theme="light"] button.bg-crimson {
+  background-color: var(--primary-color) !important;
+  color: var(--theme-void) !important;
+  box-shadow: 0 0 20px var(--primary-glow) !important;
+}
+
+:root[data-theme="light"] button.bg-volt:hover,
+:root[data-theme="light"] button.bg-crimson:hover {
+  filter: brightness(1.2);
+  box-shadow: 0 0 30px var(--primary-glow) !important;
+}
+
+/* Specific fix for text-void legibility on primary buttons in light mode */
+:root[data-theme="light"] button.bg-volt,
+:root[data-theme="light"] button.bg-crimson {
+  text-shadow: none !important;
+}
+
+/* Force Destructive Styling */
+.btn-destructive {
+  background-color: #dc2626 !important; /* Crimson Red */
+  color: #ffffff !important;
+  border: none !important;
+  box-shadow: 0 4px 14px 0 rgba(220, 38, 38, 0.39) !important;
+  transition: all 0.2s ease-in-out !important;
+}
+
+.btn-destructive:hover {
+  background-color: #ef4444 !important;
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px 0 rgba(220, 38, 38, 0.5) !important;
+}
+
+.btn-destructive:active {
+  transform: translateY(0);
 }

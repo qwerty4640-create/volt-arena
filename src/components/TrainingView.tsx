@@ -6,6 +6,7 @@ import {
   Activity,
   Trophy,
   Video,
+  ArrowRight,
   Clock,
   Flame,
   Zap,
@@ -117,7 +118,7 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
   const readinessScore = hasHistory || currentSession?.readiness ? readinessScoreValue : '–';
   const readinessY = 40 - (readinessScoreValue / 100) * 35;
   const totalLoad = calculateVolume(activeOrNext);
-  const weightUnit = unit === 'metric' ? 'Kg' : 'lbs';
+  const weightUnit = unit === 'metric' ? 'Kg' : 'LBS';
   
   // Calculate dynamic PRs
   const getPR = (exerciseName: string) => {
@@ -209,7 +210,7 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
                     </div>
                   )}
                 </div>
-                <h1 className="font-headline text-2xl sm:text-3xl md:text-5xl font-black uppercase italic tracking-tight mb-2">{displayTitle}</h1>
+                <h1 className="font-headline text-3xl md:text-5xl font-black uppercase italic tracking-tight mb-2">{displayTitle}</h1>
                 <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed">
                   {focusText}
                 </p>
@@ -346,7 +347,7 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
                   <div className="flex flex-col sm:flex-row gap-4 w-full">
                     <button 
                       onClick={onContinueSession}
-                      className="flex-[2] w-full min-h-[44px] px-4 sm:px-8 py-4 bg-crimson text-void font-headline text-xs md:text-sm font-black uppercase tracking-widest hover:bg-white hover:text-void transition-all flex flex-col items-center justify-center gap-1 group shadow-[0_0_30px_rgba(255,113,98,0.2)]"
+                      className="flex-[2] w-full min-h-[44px] px-4 sm:px-8 py-4 btn-destructive font-headline text-xs md:text-sm font-black uppercase tracking-widest flex flex-col items-center justify-center gap-1 group transition-all"
                     >
                       <div className="flex items-center gap-2">
                         <Play size={16} md:size={18} className="fill-white group-hover:scale-110 transition-transform" />
@@ -401,14 +402,14 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
                 className="col-span-1 md:col-span-2 lg:col-span-3 shrink-0 glass-panel p-4 flex flex-col w-full"
               >
                 <div className="flex items-center gap-3 mb-6 md:mb-10">
-                  <Trophy className="text-volt" size={24} />
-                  <h2 className="font-headline text-lg sm:text-xl md:text-2xl font-black uppercase italic tracking-tight">{t('analysis.myPRs')}</h2>
+                  {/*<Trophy className="text-volt" size={24} />*/}
+                  <h2 className="font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tight mb-2">{t('analysis.myPRs')}</h2>
                 </div>
                 
                 {hasHistory ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 flex-1">
                     {[
-                      { lift: t('stage.squat'), weight: squatPR.weight, date: squatPR.date, workoutId: squatPR.workoutId, image: 'https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?q=80&w=1000' },
+                      { lift: t('stage.squat'), weight: squatPR.weight, date: squatPR.date, workoutId: squatPR.workoutId, image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=1000' },
                       { lift: t('stage.benchPress'), weight: benchPR.weight, date: benchPR.date, workoutId: benchPR.workoutId, image: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?q=80&w=1000' },
                       { lift: t('stage.deadlift'), weight: deadliftPR.weight, date: deadliftPR.date, workoutId: deadliftPR.workoutId, image: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=1000' }
                     ].map((pr, i) => (
@@ -440,8 +441,8 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
                           <span className="text-[10px] md:text-xs font-medium text-zinc-400">{pr.date}</span>
                           
                           <button onClick={() => onViewHistory?.(pr.workoutId)} className="flex items-center gap-2 bg-white/10 hover:bg-volt hover:text-void transition-colors px-6 py-3 border-none group/btn backdrop-blur-sm">
-                            <Video size={12} md:size={14} className="text-volt group-hover/btn:text-void transition-colors" />
-                            <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest">View Log</span>
+                            <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest">{t('View Log')}</span>
+                            <ArrowRight size={14} className="text-volt group-hover/btn:text-void transition-colors" />
                           </button>
                         </div>
                       </div>

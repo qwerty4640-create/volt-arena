@@ -108,6 +108,7 @@ interface WorkoutContextType {
   resetProgress: () => Promise<void>;
   resetProgram: () => Promise<void>;
   updateHistoryWorkout: (workout: WorkoutSession) => Promise<void>;
+  deleteHistoryWorkout: (id: string) => Promise<void>;
   saveReflection: (workoutId: string, actualRpe: number) => Promise<void>;
   pendingReflection: WorkoutSession | null;
   setPendingReflection: (workout: WorkoutSession | null) => void;
@@ -159,7 +160,7 @@ const calculateFallback1RM = (
     bw = unit === 'metric' ? bw / 2.20462 : bw * 2.20462;
   }
 
-  // Default bodyweight if not provided: 80kg or 175lbs
+  // Default bodyweight if not provided: 80kg or 175LBS
   if (!bw) {
     bw = unit === 'imperial' ? 175 : 80;
   }
@@ -516,7 +517,17 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
           unsubscribeWorkouts();
         };
       } else {
-        setHistory([]);
+        const isGuestMode = localStorage.getItem('volt_guest_mode') === 'true';
+        if (isGuestMode) {
+          const guestHistory = localStorage.getItem('volt_ghost_history');
+          if (guestHistory) {
+            setHistory(JSON.parse(guestHistory));
+          } else {
+            setHistory([]);
+          }
+        } else {
+          setHistory([]);
+        }
         setRecoveryHistory([]);
         setIsLoading(false);
       }
@@ -717,6 +728,8 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
       // Calculate Chronic Load (last 7 days)
       let chronicLoadTotal = 0;
       
+      const oneHour = 3600000;
+
       history.forEach(session => {
         const completedAt = session.completedAt || 0;
         const daysAgo = (now - completedAt) / msPerDay;
@@ -736,7 +749,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
       
       // Calculate ACWR (Acute:Chronic Workload Ratio)
       let acwr = 1.0;
-      if (history.length >= 3) {
+      if (history.length >= 2) { // Lowered threshold to 2 for earlier feedback
         if (chronicLoad > 0) {
           acwr = acuteLoad / chronicLoad;
         } else if (acuteLoad > 0) {
@@ -746,21 +759,25 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
       
       // Map ACWR to readiness score
       // Optimal ACWR is 0.8 - 1.3
-      // If ACWR is optimal, readiness is high (85-100)
-      // If ACWR is > 1.5, readiness drops significantly
-      // If ACWR < 0.8, readiness is high but maybe detraining
       
       // Factor in the time since last session for acute recovery
-      const lastSession = history[0];
-      const hoursSinceLast = (now - (lastSession.completedAt || now)) / 3600000;
+      // Support for multi-session days: use the second most recent if both occurred today 
+      const recentWorkoutsToday = history.filter(s => (now - (s.completedAt || 0)) < msPerDay);
+      let hoursSinceLast = 0;
+      
+      if (recentWorkoutsToday.length > 1) {
+          hoursSinceLast = (now - (recentWorkoutsToday[1].completedAt || now)) / oneHour;
+      } else if (history[0]) {
+          hoursSinceLast = (now - (history[0].completedAt || now)) / oneHour;
+      }
       
       // Factor in Active Recovery
       const lastRecovery = activeRecoveryHistory[0];
-      const hoursSinceRecovery = lastRecovery ? (now - lastRecovery.timestamp) / 3600000 : Infinity;
+      const hoursSinceRecovery = lastRecovery ? (now - lastRecovery.timestamp) / oneHour : Infinity;
       
       const acuteRecoveryFactor = Math.min(1.0, hoursSinceLast / 48); // Full acute recovery at 48 hours
       
-      if (history.length < 3) {
+      if (history.length < 2) {
         // Not enough data for ACWR, rely purely on acute recovery
         currentReadiness = 60 + (40 * acuteRecoveryFactor); // 60-100
       } else if (acwr < 0.8) {
@@ -985,11 +1002,12 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const completeSession = async (data: { rpe: number; note: string }) => {
-    if (!currentSession || !auth.currentUser) return;
+    if (!currentSession) return;
+
+    const currentUid = auth.currentUser ? auth.currentUser.uid : 'guest';
 
     // Bug 1 Fix: Capture session data locally before state cleanup as requested
     const sessionToSave = { ...currentSession };
-    const currentUid = auth.currentUser.uid;
 
     const completedSession: any = {
       ...sessionToSave,
@@ -1010,11 +1028,24 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
     });
 
-    const workoutsPath = `users/${currentUid}/workouts`;
     try {
-      await addDoc(collection(db, workoutsPath), completedSession);
+      if (auth.currentUser) {
+        const workoutsPath = `users/${currentUid}/workouts`;
+        await addDoc(collection(db, workoutsPath), completedSession);
+      } else {
+        const guestHistory = JSON.parse(localStorage.getItem('volt_ghost_history') || '[]');
+        const newId = `guest_w_${Date.now()}`;
+        const sessionWithId = { ...completedSession, id: newId };
+        const updatedHistory = [sessionWithId, ...guestHistory];
+        localStorage.setItem('volt_ghost_history', JSON.stringify(updatedHistory));
+        setHistory(updatedHistory);
+      }
     } catch (error) {
-      handleFirestoreError(error, OperationType.CREATE, workoutsPath);
+      if (auth.currentUser) {
+        handleFirestoreError(error, OperationType.CREATE, `users/${currentUid}/workouts`);
+      } else {
+        console.error("Guest mode save failed", error);
+      }
     } finally {
       // Ensure state nullification and storage cleanup only happens after capture
       setCurrentSession(null);
@@ -1023,7 +1054,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const calculateVolume = (session: WorkoutSession) => {
-    if (!session || !session.exercises) return `0 ${unit === 'imperial' ? 'lbs' : 'kg'}`;
+    if (!session || !session.exercises) return `0 ${unit === 'imperial' ? 'LBS' : 'kg'}`;
     let total = 0;
     session.exercises.forEach(ex => {
       if (!ex.sets) return;
@@ -1033,7 +1064,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
         }
       });
     });
-    return `${total.toLocaleString()} ${unit === 'imperial' ? 'lbs' : 'kg'}`;
+    return `${total.toLocaleString()} ${unit === 'imperial' ? 'LBS' : 'kg'}`;
   };
 
   const resetProgress = async () => {
@@ -1090,19 +1121,42 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const updateHistoryWorkout = async (workout: WorkoutSession) => {
-    if (!auth.currentUser) return;
-    const workoutPath = `users/${auth.currentUser.uid}/workouts/${workout.id}`;
-    try {
-      // Recalculate volume
-      const updatedWorkout = {
-        ...workout,
-        uid: auth.currentUser.uid, // Ensure UID is present
-        volume: calculateVolume(workout)
-      };
-      
-      await setDoc(doc(db, `users/${auth.currentUser.uid}/workouts`, workout.id), updatedWorkout);
-    } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, workoutPath);
+    // Recalculate volume
+    const updatedWorkout = {
+      ...workout,
+      uid: auth.currentUser ? auth.currentUser.uid : 'guest',
+      volume: calculateVolume(workout)
+    };
+
+    if (auth.currentUser) {
+      const workoutPath = `users/${auth.currentUser.uid}/workouts/${workout.id}`;
+      try {
+        await setDoc(doc(db, `users/${auth.currentUser.uid}/workouts`, workout.id), updatedWorkout);
+      } catch (error) {
+        handleFirestoreError(error, OperationType.UPDATE, workoutPath);
+      }
+    } else {
+      const guestHistory = JSON.parse(localStorage.getItem('volt_ghost_history') || '[]');
+      const updatedHistory = guestHistory.map((s: WorkoutSession) => s.id === workout.id ? updatedWorkout : s);
+      localStorage.setItem('volt_ghost_history', JSON.stringify(updatedHistory));
+      setHistory(updatedHistory);
+    }
+  };
+
+  const deleteHistoryWorkout = async (id: string) => {
+    if (auth.currentUser) {
+      const workoutPath = `users/${auth.currentUser.uid}/workouts/${id}`;
+      try {
+        const { deleteDoc, doc } = await import('firebase/firestore');
+        await deleteDoc(doc(db, `users/${auth.currentUser.uid}/workouts`, id));
+      } catch (error) {
+        handleFirestoreError(error, OperationType.DELETE, workoutPath);
+      }
+    } else {
+      const guestHistory = JSON.parse(localStorage.getItem('volt_ghost_history') || '[]');
+      const updatedHistory = guestHistory.filter((s: WorkoutSession) => s.id !== id);
+      localStorage.setItem('volt_ghost_history', JSON.stringify(updatedHistory));
+      setHistory(updatedHistory);
     }
   };
 
@@ -1159,6 +1213,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
       resetProgress,
       resetProgram,
       updateHistoryWorkout,
+      deleteHistoryWorkout,
       saveReflection,
       pendingReflection,
       setPendingReflection,

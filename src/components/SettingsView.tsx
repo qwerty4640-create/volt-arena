@@ -5,19 +5,16 @@ import { cn } from '../lib/utils';
 import { useSettings, TrainingGoal } from '../contexts/SettingsContext';
 import { useWorkout } from '../contexts/WorkoutContext';
 import { ConfirmationModal } from './ConfirmationModal';
-
+ 
 const LANGUAGES = [
   { id: 'en', label: 'English' },
   { id: 'zh', label: 'Mandarin (中文)' },
   { id: 'ko', label: 'Korean (한국어)' },
-  { id: 'ja', label: 'Japanese (日本語)' },
   { id: 'es', label: 'Spanish (Español)' },
-  { id: 'hi', label: 'Hindi (हिन्दी)' },
-  { id: 'nl', label: 'Dutch (Nederlands)' },
 ] as const;
 
 const UNITS = [
-  { id: 'imperial', label: 'Imperial (lbs, in)' },
+  { id: 'imperial', label: 'Imperial (LBS, in)' },
   { id: 'metric', label: 'Metric (kg, cm)' },
 ] as const;
 
@@ -66,7 +63,7 @@ export const SettingsView = ({ onExit }: { onExit?: () => void }) => {
         >
           <div className="flex items-center gap-3 mb-6 md:mb-8">
             <Globe className="text-volt" size={20} />
-            <h3 className="font-headline text-lg md:text-2xl font-black uppercase tracking-widest text-white">{t('settings.language')}</h3>
+            <h3 className="font-sans text-sm font-bold uppercase tracking-widest text-white">{t('settings.language')}</h3>
           </div>
           <div className="flex flex-col gap-3">
             {LANGUAGES.map(lang => (
@@ -96,7 +93,7 @@ export const SettingsView = ({ onExit }: { onExit?: () => void }) => {
         >
           <div className="flex items-center gap-3 mb-6 md:mb-8">
             <Scale className="text-volt" size={20} />
-            <h3 className="font-headline text-lg md:text-2xl font-black uppercase tracking-widest text-white">{t('settings.unit')}</h3>
+            <h3 className="font-sans text-sm font-bold uppercase tracking-widest text-white">{t('settings.unit')}</h3>
           </div>
           <div className="flex flex-col gap-3">
             {UNITS.map(u => (
@@ -126,7 +123,7 @@ export const SettingsView = ({ onExit }: { onExit?: () => void }) => {
         >
           <div className="flex items-center gap-3 mb-6 md:mb-8">
             <Monitor className="text-volt" size={20} />
-            <h3 className="font-headline text-lg md:text-2xl font-black uppercase tracking-widest text-zinc-100">Visual Output</h3>
+            <h3 className="font-sans text-sm font-bold uppercase tracking-widest text-white">Visual Output</h3>
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
@@ -191,7 +188,7 @@ export const SettingsView = ({ onExit }: { onExit?: () => void }) => {
           >
             <div className="flex items-center gap-3 mb-6 md:mb-8">
               <Zap className="text-volt" size={20} />
-              <h3 className="font-headline text-lg md:text-2xl font-black uppercase tracking-widest text-white">{t('settings.experience')}</h3>
+              <h3 className="font-sans text-sm font-bold uppercase tracking-widest text-white">{t('settings.experience')}</h3>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -268,7 +265,7 @@ export const SettingsView = ({ onExit }: { onExit?: () => void }) => {
         >
           <div className="flex items-center gap-3 mb-6 md:mb-8">
             <Target className="text-volt" size={20} />
-            <h3 className="font-headline text-lg md:text-2xl font-black uppercase tracking-widest text-white">{t('settings.programManagement')}</h3>
+            <h3 className="font-sans text-sm font-bold uppercase tracking-widest text-white">{t('settings.programManagement')}</h3>
           </div>
           
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -280,7 +277,7 @@ export const SettingsView = ({ onExit }: { onExit?: () => void }) => {
             </div>
             <button
               onClick={() => setShowResetProgramConfirm(true)}
-              className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 md:px-8 md:py-4 border-none bg-crimson text-void font-headline text-[10px] font-black uppercase tracking-widest hover:bg-white hover:text-crimson transition-all shrink-0"
+              className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 md:px-8 md:py-4 btn-destructive font-headline text-[10px] font-black uppercase tracking-widest shrink-0 transition-all rounded"
             >
               <RotateCcw size={14} />
               <span>{t('settings.resetProgramBtn')}</span>
@@ -297,7 +294,7 @@ export const SettingsView = ({ onExit }: { onExit?: () => void }) => {
         >
           <div className="flex items-center gap-3 mb-6 md:mb-8">
             <Settings className="text-volt" size={20} />
-            <h3 className="font-headline text-lg md:text-2xl font-black uppercase tracking-widest text-white">{t('settings.systemOps')}</h3>
+            <h3 className="font-sans text-sm font-bold uppercase tracking-widest text-white">{t('settings.systemOps')}</h3>
           </div>
           
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -309,7 +306,7 @@ export const SettingsView = ({ onExit }: { onExit?: () => void }) => {
             </div>
             <button
               onClick={onExit}
-              className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 md:px-8 md:py-4 border-none bg-crimson text-void font-headline text-[10px] font-black uppercase tracking-widest hover:bg-white hover:text-crimson transition-all shrink-0"
+              className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 md:px-8 md:py-4 btn-destructive font-headline text-[10px] font-black uppercase tracking-widest shrink-0 transition-all rounded"
             >
               <Power size={14} />
               <span>{t('nav.closeApp')}</span>
@@ -328,7 +325,7 @@ export const SettingsView = ({ onExit }: { onExit?: () => void }) => {
         >
           <div className="flex items-center gap-3 mb-6 md:mb-8">
             <Terminal className="text-volt" size={20} />
-            <h3 className="font-headline text-lg md:text-2xl font-black uppercase tracking-widest text-white">{t('settings.devTools')}</h3>
+            <h3 className="font-sans text-sm font-bold uppercase tracking-widest text-white">{t('settings.devTools')}</h3>
           </div>
           
           <div className="space-y-6">
@@ -433,7 +430,7 @@ export const SettingsView = ({ onExit }: { onExit?: () => void }) => {
                 onClick={() => setShowResetConfirm(true)}
                 disabled={isResetting}
                 className={cn(
-                  "w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 border-none bg-crimson text-void font-headline text-[10px] font-black uppercase tracking-widest hover:bg-white hover:text-crimson transition-all shrink-0",
+                  "w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 btn-destructive font-headline text-[10px] font-black uppercase tracking-widest shrink-0 transition-all rounded",
                   isResetting && "opacity-50 cursor-not-allowed"
                 )}
               >

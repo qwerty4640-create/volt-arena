@@ -59,6 +59,7 @@ import { TacticalChart } from './TacticalChart';
 import { getTacticalImpact } from '../utils/analyticsEngine';
 
 import { useWorkout, WorkoutSession } from '../contexts/WorkoutContext';
+import { auth } from '../firebase';
 import { BlockType, getPlanForDuration } from '../constants/periodization';
 
 type WidgetId = 'recovery-analysis' | 'pr' | 'macros' | 'logs' | 'block';
@@ -121,21 +122,29 @@ export const RecoveryAnalysisWidget = () => {
     startOfWeek.setHours(0, 0, 0, 0);
 
     const weekData = days.map(day => ({ day, val: 0, active: false }));
+    const today = now.toDateString();
 
     history.forEach(session => {
+      // Ensure we parse the date correctly whether it's a timestamp or a locale string
       const sessionDate = session.completedAt ? new Date(session.completedAt) : new Date(session.date);
+      
       if (sessionDate >= startOfWeek) {
         const dayIndex = sessionDate.getDay();
         let sessionVolume = 0;
-        session.exercises?.forEach(ex => {
-          ex.sets?.forEach(s => {
-            if (s.isCompleted) {
-              sessionVolume += (parseFloat(s.weight) || 0) * (parseInt(s.reps) || 0);
-            }
+        
+        if (session.exercises) {
+          session.exercises.forEach(ex => {
+            ex.sets?.forEach(s => {
+              if (s.isCompleted) {
+                sessionVolume += (parseFloat(s.weight) || 0) * (parseInt(s.reps) || 0);
+              }
+            });
           });
-        });
+        }
+        
         weekData[dayIndex].val += sessionVolume;
-        if (sessionDate.toDateString() === now.toDateString()) {
+        
+        if (sessionDate.toDateString() === today) {
           weekData[dayIndex].active = true;
         }
       }
@@ -190,7 +199,8 @@ export const RecoveryAnalysisWidget = () => {
             </span>
             <span className="text-xl md:text-2xl font-black italic text-zinc-600 mb-1">%</span>
           </div>
-          <span className="text-volt font-headline text-[10px] md:text-xs font-black uppercase tracking-widest border-l-2 border-volt/30 pl-3 block mb-6">
+          <span className="font-headline text-[10px] md:text-xs font-black uppercase tracking-widest border-l-2 pl-3 block mb-6 transition-colors text-zinc-600 border-zinc-800
+">
             {hasHistory ? t('analysis.optimalState') : 'AWAITING DATA'}
           </span>
           
@@ -249,9 +259,10 @@ export const RecoveryAnalysisWidget = () => {
             <span className="text-6xl md:text-7xl font-black italic tracking-tighter leading-none text-white">
               {hasHistory ? totalWeeklyVolume.toLocaleString() : '–'}
             </span>
-            <span className="text-xl md:text-2xl font-black italic text-zinc-600 mb-1">{unit === 'metric' ? 'kg' : 'lbs'}</span>
+            <span className="text-xl md:text-2xl font-black italic text-zinc-600 mb-1">{unit === 'metric' ? 'kg' : 'LBS'}</span>
           </div>
-          <span className="text-zinc-300 font-headline text-[10px] md:text-xs font-black uppercase tracking-widest border-l-2 border-zinc-600/30 pl-3 block mb-6">
+          <span className="font-headline text-[10px] md:text-xs font-black uppercase tracking-widest border-l-2 pl-3 block mb-6 transition-colors text-zinc-600 border-zinc-800
+">
             {hasHistory ? '7-DAY LOAD' : 'AWAITING DATA'}
           </span>
 
@@ -270,7 +281,7 @@ export const RecoveryAnalysisWidget = () => {
                         )}
                       />
                       <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-void border border-white/10 px-2 py-1 flex items-center justify-center opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none z-50">
-                        <span className="text-[8px] font-black text-white whitespace-nowrap leading-none">{d.displayVal.toLocaleString()} {unit === 'metric' ? 'kg' : 'lbs'}</span>
+                        <span className="text-[8px] font-black text-white whitespace-nowrap leading-none">{d.displayVal.toLocaleString()} {unit === 'metric' ? 'kg' : 'LBS'}</span>
                       </div>
                     </div>
                     <span className={cn(
@@ -372,6 +383,8 @@ export const BlockWidget = () => {
   const cycleLength = plan.reduce((acc, b) => acc + b.durationWeeks, 0);
   const hasHistory = (history?.length || 0) > 0;
   
+  const [hoveredWeekData, setHoveredWeekData] = useState<any>(null);
+
   // Only show progress if they've actually started lifting
   // And calculate based on completed weeks (e.g., Week 1 = 0% complete)
   const programProgress = hasHistory ? ((totalWeek - 1) / cycleLength) * 100 : 0;
@@ -389,7 +402,8 @@ export const BlockWidget = () => {
         data.push({
           week: weekAcc,
           intensity: Math.round(intensity * 100),
-          block: block.type,
+          block: block.label || block.type,
+          blockType: block.type,
           isCurrent: weekAcc === currentCycleWeek
         });
       }
@@ -397,12 +411,25 @@ export const BlockWidget = () => {
     return data;
   }, [currentCycleWeek, plan]);
 
+  const intensityCurveTicks = React.useMemo(() => {
+    if (!graphData.length) return [];
+    return graphData
+      .map(d => d.week)
+      .filter(w => w === 1 || w % 5 === 0);
+  }, [graphData]);
+
+  const activeFocus = hoveredWeekData || { 
+    block: nextWorkout.blockLabel || currentBlock, 
+    blockType: nextWorkout.blockType || currentBlock,
+    week: totalWeek
+  };
+
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
-        <div className="glass-panel p-3 border-volt/30 shadow-xl">
-          <p className="text-[10px] font-black uppercase tracking-widest text-volt mb-1">{nextWorkout.blockLabel || data.block}</p>
+        <div className="glass-panel p-3 border-volt/30 shadow-xl bg-void/90 backdrop-blur-md">
+          <p className="text-[10px] font-black uppercase tracking-widest text-volt mb-1">{data.block}</p>
           <p className="text-xs font-bold text-white">Week {data.week}</p>
           <p className="text-xs font-bold text-zinc-400">Intensity: {data.intensity}%</p>
         </div>
@@ -417,10 +444,10 @@ export const BlockWidget = () => {
       
       <div className="flex items-center justify-between mb-6 md:mb-8 relative z-10">
         <div className="flex items-center gap-3">
-          <h3 className="font-headline text-3xl font-black uppercase italic tracking-tight">Block Progression</h3>
+          <h3 className="font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tight mb-2">{t('Block Progression')}</h3>
         </div>
         <div className="flex items-center gap-2 px-3 py-1 bg-volt/10 border border-volt/20">
-          <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-volt">Week {totalWeek}</span>
+          <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-volt">{t('analysis.weeks')} {totalWeek}</span>
         </div>
       </div>
 
@@ -428,7 +455,7 @@ export const BlockWidget = () => {
         {/* Detailed Block Info */}
         <div className="space-y-4">
           <div className="space-y-2">
-            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Training Cycle</span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('analysis.trainingCycle')}</span>
             <div className="grid grid-cols-1 gap-2">
               {plan.map((block, idx) => {
                 const isCurrent = currentBlock === block.type;
@@ -491,19 +518,24 @@ export const BlockWidget = () => {
           <div className="p-4 bg-void/40 border-none mt-auto">
             <div className="flex items-center gap-2 mb-2">
               <Info size={12} className="text-zinc-500" />
-              <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500">Current Focus</span>
+              <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500">
+                {hoveredWeekData ? `Week ${hoveredWeekData.week} Focus` : 'Current Focus'}
+              </span>
             </div>
             <p className="text-[10px] text-zinc-400 leading-relaxed font-bold uppercase tracking-widest">
-              {(nextWorkout.blockLabel === 'PEAKING' || nextWorkout.blockType === BlockType.PEAKING) && "Realizing strength and preparing for 1RM."}
-              {(nextWorkout.blockLabel === 'MAX EFFORT' || nextWorkout.blockType === BlockType.MAX_EFFORT) && "Hybrid of strength and aesthetics. Focused on top sets."}
-              {(nextWorkout.blockLabel === 'OVERREACH' || nextWorkout.blockType === BlockType.OVERREACH) && "Maximal muscle cross-sectional area and metabolic stress."}
-              {(nextWorkout.blockLabel === 'COMPETITION' || nextWorkout.blockType === BlockType.COMPETITION) && "Competition specificity and realization under maximum load."}
-              {(nextWorkout.blockLabel === 'REGENERATION' || nextWorkout.blockType === BlockType.REGENERATION) && "Sustainable performance and flushing out systemic fatigue."}
-              {nextWorkout.blockType === BlockType.HYPERTROPHY && nextWorkout.blockLabel === undefined && "Building muscle mass and work capacity."}
-              {nextWorkout.blockType === BlockType.STRENGTH && nextWorkout.blockLabel === undefined && "Developing maximal strength and neural drive."}
-              {nextWorkout.blockType === BlockType.FOUNDATION && "Establishing movement quality and structural foundation."}
-              {nextWorkout.blockType === BlockType.POWER && "Developing explosive power and rate of force development."}
-              {nextWorkout.blockType === BlockType.DELOAD && "Dissipating fatigue and recovery."}
+              {(activeFocus.block === 'PEAKING' || activeFocus.blockType === BlockType.PEAKING) && t('analysis.focusRealizing')}
+              {(activeFocus.block === 'MAX EFFORT' || activeFocus.blockType === BlockType.MAX_EFFORT) && t('analysis.focusingOn')}
+              {(activeFocus.block === 'OVERREACH' || activeFocus.blockType === BlockType.OVERREACH) && t('analysis.focusHypertrophy')}
+              {(activeFocus.block === 'COMPETITION' || activeFocus.blockType === BlockType.COMPETITION) && t('analysis.focusRealizing')}
+              {(activeFocus.block === 'REGENERATION' || activeFocus.blockType === BlockType.REGENERATION) && t('analysis.focusRecovery')}
+              {activeFocus.blockType === BlockType.HYPERTROPHY && activeFocus.block === 'Hypertrophy' && t('analysis.focusBuilding')}
+              {activeFocus.blockType === BlockType.STRENGTH && activeFocus.block === 'Strength' && t('analysis.focusStrength')}
+              {activeFocus.blockType === BlockType.FOUNDATION && t('analysis.focusFoundation')}
+              {activeFocus.blockType === BlockType.POWER && t('analysis.focusPower')}
+              {activeFocus.blockType === BlockType.DELOAD && t('analysis.focusRecovery')}
+              {/* Fallback if labels are different but types match */}
+              {activeFocus.blockType === BlockType.HYPERTROPHY && activeFocus.block !== 'Hypertrophy' && t('analysis.focusBuilding')}
+              {activeFocus.blockType === BlockType.STRENGTH && activeFocus.block !== 'Strength' && t('analysis.focusStrength')}
             </p>
           </div>
         </div>
@@ -517,7 +549,16 @@ export const BlockWidget = () => {
           
           <div className="flex-1 min-h-[180px] md:min-h-[200px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={graphData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <AreaChart 
+                data={graphData} 
+                margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                onMouseMove={(e: any) => {
+                  if (e && e.activePayload) {
+                    setHoveredWeekData(e.activePayload[0].payload);
+                  }
+                }}
+                onMouseLeave={() => setHoveredWeekData(null)}
+              >
                 <defs>
                   <linearGradient id="intensity-grad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="var(--primary-color)" stopOpacity={0.3}/>
@@ -529,8 +570,9 @@ export const BlockWidget = () => {
                   dataKey="week" 
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: '#71717a', fontSize: 10, fontWeight: 900, fontFamily: 'Inter' }}
-                  interval={0}
+                  tick={{ fill: '#71717a', fontSize: 9, fontWeight: 900, fontFamily: 'Inter' }}
+                  ticks={intensityCurveTicks}
+                  tickFormatter={(val) => `${t('workout.week').toUpperCase()} ${val}`}
                 />
                 <YAxis 
                   axisLine={false}
@@ -598,13 +640,21 @@ const PRWidget = () => {
 
   const prWeight = hasHistory ? bestLift.weight.toFixed(1) : '–';
   const prDiff = hasHistory ? (unit === 'metric' ? '+2.5' : '+5.0') : '0.0';
-  const weightUnit = unit === 'metric' ? 'Kg' : 'lbs';
+  const weightUnit = unit === 'metric' ? 'Kg' : 'LBS';
+
+  const getBackgroundImage = (liftName: string) => {
+    const name = liftName.toLowerCase();
+    if (name.includes('squat')) return "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=2070&auto=format&fit=crop";
+    if (name.includes('bench')) return "https://images.unsplash.com/photo-1534367507873-d2d7e249a3f2?q=80&w=2070&auto=format&fit=crop";
+    if (name.includes('deadlift')) return "https://images.unsplash.com/photo-1583454110551-21f2fa2943f3?q=80&w=2070&auto=format&fit=crop";
+    return "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=2070&auto=format&fit=crop";
+  };
 
   return (
   <div className="relative overflow-hidden group h-full">
     <div className={cn("absolute inset-0 transition-colors duration-500", hasHistory ? "bg-crimson/90" : "bg-zinc-900/90")} />
     <img 
-      src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=2070&auto=format&fit=crop" 
+      src={hasHistory ? getBackgroundImage(bestLift.name) : "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=2070&auto=format&fit=crop"} 
       alt="Personal Record" 
       className="w-full h-full object-cover opacity-20 group-hover:scale-110 transition-transform duration-1000"
       referrerPolicy="no-referrer"
@@ -658,21 +708,27 @@ const VolumeWidget = () => {
     startOfWeek.setHours(0, 0, 0, 0);
 
     const weekData = days.map(day => ({ day, val: 0, active: false }));
+    const today = now.toDateString();
 
     history.forEach(session => {
       const sessionDate = session.completedAt ? new Date(session.completedAt) : new Date(session.date);
       if (sessionDate >= startOfWeek) {
         const dayIndex = sessionDate.getDay();
         let sessionVolume = 0;
-        session.exercises?.forEach(ex => {
-          ex.sets?.forEach(s => {
-            if (s.isCompleted) {
-              sessionVolume += (parseFloat(s.weight) || 0) * (parseInt(s.reps) || 0);
-            }
+        
+        if (session.exercises) {
+          session.exercises.forEach(ex => {
+            ex.sets?.forEach(s => {
+              if (s.isCompleted) {
+                sessionVolume += (parseFloat(s.weight) || 0) * (parseInt(s.reps) || 0);
+              }
+            });
           });
-        });
+        }
+        
         weekData[dayIndex].val += sessionVolume;
-        if (sessionDate.toDateString() === now.toDateString()) {
+        
+        if (sessionDate.toDateString() === today) {
           weekData[dayIndex].active = true;
         }
       }
@@ -715,7 +771,7 @@ const VolumeWidget = () => {
               />
               {/* Tooltip on hover */}
               <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-void border border-white/10 px-2 py-1 opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none z-10 whitespace-nowrap">
-                <span className="text-[8px] font-black text-white">{d.displayVal.toLocaleString()} {unit === 'metric' ? 'kg' : 'lbs'}</span>
+                <span className="text-[8px] font-black text-white">{d.displayVal.toLocaleString()} {unit === 'metric' ? 'kg' : 'LBS'}</span>
               </div>
             </div>
             <span className={cn(
@@ -802,7 +858,7 @@ const MacrosWidget = () => {
 export const LogsWidget = ({ onViewHistory }: { onViewHistory?: (sessionId?: string) => void }) => {
   const { t, unit } = useSettings();
   const { history, recoveryHistory, deleteActiveRecovery } = useWorkout();
-  const weightUnit = unit === 'metric' ? 'Kg' : 'lbs';
+  const weightUnit = unit === 'metric' ? 'Kg' : 'LBS';
   
   const [editingLog, setEditingLog] = React.useState<any>(null);
   const [logToDelete, setLogToDelete] = React.useState<string | null>(null);
@@ -828,8 +884,44 @@ export const LogsWidget = ({ onViewHistory }: { onViewHistory?: (sessionId?: str
   <div className="glass-panel px-4 py-6 md:p-8 border-none h-full overflow-y-auto custom-scrollbar">
     <div className="space-y-6">
       <div className="flex justify-between items-end">
-        <h2 className="font-headline text-3xl font-black uppercase italic tracking-tight">{t('analysis.recentLogs')}</h2>
+        <h2 className="font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tight mb-2">{t('analysis.recentLogs')}</h2>
       </div>
+
+      {!hasAnyLogs && !auth.currentUser && (
+        <div className="bg-volt/10 border border-volt p-4 flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
+          <div className="flex flex-col items-start gap-1">
+            <span className="text-volt font-headline font-black uppercase tracking-widest text-sm">Save Your Progress</span>
+            <span className="text-zinc-400 text-xs font-medium">Create a free account to sync your logs and unlock advanced analytics.</span>
+          </div>
+          <button 
+            onClick={() => {
+              localStorage.removeItem('volt_guest_mode');
+              window.location.reload();
+            }}
+            className="w-full sm:w-auto bg-volt text-void px-6 py-2 font-black uppercase tracking-widest text-xs hover:bg-white transition-colors"
+          >
+            Create Account
+          </button>
+        </div>
+      )}
+
+      {hasAnyLogs && !auth.currentUser && (
+        <div className="bg-volt/10 border border-volt p-4 flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
+          <div className="flex flex-col items-start gap-1">
+            <span className="text-volt font-headline font-black uppercase tracking-widest text-sm">Sync to Cloud</span>
+            <span className="text-zinc-400 text-xs font-medium">Don't lose your progress. Create an account to save your logs permanently.</span>
+          </div>
+          <button 
+            onClick={() => {
+              localStorage.removeItem('volt_guest_mode');
+              window.location.reload();
+            }}
+            className="w-full sm:w-auto bg-volt text-void px-6 py-2 font-black uppercase tracking-widest text-xs hover:bg-white transition-colors"
+          >
+            Sign Up Now
+          </button>
+        </div>
+      )}
 
       <div className="space-y-4">
         {!hasAnyLogs ? (
@@ -854,9 +946,11 @@ export const LogsWidget = ({ onViewHistory }: { onViewHistory?: (sessionId?: str
                   className="glass-panel p-4 md:p-6 border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-0 group hover:bg-volt/5 transition-all border-l-4 border-l-zinc-800"
                 >
                   <div className="flex items-center gap-4 sm:gap-6">
+                  {/*}
                     <div className="w-12 h-12 md:w-14 md:h-14 shrink-0 bg-void flex items-center justify-center border border-white/5">
                       <Zap size={20} className="text-zinc-700 group-hover:text-volt transition-colors" />
                     </div>
+                    {*/}
                     <div className="min-w-0">
                       <h4 className="text-lg sm:text-xl font-black uppercase italic leading-tight group-hover:text-volt transition-colors truncate">
                         {recovery.type}
@@ -874,23 +968,7 @@ export const LogsWidget = ({ onViewHistory }: { onViewHistory?: (sessionId?: str
                       <span className="text-xs font-black uppercase text-white/40 italic">Log Entry</span>
                     </div>
                     
-                    {/* Action Buttons */}
-                    <div className="flex items-center gap-2 relative z-10" onClick={(e) => e.stopPropagation()}>
-                      <button 
-                        onClick={() => setEditingLog(recovery)}
-                        className="w-11 h-11 flex items-center justify-center bg-white/5 hover:bg-volt hover:text-void text-zinc-400 transition-colors"
-                        aria-label="Edit log entry"
-                      >
-                        <Edit2 size={16} />
-                      </button>
-                      <button 
-                        onClick={() => setLogToDelete(recovery.id)}
-                        className="w-11 h-11 flex items-center justify-center bg-white/5 hover:bg-crimson hover:text-void text-crimson transition-colors"
-                        aria-label="Delete log entry"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
+                    {/* Remove Action Buttons from Recent Logs */}
                   </div>
                 </div>
               );
@@ -925,9 +1003,11 @@ export const LogsWidget = ({ onViewHistory }: { onViewHistory?: (sessionId?: str
                 className="glass-panel p-4 md:p-6 border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-0 group hover:bg-white/5 transition-colors cursor-pointer focus-visible:outline-volt focus-visible:outline-offset-2"
               >
                 <div className="flex items-center gap-4 sm:gap-6">
+                {/*}
                   <div className="w-12 h-12 md:w-14 md:h-14 shrink-0 bg-zinc-900 flex items-center justify-center border border-white/5">
                     <span className="text-xl md:text-2xl font-black italic text-zinc-700">{day}</span>
                   </div>
+                  {*/}
                   <div className="min-w-0">
                     <h4 className="text-lg sm:text-xl font-black uppercase italic leading-tight group-hover:text-volt transition-colors truncate">
                       {workout.title}
@@ -1027,10 +1107,10 @@ export const ExternalActivityWidget = () => {
            style={{ backgroundImage: 'radial-gradient(var(--primary-color) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
       
       <div className="flex items-center gap-3 mb-6 md:mb-8 relative z-10">
-        <h2 className="font-headline text-3xl font-black uppercase italic tracking-tight">Tactical Integration</h2>
+        <h2 className="font-headline text-2xl font-black uppercase italic tracking-tight">Tactical Integration</h2>
       </div>
       
-      <div className="grid grid-cols-3 gap-4 mb-6 relative z-10 w-full max-w-sm">
+      <div className="grid grid-cols-3 mb-6 relative z-10 w-full max-w-sm">
         <div className="flex flex-col">
           <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">Weekly</span>
           <div className="flex items-end gap-1">
@@ -1054,7 +1134,7 @@ export const ExternalActivityWidget = () => {
         </div>
       </div>
       
-      <div className="bg-void/40 border border-white/5 p-4 flex flex-col sm:flex-row gap-4 items-start sm:items-center mb-6 relative z-10">
+      <div className="bg-void/40 border border-white/5 p-4 flex flex-col sm:flex-row items-start sm:items-center mb-6 relative z-10">
          <div className="flex flex-col justify-center min-w-[70px]">
            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">AVG RPE</span>
            <span className="text-2xl md:text-3xl font-black italic text-volt">{avgRpeWeek > 0 ? avgRpeWeek.toFixed(1) : '–'}</span>

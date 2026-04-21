@@ -343,7 +343,7 @@ export const OnboardingFlow = () => {
                       unit === 'imperial' ? "bg-volt text-void" : "text-zinc-500 hover:text-white"
                     )}
                   >
-                    LB
+                    LBS
                   </button>
                   <button
                     onClick={() => handleUnitChange('metric')}
@@ -420,7 +420,7 @@ export const OnboardingFlow = () => {
                     "text-[10px] font-black uppercase tracking-widest transition-colors",
                     isWeightError ? "text-crimson" : "text-zinc-500"
                   )}>
-                    {t('onboarding.weight')} ({unit === 'metric' ? 'kg' : 'lb'})
+                    {t('onboarding.weight')} ({unit === 'metric' ? 'kg' : 'LBS'})
                   </label>
                   <div className="relative">
                     <Scale className={cn("absolute left-4 top-1/2 -translate-y-1/2 transition-colors", isWeightError ? "text-crimson" : "text-zinc-500")} size={18} />
@@ -502,7 +502,7 @@ export const OnboardingFlow = () => {
                           unit === 'imperial' ? "bg-volt text-void" : "text-zinc-500 hover:text-white"
                         )}
                       >
-                        LB
+                        LBS
                       </button>
                       <button
                         onClick={() => handleUnitChange('metric')}

@@ -13,7 +13,7 @@
         "lastName": { "type": "string", "description": "User's last name." },
         "gender": { "type": "string", "enum": ["male", "female", "other"], "description": "User's gender." },
         "height": { "type": "number", "description": "User's height in cm or inches." },
-        "weight": { "type": "number", "description": "User's body weight in kg or lbs." },
+        "weight": { "type": "number", "description": "User's body weight in kg or LBS." },
         "squatPR": { "type": "number", "description": "User's squat personal record." },
         "benchPR": { "type": "number", "description": "User's bench press personal record." },
         "deadliftPR": { "type": "number", "description": "User's deadlift personal record." },

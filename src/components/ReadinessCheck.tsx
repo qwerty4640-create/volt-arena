@@ -153,7 +153,7 @@ export const ReadinessCheck = ({ onComplete, onCancel }: ReadinessCheckProps) =>
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
         className="relative w-full max-w-2xl glass-panel border-white/10 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
       >
-        <div className="p-6 md:p-8 border-b border-white/5 shrink-0">
+        <div className="p-3 md:p-8 border-b border-white/5 shrink-0">
           <div className="flex items-center gap-6">
             <button 
               onClick={onCancel}
@@ -170,7 +170,7 @@ export const ReadinessCheck = ({ onComplete, onCancel }: ReadinessCheckProps) =>
 
         <div 
           ref={scrollContainerRef}
-          className="p-6 md:p-8 overflow-y-auto flex-1 custom-scrollbar"
+          className="p-3 md:p-8 overflow-y-auto flex-1 custom-scrollbar"
         >
           <AnimatePresence mode="wait">
             {!showResult ? (
@@ -267,7 +267,7 @@ export const ReadinessCheck = ({ onComplete, onCancel }: ReadinessCheckProps) =>
                 </div>
 
                 {/* Session Target RPE Selector */}
-                <div className="space-y-4 p-6 bg-surface-container-lowest border border-white/5">
+                <div className="space-y-4 p-3 bg-surface-container-lowest border border-white/5">
                   <div className="flex items-center justify-between">
                     <div className="space-y-1">
                       <h3 className="font-headline text-sm font-black uppercase tracking-widest text-white">Session Target RPE</h3>

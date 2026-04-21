@@ -272,7 +272,7 @@ export const ProfileView = () => {
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
-          className="glass-panel px-4 py-8 md:p-8 space-y-6"
+          className="glass-panel px-4 py-8 md:p-6 space-y-6"
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -301,7 +301,7 @@ export const ProfileView = () => {
                 <span className="text-7xl font-sans font-black text-volt italic tracking-tighter drop-shadow-[0_0_30px_rgba(0,182,255,0.4)]">
                   {(profile.squatPR || 0) + (profile.benchPR || 0) + (profile.deadliftPR || 0)}
                 </span>
-                <span className="text-sm font-black text-zinc-400 uppercase tracking-[0.2em]">{unit === 'metric' ? 'kg' : 'lb'}</span>
+                <span className="text-sm font-black text-zinc-400 uppercase tracking-[0.2em]">{unit === 'metric' ? 'kg' : 'LBS'}</span>
               </div>
               <div className="absolute top-0 right-0 w-48 h-48 bg-volt/5 blur-[80px] rounded-full -mr-24 -mt-24 pointer-events-none" />
             </div>
@@ -317,7 +317,7 @@ export const ProfileView = () => {
                   </div>
                   <div className="flex items-baseline gap-2">
                     <span className="text-lg font-sans font-black text-white italic">{stat.value}</span>
-                    <span className="text-[8px] font-bold text-zinc-400 uppercase">{unit === 'metric' ? 'kg' : 'lb'}</span>
+                    <span className="text-[8px] font-bold text-zinc-400 uppercase">{unit === 'metric' ? 'kg' : 'LBS'}</span>
                   </div>
                 </div>
               ))}
@@ -330,7 +330,7 @@ export const ProfileView = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="glass-panel px-4 py-8 md:p-8 space-y-6"
+          className="glass-panel px-4 py-8 md:p-6 space-y-6"
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -382,7 +382,7 @@ export const ProfileView = () => {
               <Scale size={18} className="text-zinc-500" />
               <div>
                 <p className="text-[8px] font-black uppercase tracking-widest text-zinc-500">Weight</p>
-                <p className="text-xs font-bold text-white uppercase">{profile.weight || 0} {unit === 'metric' ? 'kg' : 'lb'}</p>
+                <p className="text-xs font-bold text-white uppercase">{profile.weight || 0} {unit === 'metric' ? 'kg' : 'LBS'}</p>
               </div>
             </div>
           </div>
@@ -475,7 +475,7 @@ export const ProfileView = () => {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-md glass-panel p-8 border-volt/30 shadow-2xl my-auto"
+              className="relative w-full max-w-md glass-panel p-3 md:p-6 border-volt/30 shadow-2xl my-auto"
             >
               <div className="flex items-center gap-4 mb-8">
                 <div className="p-4 bg-volt/10 text-volt">
@@ -491,7 +491,7 @@ export const ProfileView = () => {
                 <div className="space-y-4">
                   {/* Gender */}
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-normal text-zinc-500 ml-2">Gender</label>
+                    <label className="text-[10px] font-bold uppercase tracking-normal text-zinc-500">Gender</label>
                     <select
                       value={editData.gender}
                       onChange={(e) => setEditData({ ...editData, gender: e.target.value as any })}
@@ -505,7 +505,7 @@ export const ProfileView = () => {
 
                   {/* Age */}
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-normal text-zinc-500 ml-2">Age</label>
+                    <label className="text-[10px] font-bold uppercase tracking-normal text-zinc-500">Age</label>
                     <input
                       type="number"
                       step="1"
@@ -531,7 +531,7 @@ export const ProfileView = () => {
 
                   {/* Height */}
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-normal text-zinc-500 ml-2">Height</label>
+                    <label className="text-[10px] font-bold uppercase tracking-normal text-zinc-500">Height</label>
                     {unit === 'metric' ? (
                       <div className="flex items-center gap-2">
                         <input
@@ -568,7 +568,7 @@ export const ProfileView = () => {
 
                   {/* Weight */}
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-normal text-zinc-500 ml-2">Weight ({unit === 'metric' ? 'kg' : 'lb'})</label>
+                    <label className="text-[10px] font-bold uppercase tracking-normal text-zinc-500">Weight ({unit === 'metric' ? 'kg' : 'LBS'})</label>
                     <input
                       type="number"
                       value={editData.weight}
@@ -579,7 +579,7 @@ export const ProfileView = () => {
 
                   {/* Training Goal */}
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-normal text-zinc-500 ml-2">Training Objective</label>
+                    <label className="text-[10px] font-bold uppercase tracking-normal text-zinc-500">Training Objective</label>
                     <div className="grid grid-cols-1 gap-2">
                       {(['pure_strength', 'powerbuilding', 'hypertrophy', 'peaking', 'longevity'] as TrainingGoal[]).map(goal => (
                         <button
@@ -646,7 +646,7 @@ export const ProfileView = () => {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-2xl glass-panel p-8 border-volt/30 shadow-2xl my-auto"
+              className="relative w-full max-w-2xl glass-panel p-3 md:p-6 border-volt/30 shadow-2xl my-auto"
             >
               <div className="flex items-center gap-4 mb-8">
                 <div className="p-4 bg-volt/10 text-volt">
@@ -662,7 +662,7 @@ export const ProfileView = () => {
                 {/* Timeline Column */}
                 <div className="space-y-6">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-normal text-zinc-500 ml-2">Months until Competition</label>
+                    <label className="text-[10px] font-bold uppercase tracking-normal text-zinc-500">Months until Competition</label>
                     <div className="grid grid-cols-4 gap-2">
                       {[3, 6, 9, 12].map((m) => (
                         <button
@@ -695,7 +695,7 @@ export const ProfileView = () => {
                 {/* Frequency Column */}
                 <div className="space-y-6">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-normal text-zinc-500 ml-2">Training Frequency</label>
+                    <label className="text-[10px] font-bold uppercase tracking-normal text-zinc-500">Training Frequency</label>
                     <div className="grid grid-cols-5 gap-2">
                       {[3, 4, 5, 6, 7].map((f) => (
                         <button
@@ -728,9 +728,9 @@ export const ProfileView = () => {
                 <div className="flex items-start gap-3 text-left">
                   <Info size={16} className="text-volt shrink-0 mt-0.5" />
                   <p className="text-[10px] text-volt font-bold uppercase tracking-widest leading-relaxed">
-                    Adjusting your protocol will recalibrate your training cycle. 
+                    Adjusting your protocol will recalibrate your training cycle. History and PRs are always preserved.
                     {adjustingDuration !== profile.trainingDurationMonths && " Changing duration will restart your cycle from Week 1."}
-                    History and PRs are always preserved.
+                     
                   </p>
                 </div>
               </div>
@@ -770,7 +770,7 @@ export const ProfileView = () => {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-md glass-panel p-8 border-volt/30 shadow-2xl my-auto"
+              className="relative w-full max-w-md glass-panel p-3 md:p-6 border-volt/30 shadow-2xl my-auto"
             >
               <div className="flex items-center gap-4 mb-8">
                 <div className="p-4 bg-volt/10 text-volt">
@@ -785,7 +785,7 @@ export const ProfileView = () => {
               <div className="space-y-6">
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-normal text-zinc-500 ml-2">Squat ({unit === 'metric' ? 'kg' : 'lb'})</label>
+                    <label className="text-[10px] font-bold uppercase tracking-normal text-zinc-500">Squat ({unit === 'metric' ? 'kg' : 'LBS'})</label>
                     <input
                       type="number"
                       value={edit1RMData.squatPR || ''}
@@ -794,7 +794,7 @@ export const ProfileView = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-normal text-zinc-500 ml-2">Bench ({unit === 'metric' ? 'kg' : 'lb'})</label>
+                    <label className="text-[10px] font-bold uppercase tracking-normal text-zinc-500">Bench ({unit === 'metric' ? 'kg' : 'LBS'})</label>
                     <input
                       type="number"
                       value={edit1RMData.benchPR || ''}
@@ -803,7 +803,7 @@ export const ProfileView = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-normal text-zinc-500 ml-2">Deadlift ({unit === 'metric' ? 'kg' : 'lb'})</label>
+                    <label className="text-[10px] font-bold uppercase tracking-normal text-zinc-500">Deadlift ({unit === 'metric' ? 'kg' : 'LBS'})</label>
                     <input
                       type="number"
                       value={edit1RMData.deadliftPR || ''}
@@ -891,7 +891,7 @@ export const ProfileView = () => {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-lg glass-panel p-8 border-volt/30 shadow-2xl my-auto"
+              className="relative w-full max-w-lg glass-panel p-3 md:p-6 border-volt/30 shadow-2xl my-auto"
             >
               <div className="absolute top-0 right-0 p-6">
                 <button 

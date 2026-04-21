@@ -561,7 +561,7 @@ export const StageView = ({ immersionMode = 'immersive', isVoiceActive = false, 
           >
             <button
               onClick={() => setIsWithdrawModalOpen(true)}
-              className="px-8 py-3 bg-crimson/10 border border-crimson/20 text-crimson font-sans text-[10px] font-bold uppercase tracking-[0.3em] hover:bg-crimson hover:text-void transition-all shadow-lg backdrop-blur-md"
+              className="px-8 py-3 btn-destructive font-sans text-[10px] font-bold uppercase tracking-[0.3em] transition-all backdrop-blur-md"
             >
               {t('stage.withdrawCompetition')}
             </button>
@@ -655,7 +655,7 @@ export const StageView = ({ immersionMode = 'immersive', isVoiceActive = false, 
                 <div className="flex gap-4 pt-6 border-t border-white/5 shrink-0">
                   <button
                     onClick={() => setIsTermsModalOpen(false)}
-                    className="flex-1 py-5 border border-crimson/20 bg-crimson/5 text-crimson font-sans text-sm font-bold uppercase tracking-widest hover:bg-crimson hover:text-void transition-all"
+                    className="flex-1 py-5 border border-white/10 text-zinc-500 font-sans text-sm font-bold uppercase tracking-widest hover:bg-white/5 transition-all"
                   >
                     {t('stage.decline')}
                   </button>
@@ -719,7 +719,7 @@ export const StageView = ({ immersionMode = 'immersive', isVoiceActive = false, 
                       ]);
                       setIsWithdrawModalOpen(false);
                     }}
-                    className="w-full py-5 bg-crimson text-void font-sans text-sm font-bold uppercase tracking-widest hover:scale-[1.02] transition-all shadow-lg shadow-crimson/20"
+                    className="w-full py-5 btn-destructive font-sans text-sm font-bold uppercase tracking-widest transition-all shadow-lg"
                   >
                     {t('stage.yesWithdraw')}
                   </button>
