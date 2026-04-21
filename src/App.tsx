@@ -985,6 +985,8 @@ function AppContent() {
         onConfirm={() => {
           setIsExitModalOpen(false);
           logout();
+          localStorage.removeItem('volt_guest_mode');
+          setIsGuestMode(false);
         }}
         onCancel={() => setIsExitModalOpen(false)}
       />
