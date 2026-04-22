@@ -263,9 +263,11 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
                       <div className="space-y-1">
                         <div className="flex items-center gap-2 text-zinc-500">
                           <Calendar size={12} />
-                          <span className="text-[10px] font-black uppercase tracking-widest">
-                            {isWorkout ? `${log.date} • ${log.time}` : new Date(log.timestamp).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
-                            {!isWorkout && ` • ${new Date(log.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}`}
+                          <span className="text-[9px] font-mono font-bold uppercase tracking-widest">
+                            {isWorkout 
+                              ? `${new Date(log.completedAt || log.startTime || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} • ${new Date(log.completedAt || log.startTime || Date.now()).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}` 
+                              : new Date(log.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                            {!isWorkout && ` • ${new Date(log.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`}
                           </span>
                         </div>
                         <h3 className="text-xl font-black italic uppercase tracking-tight group-hover:text-volt transition-colors">
@@ -291,7 +293,7 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
                         <div className="flex items-center gap-2">
                           <div className="flex items-center gap-1 text-zinc-600">
                             <Clock size={10} />
-                            <span className="text-[9px] font-bold">{isWorkout ? log.duration : `${log.durationMinutes}m`}</span>
+                            <span className="text-[9px] font-mono font-bold">{isWorkout ? log.duration : `${log.durationMinutes}m`}</span>
                           </div>
                           <button 
                             onClick={(e) => {
@@ -392,14 +394,18 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
                       <div className="flex items-center gap-4 text-zinc-500">
                         <div className="flex items-center gap-1">
                           <Calendar size={14} />
-                          <span className="text-[10px] font-black uppercase tracking-widest">
-                            {selectedWorkout.logType === 'workout' ? selectedWorkout.date : new Date(selectedWorkout.timestamp).toLocaleDateString()}
+                          <span className="text-[9px] font-mono font-bold uppercase tracking-widest">
+                            {selectedWorkout.logType === 'workout' 
+                              ? new Date(selectedWorkout.completedAt || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) 
+                              : new Date(selectedWorkout.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                           </span>
                         </div>
                         <div className="flex items-center gap-1">
                           <Clock size={14} />
-                          <span className="text-[10px] font-black uppercase tracking-widest">
-                            {selectedWorkout.logType === 'workout' ? selectedWorkout.time : new Date(selectedWorkout.timestamp).toLocaleTimeString()}
+                          <span className="text-[9px] font-mono font-bold uppercase tracking-widest">
+                            {selectedWorkout.logType === 'workout' 
+                              ? new Date(selectedWorkout.completedAt || selectedWorkout.startTime || Date.now()).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) 
+                              : new Date(selectedWorkout.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
                           </span>
                         </div>
                       </div>

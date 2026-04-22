@@ -40,6 +40,7 @@
   --font-primary: 'Inter', system-ui, -apple-system, sans-serif;
   --primary-color: #00b6ff;
   --primary-glow: rgba(0, 182, 255, 0.6);
+  --primary-gradient: linear-gradient(135deg, #4dd0ff 0%, #0088cc 100%);
   --app-gutter: 1rem;
   --app-max-width: 1600px;
   
@@ -85,26 +86,31 @@
 [data-tier="advanced"] {
   --primary-color: #FFD700;
   --primary-glow: rgba(255, 215, 0, 0.6);
+  --primary-gradient: linear-gradient(135deg, #ffe866 0%, #ccac00 100%);
 }
 
 [data-tier="elite"] {
   --primary-color: #C692FF;
   --primary-glow: rgba(198, 146, 255, 0.6);
+  --primary-gradient: linear-gradient(135deg, #d9b3ff 0%, #9933ff 100%);
 }
 
 .tier-untrained, .tier-novice, .tier-newbie, .tier-intermediate {
   --primary-color: #00b6ff;
   --primary-glow: rgba(0, 182, 255, 0.6);
+  --primary-gradient: linear-gradient(135deg, #4dd0ff 0%, #0088cc 100%);
 }
 
 .tier-advanced {
   --primary-color: #FFD700;
   --primary-glow: rgba(255, 215, 0, 0.6);
+  --primary-gradient: linear-gradient(135deg, #ffe866 0%, #ccac00 100%);
 }
 
 .tier-elite {
   --primary-color: #C692FF;
   --primary-glow: rgba(198, 146, 255, 0.6);
+  --primary-gradient: linear-gradient(135deg, #d9b3ff 0%, #9933ff 100%);
 }
 
 @keyframes flaming {
@@ -188,7 +194,7 @@
   }
 
   .custom-scrollbar::-webkit-scrollbar {
-    width: 4px;
+    width: 2px;
   }
   .custom-scrollbar::-webkit-scrollbar-track {
     background: transparent;
@@ -242,6 +248,7 @@
 [data-theme="light"][data-light-scheme="default"] .tier-elite {
   --primary-color: #00478f !important;
   --primary-glow: rgba(0, 71, 143, 0.4) !important;
+  --primary-gradient: linear-gradient(135deg, #0073e6 0%, #00478f 100%) !important;
 }
 
 :root[data-theme="light"][data-light-scheme="ocean"],
@@ -254,6 +261,7 @@
 [data-theme="light"][data-light-scheme="ocean"] .tier-elite {
   --primary-color: #005080 !important;
   --primary-glow: rgba(0, 80, 128, 0.4) !important;
+  --primary-gradient: linear-gradient(135deg, #0088cc 0%, #005080 100%) !important;
 }
 
 :root[data-theme="light"][data-light-scheme="neon"],
@@ -266,6 +274,7 @@
 [data-theme="light"][data-light-scheme="neon"] .tier-elite {
   --primary-color: #b30080 !important;
   --primary-glow: rgba(179, 0, 128, 0.4) !important;
+  --primary-gradient: linear-gradient(135deg, #ff33cc 0%, #b30080 100%) !important;
 }
 
 :root[data-theme="light"][data-light-scheme="solar"],
@@ -278,6 +287,7 @@
 [data-theme="light"][data-light-scheme="solar"] .tier-elite {
   --primary-color: #aa3300 !important;
   --primary-glow: rgba(170, 51, 0, 0.4) !important;
+  --primary-gradient: linear-gradient(135deg, #ff5500 0%, #aa3300 100%) !important;
 }
 
 :root[data-theme="light"][data-light-scheme="monochrome"],
@@ -290,6 +300,7 @@
 [data-theme="light"][data-light-scheme="monochrome"] .tier-elite {
   --primary-color: #000000 !important;
   --primary-glow: rgba(0, 0, 0, 0.2) !important;
+  --primary-gradient: linear-gradient(135deg, #666666 0%, #000000 100%) !important;
 }
 
 /* Primary Button Global Overrides for Light Themes */

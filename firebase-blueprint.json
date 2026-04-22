@@ -78,19 +78,22 @@
     },
     "ActiveRecovery": {
       "title": "ActiveRecovery",
-      "description": "Cardio or active recovery session logged outside the main program.",
+      "description": "Tactical activity log including calorie burn estimation.",
       "type": "object",
       "properties": {
         "id": { "type": "string", "description": "Unique recovery session ID." },
         "uid": { "type": "string", "description": "The user who performed the activity." },
-        "type": { "type": "string", "enum": ["Running", "Swimming", "Cycling", "Walking", "Boxing", "Muay Thai", "Jiu Jitsu", "Wrestling", "MMA", "Rucking", "Tactical Drills", "Parkour", "Yoga", "Pilates", "Other"], "description": "The type of activity." },
+        "type": { "type": "string", "description": "The label of the activity (e.g., 'Muay Thai')." },
+        "activityId": { "type": "string", "description": "The library ID of the activity." },
         "rpe": { "type": "number", "description": "Rate of Perceived Exertion (1-10)." },
         "durationMinutes": { "type": "number", "description": "Duration in minutes." },
+        "caloriesBurned": { "type": "number", "description": "Estimated calories burned." },
         "date": { "type": "string", "description": "Human-readable date." },
         "timestamp": { "type": "integer", "description": "Timestamp of when the activity was performed." },
+        "performedAt": { "type": "string", "description": "ISO date string of when the activity was performed." },
         "note": { "type": "string", "description": "User notes." }
       },
-      "required": ["id", "uid", "type", "rpe", "timestamp"]
+      "required": ["id", "uid", "type", "rpe", "timestamp", "activityId"]
     }
   },
   "firestore": {

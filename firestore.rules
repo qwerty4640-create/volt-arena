@@ -79,15 +79,18 @@ service cloud.firestore {
     }
 
     function isValidActiveRecovery(data) {
-      return hasRequiredFields(['id', 'uid', 'type', 'rpe', 'timestamp', 'durationMinutes', 'date']) &&
+      return hasRequiredFields(['id', 'uid', 'type', 'rpe', 'timestamp', 'durationMinutes', 'date', 'activityId']) &&
              data.uid == request.auth.uid &&
-             data.id is string && data.id.size() < 100 &&
-             data.type in ['Running', 'Swimming', 'Cycling', 'Walking', 'Boxing', 'Muay Thai', 'Jiu Jitsu', 'Wrestling', 'MMA', 'Rucking', 'Tactical Drills', 'Parkour', 'Yoga', 'Pilates', 'Other'] &&
+             data.id is string && data.id.size() < 128 &&
+             data.type is string && data.type.size() < 100 &&
+             data.activityId is string && data.activityId.size() < 100 &&
              data.rpe is number && data.rpe >= 1 && data.rpe <= 10 &&
              data.durationMinutes is number && data.durationMinutes > 0 &&
              data.date is string && data.date.size() < 100 &&
              data.timestamp is int &&
-             (data.get('note', '') == '' || (data.note is string && data.note.size() < 1000));
+             (data.get('caloriesBurned', 0) is number) &&
+             (data.get('performedAt', '') == '' || (data.performedAt is string && data.performedAt.size() < 100)) &&
+             (data.get('note', '') == '' || (data.note is string && data.note.size() < 2000));
     }
 
     // Default deny

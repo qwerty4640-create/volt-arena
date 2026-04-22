@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Play, 
@@ -54,15 +54,73 @@ import { CSS } from '@dnd-kit/utilities';
 import { DragOverlay, defaultDropAnimationSideEffects } from '@dnd-kit/core';
 
 import { ConfirmationModal } from './ConfirmationModal';
-import { ActiveRecoveryModal } from './ActiveRecoveryModal';
+import { NonProgramActivityModal } from './NonProgramActivityModal';
 import { TacticalChart } from './TacticalChart';
 import { getTacticalImpact } from '../utils/analyticsEngine';
 
-import { useWorkout, WorkoutSession } from '../contexts/WorkoutContext';
+import { useWorkout, WorkoutSession, ActiveRecovery } from '../contexts/WorkoutContext';
 import { auth } from '../firebase';
 import { BlockType, getPlanForDuration } from '../constants/periodization';
 
-type WidgetId = 'recovery-analysis' | 'pr' | 'macros' | 'logs' | 'block';
+const WelcomeModule = ({ onStart }: { onStart: () => void }) => {
+  const { profile } = useSettings();
+  const { history, getCalibrationStatus, getNextWorkoutTemplate, calculateProgramCalories, currentSession } = useWorkout();
+  
+  const greeting = useMemo(() => {
+    const greetings = ["Mission Start", "Welcome", "Systems Nominal", "Good Day"];
+    return greetings[Math.floor(Math.random() * greetings.length)];
+  }, []);
+  
+  const calibration = getCalibrationStatus();
+  const readinessScore = history.length > 0 ? calibration.readiness : 100;
+  const nextWorkout = getNextWorkoutTemplate();
+  
+  const predictedCalories = React.useMemo(() => {
+    if (!nextWorkout || !profile) return 0;
+    const totalTonnage = nextWorkout.exercises.reduce((acc, ex) => {
+      return acc + (ex.sets?.reduce((sAcc, s) => sAcc + (parseFloat(ex.weight?.toString() || '0') || 0) * (parseInt(s.reps?.toString() || '0') || 0), 0) || 0);
+    }, 0);
+    const weightKg = profile.unit === 'imperial' ? (profile.weight || 75) * 0.453592 : (profile.weight || 75);
+    // Rough estimate: sets * 3 mins, minimum 30 mins
+    const estimatedDuration = Math.max(30, nextWorkout.exercises.reduce((acc, ex) => acc + (ex.sets?.length || 0) * 3, 0));
+    // Assume average RPE for a template base is 7
+    return calculateProgramCalories(weightKg, estimatedDuration, 7, totalTonnage);
+  }, [nextWorkout, profile]);
+
+  const tacticalName = useMemo(() => {
+    if (profile?.gender === 'male') return 'Dominus';
+    if (profile?.gender === 'female') return 'Domina';
+    return profile?.displayName || 'Operator';
+  }, [profile?.gender, profile?.displayName]);
+
+  return (
+    <div className="pt-6 pb-6 px-4 md:px-6 bg-black border-b border-zinc-900 mb-6">
+      <div className="flex flex-col gap-6">
+        <span className="font-mono text-[9px] tracking-[widest] text-zinc-500 uppercase mb-2">
+          // STATUS REPORT
+        </span>
+        <h1 className="text-3xl font-black italic uppercase leading-none">
+          {greeting}, <span className="text-volt">{tacticalName}</span>
+        </h1>
+        <p className="font-mono text-xs text-zinc-400 leading-relaxed border-l border-zinc-700 pl-4 max-w-2xl">
+          Your readiness is sitting at <span className="text-white">{readinessScore}%</span> today. 
+          When you're ready, we've got <span className="text-white">{nextWorkout?.title || 'an active recovery session'}</span> on the agenda. It should take about <span className="text-white">{nextWorkout?.duration || 'around 45 minutes'}</span> and burn roughly <span className="text-white">{predictedCalories} kcal</span>.
+        </p>
+        
+        <button 
+          onClick={onStart}
+          className="flex-[2] w-full min-h-[44px] px-4 sm:px-8 py-4 bg-volt text-void font-headline text-xs md:text-sm font-black uppercase tracking-widest hover:bg-white transition-all flex items-center justify-center gap-2 group"
+        >
+          <Play size={16} className="fill-void group-hover:scale-110 transition-transform" />
+          {currentSession ? 'Continue Mission' : 'Start Mission'}
+        </button>  
+        
+      </div>
+    </div>
+  );
+};
+
+type WidgetId = 'recovery-analysis' | 'pr' | 'macros' | 'block';
 
 interface Widget {
   id: WidgetId;
@@ -75,7 +133,6 @@ const ALL_WIDGETS: Widget[] = [
   { id: 'recovery-analysis', label: 'Recovery Analysis', icon: Activity, span: 'col-span-1 md:col-span-2 xl:col-span-3' },
   { id: 'pr', label: 'analysis.personalRecord', icon: Star, span: 'col-span-1 md:col-span-2 xl:col-span-1' },
   { id: 'macros', label: 'analysis.macroDistribution', icon: Utensils, span: 'col-span-1 md:col-span-2 xl:col-span-2' },
-  { id: 'logs', label: 'analysis.recentLogs', icon: History, span: 'col-span-1 md:col-span-2 xl:col-span-3' },
   { id: 'block', label: 'Block Progression', icon: Zap, span: 'col-span-1 md:col-span-2 xl:col-span-3' },
 ];
 
@@ -810,7 +867,7 @@ const MacrosWidget = () => {
   <div className="glass-panel px-4 py-6 md:p-8 border-none space-y-4 xl:space-y-8 h-full flex flex-col">
     <div className="flex justify-between items-center">
       <div className="flex items-center gap-2">
-        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500">{t('analysis.macroDistribution')}</span>
+        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-volt drop-shadow-[0_0_8px_rgba(215,255,0,0.4)]">{t('analysis.macroDistribution')}</span>
         <span className="text-[8px] font-black uppercase tracking-widest text-volt bg-volt/10 px-1.5 py-0.5 border border-volt/20">EXP</span>
       </div>
     </div>
@@ -855,221 +912,9 @@ const MacrosWidget = () => {
   );
 };
 
-export const LogsWidget = ({ onViewHistory }: { onViewHistory?: (sessionId?: string) => void }) => {
-  const { t, unit } = useSettings();
-  const { history, recoveryHistory, deleteActiveRecovery } = useWorkout();
-  const weightUnit = unit === 'metric' ? 'Kg' : 'LBS';
-  
-  const [editingLog, setEditingLog] = React.useState<any>(null);
-  const [logToDelete, setLogToDelete] = React.useState<string | null>(null);
-
-  const allLogs = React.useMemo(() => {
-    const workouts = history.map(h => ({ ...h, logType: 'workout' as const, timestamp: h.completedAt || 0 }));
-    const recoveries = recoveryHistory.map(r => ({ ...r, logType: 'recovery' as const, timestamp: r.timestamp }));
-    return [...workouts, ...recoveries].sort((a, b) => b.timestamp - a.timestamp).slice(0, 4);
-  }, [history, recoveryHistory]);
-
-  const hasAnyLogs = allLogs.length > 0;
-
-  const handleDelete = async () => {
-    if (logToDelete) {
-      await deleteActiveRecovery(logToDelete);
-      setLogToDelete(null);
-      const liveRegion = document.getElementById('a11y-live-region');
-      if (liveRegion) liveRegion.textContent = 'Activity log deleted.';
-    }
-  };
-
-  return (
-  <div className="glass-panel px-4 py-6 md:p-8 border-none h-full overflow-y-auto custom-scrollbar">
-    <div className="space-y-6">
-      <div className="flex justify-between items-end">
-        <h2 className="font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tight mb-2">{t('analysis.recentLogs')}</h2>
-      </div>
-
-      {!hasAnyLogs && !auth.currentUser && (
-        <div className="bg-volt/10 border border-volt p-4 flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
-          <div className="flex flex-col items-start gap-1">
-            <span className="text-volt font-headline font-black uppercase tracking-widest text-sm">Save Your Progress</span>
-            <span className="text-zinc-400 text-xs font-medium">Create a free account to sync your logs and unlock advanced analytics.</span>
-          </div>
-          <button 
-            onClick={() => {
-              localStorage.removeItem('volt_guest_mode');
-              window.location.reload();
-            }}
-            className="w-full sm:w-auto bg-volt text-void px-6 py-2 font-black uppercase tracking-widest text-xs hover:bg-white transition-colors"
-          >
-            Create Account
-          </button>
-        </div>
-      )}
-
-      {hasAnyLogs && !auth.currentUser && (
-        <div className="bg-volt/10 border border-volt p-4 flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
-          <div className="flex flex-col items-start gap-1">
-            <span className="text-volt font-headline font-black uppercase tracking-widest text-sm">Sync to Cloud</span>
-            <span className="text-zinc-400 text-xs font-medium">Don't lose your progress. Create an account to save your logs permanently.</span>
-          </div>
-          <button 
-            onClick={() => {
-              localStorage.removeItem('volt_guest_mode');
-              window.location.reload();
-            }}
-            className="w-full sm:w-auto bg-volt text-void px-6 py-2 font-black uppercase tracking-widest text-xs hover:bg-white transition-colors"
-          >
-            Sign Up Now
-          </button>
-        </div>
-      )}
-
-      <div className="space-y-4">
-        {!hasAnyLogs ? (
-          <div className="flex flex-col items-center justify-center py-12 border border-dashed border-white/5 bg-void/20">
-            <span className="text-6xl font-black text-zinc-800 mb-2">–</span>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600 italic">
-              {t('analysis.noHistoryYet')}
-            </p>
-          </div>
-        ) : (
-          allLogs.map((log) => {
-            const date = new Date(log.timestamp);
-            const day = date.getDate().toString();
-            const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
-            const time = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
-            
-            if (log.logType === 'recovery') {
-              const recovery = log as any;
-              return (
-                <div 
-                  key={recovery.id}
-                  className="glass-panel p-4 md:p-6 border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-0 group hover:bg-volt/5 transition-all border-l-4 border-l-zinc-800"
-                >
-                  <div className="flex items-center gap-4 sm:gap-6">
-                  {/*}
-                    <div className="w-12 h-12 md:w-14 md:h-14 shrink-0 bg-void flex items-center justify-center border border-white/5">
-                      <Zap size={20} className="text-zinc-700 group-hover:text-volt transition-colors" />
-                    </div>
-                    {*/}
-                    <div className="min-w-0">
-                      <h4 className="text-lg sm:text-xl font-black uppercase italic leading-tight group-hover:text-volt transition-colors truncate">
-                        {recovery.type}
-                      </h4>
-                      <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mt-1 truncate">
-                        {dayName} • {time} • {recovery.durationMinutes}m • RPE {recovery.rpe}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between md:justify-end gap-4 sm:gap-6 shrink-0 md:ml-4 pt-4 md:pt-0 border-t border-white/5 md:border-t-0">
-                    <div className="text-left md:text-right flex-1">
-                      <span className="block text-[8px] font-black uppercase tracking-widest text-zinc-600 mb-1">
-                        ACTIVE_RECOVERY
-                      </span>
-                      <span className="text-xs font-black uppercase text-white/40 italic">Log Entry</span>
-                    </div>
-                    
-                    {/* Remove Action Buttons from Recent Logs */}
-                  </div>
-                </div>
-              );
-            }
-
-            const workout = log as any;
-            let peakWeight = 0;
-            let peakExercise = '';
-            workout.exercises?.forEach((ex: any) => {
-              ex.sets?.forEach((set: any) => {
-                const w = parseFloat(set.weight) || 0;
-                if (w > peakWeight) {
-                  peakWeight = w;
-                  peakExercise = ex.name;
-                }
-              });
-            });
-
-            return (
-              <div 
-                key={workout.id}
-                onClick={() => onViewHistory?.(workout.id)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    onViewHistory?.(workout.id);
-                  }
-                }}
-                tabIndex={0}
-                role="button"
-                aria-label={`View history for ${workout.title} on ${dayName} at ${time}`}
-                className="glass-panel p-4 md:p-6 border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-0 group hover:bg-white/5 transition-colors cursor-pointer focus-visible:outline-volt focus-visible:outline-offset-2"
-              >
-                <div className="flex items-center gap-4 sm:gap-6">
-                {/*}
-                  <div className="w-12 h-12 md:w-14 md:h-14 shrink-0 bg-zinc-900 flex items-center justify-center border border-white/5">
-                    <span className="text-xl md:text-2xl font-black italic text-zinc-700">{day}</span>
-                  </div>
-                  {*/}
-                  <div className="min-w-0">
-                    <h4 className="text-lg sm:text-xl font-black uppercase italic leading-tight group-hover:text-volt transition-colors truncate">
-                      {workout.title}
-                    </h4>
-                    <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mt-1 truncate">
-                      {dayName} • {time} • RPE {(workout.rpe || 0).toFixed(1)}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between md:justify-end gap-4 sm:gap-12 shrink-0 md:ml-4 pt-4 md:pt-0 border-t border-white/5 md:border-t-0">
-                  <div className="text-left md:text-right">
-                    <span className="block text-[8px] font-black uppercase tracking-widest text-zinc-600 mb-1">
-                      {workout.blockType === BlockType.PEAKING ? t('analysis.peakIntensity') : t('analysis.topSet')}
-                    </span>
-                    <div className="flex flex-row md:flex-col items-baseline md:items-end gap-2 md:gap-0">
-                      <span className="text-sm font-black uppercase text-volt">{peakWeight} {weightUnit}</span>
-                      <span className="text-[10px] font-black uppercase text-white/80 truncate max-w-[120px] md:max-w-[80px]">{peakExercise}</span>
-                    </div>
-                  </div>
-                  <ChevronRight size={20} className="text-zinc-700 group-hover:text-volt transition-colors" />
-                </div>
-              </div>
-            );
-          })
-        )}
-      </div>
-
-      {hasAnyLogs && (
-        <button 
-          onClick={() => onViewHistory?.()}
-          className="w-full py-4 mt-2 border border-white/5 bg-white/5 hover:bg-volt hover:text-void text-[10px] font-black uppercase tracking-[0.3em] text-volt transition-all"
-        >
-          {t('analysis.viewFullHistory')}
-        </button>
-      )}
-
-      {/* Edit Modal */}
-      <ActiveRecoveryModal 
-        isOpen={!!editingLog}
-        onClose={() => setEditingLog(null)}
-        initialData={editingLog}
-      />
-
-      {/* Delete Confirmation */}
-      <ConfirmationModal 
-        isOpen={!!logToDelete}
-        title="CONFIRM DELETE?"
-        message="Are you sure you want to permanently delete this log entry? This action cannot be undone."
-        confirmLabel="DELETE ENTRY"
-        cancelLabel="CANCEL"
-        onConfirm={handleDelete}
-        onCancel={() => setLogToDelete(null)}
-        variant="danger"
-      />
-    </div>
-  </div>
-  );
-};
-
 
 export const ExternalActivityWidget = () => {
+
   const { recoveryHistory, getCalibrationStatus } = useWorkout();
   const calibration = getCalibrationStatus();
   
@@ -1182,7 +1027,6 @@ const WIDGET_COMPONENTS: Record<WidgetId, React.FC<any>> = {
   'recovery-analysis': RecoveryAnalysisWidget,
   pr: PRWidget,
   macros: MacrosWidget,
-  logs: LogsWidget,
   block: BlockWidget,
 };
 
@@ -1259,7 +1103,7 @@ interface AnalysisViewProps {
 
 export const AnalysisView = ({ onContinueSession, onViewHistory, isLifting }: AnalysisViewProps) => {
   const { t, experimentalFeatures } = useSettings();
-  const [widgets, setWidgets] = useState<WidgetId[]>(['recovery-analysis', 'pr', 'macros', 'logs', 'block']);
+  const [widgets, setWidgets] = useState<WidgetId[]>(['recovery-analysis', 'pr', 'macros', 'block']);
   const [activeId, setActiveId] = useState<WidgetId | null>(null);
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
   const [widgetToRemove, setWidgetToRemove] = useState<WidgetId | null>(null);
@@ -1328,6 +1172,7 @@ export const AnalysisView = ({ onContinueSession, onViewHistory, isLifting }: An
 
   return (
     <>
+      <WelcomeModule onStart={() => onContinueSession?.()} />
       <DndContext 
         sensors={sensors}
         collisionDetection={closestCenter}

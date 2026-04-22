@@ -82,7 +82,7 @@ export const ReflectionModal = ({ session, onSave, onClose }: ReflectionModalPro
           </div>
 
           <div className="space-y-4">
-            <p className="text-[10px] text-zinc-400 font-bold uppercase leading-relaxed text-center">
+            <p className="text-xs text-zinc-400 font-medium max-w-md leading-relaxed text-center">
               Reflecting on your session 15-30 minutes later provides a more accurate measure of the total physiological load.
             </p>
             
@@ -91,7 +91,7 @@ export const ReflectionModal = ({ session, onSave, onClose }: ReflectionModalPro
               whileTap={{ scale: 0.98 }}
               onClick={handleSaveReflection}
               disabled={isSaving}
-              className="w-full py-5 bg-volt text-void font-headline text-sm font-black uppercase italic tracking-widest hover:bg-white transition-all shadow-[0_0_30px_var(--primary-glow)] flex items-center justify-center gap-3 disabled:opacity-50"
+              className="flex-[2] w-full min-h-[44px] px-4 sm:px-8 py-4 bg-volt text-void font-headline text-xs md:text-sm font-black uppercase tracking-widest hover:bg-white transition-all flex items-center justify-center gap-2 group"
             >
               <span>{isSaving ? 'Saving...' : 'Save Reflection'}</span>
               <ChevronRight size={18} />

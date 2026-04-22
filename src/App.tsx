@@ -39,7 +39,7 @@ import { OnboardingFlow } from './components/OnboardingFlow';
 import { WorkoutLog } from './components/WorkoutLog';
 import { PostWorkoutSummary } from './components/PostWorkoutSummary';
 import { WorkoutHistory } from './components/WorkoutHistory';
-import { ActiveRecoveryModal } from './components/ActiveRecoveryModal';
+import { NonProgramActivityModal } from './components/NonProgramActivityModal';
 import { cn } from './lib/utils';
 
 import { useSettings } from './contexts/SettingsContext';
@@ -60,9 +60,26 @@ declare global {
   }
 }
 
+const MissionIcon = ({ size = 24, strokeWidth = 2, className }: { size?: number, strokeWidth?: number, className?: string }) => (
+  <svg 
+    xmlns="http://www.w3.org/2000/svg" 
+    width={size} 
+    height={size} 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth={strokeWidth} 
+    strokeLinecap="round" 
+    strokeLinejoin="round" 
+    className={cn("lucide lucide-navigation-2", className)}
+  >
+    <polygon points="12 2 19 21 12 17 5 21 12 2"/>
+  </svg>
+);
+
 const NAV_ITEMS: NavItem[] = [
   { id: 'analysis', label: 'nav.dashboard', icon: LayoutDashboard },
-  { id: 'training', label: 'nav.training', icon: Dumbbell },
+  { id: 'training', label: 'nav.training', icon: MissionIcon },
   { id: 'analytics', label: 'nav.analytics', icon: BarChart3 },
 ];
 
@@ -820,6 +837,62 @@ function AppContent() {
               (item.id === 'training' && ['workout-log', 'post-workout', 'berserker'].includes(activeView)) ||
               (item.id === 'analysis' && activeView === 'workout-history');
             
+            if (item.id === 'training') {
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveView(item.id)}
+                  className="group relative flex flex-col items-center justify-center gap-1.5 transition-all duration-300 w-full my-2 focus:outline-none"
+                >
+                  <motion.div
+                    animate={isActive ? {
+                      boxShadow: ['0 0 15px var(--primary-glow)', '0 0 30px var(--primary-glow)', '0 0 15px var(--primary-glow)']
+                    } : {
+                      boxShadow: ['0 0 0px transparent', '0 0 15px rgba(204,255,0,0.3)', '0 0 0px transparent']
+                    }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                    className={cn(
+                      "relative flex items-center justify-center transition-all duration-500 z-10",
+                      isActive 
+                        ? "w-14 h-14 text-void scale-110" 
+                        : "w-12 h-12 text-volt group-hover:text-void group-hover:scale-110 before:absolute before:inset-0 before:opacity-0 group-hover:before:opacity-100 before:transition-opacity before:duration-300 before:-z-10"
+                    )}
+                    style={{
+                      clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)",
+                      background: isActive ? "var(--primary-gradient)" : undefined
+                    }}
+                  >
+                    {!isActive && (
+                      <svg 
+                        className="absolute inset-0 w-full h-full text-volt transition-opacity duration-300 group-hover:opacity-0" 
+                        viewBox="0 0 48 48" 
+                        preserveAspectRatio="none"
+                        style={{ zIndex: -1 }}
+                      >
+                        <polygon 
+                          points="24,0 48,12 48,36 24,48 0,36 0,12" 
+                          fill="none" 
+                          stroke="currentColor" 
+                          strokeWidth="2" 
+                        />
+                      </svg>
+                    )}
+                    <div 
+                      className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" 
+                      style={{ background: "var(--primary-gradient)", zIndex: -1 }} 
+                    />
+                    <Icon size={isActive ? 24 : 20} strokeWidth={isActive ? 3 : 2} />
+                  </motion.div>
+                  <span className={cn(
+                    "font-sans text-[7px] font-black uppercase tracking-[0.2em] transition-colors",
+                    isActive ? "text-volt drop-shadow-[0_0_5px_rgba(204,255,0,0.5)]" : "text-volt/70 group-hover:text-volt"
+                  )}>
+                    {t(item.label).split(' ')[0]}
+                  </span>
+                </button>
+              );
+            }
+
             return (
               <button
                 key={item.id}
@@ -849,59 +922,131 @@ function AppContent() {
 
       {/* Bottom Navigation for Mobile */}
       <nav className={cn(
-        "fixed bottom-0 left-0 right-0 z-50 md:hidden bg-void/80 backdrop-blur-xl border-t border-white/5 px-4 py-5 flex justify-between items-center transition-all duration-500",
+        "fixed bottom-0 left-0 right-0 z-50 md:hidden bg-void/80 backdrop-blur-xl border-t border-white/5 flex items-center transition-all duration-500 pb-safe",
         (activeView === 'berserker') ? "translate-y-full" : "translate-y-0"
       )}>
-        {NAV_ITEMS.map((item) => {
-          const Icon = item.icon;
-          const isActive = activeView === item.id || 
-            (item.id === 'training' && ['workout-log', 'post-workout', 'berserker'].includes(activeView)) ||
-            (item.id === 'analysis' && activeView === 'workout-history');
-          
-          return (
-            <button
-              key={item.id}
-              onClick={() => setActiveView(item.id)}
-              className={cn(
-                "flex flex-col items-center gap-1 transition-all",
-                isActive ? "text-volt" : "text-zinc-500"
-              )}
-            >
-              <Icon size={20} strokeWidth={isActive ? 3 : 2} />
-              <span className="text-[8px] font-black uppercase tracking-widest">{t(item.label).split(' ')[0]}</span>
-            </button>
-          );
-        })}
-        <button
-          onClick={() => setActiveView('settings')}
-          className={cn(
-            "flex flex-col items-center gap-1 transition-all",
-            activeView === 'settings' ? "text-volt" : "text-zinc-500"
-          )}
-        >
-          <Settings size={20} strokeWidth={activeView === 'settings' ? 3 : 2} />
-          <span className="text-[8px] font-black uppercase tracking-widest">SETTINGS</span>
-        </button>
-        <button
-          onClick={() => setActiveView('profile')}
-          className={cn(
-            "flex flex-col items-center gap-1 transition-all",
-            activeView === 'profile' ? "text-volt" : "text-zinc-500"
-          )}
-        >
-          <div className={cn(
-            "w-5 h-5 rounded-full overflow-hidden border transition-all",
-            activeView === 'profile' ? "border-volt" : "border-zinc-500"
-          )}>
-            <img 
-              src={user?.photoURL || "https://picsum.photos/seed/athlete/100/100"} 
-              alt={user?.displayName || "Athlete"} 
-              className="w-full h-full object-cover"
-              referrerPolicy="no-referrer"
-            />
-          </div>
-          <span className="text-[8px] font-black uppercase tracking-widest">PROFILE</span>
-        </button>
+        <div className="flex-1 flex justify-evenly items-center py-5">
+          {[
+            NAV_ITEMS.find(i => i.id === 'analysis'),
+            NAV_ITEMS.find(i => i.id === 'analytics'),
+          ].map((item) => {
+            if (!item) return null;
+            
+            const Icon = item.icon;
+            const isActive = activeView === item.id || 
+              (item.id === 'analysis' && activeView === 'workout-history');
+            
+            return (
+              <button
+                key={item.id}
+                onClick={() => setActiveView(item.id)}
+                className={cn(
+                  "flex flex-col items-center gap-1 transition-all",
+                  isActive ? "text-volt" : "text-zinc-500"
+                )}
+              >
+                <Icon size={20} strokeWidth={isActive ? 3 : 2} />
+                <span className="text-[8px] font-black uppercase tracking-widest">{t(item.label).split(' ')[0]}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="flex-shrink-0 flex justify-center -mt-8 px-2">
+          {(() => {
+            const item = NAV_ITEMS.find(i => i.id === 'training');
+            if (!item) return null;
+            
+            const Icon = item.icon;
+            const isActive = activeView === item.id || 
+              ['workout-log', 'post-workout', 'berserker'].includes(activeView);
+            
+            return (
+              <button
+                key={item.id}
+                onClick={() => setActiveView(item.id)}
+                className="relative group flex flex-col items-center gap-1 focus:outline-none"
+              >
+                <motion.div
+                  animate={isActive ? {
+                    boxShadow: ['0 0 15px var(--primary-glow)', '0 0 30px var(--primary-glow)', '0 0 15px var(--primary-glow)']
+                  } : {
+                    boxShadow: ['0 0 0px transparent', '0 0 15px rgba(204,255,0,0.5)', '0 0 0px transparent']
+                  }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                  className={cn(
+                    "relative flex items-center justify-center transition-all duration-300 overflow-hidden",
+                    isActive 
+                      ? "w-14 h-14 text-void scale-110" 
+                      : "w-12 h-12 bg-void text-volt group-hover:text-void scale-105"
+                  )}
+                  style={{ 
+                    clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)",
+                    background: isActive ? "var(--primary-gradient)" : undefined
+                  }}
+                >
+                  {!isActive && (
+                    <svg 
+                      className="absolute inset-0 w-full h-full text-volt transition-opacity duration-300 group-hover:opacity-0" 
+                      viewBox="0 0 48 48" 
+                      preserveAspectRatio="none"
+                      style={{ zIndex: -1 }}
+                    >
+                      <polygon 
+                        points="24,0 48,12 48,36 24,48 0,36 0,12" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        strokeWidth="2" 
+                      />
+                    </svg>
+                  )}
+                  <div 
+                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" 
+                    style={{ background: "var(--primary-gradient)", zIndex: -1 }} 
+                  />
+                  <Icon size={24} strokeWidth={isActive ? 3 : 2} />
+                </motion.div>
+                <span className={cn(
+                  "text-[8px] font-black uppercase tracking-widest mt-1 transition-colors",
+                  isActive ? "text-volt drop-shadow-[0_0_5px_rgba(204,255,0,0.5)]" : "text-volt/70"
+                )}>{t(item.label).split(' ')[0]}</span>
+              </button>
+            );
+          })()}
+        </div>
+
+        <div className="flex-1 flex justify-evenly items-center py-5">
+          <button
+            onClick={() => setActiveView('settings')}
+            className={cn(
+              "flex flex-col items-center gap-1 transition-all",
+              activeView === 'settings' ? "text-volt" : "text-zinc-500"
+            )}
+          >
+            <Settings size={20} strokeWidth={activeView === 'settings' ? 3 : 2} />
+            <span className="text-[8px] font-black uppercase tracking-widest">SETTINGS</span>
+          </button>
+          <button
+            onClick={() => setActiveView('profile')}
+            className={cn(
+              "flex flex-col items-center gap-1 transition-all",
+              activeView === 'profile' ? "text-volt" : "text-zinc-500"
+            )}
+          >
+            <div className={cn(
+              "w-5 h-5 rounded-full overflow-hidden border transition-all",
+              activeView === 'profile' ? "border-volt" : "border-zinc-500"
+            )}>
+              <img 
+                src={user?.photoURL || "https://picsum.photos/seed/athlete/100/100"} 
+                alt={user?.displayName || "Athlete"} 
+                className="w-full h-full object-cover"
+                referrerPolicy="no-referrer"
+              />
+            </div>
+            <span className="text-[8px] font-black uppercase tracking-widest">PROFILE</span>
+          </button>
+        </div>
       </nav>
 
       {/* Main Content Area */}
@@ -990,7 +1135,7 @@ function AppContent() {
         }}
         onCancel={() => setIsExitModalOpen(false)}
       />
-      <ActiveRecoveryModal 
+      <NonProgramActivityModal 
         isOpen={isRecoveryModalOpen}
         onClose={() => setIsRecoveryModalOpen(false)}
       />

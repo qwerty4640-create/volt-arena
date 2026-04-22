@@ -18,7 +18,7 @@ import { cn } from '../lib/utils';
 import { useSettings } from '../contexts/SettingsContext';
 import { useWorkout, WorkoutSession } from '../contexts/WorkoutContext';
 import { calculateTier } from '../lib/strength';
-import { LogsWidget, BlockWidget } from './AnalysisView';
+import { BlockWidget } from './AnalysisView';
 
 interface TrainingViewProps {
   onContinueSession?: () => void;
@@ -464,16 +464,6 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
                 </div>
               </motion.div>
 
-              {/* Recent Logs Module */}
-              <motion.div 
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ delay: 0.4 }}
-                className="col-span-1 md:col-span-2 lg:col-span-3 shrink-0 w-full"
-              >
-                <LogsWidget onViewHistory={onViewHistory} />
-              </motion.div>
     </div>
   );
 };

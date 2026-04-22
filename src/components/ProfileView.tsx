@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { User, Mail, Scale, Ruler, Trophy, Dumbbell, Calendar, BadgeCheck, Edit3, Info, X, Crown, Zap, Medal, Skull, CheckCircle2, BarChart3, AlertTriangle, Activity, ChevronDown, ChevronUp, MoveDown, Target, ListOrdered } from 'lucide-react';
 import { useSettings, TrainingGoal } from '../contexts/SettingsContext';
 import { useWorkout } from '../contexts/WorkoutContext';
+import { useToast } from '../contexts/ToastContext';
 import { cn } from '../lib/utils';
 import { AnimatePresence } from 'motion/react';
 import { getBlockForWeek, getPlanForDuration } from '../constants/periodization';
@@ -11,6 +12,7 @@ import { calculateTier } from '../lib/strength';
 export const ProfileView = () => {
   const { profile, updateProfile, t, unit } = useSettings();
   const { history, resetProgram } = useWorkout();
+  const { showToast } = useToast();
   const [showTierInfo, setShowTierInfo] = React.useState(false);
   const [showProtocolModal, setShowProtocolModal] = React.useState(false);
   const [show1RMModal, setShow1RMModal] = React.useState(false);
@@ -50,6 +52,7 @@ export const ProfileView = () => {
         deadliftPR: edit1RMData.deadliftPR,
         level: newTier as any,
       });
+      showToast('Action Successful.', 3000, 'success');
       setShow1RMModal(false);
     } finally {
       setLoading(false);
@@ -73,6 +76,7 @@ export const ProfileView = () => {
         competitionDate: newCompetitionDate,
         trainingWeekOffset: 0
       });
+      showToast('Action Successful.', 3000, 'success');
       setShowProtocolModal(false);
     } finally {
       setLoading(false);
@@ -149,6 +153,7 @@ export const ProfileView = () => {
         trainingDurationMonths: editData.trainingDurationMonths,
         level: newTier as any,
       });
+      showToast('Action Successful.', 3000, 'success');
       setShowBiometricsModal(false);
     } finally {
       setLoading(false);
@@ -478,7 +483,7 @@ export const ProfileView = () => {
               className="relative w-full max-w-md glass-panel p-3 md:p-6 border-volt/30 shadow-2xl my-auto"
             >
               <div className="flex items-center gap-4 mb-8">
-                <div className="p-4 bg-volt/10 text-volt">
+                <div className="p-2 md:p-4 bg-volt/10 text-volt">
                   <User size={32} />
                 </div>
                 <div>
@@ -491,7 +496,7 @@ export const ProfileView = () => {
                 <div className="space-y-4">
                   {/* Gender */}
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-normal text-zinc-500">Gender</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Gender</label>
                     <select
                       value={editData.gender}
                       onChange={(e) => setEditData({ ...editData, gender: e.target.value as any })}
@@ -505,7 +510,7 @@ export const ProfileView = () => {
 
                   {/* Age */}
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-normal text-zinc-500">Age</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Age</label>
                     <input
                       type="number"
                       step="1"
@@ -531,7 +536,7 @@ export const ProfileView = () => {
 
                   {/* Height */}
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-normal text-zinc-500">Height</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Height</label>
                     {unit === 'metric' ? (
                       <div className="flex items-center gap-2">
                         <input
@@ -568,7 +573,7 @@ export const ProfileView = () => {
 
                   {/* Weight */}
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-normal text-zinc-500">Weight ({unit === 'metric' ? 'kg' : 'LBS'})</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Weight ({unit === 'metric' ? 'kg' : 'LBS'})</label>
                     <input
                       type="number"
                       value={editData.weight}
@@ -579,7 +584,7 @@ export const ProfileView = () => {
 
                   {/* Training Goal */}
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-normal text-zinc-500">Training Objective</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Training Objective</label>
                     <div className="grid grid-cols-1 gap-2">
                       {(['pure_strength', 'powerbuilding', 'hypertrophy', 'peaking', 'longevity'] as TrainingGoal[]).map(goal => (
                         <button
@@ -649,7 +654,7 @@ export const ProfileView = () => {
               className="relative w-full max-w-2xl glass-panel p-3 md:p-6 border-volt/30 shadow-2xl my-auto"
             >
               <div className="flex items-center gap-4 mb-8">
-                <div className="p-4 bg-volt/10 text-volt">
+                <div className="p-2 md:p-4 bg-volt/10 text-volt">
                   <Zap size={32} />
                 </div>
                 <div>
@@ -662,7 +667,7 @@ export const ProfileView = () => {
                 {/* Timeline Column */}
                 <div className="space-y-6">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-normal text-zinc-500">Months until Competition</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Months until Competition</label>
                     <div className="grid grid-cols-4 gap-2">
                       {[3, 6, 9, 12].map((m) => (
                         <button
@@ -695,7 +700,7 @@ export const ProfileView = () => {
                 {/* Frequency Column */}
                 <div className="space-y-6">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-normal text-zinc-500">Training Frequency</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Training Frequency</label>
                     <div className="grid grid-cols-5 gap-2">
                       {[3, 4, 5, 6, 7].map((f) => (
                         <button
@@ -773,7 +778,7 @@ export const ProfileView = () => {
               className="relative w-full max-w-md glass-panel p-3 md:p-6 border-volt/30 shadow-2xl my-auto"
             >
               <div className="flex items-center gap-4 mb-8">
-                <div className="p-4 bg-volt/10 text-volt">
+                <div className="p-2 md:p-4 bg-volt/10 text-volt">
                   <Dumbbell size={32} />
                 </div>
                 <div>
@@ -785,7 +790,7 @@ export const ProfileView = () => {
               <div className="space-y-6">
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-normal text-zinc-500">Squat ({unit === 'metric' ? 'kg' : 'LBS'})</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Squat ({unit === 'metric' ? 'kg' : 'LBS'})</label>
                     <input
                       type="number"
                       value={edit1RMData.squatPR || ''}
@@ -794,7 +799,7 @@ export const ProfileView = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-normal text-zinc-500">Bench ({unit === 'metric' ? 'kg' : 'LBS'})</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Bench ({unit === 'metric' ? 'kg' : 'LBS'})</label>
                     <input
                       type="number"
                       value={edit1RMData.benchPR || ''}
@@ -803,7 +808,7 @@ export const ProfileView = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-normal text-zinc-500">Deadlift ({unit === 'metric' ? 'kg' : 'LBS'})</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Deadlift ({unit === 'metric' ? 'kg' : 'LBS'})</label>
                     <input
                       type="number"
                       value={edit1RMData.deadliftPR || ''}
@@ -903,7 +908,7 @@ export const ProfileView = () => {
               </div>
 
               <div className="flex items-center gap-4 mb-8">
-                <div className="p-4 bg-volt/10 text-volt">
+                <div className="p-2 md:p-4 bg-volt/10 text-volt">
                   <ListOrdered size={32} />
                 </div>
                 <div>
@@ -921,7 +926,7 @@ export const ProfileView = () => {
                 <div className="space-y-4">
                   {[
                     { name: 'Elite', male: '> 5.8x', female: '> 3.8x', icon: Skull, color: 'text-[#9333EA]', bg: 'bg-[#9333EA]/10', glow: 'drop-shadow-[0_0_20px_#3b82f6]', animation: '' },
-                    { name: 'Advanced', male: '> 4.5x', female: '> 2.9x', icon: Trophy, color: 'text-[#FFD700]', bg: 'bg-[#FFD700]/10', glow: 'drop-shadow-[0_0_15px_#ff4500]', animation: 'animate-flaming' },
+                    { name: 'Advanced', male: '> 4.5x', female: '> 2.9x', icon: Trophy, color: 'text-[#8B8000]', bg: 'bg-[#8B8000]/10', glow: 'drop-shadow-[0_0_15px_#8B8000]', animation: '' },
                     { name: 'Intermediate', male: '> 3.6x', female: '> 2.3x', icon: Trophy, color: 'text-white', bg: 'bg-white/10', glow: 'drop-shadow-[0_0_10px_rgba(255,255,255,0.8)]', animation: '' },
                     { name: 'Novice', male: '> 2.4x', female: '> 1.5x', icon: Medal, color: 'text-volt', bg: 'bg-volt/10', glow: '', animation: '' },
                     { name: 'Untrained', male: 'Baseline', female: 'Baseline', icon: Medal, color: 'text-zinc-500', bg: 'bg-zinc-500/10', glow: '', animation: '' },
