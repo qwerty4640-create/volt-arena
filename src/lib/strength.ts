@@ -34,3 +34,45 @@ export const calculateTier = (
 
   return tiers[tierIndex];
 };
+
+export const getTierStyle = (tier: string) => {
+  switch (tier) {
+    case 'untrained': 
+    case 'novice': 
+    case 'newbie': 
+      return { 
+        color: 'text-volt', 
+        bg: 'bg-volt/10',
+        border: 'border-volt/30',
+        glow: ''
+      };
+    case 'intermediate': 
+      return { 
+        color: 'text-white', 
+        bg: 'bg-white/10',
+        border: 'border-white/20',
+        glow: 'drop-shadow-[0_0_10px_rgba(255,255,255,0.8)]'
+      };
+    case 'advanced': 
+      return { 
+        color: 'text-[#FFD700]', 
+        bg: 'bg-[#FFD700]/10',
+        border: 'border-[#FFD700]/30',
+        glow: 'drop-shadow-[0_0_15px_#ff4500]'
+      };
+    case 'elite': 
+      return { 
+        color: 'text-[#9333EA]', 
+        bg: 'bg-[#9333EA]/10',
+        border: 'border-[#9333EA]/30',
+        glow: 'drop-shadow-[0_0_20px_#3b82f6]'
+      };
+    default: 
+      return { 
+        color: 'text-zinc-500', 
+        bg: 'bg-zinc-500/10',
+        border: 'border-zinc-500/20',
+        glow: ''
+      };
+  }
+};

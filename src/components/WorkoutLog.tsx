@@ -17,6 +17,7 @@ import {
   Zap,
   AlertTriangle
 } from 'lucide-react';
+import { InfoTooltip } from './InfoTooltip';
 import { useSettings } from '../contexts/SettingsContext';
 import { cn } from '../lib/utils';
 import { useWorkout, Exercise, Set as WorkoutSet } from '../contexts/WorkoutContext';
@@ -371,14 +372,14 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
             <h1 className="font-sans text-2xl md:text-4xl font-black uppercase italic tracking-tight">{currentSession.title}</h1>
             <div className="flex items-center gap-4 mt-2 font-mono text-[10px] md:text-xs font-bold uppercase tracking-widest text-zinc-500">
               <span className="flex items-center gap-2">
-                RECOVERY: <span className={cn(
+                RECOVERY <InfoTooltip term="Readiness" />: <span className={cn(
                   "font-black tracking-tighter text-white",
                   getCalibrationStatus().readiness >= 85 ? "text-emerald-500" :
                   getCalibrationStatus().readiness >= 60 ? "text-amber-500" : "text-crimson"
                 )}>{getCalibrationStatus().readiness}%</span>
               </span>
               <span className="flex items-center gap-2">
-                SESSION TARGET RPE: <span className="font-black text-white">{currentSession.targetRpe || '–'}</span>
+                SESSION TARGET RPE <InfoTooltip term="sRPE" /> <span className="font-black text-white">{currentSession.targetRpe || '–'}</span>
               </span>
             </div>
           </div>
@@ -965,9 +966,9 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
 
               <button 
                 onClick={() => setIsAddExerciseOpen(false)}
-                className="w-full mt-6 py-4 border-none text-zinc-500 font-headline text-[10px] font-black uppercase tracking-widest hover:bg-surface-container-high transition-all"
+                className="w-full mt-6 btn-secondary py-4"
               >
-                Cancel
+                Close
               </button>
             </motion.div>
           </div>

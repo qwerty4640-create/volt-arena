@@ -623,6 +623,7 @@ function AppContent() {
             setActiveView(allCompleted ? 'post-workout' : 'workout-log');
           }
         }} 
+        onViewBriefing={() => setActiveView('training')}
         onViewHistory={(sessionId) => {
           setSelectedHistoryWorkoutId(sessionId || null);
           setActiveView('workout-history');
@@ -697,6 +698,7 @@ function AppContent() {
         onContinueSession={() => {
           setActiveView('workout-log');
         }} 
+        onViewBriefing={() => setActiveView('training')}
       />;
     }
   };
@@ -848,14 +850,14 @@ function AppContent() {
                     animate={isActive ? {
                       boxShadow: ['0 0 15px var(--primary-glow)', '0 0 30px var(--primary-glow)', '0 0 15px var(--primary-glow)']
                     } : {
-                      boxShadow: ['0 0 0px transparent', '0 0 15px rgba(204,255,0,0.3)', '0 0 0px transparent']
+                      boxShadow: ['0 0 0px transparent', '0 0 15px rgba(204,255,0,0.5)', '0 0 0px transparent']
                     }}
                     transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
                     className={cn(
                       "relative flex items-center justify-center transition-all duration-500 z-10",
                       isActive 
                         ? "w-14 h-14 text-void scale-110" 
-                        : "w-12 h-12 text-volt group-hover:text-void group-hover:scale-110 before:absolute before:inset-0 before:opacity-0 group-hover:before:opacity-100 before:transition-opacity before:duration-300 before:-z-10"
+                        : "w-12 h-12 text-volt group-hover:text-void group-hover:scale-110"
                     )}
                     style={{
                       clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)",
@@ -870,10 +872,11 @@ function AppContent() {
                         style={{ zIndex: -1 }}
                       >
                         <polygon 
-                          points="24,0 48,12 48,36 24,48 0,36 0,12" 
+                          points="24,1.5 46.5,12.5 46.5,35.5 24,46.5 1.5,35.5 1.5,12.5" 
                           fill="none" 
                           stroke="currentColor" 
-                          strokeWidth="2" 
+                          strokeWidth="2.5" 
+                          strokeLinejoin="round"
                         />
                       </svg>
                     )}
@@ -881,7 +884,19 @@ function AppContent() {
                       className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" 
                       style={{ background: "var(--primary-gradient)", zIndex: -1 }} 
                     />
-                    <Icon size={isActive ? 24 : 20} strokeWidth={isActive ? 3 : 2} />
+                    <svg 
+                      xmlns="http://www.w3.org/2000/svg" 
+                      width={isActive ? 24 : 20} 
+                      height={isActive ? 24 : 20} 
+                      viewBox="0 0 24 24" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      strokeWidth={isActive ? 3 : 2} 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round"
+                    >
+                      <polygon points="12 2 19 21 12 17 5 21 12 2" />
+                    </svg>
                   </motion.div>
                   <span className={cn(
                     "font-sans text-[7px] font-black uppercase tracking-[0.2em] transition-colors",
@@ -952,7 +967,7 @@ function AppContent() {
           })}
         </div>
 
-        <div className="flex-shrink-0 flex justify-center -mt-8 px-2">
+        <div className="flex-shrink-0 flex justify-center -mt-8">
           {(() => {
             const item = NAV_ITEMS.find(i => i.id === 'training');
             if (!item) return null;
@@ -993,10 +1008,11 @@ function AppContent() {
                       style={{ zIndex: -1 }}
                     >
                       <polygon 
-                        points="24,0 48,12 48,36 24,48 0,36 0,12" 
+                        points="24,1.5 46.5,12.5 46.5,35.5 24,46.5 1.5,35.5 1.5,12.5" 
                         fill="none" 
                         stroke="currentColor" 
-                        strokeWidth="2" 
+                        strokeWidth="2.5" 
+                        strokeLinejoin="round"
                       />
                     </svg>
                   )}
@@ -1004,7 +1020,19 @@ function AppContent() {
                     className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" 
                     style={{ background: "var(--primary-gradient)", zIndex: -1 }} 
                   />
-                  <Icon size={24} strokeWidth={isActive ? 3 : 2} />
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    width={24} 
+                    height={24} 
+                    viewBox="0 0 24 24" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeWidth={isActive ? 3 : 2} 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round"
+                  >
+                    <polygon points="12 2 19 21 12 17 5 21 12 2" />
+                  </svg>
                 </motion.div>
                 <span className={cn(
                   "text-[8px] font-black uppercase tracking-widest mt-1 transition-colors",
@@ -1057,10 +1085,10 @@ function AppContent() {
         <AnimatePresence mode="wait">
           <motion.div
             key={activeView}
-            initial={{ opacity: 0, y: 20, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -20, scale: 0.98 }}
-            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            initial={{ opacity: 0, scale: 0.95, clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 100%)' }}
+            animate={{ opacity: 1, scale: 1, clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 100%)' }}
+            exit={{ opacity: 0, scale: 1.05, filter: 'blur(5px)' }}
+            transition={{ duration: 0.2, ease: [0.33, 1, 0.68, 1] }}
             className="w-full flex flex-col items-center justify-start"
           >
             {renderView()}

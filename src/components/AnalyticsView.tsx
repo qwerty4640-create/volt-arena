@@ -56,7 +56,8 @@ export const AnalyticsView = () => {
         title: session.title,
         timestamp: session.completedAt || new Date(session.date).getTime(),
         displayDate: new Date(session.completedAt || session.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        fullDate: new Date(session.completedAt || session.date).toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })
+        fullDate: new Date(session.completedAt || session.date).toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' }),
+        rpe: session.rpe
       };
 
       selectedLifts.forEach(lift => {
@@ -176,6 +177,10 @@ export const AnalyticsView = () => {
                   </span>
                 </div>
               ))}
+              <div className="pt-2 mt-2 border-t border-white/5 flex justify-between items-center">
+                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Session RPE</span>
+                <span className="text-sm font-black italic text-volt">{data.rpe ? (data.rpe as number).toFixed(1) : 'N/A'}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -192,7 +197,7 @@ export const AnalyticsView = () => {
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.1 }}
-          className="col-span-12 lg:col-span-8 glass-panel px-4 py-6 md:p-8 flex flex-col"
+          className="col-span-12 glass-panel px-4 py-6 md:p-8 flex flex-col"
         >
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6">
             <div>
@@ -280,41 +285,6 @@ export const AnalyticsView = () => {
                 <p className="text-[10px] font-black uppercase tracking-[0.2em]">{t('analysis.insufficientData')}</p>
               </div>
             )}
-          </div>
-        </motion.div>
-
-        {/* Peak Intensity Card */}
-        <motion.div 
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          className="col-span-12 lg:col-span-4 glass-panel px-4 py-6 md:p-8 flex flex-col justify-between relative overflow-hidden"
-        >
-          <div className="absolute top-0 right-0 w-32 h-32 bg-volt/5 blur-[60px] -z-10" />
-          <div>
-            {/* 
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-1.5 h-1.5 bg-volt" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('analysis.intensityMetrics')}</span>
-            </div>
-            */}
-            <h3 className="font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tight mb-2">{t('analysis.peakIntensity')}</h3>
-            <p className="text-zinc-400 text-xs font-medium leading-relaxed">{t('analysis.peakIntensityDesc')}</p>
-          </div>
-          <div className="my-12">
-            <div className="font-headline text-7xl md:text-8xl font-black text-volt text-glow-volt leading-none italic">
-              {history.length > 0 ? Math.max(...history.map(s => s.rpe || 0)).toFixed(1) : '0.0'}
-            </div>
-            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500 mt-4 block">{t('analysis.rpeMax')}</span>
-          </div>
-          <div className="pt-6 border-t border-white/5">
-            <span className="text-[10px] font-black text-zinc-500 tracking-widest uppercase">
-              {t('analysis.occurredOn')}: <span className="text-white">
-                {history.length > 0 
-                  ? new Date(history.reduce((prev, curr) => (curr.rpe || 0) > (prev.rpe || 0) ? curr : prev).completedAt || 0).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })
-                  : '–'}
-              </span>
-            </span>
           </div>
         </motion.div>
 

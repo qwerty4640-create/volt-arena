@@ -1,10 +1,11 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Settings, Globe, Scale, CheckCircle2, Terminal, Mic, MicOff, Eye, Box, Zap, Trash2, Loader2, AlertTriangle, Power, Target, RotateCcw, Monitor, Sun, Moon, Paintbrush } from 'lucide-react';
+import { Settings, Globe, Scale, CheckCircle2, Terminal, Mic, MicOff, Eye, Box, Zap, Trash2, Loader2, AlertTriangle, Power, Target, RotateCcw, Monitor, Sun, Moon, Paintbrush, Book } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useSettings, TrainingGoal } from '../contexts/SettingsContext';
 import { useWorkout } from '../contexts/WorkoutContext';
 import { ConfirmationModal } from './ConfirmationModal';
+import { FieldManual } from './FieldManual';
  
 const LANGUAGES = [
   { id: 'en', label: 'English' },
@@ -32,6 +33,7 @@ export const SettingsView = ({ onExit }: { onExit?: () => void }) => {
     t 
   } = useSettings();
   const { mockWorkoutCount, setMockWorkoutCount, history, resetProgress, resetProgram } = useWorkout();
+  const [showFieldManual, setShowFieldManual] = React.useState(false);
   const [isResetting, setIsResetting] = React.useState(false);
   const [showResetConfirm, setShowResetConfirm] = React.useState(false);
   const [showResetProgramConfirm, setShowResetProgramConfirm] = React.useState(false);
@@ -54,6 +56,34 @@ export const SettingsView = ({ onExit }: { onExit?: () => void }) => {
 
   return (
     <div className="w-full max-w-7xl space-y-6 md:space-y-8 pb-20 pt-8">
+      {/* Field Manual - Top Positioned Modal Trigger */}
+      <motion.div 
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        className="relative overflow-hidden border border-volt/40 bg-zinc-900/40 shadow-[0_0_30px_rgba(204,255,0,0.06)]"
+      >
+        <button 
+          onClick={() => setShowFieldManual(true)}
+          className="w-full px-4 py-6 md:p-8 flex items-center justify-between hover:bg-volt/[0.06] transition-all group active:scale-[0.995]"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-volt/10 flex items-center justify-center text-volt border border-volt/20 group-hover:border-volt/50 transition-colors">
+              <Book size={20} />
+            </div>
+            <div className="text-left">
+              <h3 className="font-sans text-sm font-bold uppercase tracking-widest text-white group-hover:text-volt transition-colors">{t('settings.fieldManual')}</h3>
+              <p className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest mt-1 opacity-80">{t('settings.fieldManualSubtitle')}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 text-zinc-500 group-hover:text-white transition-colors">
+            <span className="text-[10px] font-black uppercase tracking-widest hidden sm:block">Open Archive</span>
+            {/*...Icon hidden}}<Terminal size={18} />{...*/}
+          </div>
+        </button>
+      </motion.div>
+
+      <FieldManual isOpen={showFieldManual} onClose={() => setShowFieldManual(false)} />
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Language Settings */}
         <motion.div 

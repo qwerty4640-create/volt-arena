@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Activity, Brain, Battery, Moon, Heart, ChevronRight, AlertTriangle, Zap, ShieldCheck, Info, ArrowLeft, Star } from 'lucide-react';
+import { Activity, Brain, Battery, Moon, Heart, ChevronRight, AlertTriangle, Zap, ShieldCheck, Info, ArrowLeft, Star, X } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useSettings } from '../contexts/SettingsContext';
 import { useWorkout } from '../contexts/WorkoutContext';
@@ -153,14 +153,16 @@ export const ReadinessCheck = ({ onComplete, onCancel }: ReadinessCheckProps) =>
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
         className="relative w-full max-w-2xl glass-panel border-white/10 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
       >
-        <div className="p-3 md:p-8 border-b border-white/5 shrink-0">
+        <div className="p-3 md:p-8 border-b border-white/5 shrink-0 relative">
           <div className="flex items-center gap-6">
+          {/*...}
             <button 
               onClick={onCancel}
-              className="w-12 h-12 shrink-0 bg-surface-container-lowest border border-white/5 flex items-center justify-center text-zinc-400 hover:text-white hover:border-volt transition-all"
+              className="w-12 h-12 btn-secondary"
             >
               <ArrowLeft size={24} />
             </button>
+            {...*/}
             <div className="space-y-1">
               <h2 className="font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tight text-white">Pre-Training Questionnaire</h2>
               <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Hooper-Mackinnon Scale</p>
@@ -333,23 +335,31 @@ export const ReadinessCheck = ({ onComplete, onCancel }: ReadinessCheckProps) =>
           </AnimatePresence>
         </div>
 
-        <div className="p-6 md:p-8 border-t border-white/5 shrink-0 bg-surface-container-lowest">
-          {!showResult ? (
+        <div className="p-3 md:p-6 border-t border-white/5 shrink-0 bg-surface-container-lowest">
+          <div className="flex gap-4">
             <button
-              onClick={() => setShowResult(true)}
-              disabled={!isComplete}
-              className="w-full py-4 bg-volt text-void font-headline text-sm font-black uppercase tracking-widest hover:bg-white hover:shadow-[0_0_20px_var(--primary-glow)] transition-all disabled:opacity-50 disabled:hover:bg-volt disabled:hover:shadow-none flex items-center justify-center gap-2"
+              onClick={onCancel}
+              className="flex-1 btn-secondary py-4"
             >
-              Analyze Readiness <ChevronRight size={16} />
+              <X size={16} /> Close
             </button>
-          ) : (
-            <button
-              onClick={handleComplete}
-              className="w-full py-4 bg-volt text-void font-headline text-sm font-black uppercase tracking-widest hover:bg-white hover:shadow-[0_0_20px_var(--primary-glow)] transition-all flex items-center justify-center gap-2"
-            >
-              Initialize Protocol <Zap size={16} />
-            </button>
-          )}
+            {!showResult ? (
+              <button
+                onClick={() => setShowResult(true)}
+                disabled={!isComplete}
+                className="flex-[2] btn-primary py-4 disabled:opacity-50"
+              >
+                Analyze <ChevronRight size={16} />
+              </button>
+            ) : (
+              <button
+                onClick={handleComplete}
+                className="flex-[2] btn-primary py-4"
+              >
+                Initialize Protocol <Zap size={16} />
+              </button>
+            )}
+          </div>
         </div>
       </motion.div>
     </div>

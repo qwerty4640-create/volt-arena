@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { MessageSquare, Star, ChevronRight, Zap } from 'lucide-react';
+import { MessageSquare, Star, ChevronRight, Zap, X } from 'lucide-react';
+import { InfoTooltip } from './InfoTooltip';
 import { cn } from '../lib/utils';
 import { WorkoutSession } from '../contexts/WorkoutContext';
 
@@ -59,6 +60,7 @@ export const ReflectionModal = ({ session, onSave, onClose }: ReflectionModalPro
               <div className="flex items-center gap-2 text-zinc-400">
                 <Star size={14} className="text-volt" />
                 <span className="text-[10px] font-black uppercase tracking-widest">Actual Session RPE</span>
+                <InfoTooltip term="sRPE" />
               </div>
               <span className="text-3xl font-black italic text-volt">{rpe}</span>
             </div>
@@ -86,16 +88,24 @@ export const ReflectionModal = ({ session, onSave, onClose }: ReflectionModalPro
               Reflecting on your session 15-30 minutes later provides a more accurate measure of the total physiological load.
             </p>
             
+          <div className="flex gap-4">
+            <button
+              onClick={onClose}
+              className="flex-1 btn-secondary py-4"
+            >
+              <X size={16} /> Close
+            </button>
             <motion.button 
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={handleSaveReflection}
               disabled={isSaving}
-              className="flex-[2] w-full min-h-[44px] px-4 sm:px-8 py-4 bg-volt text-void font-headline text-xs md:text-sm font-black uppercase tracking-widest hover:bg-white transition-all flex items-center justify-center gap-2 group"
+              className="flex-[2] btn-primary py-4"
             >
               <span>{isSaving ? 'Saving...' : 'Save Reflection'}</span>
               <ChevronRight size={18} />
             </motion.button>
+          </div>
           </div>
         </div>
       </motion.div>

@@ -2,6 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { AlertTriangle, X } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
+import { cn } from '../lib/utils';
 
 interface ConfirmationModalProps {
   isOpen: boolean;
@@ -19,7 +20,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   title,
   message,
   confirmLabel = 'Confirm',
-  cancelLabel = 'Cancel',
+  cancelLabel = 'Close',
   onConfirm,
   onCancel,
   variant = 'danger'
@@ -66,19 +67,18 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
               <div className="flex w-full gap-4 pt-4 border-t border-white/5">
                 <button
                   onClick={onCancel}
-                  className="flex-1 py-4 border-none bg-surface-container-low text-zinc-500 font-headline text-[10px] font-black uppercase tracking-widest hover:bg-surface-container-high hover:text-white transition-all"
+                  className="flex-1 btn-secondary py-4"
                 >
                   {cancelLabel}
                 </button>
                 <button
                   onClick={onConfirm}
-                  className={`flex-1 py-4 font-headline text-[10px] font-black uppercase tracking-widest transition-all shadow-lg ${
+                  className={cn(
+                    "flex-1 py-4 font-headline text-[10px] font-black uppercase tracking-widest transition-all shadow-lg",
                     variant === 'danger' 
                       ? 'btn-destructive' 
-                      : variant === 'warning'
-                      ? 'bg-volt text-void hover:bg-white'
-                      : 'bg-white text-void hover:bg-zinc-200'
-                  }`}
+                      : 'btn-primary'
+                  )}
                 >
                   {confirmLabel}
                 </button>

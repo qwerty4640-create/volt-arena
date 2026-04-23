@@ -5,6 +5,7 @@ import { useWorkout, ActiveRecovery } from '../contexts/WorkoutContext';
 import { useSettings } from '../contexts/SettingsContext';
 import { cn } from '../lib/utils';
 import { ACTIVITY_LIBRARY, ActivityCategory } from '../data/activityLibrary';
+import { getTierStyle } from '../lib/strength';
 
 interface NonProgramActivityModalProps {
   isOpen: boolean;
@@ -13,7 +14,7 @@ interface NonProgramActivityModalProps {
 }
 
 const CATEGORY_COLORS: Record<ActivityCategory, string> = {
-  Cardio: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+  Cardio: 'bg-volt/20 text-volt border-volt/30',
   Combat: 'bg-crimson/20 text-crimson border-crimson/30',
   Strength: 'bg-volt/20 text-volt border-volt/30',
   Sport: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
@@ -85,6 +86,7 @@ export const NonProgramActivityModal = ({ isOpen, onClose, initialData }: NonPro
   }, [searchQuery, selectedCategory]);
 
   const selectedActivity = ACTIVITY_LIBRARY.find(a => a.id === activityId) || ACTIVITY_LIBRARY[0];
+  const tierStyle = getTierStyle(profile?.level || 'untrained');
 
   const estimatedCalories = useMemo(() => {
     if (!selectedActivity) return 0;
@@ -165,12 +167,11 @@ export const NonProgramActivityModal = ({ isOpen, onClose, initialData }: NonPro
             {/* Header */}
             <div className="p-4 md:p-6 bg-zinc-900 border-b border-zinc-800 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-volt flex items-center justify-center text-void shadow-[0_0_15px_rgba(206,255,0,0.2)] rounded-none">
-                  <Activity size={24} />
-                </div>
                 <div>
-                  <h3 className="font-headline text-lg md:text-xl font-black uppercase italic tracking-tighter text-white">{t('Non-Program Activity')}</h3>
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-volt/70">{t('Tactical Integration Log')}</p>
+                  <h3 className={cn("font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tighter", tierStyle.color)}>{t('Non-Program Activity')}</h3>
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">
+                    {t('Tactical Integration Log')}
+                  </p>
                 </div>
               </div>
               {/*...X button}
@@ -361,17 +362,17 @@ export const NonProgramActivityModal = ({ isOpen, onClose, initialData }: NonPro
               <div className="flex gap-4">
                 <button
                   onClick={onClose}
-                  className="flex-1 py-4 text-[10px] font-black uppercase tracking-widest hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-white transition-all rounded-none"
+                  className="flex-1 btn-secondary py-4"
                 >
-                  Cancel
+                  <X size={16} /> Close
                 </button>
                 <button
                   onClick={handleSubmit}
                   disabled={isSubmitting}
-                  className="flex-[2] py-4 bg-volt text-void font-headline text-xs font-black uppercase tracking-widest hover:bg-white transition-all flex items-center justify-center gap-2 rounded-none"
+                  className="flex-[2] btn-primary py-4 rounded-none"
                 >
                   {isSubmitting ? <Zap className="animate-spin" size={16} /> : <Zap size={16} />}
-                  {initialData ? "UPDATE INTEL" : "LOG OPERATION"}
+                  Log
                 </button>
               </div>
             </div>

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   ChevronLeft, 
@@ -48,6 +49,11 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
   const [dateRange, setDateRange] = useState<number>(28); // Default 4 weeks
   const [minRpe, setMinRpe] = useState<number>(0);
   const [focusFilter, setFocusFilter] = useState<string>('all');
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   React.useEffect(() => {
     if (initialSelectedWorkoutId) {
@@ -105,7 +111,7 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
             <ChevronLeft size={20} className="md:w-6 md:h-6" />
           </button>
           <div>
-            <h1 className="text-2xl md:text-4xl font-black italic uppercase tracking-tighter">{t('analysis.workoutHistory')}</h1>
+            <h1 className="text-2xl md:text-4xl font-black italic uppercase tracking-tighter">Mission History</h1>
             <p className="text-[8px] md:text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500">{t('analysis.reviewPerformance')}</p>
           </div>
         </div>
@@ -560,9 +566,10 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
       </div>
 
       {/* Edit Modal */}
-      <AnimatePresence>
-        {isEditing && editWorkout && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8">
+      {mounted && createPortal(
+        <AnimatePresence>
+          {isEditing && editWorkout && (
+            <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 md:p-8">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -772,9 +779,9 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
               <div className="p-3 md:p-3 flex gap-4 bg-surface-container-high">
                 <button 
                   onClick={() => setIsEditing(false)}
-                  className="flex-1 w-full min-h-[44px] px-4 sm:px-8 py-4 bg-void/40 border border-white/10 text-white font-headline text-[10px] md:text-xs font-black uppercase tracking-widest hover:bg-white/5 transition-all flex items-center justify-center gap-2 group"
+                  className="flex-1 btn-secondary py-4"
                 >
-                  {t('Discard')}
+                  Close
                 </button>
                 <button 
                   onClick={async () => {
@@ -782,7 +789,7 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
                     setSelectedWorkout(editWorkout);
                     setIsEditing(false);
                   }}
-                  className="flex-[2] w-full min-h-[44px] px-4 sm:px-8 py-4 bg-volt text-void font-headline text-xs md:text-sm font-black uppercase tracking-widest hover:bg-white transition-all flex items-center justify-center gap-2 group"
+                  className="flex-[2] btn-primary py-4"
                 >
                   <Save size={18} />
                   <span>{t('analysis.saveChanges')}</span>
@@ -791,7 +798,9 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
             </motion.div>
           </div>
         )}
-      </AnimatePresence>
+      </AnimatePresence>,
+      document.body
+    )}
 
       <ConfirmationModal 
         isOpen={!!logToDelete}

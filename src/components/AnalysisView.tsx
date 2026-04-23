@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { InfoTooltip } from './InfoTooltip';
 import { 
   Play, 
   TrendingUp, 
@@ -62,7 +63,7 @@ import { useWorkout, WorkoutSession, ActiveRecovery } from '../contexts/WorkoutC
 import { auth } from '../firebase';
 import { BlockType, getPlanForDuration } from '../constants/periodization';
 
-const WelcomeModule = ({ onStart }: { onStart: () => void }) => {
+const WelcomeModule = ({ onStart, onViewBriefing }: { onStart: () => void, onViewBriefing: () => void }) => {
   const { profile } = useSettings();
   const { history, getCalibrationStatus, getNextWorkoutTemplate, calculateProgramCalories, currentSession } = useWorkout();
   
@@ -107,13 +108,23 @@ const WelcomeModule = ({ onStart }: { onStart: () => void }) => {
           When you're ready, we've got <span className="text-white">{nextWorkout?.title || 'an active recovery session'}</span> on the agenda. It should take about <span className="text-white">{nextWorkout?.duration || 'around 45 minutes'}</span> and burn roughly <span className="text-white">{predictedCalories} kcal</span>.
         </p>
         
-        <button 
-          onClick={onStart}
-          className="flex-[2] w-full min-h-[44px] px-4 sm:px-8 py-4 bg-volt text-void font-headline text-xs md:text-sm font-black uppercase tracking-widest hover:bg-white transition-all flex items-center justify-center gap-2 group"
-        >
-          <Play size={16} className="fill-void group-hover:scale-110 transition-transform" />
-          {currentSession ? 'Continue Mission' : 'Start Mission'}
-        </button>  
+        <div className="flex flex-col sm:flex-row gap-3 mt-4">
+          <button 
+            onClick={onStart}
+            className="flex-[2] w-full min-h-[44px] px-4 sm:px-8 py-4 bg-volt text-void font-headline text-xs md:text-sm font-black uppercase tracking-widest hover:bg-white transition-all flex items-center justify-center gap-2 group"
+          >
+            <Play size={16} className="fill-void group-hover:scale-110 transition-transform" />
+            {currentSession ? 'Continue Mission' : 'Start Mission'}
+          </button>
+          
+          <button 
+            onClick={onViewBriefing}
+            className="flex-[2] btn-secondary w-full min-h-[44px] px-4 sm:px-8 py-4"
+          >
+            Mission Briefing
+            <ChevronRight size={16} className="ml-2" />
+          </button>
+        </div>
         
       </div>
     </div>
@@ -242,14 +253,17 @@ export const RecoveryAnalysisWidget = () => {
            style={{ backgroundImage: 'radial-gradient(var(--primary-color) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
       
       <div className="flex items-center justify-start mb-6 md:mb-10 relative z-10 w-full">
-        <h2 className="font-headline text-3xl font-black uppercase italic tracking-tight text-left">Recovery Analysis</h2>
+        <h2 className="font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tight text-left">Recovery Analysis</h2>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 md:gap-12 relative z-10 w-full flex-1">
         
         {/* Readiness Section */}
         <div className="flex flex-col h-full border-b lg:border-b-0 lg:border-r border-white/5 pb-8 lg:pb-0 lg:pr-8 text-left justify-start items-start">
-          <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-4 block w-full">{t('analysis.readiness')}</span>
+          <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-4 block w-full">
+            {t('analysis.readiness')}
+            <InfoTooltip term="Readiness" />
+          </span>
           <div className="flex items-end gap-3 mb-2 justify-start w-full">
             <span className="text-6xl md:text-7xl font-black italic tracking-tighter leading-none text-white">
               {readinessScore}
@@ -278,7 +292,10 @@ export const RecoveryAnalysisWidget = () => {
 
         {/* Recovery Score Section */}
         <div className="flex flex-col h-full border-b lg:border-b-0 lg:border-r border-white/5 pb-8 lg:pb-0 lg:pr-8 lg:pl-4 text-left justify-start items-start">
-          <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-4 block w-full">{t('analysis.recoveryScore')}</span>
+          <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-4 block w-full">
+            {t('analysis.recoveryScore')}
+            <InfoTooltip term="CNS" />
+          </span>
           <div className="flex items-end gap-3 mb-2 justify-start w-full">
             <span className="text-6xl md:text-7xl font-black italic tracking-tighter leading-none text-white">
               {recoveryScore}
@@ -311,7 +328,10 @@ export const RecoveryAnalysisWidget = () => {
 
         {/* Volume Section */}
         <div className="flex flex-col h-full text-left justify-start items-start lg:pl-8">
-          <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-4 block w-full">{t('analysis.weeklyAccumulatedVolume')}</span>
+          <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-4 block w-full">
+            {t('analysis.weeklyAccumulatedVolume')}
+            <InfoTooltip term="Volume" />
+          </span>
            <div className="flex items-end gap-3 mb-2 justify-start w-full">
             <span className="text-6xl md:text-7xl font-black italic tracking-tighter leading-none text-white">
               {hasHistory ? totalWeeklyVolume.toLocaleString() : '–'}
@@ -381,7 +401,10 @@ export const RecoveryWidget = () => {
   <div className="glass-panel px-4 py-6 md:p-8 border-none flex flex-col items-center justify-between text-center h-full">
     <div className="w-full flex justify-between items-center mb-2 xl:mb-4">
       <div className="flex items-center gap-2">
-        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500">{t('analysis.recoveryScore')}</span>
+        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500">
+          {t('analysis.recoveryScore')}
+          <InfoTooltip term="CNS" />
+        </span>
       </div>
     </div>
 
@@ -503,9 +526,11 @@ export const BlockWidget = () => {
         <div className="flex items-center gap-3">
           <h3 className="font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tight mb-2">{t('Block Progression')}</h3>
         </div>
+        {/*...week number hidden}
         <div className="flex items-center gap-2 px-3 py-1 bg-volt/10 border border-volt/20">
           <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-volt">{t('analysis.weeks')} {totalWeek}</span>
         </div>
+        {...*/}
       </div>
 
       <div className="flex flex-col gap-6 md:gap-8 flex-1">
@@ -600,7 +625,10 @@ export const BlockWidget = () => {
         {/* Intensity Graph */}
         <div className="flex flex-col">
           <div className="flex justify-between items-end mb-4">
-            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Intensity Curve</span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+              {t('analysis.intensityCurve')}
+              <InfoTooltip term="RPE" />
+            </span>
             <span className="text-[10px] font-black uppercase tracking-widest text-volt">{cycleLength}-Week Cycle</span>
           </div>
           
@@ -660,7 +688,8 @@ export const BlockWidget = () => {
               </div>
             </div>
             <span className="text-[8px] font-black uppercase tracking-widest text-zinc-600 italic">
-              *Based on 1RM Percentage
+              {t('analysis.basedOn1rm')}
+              <InfoTooltip term="1RM" />
             </span>
           </div>
         </div>
@@ -1097,11 +1126,12 @@ const SortableWidget: React.FC<SortableWidgetProps> = ({
 
 interface AnalysisViewProps {
   onContinueSession?: () => void;
+  onViewBriefing?: () => void;
   onViewHistory?: (sessionId?: string) => void;
   isLifting?: boolean;
 }
 
-export const AnalysisView = ({ onContinueSession, onViewHistory, isLifting }: AnalysisViewProps) => {
+export const AnalysisView = ({ onContinueSession, onViewBriefing, onViewHistory, isLifting }: AnalysisViewProps) => {
   const { t, experimentalFeatures } = useSettings();
   const [widgets, setWidgets] = useState<WidgetId[]>(['recovery-analysis', 'pr', 'macros', 'block']);
   const [activeId, setActiveId] = useState<WidgetId | null>(null);
@@ -1172,7 +1202,7 @@ export const AnalysisView = ({ onContinueSession, onViewHistory, isLifting }: An
 
   return (
     <>
-      <WelcomeModule onStart={() => onContinueSession?.()} />
+      <WelcomeModule onStart={() => onContinueSession?.()} onViewBriefing={() => onViewBriefing?.()} />
       <DndContext 
         sensors={sensors}
         collisionDetection={closestCenter}

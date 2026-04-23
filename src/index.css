@@ -123,12 +123,28 @@
 }
 
 @keyframes tactical-pulse {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.2); opacity: 0.7; }
+  0%, 100% { 
+    border-color: var(--primary-color-muted, rgba(234, 126, 8, 0.4)); 
+    box-shadow: 0 0 0px transparent; 
+  }
+  50% { 
+    border-color: var(--primary-color); 
+    box-shadow: 0 0 8px var(--primary-glow); 
+  }
 }
 
 .animate-tactical-pulse {
-  animation: tactical-pulse 2s ease-out infinite;
+  animation: tactical-pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Tooltip Animation */
+.tooltip-enter {
+  animation: tooltip-in 0.2s ease-out forwards;
+}
+
+@keyframes tooltip-in {
+  from { opacity: 0; transform: translate(-50%, 8px) scale(0.95); }
+  to { opacity: 1; transform: translate(-50%, 0) scale(1); }
 }
 
 @layer base {
@@ -151,7 +167,12 @@
   }
 
   button, a, [role="button"], input[type="submit"], input[type="button"], select {
-    @apply cursor-pointer;
+    @apply cursor-pointer transition-all duration-100 ease-in-out;
+  }
+
+  button:active, 
+  [role="button"]:active {
+    @apply scale-[0.97] brightness-90;
   }
 
   :focus-visible {
@@ -160,6 +181,30 @@
 }
 
 @layer components {
+  .btn-primary {
+    @apply bg-volt text-void font-headline text-xs md:text-sm font-black uppercase tracking-widest hover:bg-white active:scale-95 active:brightness-90 transition-all flex items-center justify-center gap-2;
+  }
+
+  .btn-secondary {
+    @apply bg-zinc-900 border border-white/5 text-zinc-500 font-headline text-[10px] md:text-xs font-black uppercase tracking-widest hover:bg-zinc-800 hover:text-white hover:border-white/10 active:scale-95 active:bg-zinc-950 transition-all flex items-center justify-center gap-2 px-6;
+  }
+
+  button svg, [role="button"] svg {
+    @apply fill-none stroke-current;
+  }
+
+  .btn-secondary svg {
+    @apply text-volt transition-colors duration-200;
+  }
+
+  .btn-secondary:hover svg {
+    @apply text-white;
+  }
+
+  .btn-tertiary {
+    @apply text-zinc-500 hover:text-white font-headline text-[10px] font-black uppercase tracking-widest active:scale-95 active:opacity-70 transition-all flex items-center gap-2;
+  }
+
   .glass-panel {
     @apply bg-surface-variant/40 backdrop-blur-[40px];
   }

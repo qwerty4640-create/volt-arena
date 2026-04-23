@@ -5,18 +5,28 @@ import { SettingsProvider } from './contexts/SettingsContext';
 import { ToastProvider } from './contexts/ToastContext';
 import './index.css';
 
-if (import.meta.env.PROD && 'serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch((error) => {
-      console.error('ServiceWorker registration failed: ', error);
-    });
-  });
-} else if ('serviceWorker' in navigator) {
+import { registerSW } from 'virtual:pwa-register';
+
+if (!import.meta.env.PROD && 'serviceWorker' in navigator) {
   // In development, unregister any existing service worker to clear cache
   navigator.serviceWorker.getRegistrations().then((registrations) => {
     for (const registration of registrations) {
       registration.unregister();
       console.log('ServiceWorker unregistered');
+    }
+  });
+}
+
+// Register service worker with auto-update
+if (import.meta.env.PROD) {
+  registerSW({
+    immediate: true,
+    onRegistered(r) {
+      console.log('SW Registered');
+      r && setInterval(() => {
+        console.log('Checking for update...');
+        r.update();
+      }, 30 * 60 * 1000); // Check every 30 mins
     }
   });
 }

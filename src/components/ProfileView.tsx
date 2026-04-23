@@ -1,13 +1,13 @@
-import React from 'react';
-import { motion } from 'motion/react';
+import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { motion, AnimatePresence } from 'motion/react';
 import { User, Mail, Scale, Ruler, Trophy, Dumbbell, Calendar, BadgeCheck, Edit3, Info, X, Crown, Zap, Medal, Skull, CheckCircle2, BarChart3, AlertTriangle, Activity, ChevronDown, ChevronUp, MoveDown, Target, ListOrdered } from 'lucide-react';
 import { useSettings, TrainingGoal } from '../contexts/SettingsContext';
 import { useWorkout } from '../contexts/WorkoutContext';
 import { useToast } from '../contexts/ToastContext';
 import { cn } from '../lib/utils';
-import { AnimatePresence } from 'motion/react';
 import { getBlockForWeek, getPlanForDuration } from '../constants/periodization';
-import { calculateTier } from '../lib/strength';
+import { calculateTier, getTierStyle } from '../lib/strength';
 
 export const ProfileView = () => {
   const { profile, updateProfile, t, unit } = useSettings();
@@ -22,6 +22,11 @@ export const ProfileView = () => {
   const [ageError, setAgeError] = React.useState<string | null>(null);
   const [adjustingDuration, setAdjustingDuration] = React.useState(profile?.trainingDurationMonths || 3);
   const [adjustingFrequency, setAdjustingFrequency] = React.useState(profile?.trainingFrequency || 3);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const [edit1RMData, setEdit1RMData] = React.useState({
     squatPR: profile?.squatPR || 0,
     benchPR: profile?.benchPR || 0,
@@ -160,54 +165,16 @@ export const ProfileView = () => {
     }
   };
 
-  const getTierStyle = (tier: string) => {
-    switch (tier) {
-      case 'untrained': 
-      case 'novice': 
-      case 'newbie': 
-        return { 
-          icon: Medal, 
-          color: 'text-volt', 
-          bg: 'bg-volt/10',
-          glow: '',
-          animation: ''
-        };
-      case 'intermediate': 
-        return { 
-          icon: Trophy, 
-          color: 'text-white', 
-          bg: 'bg-white/10',
-          glow: 'drop-shadow-[0_0_10px_rgba(255,255,255,0.8)]',
-          animation: ''
-        };
-      case 'advanced': 
-        return { 
-          icon: Trophy, 
-          color: 'text-[#FFD700]', 
-          bg: 'bg-[#FFD700]/10',
-          glow: 'drop-shadow-[0_0_15px_#ff4500]',
-          animation: ''
-        };
-      case 'elite': 
-        return { 
-          icon: Skull, 
-          color: 'text-[#9333EA]', 
-          bg: 'bg-[#9333EA]/10',
-          glow: 'drop-shadow-[0_0_20px_#3b82f6]',
-          animation: ''
-        };
-      default: 
-        return { 
-          icon: Trophy, 
-          color: 'text-volt', 
-          bg: 'bg-volt/10',
-          glow: '',
-          animation: ''
-        };
-    }
+  const getTierStyleLocal = (tier: string) => {
+    const style = getTierStyle(tier);
+    return {
+      ...style,
+      icon: (tier === 'elite' ? Skull : (['advanced', 'intermediate'].includes(tier) ? Trophy : Medal)),
+      animation: ''
+    };
   };
 
-  const tierStyle = getTierStyle(profile.level);
+  const tierStyle = getTierStyleLocal(profile?.level || 'untrained');
   const isElite = profile.level === 'elite';
 
   const stats = [
@@ -463,9 +430,10 @@ export const ProfileView = () => {
       </div>
 
       {/* Biometrics Adjustment Modal */}
-      <AnimatePresence>
-        {showBiometricsModal && (
-          <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 overflow-y-auto custom-scrollbar">
+      {mounted && createPortal(
+        <AnimatePresence>
+          {showBiometricsModal && (
+            <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 overflow-y-auto custom-scrollbar">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -634,12 +602,15 @@ export const ProfileView = () => {
             </motion.div>
           </div>
         )}
-      </AnimatePresence>
+      </AnimatePresence>,
+      document.body
+    )}
 
       {/* Protocol Adjustment Modal */}
-      <AnimatePresence>
-        {showProtocolModal && (
-          <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 overflow-y-auto custom-scrollbar">
+      {mounted && createPortal(
+        <AnimatePresence>
+          {showProtocolModal && (
+            <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 overflow-y-auto custom-scrollbar">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -743,14 +714,14 @@ export const ProfileView = () => {
               <div className="flex gap-4">
                 <button 
                   onClick={() => setShowProtocolModal(false)}
-                  className="flex-1 py-4 bg-white/5 text-zinc-500 font-sans text-xs font-bold uppercase tracking-widest hover:text-white transition-all"
+                  className="flex-1 btn-secondary py-4"
                 >
-                  Cancel
+                  Close
                 </button>
                 <button 
                   onClick={handleAdjustProtocol}
                   disabled={loading}
-                  className="flex-1 py-4 bg-volt text-void font-sans text-xs font-bold uppercase tracking-widest hover:bg-white hover:shadow-[0_0_20px_var(--primary-glow)] transition-all disabled:opacity-50"
+                  className="flex-1 btn-primary py-4 disabled:opacity-50"
                 >
                   {loading ? 'Recalculating...' : 'Confirm Protocol'}
                 </button>
@@ -758,12 +729,15 @@ export const ProfileView = () => {
             </motion.div>
           </div>
         )}
-      </AnimatePresence>
+      </AnimatePresence>,
+      document.body
+    )}
 
       {/* 1RM Adjustment Modal */}
-      <AnimatePresence>
-        {show1RMModal && (
-          <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 overflow-y-auto custom-scrollbar">
+      {mounted && createPortal(
+        <AnimatePresence>
+          {show1RMModal && (
+            <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 overflow-y-auto custom-scrollbar">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -824,19 +798,19 @@ export const ProfileView = () => {
                     <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Projected Tier</span>
                     <span className={cn(
                       "text-[10px] font-black uppercase tracking-widest px-2 py-0.5",
-                      getTierStyle(calculateTier(
+                      getTierStyleLocal(calculateTier(
                         edit1RMData.squatPR,
                         edit1RMData.benchPR,
                         edit1RMData.deadliftPR,
-                        profile.weight || 0,
-                        profile.gender || 'male'
+                        profile?.weight || 0,
+                        profile?.gender || 'male'
                       )).bg,
-                      getTierStyle(calculateTier(
+                      getTierStyleLocal(calculateTier(
                         edit1RMData.squatPR,
                         edit1RMData.benchPR,
                         edit1RMData.deadliftPR,
-                        profile.weight || 0,
-                        profile.gender || 'male'
+                        profile?.weight || 0,
+                        profile?.gender || 'male'
                       )).color
                     )}>
                       {calculateTier(
@@ -863,14 +837,14 @@ export const ProfileView = () => {
                 <div className="flex gap-4">
                   <button 
                     onClick={() => setShow1RMModal(false)}
-                    className="flex-1 py-4 bg-white/5 text-zinc-500 font-sans text-xs font-bold uppercase tracking-widest hover:text-white transition-all"
+                    className="flex-1 btn-secondary py-4"
                   >
-                    Cancel
+                    Close
                   </button>
                   <button 
                     onClick={handleUpdate1RM}
                     disabled={loading}
-                    className="flex-1 py-4 bg-volt text-void font-sans text-xs font-bold uppercase tracking-widest hover:bg-white hover:shadow-[0_0_20px_var(--primary-glow)] transition-all disabled:opacity-50"
+                    className="flex-1 btn-primary py-4 disabled:opacity-50"
                   >
                     {loading ? 'Saving...' : 'Confirm'}
                   </button>
@@ -879,12 +853,15 @@ export const ProfileView = () => {
             </motion.div>
           </div>
         )}
-      </AnimatePresence>
+      </AnimatePresence>,
+      document.body
+    )}
 
       {/* Tier Info Modal */}
-      <AnimatePresence>
-        {showTierInfo && (
-          <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 overflow-y-auto custom-scrollbar">
+      {mounted && createPortal(
+        <AnimatePresence>
+          {showTierInfo && (
+            <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 overflow-y-auto custom-scrollbar">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -958,7 +935,9 @@ export const ProfileView = () => {
             </motion.div>
           </div>
         )}
-      </AnimatePresence>
+      </AnimatePresence>,
+      document.body
+    )}
     </div>
   );
 };
