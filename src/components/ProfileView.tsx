@@ -8,6 +8,7 @@ import { useToast } from '../contexts/ToastContext';
 import { cn } from '../lib/utils';
 import { getBlockForWeek, getPlanForDuration } from '../constants/periodization';
 import { calculateTier, getTierStyle } from '../lib/strength';
+import { MovementExclusionModal } from './MovementExclusionModal';
 
 export const ProfileView = () => {
   const { profile, updateProfile, t, unit } = useSettings();
@@ -17,6 +18,7 @@ export const ProfileView = () => {
   const [showProtocolModal, setShowProtocolModal] = React.useState(false);
   const [show1RMModal, setShow1RMModal] = React.useState(false);
   const [showBiometricsModal, setShowBiometricsModal] = React.useState(false);
+  const [showExclusionModal, setShowExclusionModal] = React.useState(false);
   const [isEditing, setIsEditing] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
   const [ageError, setAgeError] = React.useState<string | null>(null);
@@ -185,7 +187,7 @@ export const ProfileView = () => {
   ];
 
   return (
-    <div className="w-full max-w-7xl space-y-6 md:space-y-8 px-2 md:px-0">
+    <div className="w-full max-w-7xl space-y-6 md:space-y-8 md:px-0">
       {/* Header Section */}
       <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8 mb-8 md:mb-12">
         <div className="relative group">
@@ -358,6 +360,27 @@ export const ProfileView = () => {
               </div>
             </div>
           </div>
+          <motion.div 
+            initial={{ y: -20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            className="col-span-2 relative overflow-hidden border border-volt/40 bg-zinc-900/40 shadow-[0_0_30px_rgba(204,255,0,0.06)]"
+          >
+            <button 
+              onClick={() => setShowExclusionModal(true)}
+              className="w-full px-4 py-6 flex items-center justify-between hover:bg-volt/[0.06] transition-all group active:scale-[0.995]"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-volt/10 flex items-center justify-center text-volt border border-volt/20 group-hover:border-volt/50 transition-colors">
+                  <Activity size={20} />
+                </div>
+                <div className="text-left">
+                  <h3 className="font-sans text-sm font-bold uppercase tracking-widest text-white group-hover:text-volt transition-colors">Movement Restrictions</h3>
+                  <p className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest mt-1 opacity-80">Manual Calibration</p>
+                </div>
+              </div>
+            </button>
+          </motion.div>
+          <MovementExclusionModal isOpen={showExclusionModal} onClose={() => setShowExclusionModal(false)} />
         </motion.div>
 
         {/* Timeline & Frequency */}
@@ -386,7 +409,7 @@ export const ProfileView = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="p-4 bg-void/40 border border-white/5">
                 <p className="text-[7px] font-bold uppercase tracking-widest text-zinc-500 mb-1">Current Block</p>
-                <p className="text-xl font-sans font-black text-white italic uppercase truncate">{block.label || block.type}</p>
+                <p className="text-xl font-sans font-black text-white italic uppercase leading-tight">{block.label || block.type}</p>
                 <div className="flex justify-between items-center mt-2">
                   <span className="text-[8px] font-bold italic text-zinc-400">Week {weekInBlock} / {block.durationWeeks}</span>
                   <span className="text-[10px] font-bold uppercase text-volt">Week {currentWeek}</span>
@@ -395,7 +418,7 @@ export const ProfileView = () => {
 
               <div className="p-4 bg-void/40 border border-white/5">
                 <p className="text-[7px] font-bold uppercase tracking-widest text-zinc-500 mb-1">Training Load</p>
-                <p className="text-xl font-sans font-black text-white italic uppercase">{profile.trainingFrequency || 3} Sessions / Wk</p>
+                <p className="text-xl font-sans font-black text-white italic uppercase">{profile.trainingFrequency || 3} Missions / Wk</p>
                 <div className="mt-4 space-y-1.5">
                   <div className="flex justify-between text-[6px] font-black uppercase tracking-widest text-zinc-500">
                     <span>Weekly Distribution</span>
@@ -433,7 +456,7 @@ export const ProfileView = () => {
       {mounted && createPortal(
         <AnimatePresence>
           {showBiometricsModal && (
-            <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 overflow-y-auto custom-scrollbar">
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 overflow-y-auto custom-scrollbar">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -610,7 +633,7 @@ export const ProfileView = () => {
       {mounted && createPortal(
         <AnimatePresence>
           {showProtocolModal && (
-            <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 overflow-y-auto custom-scrollbar">
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 overflow-y-auto custom-scrollbar">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -691,10 +714,10 @@ export const ProfileView = () => {
                   <div className="p-4 bg-void/40 border border-white/5">
                     <p className="text-[8px] font-bold uppercase tracking-widest text-zinc-500 mb-2">Weekly Volume Preview</p>
                     <p className="text-xs font-bold text-white uppercase tracking-widest">
-                      {adjustingFrequency} Sessions / Week
+                      {adjustingFrequency} Missions / Week
                     </p>
                     <p className="text-[10px] text-zinc-500 mt-1 uppercase">
-                      Total Monthly Sessions: {adjustingFrequency * 4}
+                      Total Monthly Missions: {adjustingFrequency * 4}
                     </p>
                   </div>
                 </div>
@@ -737,7 +760,7 @@ export const ProfileView = () => {
       {mounted && createPortal(
         <AnimatePresence>
           {show1RMModal && (
-            <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 overflow-y-auto custom-scrollbar">
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 overflow-y-auto custom-scrollbar">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -861,7 +884,7 @@ export const ProfileView = () => {
       {mounted && createPortal(
         <AnimatePresence>
           {showTierInfo && (
-            <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 overflow-y-auto custom-scrollbar">
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 overflow-y-auto custom-scrollbar">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}

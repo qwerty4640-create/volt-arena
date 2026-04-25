@@ -178,7 +178,7 @@ export const AnalyticsView = () => {
                 </div>
               ))}
               <div className="pt-2 mt-2 border-t border-white/5 flex justify-between items-center">
-                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Session RPE</span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Mission RPE</span>
                 <span className="text-sm font-black italic text-volt">{data.rpe ? (data.rpe as number).toFixed(1) : 'N/A'}</span>
               </div>
             </div>

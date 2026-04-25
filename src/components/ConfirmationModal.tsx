@@ -29,7 +29,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[999] flex justify-center p-4 overflow-y-auto custom-scrollbar">
+        <div className="fixed inset-0 z-[10000] flex justify-center p-4 overflow-y-auto custom-scrollbar">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -67,14 +67,14 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
               <div className="flex w-full gap-4 pt-4 border-t border-white/5">
                 <button
                   onClick={onCancel}
-                  className="flex-1 btn-secondary py-4"
+                  className="flex-1 btn-secondary py-2"
                 >
                   {cancelLabel}
                 </button>
                 <button
                   onClick={onConfirm}
                   className={cn(
-                    "flex-1 py-4 font-headline text-[10px] font-black uppercase tracking-widest transition-all shadow-lg",
+                    "flex-1 py-4 font-headline text-[10px] py-4 p-4 font-black uppercase tracking-widest transition-all shadow-lg",
                     variant === 'danger' 
                       ? 'btn-destructive' 
                       : 'btn-primary'
@@ -84,13 +84,14 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                 </button>
               </div>
             </div>
-
+{/*...}
             <button 
               onClick={onCancel}
               className="absolute top-6 right-6 text-zinc-600 hover:text-white transition-colors"
             >
               <X size={20} />
             </button>
+            {...*/}
           </motion.div>
         </div>
       )}

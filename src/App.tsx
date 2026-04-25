@@ -156,8 +156,15 @@ function AppContent() {
 
   useEffect(() => {
     localStorage.setItem('volt_active_view', activeView);
+    
+    // Track the last "main" view to support intelligent back-navigation from sub-views like History
+    const mainViews: ViewType[] = ['analysis', 'training', 'analytics', 'settings', 'profile'];
+    if (mainViews.includes(activeView)) {
+      setLastView(activeView);
+    }
   }, [activeView]);
   const [selectedHistoryWorkoutId, setSelectedHistoryWorkoutId] = useState<string | null>(null);
+  const [lastView, setLastView] = useState<ViewType>('analysis');
   const [isSafetyActive, setIsSafetyActive] = useState(false);
   const [isLifting, setIsLifting] = useState(false);
   const [isRecoveryModalOpen, setIsRecoveryModalOpen] = useState(false);
@@ -625,6 +632,7 @@ function AppContent() {
         }} 
         onViewBriefing={() => setActiveView('training')}
         onViewHistory={(sessionId) => {
+          setLastView('analysis');
           setSelectedHistoryWorkoutId(sessionId || null);
           setActiveView('workout-history');
         }}
@@ -632,13 +640,14 @@ function AppContent() {
       case 'workout-history': return <WorkoutHistory 
         onBack={() => {
           setSelectedHistoryWorkoutId(null);
-          setActiveView('analysis');
+          setActiveView(lastView);
         }} 
         initialSelectedWorkoutId={selectedHistoryWorkoutId}
       />;
       case 'training': return <TrainingView 
         isLifting={isLifting}
         onViewHistory={(sessionId) => {
+          setLastView('training');
           setSelectedHistoryWorkoutId(sessionId || null);
           setActiveView('workout-history');
         }}

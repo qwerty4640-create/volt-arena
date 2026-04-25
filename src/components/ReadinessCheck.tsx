@@ -229,24 +229,14 @@ export const ReadinessCheck = ({ onComplete, onCancel }: ReadinessCheckProps) =>
                 className="space-y-8 py-4"
               >
                 <div className={cn("p-4 md:p-6 border flex items-center gap-6 md:gap-8", scenario.bg, scenario.border)}>
-                  <div className="text-center shrink-0">
-                    <div className="flex items-baseline justify-center gap-0.5">
-                      <span className="font-headline text-4xl md:text-6xl font-black italic text-white">{readinessPercentage}</span>
-                      <span className="font-headline text-lg md:text-2xl font-black text-volt">%</span>
-                    </div>
-                    <p className="text-[8px] font-black uppercase tracking-widest text-zinc-500 mt-1">Readiness</p>
-                  </div>
-
-                  <div className="w-[1px] h-12 bg-white/10" />
-
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3 mb-1">
                       <div className={cn("p-2 bg-white/10", scenario.color)}>
                         <scenario.icon size={16} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className={cn("font-headline text-base md:text-lg font-black uppercase italic tracking-tight truncate", isRedline ? "text-crimson" : scenario.color)}>
-                          {isRedline ? "Redline Status Detected" : scenario.title}
+                        <h3 className={cn("font-headline text-base md:text-lg font-black uppercase italic tracking-tight leading-tight", isRedline ? "text-crimson" : scenario.color)}>
+                          {readinessPercentage}%
                         </h3>
                         {isRedline ? (
                            <p className="text-[8px] font-black uppercase tracking-widest text-crimson">Overridden by Redline Safety (-25%)</p>
@@ -262,17 +252,14 @@ export const ReadinessCheck = ({ onComplete, onCancel }: ReadinessCheckProps) =>
                         )}
                       </div>
                     </div>
-                    <p className="text-[10px] md:text-xs text-zinc-400 leading-tight">
-                      {scenario.message}
-                    </p>
                   </div>
                 </div>
 
-                {/* Session Target RPE Selector */}
+                {/* Mission Target RPE Selector */}
                 <div className="space-y-4 p-3 bg-surface-container-lowest border border-white/5">
                   <div className="flex items-center justify-between">
                     <div className="space-y-1">
-                      <h3 className="font-headline text-sm font-black uppercase tracking-widest text-white">Session Target RPE</h3>
+                      <h3 className="font-headline text-sm font-black uppercase tracking-widest text-white">Mission Target RPE</h3>
                       <p className="text-[10px] text-zinc-500 uppercase font-bold">Self-Regulation Intensity Target</p>
                     </div>
                     <div className="font-headline text-3xl font-black italic text-volt">
@@ -356,7 +343,7 @@ export const ReadinessCheck = ({ onComplete, onCancel }: ReadinessCheckProps) =>
                 onClick={handleComplete}
                 className="flex-[2] btn-primary py-4"
               >
-                Initialize Protocol <Zap size={16} />
+                Enter Mission <Zap size={16} />
               </button>
             )}
           </div>

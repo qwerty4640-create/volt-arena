@@ -33,7 +33,7 @@ interface TrainingViewProps {
 
 export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAddActivity }: TrainingViewProps) => {
   const { t, unit, profile } = useSettings();
-  const { currentSession, getNextWorkoutTemplate, history, getCalibrationStatus } = useWorkout();
+  const { currentSession, getNextWorkoutTemplate, history, getCalibrationStatus, calculateProgramCalories } = useWorkout();
   const calibration = getCalibrationStatus();
   
   const nextWorkout = getNextWorkoutTemplate();
@@ -137,6 +137,31 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
   const totalLoad = calculateVolume(activeOrNext);
   const weightUnit = unit === 'metric' ? 'Kg' : 'LBS';
   
+  // Estimate duration: 12 mins per exercise + 15 mins warmup/cool
+  const estDuration = ((activeOrNext?.exercises?.length || 0) * 12) + 15;
+  
+  // Calculate est calories
+  const weightKg = profile?.weight ? (unit === 'imperial' ? profile.weight * 0.453592 : profile.weight) : 75;
+  const sessionRpe = isActiveSession ? (currentSession?.targetRpe || 7) : (calibration.recommendedRpe || 7);
+  
+  // For total volume calculation, if it's 0 (nothing completed yet), use predicted volume for consistency with WelcomeModule
+  let totalVolumeNum = parseFloat(totalLoad.replace(/,/g, '')) || 0;
+  if (totalVolumeNum === 0 && activeOrNext?.exercises) {
+    totalVolumeNum = activeOrNext.exercises.reduce((acc, ex) => {
+      if (!ex.sets) return acc;
+      return acc + ex.sets.reduce((sAcc, s) => {
+        let weight = parseFloat(s.weight || '0') || 0;
+        // Apply Redline scaling if not started and redline is active
+        if (!isActiveSession && calibration.isRedline) {
+          weight = Math.round((weight * 0.75) / 5) * 5;
+        }
+        return sAcc + weight * (parseInt(s.reps || '0') || 0);
+      }, 0);
+    }, 0);
+  }
+  
+  const estCalories = calculateProgramCalories(weightKg, estDuration, sessionRpe, totalVolumeNum);
+  
   // Calculate dynamic PRs
   const getPR = (exerciseName: string) => {
     let maxWeight = 0;
@@ -165,9 +190,6 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
   const benchPR = getPR(t('stage.benchPress'));
   const deadliftPR = getPR(t('stage.deadlift'));
 
-  // Estimate duration: 15 mins per exercise + 15 mins warmup/cool
-  const estDuration = ((activeOrNext?.exercises?.length || 0) * 15) + 15;
-
   const calculateProgress = (session: WorkoutSession | null) => {
     if (!session || !session.exercises) return 0;
     let totalSets = 0;
@@ -184,7 +206,7 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 auto-rows-min w-full">
-      {/* Active/Next Session Module */}
+      {/* Active/Next Mission Module */}
       <motion.div 
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
@@ -264,14 +286,33 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
               </div>
             )}
           </div>
-          <div className="md:text-right">
-            <div className="flex items-center gap-2 text-zinc-400 mb-1 md:justify-end">
-              <Clock size={14} />
-              <span className="font-mono text-sm font-bold">{isActiveSession ? elapsedTime : `${estDuration} Min`}</span>
+          <div className="md:text-right flex flex-col gap-2">
+            <div className="flex items-center gap-3 text-zinc-400 md:justify-end">
+              <div className="flex items-center gap-2">
+                <Clock size={14} className="text-volt" />
+                <span className="font-mono text-sm font-bold uppercase">{isActiveSession ? elapsedTime : `${estDuration} MIN`}</span>
+                <span className="text-zinc-700">•</span>
+                <Flame size={14} className="text-volt" />
+                <span className="font-mono text-sm font-bold">{estCalories} KCAL</span>
+              </div>
             </div>
-            <span className="block text-[10px] font-black uppercase tracking-widest text-zinc-500 mt-1 md:mt-2">
-              {isActiveSession ? t('analysis.duration') : t('analysis.estDuration')}
-            </span>
+            
+            {isActiveSession && (
+              <div className="flex items-center gap-4 md:justify-end mt-2 animate-in fade-in slide-in-from-right-4 duration-500">
+                <div className="flex flex-col items-end">
+                  <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500">sRPE</span>
+                  <span className="text-sm font-black italic text-white">{currentSession?.targetRpe || '–'}</span>
+                </div>
+                <div className="w-px h-6 bg-white/10" />
+                <div className="flex flex-col items-end">
+                  <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500">Mission Status</span>
+                  <div className="flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-volt animate-pulse shadow-[0_0_8px_var(--primary-glow)]" />
+                    <span className="text-sm font-black italic text-volt uppercase">Active</span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -318,37 +359,29 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
 
         {/* Current Movement */}
         <div className={cn(
-          "w-full bg-void/40 p-4 md:p-6 border border-white/5 grid grid-cols-2 gap-4 mt-auto mb-6 transition-all duration-500",
+          "w-full bg-void/40 p-4 md:p-6 border border-white/5 mt-auto mb-6 transition-all duration-500",
           isElite && "border-volt/20"
         )}>
-          <div>
+          <div className="w-full">
             <span className={cn(
               "block text-[8px] md:text-[10px] font-black uppercase tracking-widest mb-1",
               isActiveSession ? "text-volt" : "text-zinc-500"
             )}>
               {t('analysis.mainLift')}
             </span>
-            <h2 className="font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tighter truncate">{exName}</h2>
-            <span aria-live="polite" className="text-zinc-400 text-[10px] md:text-xs font-medium uppercase tracking-widest block mt-1">
-              {isActiveSession 
-                ? <span aria-live="assertive">Set {currentSetIdx + 1} of {displayTotalSets}</span> 
-                : `${displayTotalSets} sets x ${displayTargetReps} reps`}
-            </span>
-          </div>
-          <div className="text-left">
-            <span className="block text-[8px] md:text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">{t('analysis.targetWeight')}</span>
-            <div className="flex items-baseline gap-1 justify-start">
-              <span className="font-headline text-xl md:text-2xl font-black uppercase italic tracking-tight">{displayTargetWeight}</span>
-              <span className="text-[10px] md:text-xs font-black uppercase text-zinc-400">{weightUnit}</span>
-            </div>
-            
-            <button 
-              onClick={() => setShowRoutineModal(true)}
-              className="mt-2 text-[10px] font-black uppercase tracking-[0.2em] text-volt hover:text-white transition-colors flex items-center gap-1.5"
-            >
-              <ListOrdered size={12} />
-              All Details
-            </button>
+            <h2 className="font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tighter break-words line-clamp-none">{exName}</h2>
+              <span aria-live="polite" className="text-zinc-400 text-[10px] md:text-xs font-medium uppercase tracking-widest block mt-1">
+                {isActiveSession 
+                  ? <span aria-live="assertive">Set {currentSetIdx + 1} of {displayTotalSets} @ {displayTargetWeight}{weightUnit}</span> 
+                  : `${displayTotalSets} sets x ${displayTargetReps} reps @ ${displayTargetWeight}${weightUnit}`}
+              </span>
+              <button 
+                onClick={() => setShowRoutineModal(true)}
+                className="mt-3 text-[10px] font-black uppercase tracking-[0.2em] text-volt hover:text-white transition-colors flex items-center gap-1.5"
+              >
+                <ListOrdered size={12} />
+                All Details
+              </button>
           </div>
         </div>
 
@@ -362,13 +395,13 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
                 >
                   <div className="flex items-center gap-2">
                     <Play size={16} md:size={18} className="fill-white group-hover:scale-110 transition-transform" />
-                    <span>Continue Training Anyway</span>
+                    <span>Continue Mission Anyway</span>
                   </div>
                   <span className="text-[8px] opacity-70 italic font-black uppercase tracking-widest">25% Intensity Safety Penalty Applied</span>
                 </button>
                 <button 
                   onClick={onAddActivity}
-                  className="flex-1 btn-secondary w-full min-h-[44px] px-4 sm:px-8 py-4"
+                  className="flex-1 btn-secondary min-h-[44px] w-full min-h-[44px] px-4 sm:px-8 py-4 text-xs md:text-sm"
                 >
                   <Plus size={14} className="group-hover:rotate-90 transition-transform" />
                   Log Non-Program Activity
@@ -502,8 +535,8 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
                   <div className="flex flex-col gap-2 relative z-10">
                     <div className="flex flex-wrap gap-1.5">
                       {log.exercises?.slice(0, 3).map((ex, idx) => (
-                        <span key={idx} className="text-[8px] font-black uppercase tracking-widest text-zinc-600 bg-white/5 px-1.5 py-0.5">
-                          {ex.name.split(' ').slice(-1)[0]}
+                        <span key={idx} className="text-[8px] font-black uppercase tracking-widest text-zinc-600 bg-white/5 px-1.5 py-0.5 whitespace-nowrap">
+                          {ex.name}
                         </span>
                       ))}
                       {(log.exercises?.length || 0) > 3 && <span className="text-[8px] font-black text-zinc-600">+{log.exercises.length - 3}</span>}
@@ -541,7 +574,7 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
         <AnimatePresence>
           {showRoutineModal && (
             <div 
-              className="fixed inset-0 z-[1000] flex items-center justify-center p-4 md:p-8"
+              className="fixed inset-0 z-[9999] flex items-center justify-center p-4 md:p-8"
             >
             <motion.div 
               initial={{ opacity: 0 }}
@@ -555,15 +588,15 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-2xl bg-black border border-zinc-800 rounded-none overflow-hidden max-h-[80vh] flex flex-col shadow-[0_0_50px_rgba(0,0,0,0.5)]"
+              className="relative w-full max-w-2xl bg-black border border-zinc-800 rounded-none overflow-hidden max-h-[80vh] flex flex-col shadow-[0_0_100px_rgba(0,0,0,0.8)] z-[9999]"
             >
-              <div className="p-6 bg-zinc-900 border-b border-zinc-800 flex items-center justify-between shrink-0">
+              <div className="p-3 md:p-6 bg-zinc-900 border-b border-zinc-800 flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-volt/10 border border-volt/20 flex items-center justify-center">
                     <ListOrdered className="text-volt" size={20} />
                   </div>
                   <div>
-                    <h2 className="font-headline text-xl font-black uppercase italic tracking-tight text-white">Full Session Routine</h2>
+                    <h2 className="font-headline text-xl font-black uppercase italic tracking-tight text-white">Mission Details</h2>
                     <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{activeOrNext.title}</p>
                   </div>
                 </div>
@@ -575,7 +608,7 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
                 </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+              <div className="flex-1 overflow-y-auto p-3 md:p-6 custom-scrollbar">
                 <div className="space-y-8">
                   {activeOrNext.exercises.map((ex, exIdx) => (
                     <div key={ex.id || exIdx} className="space-y-4">
@@ -586,7 +619,7 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
                         </h3>
                       </div>
                       
-                      <div className="grid grid-cols-5 gap-2">
+                      <div className="grid grid-cols-3 gap-2">
                         {ex.sets?.map((set, sIdx) => {
                           const w = parseFloat(set.weight) || 0;
                           const displayWeight = !isActiveSession && calibration.isRedline 

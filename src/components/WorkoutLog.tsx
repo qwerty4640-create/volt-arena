@@ -1,4 +1,5 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Plus, 
@@ -15,11 +16,13 @@ import {
   PlusCircle,
   Bot,
   Zap,
-  AlertTriangle
+  AlertTriangle,
+  Clock,
+  Flame
 } from 'lucide-react';
 import { InfoTooltip } from './InfoTooltip';
 import { useSettings } from '../contexts/SettingsContext';
-import { cn } from '../lib/utils';
+import { cn, isDumbbell } from '../lib/utils';
 import { useWorkout, Exercise, Set as WorkoutSet } from '../contexts/WorkoutContext';
 import { useToast } from '../contexts/ToastContext';
 import { ConfirmationModal } from './ConfirmationModal';
@@ -35,7 +38,7 @@ interface WorkoutLogProps {
 export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps) => {
   const { t, unit, profile, lastVoiceCommand, experimentalFeatures } = useSettings();
   const { showToast } = useToast();
-  const { currentSession, updateCurrentSession, history, getCalibrationStatus } = useWorkout();
+  const { currentSession, updateCurrentSession, history, getCalibrationStatus, calculateProgramCalories } = useWorkout();
   const weightUnit = unit === 'metric' ? t('workout.kg') : t('workout.lbs');
 
   const [isCompleting, setIsCompleting] = useState(false);
@@ -49,7 +52,55 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
   const [circuitTitle, setCircuitTitle] = useState('');
   const [isAICoachOpen, setIsAICoachOpen] = useState(false);
   const [showIntensityWarning, setShowIntensityWarning] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [elapsedMs, setElapsedMs] = useState(0);
   const lastAutoRegToastRef = useRef<{ [key: string]: number }>({});
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!currentSession?.startTime) return;
+    const updateElapsed = () => {
+      setElapsedMs(Date.now() - currentSession.startTime!);
+    };
+    updateElapsed();
+    const interval = setInterval(updateElapsed, 1000);
+    return () => clearInterval(interval);
+  }, [currentSession?.startTime]);
+
+  const formatDuration = (ms: number) => {
+    const totalSeconds = Math.floor(ms / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  const currentVolume = (() => {
+    if (!currentSession) return 0;
+    let volume = 0;
+    currentSession.exercises.forEach(ex => {
+      ex.sets.forEach(set => {
+        if (set.isCompleted) {
+          volume += (parseFloat(set.weight) || 0) * (parseInt(set.reps) || 0);
+        }
+      });
+    });
+    return volume;
+  })();
+
+  const estimatedCalories = (() => {
+    if (!currentSession) return 0;
+    const durationMins = elapsedMs / 60000;
+    const weightKg = profile?.weight ? (unit === 'imperial' ? profile.weight * 0.453592 : profile.weight) : 75;
+    const activeRpe = currentSession.targetRpe || 7;
+    return Math.round(calculateProgramCalories(weightKg, durationMins, activeRpe, currentVolume));
+  })();
 
   // Voice command listener for AI Coach
   React.useEffect(() => {
@@ -249,10 +300,28 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
         const setIndex = ex.sets.findIndex(s => s.id === setId);
         if (setIndex !== -1 && setIndex < ex.sets.length - 1) {
           const rpeDiff = actualRpe - targetRpe;
-          // Apply changes if RPE is off by 0.5 or more
-          if (Math.abs(rpeDiff) >= 0.5) {
-            willAutoRegulate = true;
-            autoRegDirection = rpeDiff > 0 ? 'decreased' : 'increased';
+          
+          const currentSet = ex.sets[setIndex];
+          const actualWeight = parseFloat(currentSet.weight) || 0;
+          const prescribedWeight = parseFloat(currentSet.baseWeight || currentSet.weight) || 0;
+          
+          let weightRatio = 1;
+          if (prescribedWeight > 0 && actualWeight > 0) {
+            weightRatio = actualWeight / prescribedWeight;
+          }
+          
+          const adjustmentFactor = 1 - (rpeDiff * 0.04);
+          const totalFactor = weightRatio * adjustmentFactor;
+
+          // Apply changes if RPE is off by 0.5 or weight modified
+          if (Math.abs(rpeDiff) >= 0.5 || Math.abs(weightRatio - 1) > 0.01) {
+            if (totalFactor < 0.98) {
+              willAutoRegulate = true;
+              autoRegDirection = 'decreased';
+            } else if (totalFactor > 1.02) {
+              willAutoRegulate = true;
+              autoRegDirection = 'increased';
+            }
           }
         }
       }
@@ -271,18 +340,26 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
             const setIndex = updatedSets.findIndex(s => s.id === setId);
             
             if (setIndex !== -1 && setIndex < updatedSets.length - 1) {
-              const rpeDiff = actualRpe - targetRpe;
+              const currentSet = updatedSets[setIndex];
+              const actualWeight = parseFloat(currentSet.weight) || 0;
+              const prescribedWeight = parseFloat(currentSet.baseWeight || currentSet.weight) || 0;
               
-              if (Math.abs(rpeDiff) >= 0.5) {
-                // ~4% load adjustment per 1 RPE point difference
-                const adjustmentFactor = 1 - (rpeDiff * 0.04);
-                
+              let weightRatio = 1;
+              if (prescribedWeight > 0 && actualWeight > 0) {
+                weightRatio = actualWeight / prescribedWeight;
+              }
+
+              const rpeDiff = actualRpe - targetRpe;
+              const adjustmentFactor = 1 - (rpeDiff * 0.04);
+              const totalFactor = weightRatio * adjustmentFactor;
+              
+              if (Math.abs(rpeDiff) >= 0.5 || Math.abs(weightRatio - 1) > 0.01) {
                 updatedSets = updatedSets.map((s, idx) => {
                   // Adjust only remaining, uncompleted sets
                   if (idx > setIndex && !s.isCompleted) {
                     const referenceWeightLocal = parseFloat(s.baseWeight || s.weight);
                     if (!isNaN(referenceWeightLocal) && referenceWeightLocal > 0) {
-                      let newWeight = referenceWeightLocal * adjustmentFactor;
+                      let newWeight = referenceWeightLocal * totalFactor;
                       // Rounding rules based on unit
                       if (unit === 'metric') {
                         newWeight = Math.round(newWeight / 2.5) * 2.5;
@@ -356,7 +433,7 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
         className="w-full max-w-5xl mx-auto h-full flex flex-col pt-4 md:pt-8 pb-12 md:px-8"
       >
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 md:mb-12 gap-6">
+      <div className="flex flex-col mb-8 md:mb-12 gap-6">
         <div className="flex items-center gap-4 md:gap-6">
           <button 
             onClick={onBack}
@@ -364,27 +441,47 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
           >
             <ChevronLeft size={20} className="md:w-6 md:h-6" />
           </button>
-          <div>
-            <div className="flex items-center gap-3 mb-1">
-              <ClipboardList className="text-volt" size={16} />
-              <span className="text-volt font-sans text-[8px] md:text-[10px] font-bold uppercase tracking-widest">{t('workout.log')}</span>
-            </div>
-            <h1 className="font-sans text-2xl md:text-4xl font-black uppercase italic tracking-tight">{currentSession.title}</h1>
-            <div className="flex items-center gap-4 mt-2 font-mono text-[10px] md:text-xs font-bold uppercase tracking-widest text-zinc-500">
-              <span className="flex items-center gap-2">
-                RECOVERY <InfoTooltip term="Readiness" />: <span className={cn(
-                  "font-black tracking-tighter text-white",
-                  getCalibrationStatus().readiness >= 85 ? "text-emerald-500" :
-                  getCalibrationStatus().readiness >= 60 ? "text-amber-500" : "text-crimson"
-                )}>{getCalibrationStatus().readiness}%</span>
-              </span>
-              <span className="flex items-center gap-2">
-                SESSION TARGET RPE <InfoTooltip term="sRPE" /> <span className="font-black text-white">{currentSession.targetRpe || '–'}</span>
-              </span>
-            </div>
+          <div className="flex items-center gap-3">
+            <ClipboardList className="text-volt" size={16} />
+            <span className="text-volt font-sans text-[10px] font-black uppercase tracking-widest">{t('mission log')}</span>
           </div>
         </div>
+
+        <div>
+          <h1 className="font-sans text-3xl md:text-4xl font-black uppercase italic tracking-tight">{currentSession.title}</h1>
         </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 font-mono text-[10px] md:text-xs font-bold uppercase tracking-widest text-zinc-500 p-4 y-4 bg-surface-container-low">
+          <div className="flex flex-col gap-2">
+            <span className="flex items-center gap-2">
+              READINESS <InfoTooltip term="Readiness" />
+            </span>
+            <span className={cn(
+              "font-black tracking-tighter text-white text-xl md:text-2xl italic",
+              getCalibrationStatus().readiness >= 85 ? "text-emerald-500" :
+              getCalibrationStatus().readiness >= 60 ? "text-amber-500" : "text-crimson"
+            )}>{getCalibrationStatus().readiness}%</span>
+          </div>
+          <div className="flex flex-col gap-2">
+            <span className="flex items-center gap-2">
+              TARGET RPE <InfoTooltip term="sRPE" />
+            </span>
+            <span className="font-black text-white text-xl md:text-2xl italic">{currentSession.targetRpe || '–'}</span>
+          </div>
+          <div className="flex flex-col gap-2">
+            <span className="flex items-center gap-2">
+              TIME <Clock size={12} className="md:w-3.5 md:h-3.5" />
+            </span>
+            <span className="font-black text-white text-xl md:text-2xl italic">{formatDuration(elapsedMs)}</span>
+          </div>
+          <div className="flex flex-col gap-2">
+            <span className="flex items-center gap-2">
+              EST. BURN <Flame size={12} className="md:w-3.5 md:h-3.5" />
+            </span>
+            <span className="font-black text-white text-xl md:text-2xl italic">{estimatedCalories} KCAL</span>
+          </div>
+        </div>
+      </div>
 
       {/* Intensity Warning Banner */}
       <AnimatePresence>
@@ -401,7 +498,7 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
                 <div className="space-y-1">
                   <p className="text-[10px] text-crimson font-black uppercase tracking-widest">High Intensity Detected</p>
                   <p className="text-[10px] text-zinc-300 font-bold uppercase">
-                    First set RPE is high. We recommend lowering your Session Target to prioritize recovery.
+                    First set RPE is high. We recommend lowering your Mission Target to prioritize recovery.
                   </p>
                 </div>
               </div>
@@ -448,44 +545,44 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
                 <div className="space-y-12">
                   {groupExercises.map((ex) => (
                     <div key={ex.id} className="space-y-4 md:space-y-6">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-white/5 pb-4 gap-4">
+                      <div className="flex flex-col gap-4 border-b border-white/5 pb-4">
                         <div className="flex items-center gap-3 md:gap-4">
-                        {/*...Dumbbell icon hidden}
-                          <div className="w-8 h-8 md:w-10 md:h-10 bg-volt/10 flex items-center justify-center text-volt">
+                          <div className="w-8 h-8 md:w-10 md:h-10 bg-volt/10 flex items-center justify-center text-volt shrink-0">
                             <Dumbbell size={16} className="md:w-5 md:h-5" />
                           </div>
-                          {...*/}
-                          <h3 className="font-sans text-xl md:text-2xl font-black uppercase italic tracking-tight flex-1">{ex.name}</h3>
-                          <div className="flex items-center gap-2">
-                            <button 
-                              onClick={() => setSwappingExerciseId(ex.id)}
-                              className="p-1.5 md:p-2 bg-surface-container-low hover:bg-volt/10 text-zinc-500 hover:text-volt transition-all flex items-center gap-2 group"
-                              title={t('workout.swapExercise')}
-                            >
-                              <RefreshCw size={12} className="md:w-3.5 md:h-3.5 group-hover:rotate-180 transition-transform duration-500" />
-                              <span className="text-[7px] md:text-[8px] font-bold uppercase tracking-widest">{t('workout.swap')}</span>
-                            </button>
-                            <button 
-                              onClick={() => setExerciseToRemove(ex.id)}
-                              className="p-1.5 md:p-2 bg-surface-container-low hover:bg-crimson/10 text-zinc-500 hover:text-crimson transition-all flex items-center gap-2 group"
-                              title={t('workout.removeExerciseTitle')}
-                            >
-                              <Trash2 size={12} className="md:w-3.5 md:h-3.5" />
-                              <span className="text-[7px] md:text-[8px] font-bold uppercase tracking-widest">{t('workout.remove')}</span>
-                            </button>
-                          </div>
+                          <h3 className="font-sans text-xl md:text-2xl font-black uppercase italic tracking-tight">{ex.name}</h3>
                         </div>
-                        <div className="flex items-center gap-2 text-zinc-500">
-                          <Info size={12} className="md:w-3.5 md:h-3.5" />
-                          <span className="text-[8px] md:text-[10px] font-bold uppercase tracking-widest">
-                            {t('workout.history')}: {getExerciseHistory(ex.name) || '–'}
-                          </span>
+                        
+                        <div className="flex gap-2 items-center">
+                          <button 
+                            onClick={() => setSwappingExerciseId(ex.id)}
+                            className="flex-1 p-2 bg-surface-container-low hover:bg-volt/10 text-volt hover:text-volt transition-all flex items-center justify-center gap-2 group"
+                            title={t('workout.swapExercise')}
+                          >
+                            <RefreshCw size={12} className="md:w-3.5 md:h-3.5 group-hover:rotate-180 transition-transform duration-500" />
+                            <span className="text-[8px] md:text-[10px] font-bold uppercase tracking-widest">{t('workout.swap')}</span>
+                          </button>
+                          
+                          <button 
+                            onClick={() => setExerciseToRemove(ex.id)}
+                            className="flex-1 p-2 bg-surface-container-low hover:bg-crimson/10 text-crimson hover:text-crimson transition-all flex items-center justify-center gap-2 group"
+                            title={t('workout.removeExerciseTitle')}
+                          >
+                            <Trash2 size={12} className="md:w-3.5 md:h-3.5" />
+                            <span className="text-[8px] md:text-[10px] font-bold uppercase tracking-widest">{t('workout.remove')}</span>
+                          </button>
+                          
+                          <div className="flex-[2] flex items-center justify-start text-zinc-500 h-full pl-2 min-w-0">
+                            <span className="text-[8px] md:text-[10px] font-bold uppercase tracking-widest truncate">
+                              {t('workout.history')}: {getExerciseHistory(ex.name) || '–'}
+                            </span>
+                          </div>
                         </div>
                       </div>
 
                       <div className="hidden md:grid md:grid-cols-[60px_1fr_1fr_1fr_60px_60px] gap-4 px-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500">
                         <div className="text-center">{t('workout.set')}</div>
-                        <div>{t('workout.weight')} ({weightUnit})</div>
+                        <div>{t('workout.weight')} ({weightUnit}{isDumbbell(ex.name) ? ' per side' : ''})</div>
                         <div>{t('workout.reps')}</div>
                         <div>{t('workout.rpe')}</div>
                         <div className="text-center">{t('workout.done')}</div>
@@ -516,7 +613,7 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
                               </div>
                               
                               <div className="flex flex-col w-full md:w-auto gap-1">
-                                <div className="md:hidden text-[8px] font-bold uppercase tracking-widest text-zinc-500 ml-1">{t('workout.weight')} ({weightUnit})</div>
+                                <div className="md:hidden text-[8px] font-bold uppercase tracking-widest text-zinc-500 ml-1">{t('workout.weight')} ({weightUnit}{isDumbbell(ex.name) ? ' per side' : ''})</div>
                                 <input 
                                   type="text" 
                                   value={set.weight}
@@ -614,7 +711,7 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
       </div>
 
         {/* Add Exercise Button */}
-        <div className="flex flex-col items-center mt-8 gap-4">
+        <div className="flex flex-col items-center gap-4">
           {(() => {
             const additionalCount = exercises.filter(ex => ex.isAdditional).length;
             const level = profile?.level || 'untrained';
@@ -629,10 +726,10 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
                   onClick={() => !isAtLimit && setIsAddExerciseOpen(true)}
                   disabled={isAtLimit}
                   className={cn(
-                    "px-8 py-4 border-none transition-all flex items-center gap-3 font-sans text-xs font-bold uppercase tracking-widest group",
+                    "w-full py-4 group",
                     isAtLimit 
-                      ? "bg-zinc-800/50 text-zinc-600 cursor-not-allowed" 
-                      : "bg-volt/10 text-volt hover:bg-volt hover:text-void"
+                      ? "btn-secondary opacity-50 cursor-not-allowed" 
+                      : "btn-secondary"
                   )}
                 >
                   <PlusCircle size={18} className={cn(!isAtLimit && "group-hover:scale-110 transition-transform")} />
@@ -750,230 +847,236 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
       )}
 
       {/* Swap Exercise Modal */}
-      <AnimatePresence>
-        {swappingExerciseId && (
-          <div className="fixed inset-0 z-[999] flex items-center justify-center p-6">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setSwappingExerciseId(null)}
-              className="absolute inset-0 bg-void/80 backdrop-blur-md"
-            />
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-md glass-panel p-8 border-volt/20 shadow-[0_0_50px_var(--primary-glow)]"
-            >
-              <div className="flex items-center gap-3 mb-6">
-                <RefreshCw className="text-volt" size={24} />
-                <h2 className="font-sans text-2xl font-black uppercase italic tracking-tight">{t('workout.swapExercise')}</h2>
-              </div>
-              
-              <p className="text-zinc-400 text-sm mb-8">
-                {t('workout.swapDesc').replace('{exercise}', exercises.find(ex => ex.id === swappingExerciseId)?.name || '')}
-              </p>
-
-              <div className="space-y-3 max-h-[40vh] overflow-y-auto custom-scrollbar pr-2">
-                {getSwappableExercises(exercises.find(ex => ex.id === swappingExerciseId)?.name || '').map((alt) => (
-                  <button
-                    key={alt.name}
-                    onClick={() => handleSwap(swappingExerciseId, alt.name)}
-                    className="w-full p-4 bg-surface-container-low border-none hover:bg-surface-container-high text-left transition-all group"
-                  >
-                    <div className="font-sans text-lg font-black uppercase italic tracking-tight group-hover:text-volt transition-colors">
-                      {alt.name}
-                    </div>
-                  </button>
-                ))}
-                {getSwappableExercises(exercises.find(ex => ex.id === swappingExerciseId)?.name || '').length === 0 && (
-                  <div className="text-center py-8 text-zinc-600 italic text-sm">
-                    {t('workout.noAltsFound')}
-                  </div>
-                )}
-              </div>
-
-              <button 
+      {mounted && createPortal(
+        <AnimatePresence>
+          {swappingExerciseId && (
+            <div className="fixed inset-0 z-[10000] flex items-center justify-center p-6">
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
                 onClick={() => setSwappingExerciseId(null)}
-                className="w-full mt-8 py-4 border-none text-zinc-500 font-sans text-[10px] font-bold uppercase tracking-widest hover:bg-surface-container-high transition-all"
+                className="absolute inset-0 bg-void/80 backdrop-blur-md"
+              />
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className="relative w-full max-w-md glass-panel p-3 md:p-6 border-volt/20 shadow-[0_0_50px_var(--primary-glow)]"
               >
-                {t('workout.cancel')}
-              </button>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+                <div className="flex items-center gap-3 mb-6">
+                  <RefreshCw className="text-volt" size={24} />
+                  <h2 className="font-sans text-2xl font-black uppercase italic tracking-tight">{t('workout.swapExercise')}</h2>
+                </div>
+                
+                <p className="text-zinc-400 text-sm mb-8">
+                  {t('workout.swapDesc').replace('{exercise}', exercises.find(ex => ex.id === swappingExerciseId)?.name || '')}
+                </p>
+
+                <div className="space-y-3 max-h-[40vh] overflow-y-auto custom-scrollbar">
+                  {getSwappableExercises(exercises.find(ex => ex.id === swappingExerciseId)?.name || '').map((alt) => (
+                    <button
+                      key={alt.name}
+                      onClick={() => handleSwap(swappingExerciseId, alt.name)}
+                      className="w-full p-4 bg-surface-container-low border-none hover:bg-surface-container-high text-left transition-all group"
+                    >
+                      <div className="font-sans text-lg font-black uppercase italic tracking-tight group-hover:text-volt transition-colors">
+                        {alt.name}
+                      </div>
+                    </button>
+                  ))}
+                  {getSwappableExercises(exercises.find(ex => ex.id === swappingExerciseId)?.name || '').length === 0 && (
+                    <div className="text-center py-8 text-zinc-600 italic text-sm">
+                      {t('workout.noAltsFound')}
+                    </div>
+                  )}
+                </div>
+
+                <button 
+                  onClick={() => setSwappingExerciseId(null)}
+                  className="w-full mt-8 py-4 border-none text-zinc-500 font-sans text-[10px] font-bold uppercase tracking-widest hover:bg-surface-container-high transition-all"
+                >
+                  {t('workout.cancel')}
+                </button>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
 
       {/* Add Exercise Modal */}
-      <AnimatePresence>
-        {isAddExerciseOpen && (
-          <div className="fixed inset-0 z-[999] flex items-center justify-center p-6">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsAddExerciseOpen(false)}
-              className="absolute inset-0 bg-void/80 backdrop-blur-md"
-            />
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-md glass-panel p-6 md:p-8 border-volt/20 shadow-[0_0_50px_var(--primary-glow)] flex flex-col max-h-[80vh]"
-            >
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <PlusCircle className="text-volt" size={24} />
-                  <h2 className="font-sans text-2xl font-black uppercase italic tracking-tight">
-                    {isCircuitMode ? t('workout.createCircuit') : t('workout.addExercise')}
-                  </h2>
-                </div>
-                <button 
-                  onClick={() => {
-                    setIsCircuitMode(!isCircuitMode);
-                    setSelectedCircuitExercises([]);
-                    setCircuitTitle('');
-                  }}
-                  className={cn(
-                    "px-4 py-2 text-[8px] font-black uppercase tracking-widest transition-all",
-                    isCircuitMode ? "bg-volt text-void" : "bg-white/5 text-zinc-400 hover:text-volt"
-                  )}
-                >
-                  {isCircuitMode ? t('workout.switchSingle') : t('workout.switchCircuit')}
-                </button>
-              </div>
-
-              {isCircuitMode && (
-                <div className="mb-6">
-                  <input 
-                    type="text"
-                    placeholder={t('workout.circuitTitlePlaceholder')}
-                    value={circuitTitle}
-                    onChange={(e) => setCircuitTitle(e.target.value)}
-                    className="w-full bg-surface-container-lowest border-none py-3 px-4 text-xs text-white placeholder:text-zinc-600 focus:border-volt/50 outline-none transition-all"
-                  />
-                </div>
-              )}
-              
-              <div className="relative mb-6">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
-                <input 
-                  type="text"
-                  placeholder={t('workout.searchPlaceholder')}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-surface-container-lowest border-none py-4 pl-12 pr-4 text-sm text-white placeholder:text-zinc-600 focus:border-volt/50 outline-none transition-all"
-                />
-              </div>
-
-              <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-2">
-                {(() => {
-                  const filtered = EXERCISE_DATABASE.filter(ex => 
-                    ex.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    ex.category.toLowerCase().includes(searchQuery.toLowerCase())
-                  );
-
-                  return (
-                    <>
-                      {filtered.map((ex) => {
-                        const isSelected = selectedCircuitExercises.includes(ex.name);
-                        return (
-                          <button
-                            key={ex.name}
-                            onClick={() => {
-                              if (isCircuitMode) {
-                                setSelectedCircuitExercises(prev => 
-                                  prev.includes(ex.name) 
-                                    ? prev.filter(n => n !== ex.name) 
-                                    : [...prev, ex.name]
-                                );
-                              } else {
-                                addExercises([ex.name]);
-                              }
-                            }}
-                            className={cn(
-                              "w-full p-4 border-none text-left transition-all group flex justify-between items-center",
-                              isSelected ? "bg-volt/20 border-l-2 border-volt" : "bg-surface-container-low hover:bg-surface-container-high"
-                            )}
-                          >
-                            <div>
-                              <div className={cn(
-                                "font-headline text-lg font-black uppercase italic tracking-tight transition-colors",
-                                isSelected ? "text-volt" : "group-hover:text-volt"
-                              )}>
-                                {ex.name}
-                              </div>
-                              <div className="text-[8px] font-black uppercase tracking-widest text-zinc-500">
-                                {ex.category}
-                              </div>
-                            </div>
-                            {isCircuitMode ? (
-                              <div className={cn(
-                                "w-5 h-5 border-2 flex items-center justify-center transition-all",
-                                isSelected ? "border-volt bg-volt text-void" : "border-zinc-700"
-                              )}>
-                                {isSelected && <Check size={14} strokeWidth={4} />}
-                              </div>
-                            ) : (
-                              <Plus size={16} className="text-zinc-500 group-hover:text-volt transition-colors" />
-                            )}
-                          </button>
-                        );
-                      })}
-                      
-                      {searchQuery && !filtered.some(ex => ex.name.toLowerCase() === searchQuery.toLowerCase()) && (
-                        <button
-                          onClick={() => {
-                            if (isCircuitMode) {
-                              setSelectedCircuitExercises(prev => [...prev, searchQuery]);
-                            } else {
-                              addExercises([searchQuery]);
-                            }
-                            setSearchQuery('');
-                          }}
-                          className="w-full p-6 bg-volt/5 border border-dashed border-volt/30 hover:bg-volt/10 transition-all group flex flex-col items-center gap-2"
-                        >
-                          <PlusCircle size={24} className="text-volt" />
-                          <div className="text-center">
-                            <div className="text-[10px] font-black uppercase tracking-widest text-volt">{t('workout.createCustom')}</div>
-                            <div className="text-lg font-black uppercase italic text-white">"{searchQuery}"</div>
-                          </div>
-                        </button>
-                      )}
-
-                      {filtered.length === 0 && !searchQuery && (
-                        <div className="text-center py-8 text-zinc-600 italic text-sm">
-                          {t('workout.searchEmpty')}
-                        </div>
-                      )}
-                    </>
-                  );
-                })()}
-              </div>
-
-              {isCircuitMode && selectedCircuitExercises.length > 0 && (
-                <div className="mt-6 pt-6 border-t border-white/5">
+      {mounted && createPortal(
+        <AnimatePresence>
+          {isAddExerciseOpen && (
+            <div className="fixed inset-0 z-[10000] flex items-center justify-center p-6">
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setIsAddExerciseOpen(false)}
+                className="absolute inset-0 bg-void/80 backdrop-blur-md"
+              />
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className="relative w-full max-w-md glass-panel p-6 md:p-8 border-volt/20 shadow-[0_0_50px_var(--primary-glow)] flex flex-col max-h-[80vh]"
+              >
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <PlusCircle className="text-volt" size={24} />
+                    <h2 className="font-sans text-2xl font-black uppercase italic tracking-tight">
+                      {isCircuitMode ? t('workout.createCircuit') : t('workout.addExercise')}
+                    </h2>
+                  </div>
                   <button 
-                    onClick={() => addExercises(selectedCircuitExercises, circuitTitle || t('workout.tacticalCircuit'))}
-                    className="w-full py-4 bg-volt text-void font-headline text-sm font-black uppercase italic tracking-widest hover:bg-white transition-all flex items-center justify-center gap-3"
+                    onClick={() => {
+                      setIsCircuitMode(!isCircuitMode);
+                      setSelectedCircuitExercises([]);
+                      setCircuitTitle('');
+                    }}
+                    className={cn(
+                      "px-4 py-2 text-[8px] font-black uppercase tracking-widest transition-all",
+                      isCircuitMode ? "bg-volt text-void" : "bg-white/5 text-zinc-400 hover:text-volt"
+                    )}
                   >
-                    <PlusCircle size={20} />
-                    <span>Add Circuit ({selectedCircuitExercises.length} Exercises)</span>
+                    {isCircuitMode ? t('workout.switchSingle') : t('workout.switchCircuit')}
                   </button>
                 </div>
-              )}
 
-              <button 
-                onClick={() => setIsAddExerciseOpen(false)}
-                className="w-full mt-6 btn-secondary py-4"
-              >
-                Close
-              </button>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+                {isCircuitMode && (
+                  <div className="mb-6">
+                    <input 
+                      type="text"
+                      placeholder={t('workout.circuitTitlePlaceholder')}
+                      value={circuitTitle}
+                      onChange={(e) => setCircuitTitle(e.target.value)}
+                      className="w-full bg-surface-container-lowest border-none py-3 px-4 text-xs text-white placeholder:text-zinc-600 focus:border-volt/50 outline-none transition-all"
+                    />
+                  </div>
+                )}
+                
+                <div className="relative mb-6">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
+                  <input 
+                    type="text"
+                    placeholder={t('workout.searchPlaceholder')}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full bg-surface-container-lowest border-none py-4 pl-12 pr-4 text-sm text-white placeholder:text-zinc-600 focus:border-volt/50 outline-none transition-all"
+                  />
+                </div>
+
+                <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-2">
+                  {(() => {
+                    const filtered = EXERCISE_DATABASE.filter(ex => 
+                      ex.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                      ex.category.toLowerCase().includes(searchQuery.toLowerCase())
+                    );
+
+                    return (
+                      <>
+                        {filtered.map((ex) => {
+                          const isSelected = selectedCircuitExercises.includes(ex.name);
+                          return (
+                            <button
+                              key={ex.name}
+                              onClick={() => {
+                                if (isCircuitMode) {
+                                  setSelectedCircuitExercises(prev => 
+                                    prev.includes(ex.name) 
+                                      ? prev.filter(n => n !== ex.name) 
+                                      : [...prev, ex.name]
+                                  );
+                                } else {
+                                  addExercises([ex.name]);
+                                }
+                              }}
+                              className={cn(
+                                "w-full p-4 border-none text-left transition-all group flex justify-between items-center",
+                                isSelected ? "bg-volt/20 border-l-2 border-volt" : "bg-surface-container-low hover:bg-surface-container-high"
+                              )}
+                            >
+                              <div>
+                                <div className={cn(
+                                  "font-headline text-lg font-black uppercase italic tracking-tight transition-colors",
+                                  isSelected ? "text-volt" : "group-hover:text-volt"
+                                )}>
+                                  {ex.name}
+                                </div>
+                                <div className="text-[8px] font-black uppercase tracking-widest text-zinc-500">
+                                  {ex.category}
+                                </div>
+                              </div>
+                              {isCircuitMode ? (
+                                <div className={cn(
+                                  "w-5 h-5 border-2 flex items-center justify-center transition-all",
+                                  isSelected ? "border-volt bg-volt text-void" : "border-zinc-700"
+                                )}>
+                                  {isSelected && <Check size={14} strokeWidth={4} />}
+                                </div>
+                              ) : (
+                                <Plus size={16} className="text-zinc-500 group-hover:text-volt transition-colors" />
+                              )}
+                            </button>
+                          );
+                        })}
+                        
+                        {searchQuery && !filtered.some(ex => ex.name.toLowerCase() === searchQuery.toLowerCase()) && (
+                          <button
+                            onClick={() => {
+                              if (isCircuitMode) {
+                                setSelectedCircuitExercises(prev => [...prev, searchQuery]);
+                              } else {
+                                addExercises([searchQuery]);
+                              }
+                              setSearchQuery('');
+                            }}
+                            className="w-full p-6 bg-volt/5 border border-dashed border-volt/30 hover:bg-volt/10 transition-all group flex flex-col items-center gap-2"
+                          >
+                            <PlusCircle size={24} className="text-volt" />
+                            <div className="text-center">
+                              <div className="text-[10px] font-black uppercase tracking-widest text-volt">{t('workout.createCustom')}</div>
+                              <div className="text-lg font-black uppercase italic text-white">"{searchQuery}"</div>
+                            </div>
+                          </button>
+                        )}
+
+                        {filtered.length === 0 && !searchQuery && (
+                          <div className="text-center py-8 text-zinc-600 italic text-sm">
+                            {t('workout.searchEmpty')}
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
+                </div>
+
+                {isCircuitMode && selectedCircuitExercises.length > 0 && (
+                  <div className="mt-6 pt-6 border-t border-white/5">
+                    <button 
+                      onClick={() => addExercises(selectedCircuitExercises, circuitTitle || t('workout.tacticalCircuit'))}
+                      className="w-full py-4 bg-volt text-void font-headline text-sm font-black uppercase italic tracking-widest hover:bg-white transition-all flex items-center justify-center gap-3"
+                    >
+                      <PlusCircle size={20} />
+                      <span>Add Circuit ({selectedCircuitExercises.length} Exercises)</span>
+                    </button>
+                  </div>
+                )}
+
+                <button 
+                  onClick={() => setIsAddExerciseOpen(false)}
+                  className="w-full mt-6 btn-secondary py-4"
+                >
+                  Close
+                </button>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </>
   );
 };

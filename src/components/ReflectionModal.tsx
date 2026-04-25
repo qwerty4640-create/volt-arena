@@ -48,7 +48,7 @@ export const ReflectionModal = ({ session, onSave, onClose }: ReflectionModalPro
           <div className="inline-flex items-center justify-center w-16 h-16 bg-volt/10 text-volt border border-volt/20 mb-2">
             <MessageSquare size={32} />
           </div>
-          <h2 className="font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tight text-white">Post-Session Reflection</h2>
+          <h2 className="font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tight text-white">Post-Mission Reflection</h2>
           <p className="text-xs text-zinc-500 uppercase font-bold tracking-widest">
             {session.title} • {new Date(session.completedAt || 0).toLocaleDateString()}
           </p>
@@ -59,7 +59,7 @@ export const ReflectionModal = ({ session, onSave, onClose }: ReflectionModalPro
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-2 text-zinc-400">
                 <Star size={14} className="text-volt" />
-                <span className="text-[10px] font-black uppercase tracking-widest">Actual Session RPE</span>
+                <span className="text-[10px] font-black uppercase tracking-widest">Actual Mission RPE</span>
                 <InfoTooltip term="sRPE" />
               </div>
               <span className="text-3xl font-black italic text-volt">{rpe}</span>
@@ -85,7 +85,7 @@ export const ReflectionModal = ({ session, onSave, onClose }: ReflectionModalPro
 
           <div className="space-y-4">
             <p className="text-xs text-zinc-400 font-medium max-w-md leading-relaxed text-center">
-              Reflecting on your session 15-30 minutes later provides a more accurate measure of the total physiological load.
+              Reflecting on your mission 15-30 minutes later provides a more accurate measure of the total physiological load.
             </p>
             
           <div className="flex gap-4">

@@ -35,6 +35,7 @@ export interface UserProfile {
   competitionDate?: number;
   gymProfile?: 'commercial' | 'powerlifting' | 'home';
   injuryNoGoList?: string[];
+  excludedMovements?: string[];
   unit: Unit;
   language: Language;
   isVoiceActive: boolean;
@@ -205,7 +206,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
       unsubscribeAuth();
       if (unsubscribeFirestore) unsubscribeFirestore();
     };
-  }, [language, unit]);
+  }, [language]); // Removed 'unit'
 
   // Background sync for strength level
   useEffect(() => {

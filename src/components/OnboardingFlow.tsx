@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { User, Scale, Ruler, Dumbbell, ChevronRight, CheckCircle2, Trophy, ArrowLeft, Medal, Skull, Zap, Loader2, Info } from 'lucide-react';
+import { User, Scale, Ruler, Dumbbell, ChevronRight, CheckCircle2, Trophy, ArrowLeft, Medal, Skull, Zap, Loader2, Info, ChevronDown } from 'lucide-react';
 import { useSettings, UserProfile, TrainingGoal } from '../contexts/SettingsContext';
 import { cn } from '../lib/utils';
 import { auth, logout } from '../firebase';
@@ -256,7 +256,7 @@ export const OnboardingFlow = () => {
   return (
     <div 
       ref={scrollContainerRef}
-      className="fixed inset-0 z-[100] bg-void flex justify-center p-2 md:p-6 overflow-y-auto"
+      className="fixed inset-0 z-[100] bg-void flex justify-center p-2 md:p-6 overflow-y-auto custom-scrollbar"
     >
       <div className="w-full max-w-2xl my-auto py-4 md:py-8">
         <AnimatePresence mode="wait">
@@ -266,7 +266,7 @@ export const OnboardingFlow = () => {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              className="glass-panel px-4 py-6 md:p-10 space-y-6 md:space-y-8"
+              className="glass-panel px-2 md:px-4 py-6 md:p-10 space-y-6 md:space-y-8"
             >
               <div className="flex items-center gap-6">
                 <button 
@@ -276,59 +276,57 @@ export const OnboardingFlow = () => {
                   <ArrowLeft size={24} />
                 </button>
                 <div className="flex-1 space-y-1">
-                  <h2 className="font-headline text-3xl font-black uppercase italic tracking-tight text-white">{t('onboarding.title')}</h2>
+                  <h2 className="font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tight text-white">{t('onboarding.title')}</h2>
                   <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">{t('onboarding.step2')}</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-normal text-zinc-500">{t('onboarding.firstName')}</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('onboarding.firstName')}</label>
                   <input
                     type="text"
                     value={formData.firstName}
                     onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                    className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white focus:border-volt outline-none transition-all"
+                    className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-2 md:p-4 text-white focus:border-volt outline-none transition-all"
                     placeholder="John"
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-normal text-zinc-500">{t('onboarding.lastName')}</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('onboarding.lastName')}</label>
                   <input
                     type="text"
                     value={formData.lastName}
                     onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                    className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white focus:border-volt outline-none transition-all"
+                    className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-2 md:p-4 text-white focus:border-volt outline-none transition-all"
                     placeholder="Doe"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-normal text-zinc-500">{t('onboarding.gender')}</label>
-                  <div className="grid grid-cols-1 gap-2">
-                    {(['male', 'female', 'other'] as const).map((g) => (
-                      <button
-                        key={g}
-                        onClick={() => setFormData({ ...formData, gender: g })}
-                        className={cn(
-                          "p-3 border font-headline text-[10px] font-black uppercase tracking-widest transition-all",
-                          formData.gender === g ? "bg-volt/10 border-volt text-white" : "bg-surface-variant border-white/5 text-zinc-500"
-                        )}
-                      >
-                        {t(`gender.${g}`)}
-                      </button>
-                    ))}
+                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('onboarding.gender')}</label>
+                  <div className="relative">
+                    <select
+                      value={formData.gender}
+                      onChange={(e) => setFormData({ ...formData, gender: e.target.value as 'male' | 'female' | 'other' })}
+                      className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-2 md:p-4 text-white focus:border-volt outline-none transition-all appearance-none"
+                    >
+                      {(['male', 'female', 'other'] as const).map((g) => (
+                        <option key={g} value={g}>{t(`gender.${g}`)}</option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" size={16} />
                   </div>
                 </div>
-                <div className="space-y-2 col-span-2">
-                  <label className="text-[10px] font-black uppercase tracking-normal text-zinc-500">{t('onboarding.age')}</label>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('onboarding.age')}</label>
                   <input
                     type="number"
                     value={formData.age}
                     onChange={(e) => setFormData({ ...formData, age: e.target.value })}
-                    className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white focus:border-volt outline-none transition-all"
+                    className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-2 md:p-4 text-white focus:border-volt outline-none transition-all"
                     placeholder="25"
                   />
                 </div>
@@ -368,13 +366,13 @@ export const OnboardingFlow = () => {
                   <div className="relative flex gap-2">
                     {unit === 'metric' ? (
                       <div className="relative w-full">
-                        <Ruler className={cn("absolute left-4 top-1/2 -translate-y-1/2 transition-colors", isHeightError ? "text-crimson" : "text-zinc-500")} size={18} />
+                        {/*...icon hidden}<Ruler className={cn("absolute left-4 top-1/2 -translate-y-1/2 transition-colors", isHeightError ? "text-crimson" : "text-zinc-500")} size={18} />{...*/}
                         <input
                           type="number"
                           value={formData.height}
                           onChange={(e) => setFormData({ ...formData, height: e.target.value })}
                           className={cn(
-                            "w-full bg-surface-container-lowest border-b-2 p-4 pl-12 text-white outline-none transition-all",
+                            "w-full bg-surface-container-lowest border-b-2 p-2 md:p-4 pl-12 text-white outline-none transition-all",
                             isHeightError ? "border-crimson" : "border-white/5 focus:border-volt"
                           )}
                           placeholder="180"
@@ -388,7 +386,7 @@ export const OnboardingFlow = () => {
                             value={formData.heightFeet}
                             onChange={(e) => setFormData({ ...formData, heightFeet: e.target.value })}
                             className={cn(
-                              "w-full bg-surface-container-lowest border-b-2 p-4 text-white outline-none transition-all text-center",
+                              "w-full bg-surface-container-lowest border-b-2 p-2 md:p-4 text-white outline-none transition-all text-center",
                               (formData.heightFeet !== '' && (heightFeetVal < 2 || heightFeetVal > 9)) ? "border-crimson" : "border-white/5 focus:border-volt"
                             )}
                             placeholder="5"
@@ -401,7 +399,7 @@ export const OnboardingFlow = () => {
                             value={formData.heightInches}
                             onChange={(e) => setFormData({ ...formData, heightInches: e.target.value })}
                             className={cn(
-                              "w-full bg-surface-container-lowest border-b-2 p-4 text-white outline-none transition-all text-center",
+                              "w-full bg-surface-container-lowest border-b-2 p-2 md:p-4 text-white outline-none transition-all text-center",
                               (formData.heightInches !== '' && (heightInchesVal < 0 || heightInchesVal > 11)) ? "border-crimson" : "border-white/5 focus:border-volt"
                             )}
                             placeholder="9"
@@ -429,7 +427,7 @@ export const OnboardingFlow = () => {
                       value={formData.weight}
                       onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
                       className={cn(
-                        "w-full bg-surface-container-lowest border-b-2 p-4 pl-12 text-white outline-none transition-all",
+                        "w-full bg-surface-container-lowest border-b-2 p-2 md:p-4 pl-12 text-white outline-none transition-all",
                         isWeightError ? "border-crimson" : "border-white/5 focus:border-volt"
                       )}
                       placeholder={unit === 'metric' ? "85" : "185"}
@@ -457,7 +455,7 @@ export const OnboardingFlow = () => {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              className="glass-panel px-4 py-6 md:p-10 space-y-6 md:space-y-8"
+              className="glass-panel px-2 md:px-4 py-6 md:p-10 space-y-6 md:space-y-8"
             >
               <div className="flex items-center gap-6">
                 <button 
@@ -474,7 +472,7 @@ export const OnboardingFlow = () => {
 
               <div className="space-y-6">
                 <div className="space-y-4">
-                  <label className="text-[10px] font-black uppercase tracking-normal text-zinc-500">{t('onboarding.experience')}</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('onboarding.experience')}</label>
                   <div className="grid grid-cols-2 gap-3">
                     {(['untrained', 'novice', 'intermediate', 'advanced', 'elite'] as const).map((level) => (
                       <button
@@ -493,7 +491,7 @@ export const OnboardingFlow = () => {
 
                 <div className="space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <label className="text-[10px] font-black uppercase tracking-normal text-zinc-500">{t('onboarding.current1rm')}</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('onboarding.current1rm')}</label>
                     <div className="flex items-center gap-2 bg-surface-container-lowest border border-white/5 p-1 w-fit">
                       <button
                         onClick={() => handleUnitChange('imperial')}
@@ -562,7 +560,7 @@ export const OnboardingFlow = () => {
                 </div>
 
                 <div className="space-y-4">
-                  <label className="text-[10px] font-black uppercase tracking-normal text-zinc-500">{t('onboarding.gymAccess')}</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('onboarding.gymAccess')}</label>
                   <div className="grid grid-cols-1 gap-3">
                     <button
                       onClick={() => setFormData({ ...formData, gymProfile: 'powerlifting' })}
@@ -586,7 +584,7 @@ export const OnboardingFlow = () => {
                 </div>
 
                 <div className="space-y-4">
-                  <label className="text-[10px] font-black uppercase tracking-normal text-zinc-500">{t('onboarding.limitations')}</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('onboarding.limitations')}</label>
                   <div className="grid grid-cols-1 gap-2">
                     {[
                       { id: 'squat_conventional', label: t('onboarding.movement.squat') },
@@ -613,7 +611,7 @@ export const OnboardingFlow = () => {
                 </div>
 
                 <div className="space-y-4">
-                  <label className="text-[10px] font-black uppercase tracking-normal text-zinc-500">{t('onboarding.trainingPeriod')}</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('onboarding.trainingPeriod')}</label>
                   <div className="grid grid-cols-4 gap-2">
                     {[3, 6, 9, 12].map((m) => (
                       <button
@@ -632,7 +630,7 @@ export const OnboardingFlow = () => {
 
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
-                    <label className="text-[10px] font-black uppercase tracking-normal text-zinc-500">{t('onboarding.frequency')}</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('onboarding.frequency')}</label>
                     <span className="text-volt font-headline text-xs font-black italic">{formData.trainingFrequency} {t('onboarding.daysPerWeek')}</span>
                   </div>
                   <input 
@@ -667,7 +665,7 @@ export const OnboardingFlow = () => {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              className="glass-panel px-4 py-6 md:p-10 space-y-6 md:space-y-8"
+              className="glass-panel px-2 md:px-4 py-6 md:p-10 space-y-6 md:space-y-8"
             >
               <div className="flex items-center gap-6">
                 <button 
@@ -683,7 +681,7 @@ export const OnboardingFlow = () => {
               </div>
 
               <div className="space-y-4">
-                <label className="text-[10px] font-black uppercase tracking-normal text-zinc-500">{t('onboarding.objective')}</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('onboarding.objective')}</label>
                 <div className="grid grid-cols-1 gap-3">
                   {(['pure_strength', 'powerbuilding', 'hypertrophy', 'peaking', 'longevity'] as TrainingGoal[]).map((goal) => (
                     <button

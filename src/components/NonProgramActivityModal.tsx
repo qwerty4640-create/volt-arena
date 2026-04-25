@@ -168,7 +168,7 @@ export const NonProgramActivityModal = ({ isOpen, onClose, initialData }: NonPro
             <div className="p-4 md:p-6 bg-zinc-900 border-b border-zinc-800 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-4">
                 <div>
-                  <h3 className={cn("font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tighter", tierStyle.color)}>{t('Non-Program Activity')}</h3>
+                  <h3 className={cn("font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tight text-white")}>{t('Non-Program Activity')}</h3>
                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">
                     {t('Tactical Integration Log')}
                   </p>
@@ -230,7 +230,7 @@ export const NonProgramActivityModal = ({ isOpen, onClose, initialData }: NonPro
                         )}
                       >
                         <ActivityIcon size={14} className="shrink-0" />
-                        <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest truncate">{activity.label}</span>
+                        <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest break-words leading-tight">{activity.label}</span>
                       </button>
                     );
                   })}

@@ -76,23 +76,45 @@ const WelcomeModule = ({ onStart, onViewBriefing }: { onStart: () => void, onVie
   const readinessScore = history.length > 0 ? calibration.readiness : 100;
   const nextWorkout = getNextWorkoutTemplate();
   
-  const predictedCalories = React.useMemo(() => {
-    if (!nextWorkout || !profile) return 0;
-    const totalTonnage = nextWorkout.exercises.reduce((acc, ex) => {
-      return acc + (ex.sets?.reduce((sAcc, s) => sAcc + (parseFloat(ex.weight?.toString() || '0') || 0) * (parseInt(s.reps?.toString() || '0') || 0), 0) || 0);
+  const { predictedCalories, estimatedDuration } = React.useMemo(() => {
+    const activeWorkout = currentSession || nextWorkout;
+    if (!activeWorkout || !profile) return { predictedCalories: 0, estimatedDuration: 0 };
+    
+    // Check for Redline scaling
+    const isRedline = calibration.isRedline;
+    const finalIntensity = isRedline ? 0.75 : 1.0;
+
+    const totalTonnage = activeWorkout.exercises.reduce((acc, ex) => {
+      if (!ex.sets) return acc;
+      return acc + ex.sets.reduce((sAcc, s) => {
+        let weight = parseFloat(s.weight || '0') || 0;
+        // The weight in WorkoutSession templates is already scaled by readiness/recovery, 
+        // but we apply Redline scaling if it was triggered after session creation
+        if (isRedline) {
+          weight = Math.round((weight * finalIntensity) / 5) * 5;
+        }
+        return sAcc + weight * (parseInt(s.reps || '0') || 0);
+      }, 0);
     }, 0);
+
     const weightKg = profile.unit === 'imperial' ? (profile.weight || 75) * 0.453592 : (profile.weight || 75);
-    // Rough estimate: sets * 3 mins, minimum 30 mins
-    const estimatedDuration = Math.max(30, nextWorkout.exercises.reduce((acc, ex) => acc + (ex.sets?.length || 0) * 3, 0));
-    // Assume average RPE for a template base is 7
-    return calculateProgramCalories(weightKg, estimatedDuration, 7, totalTonnage);
-  }, [nextWorkout, profile]);
+    
+    // Unify duration estimation: 12 mins per exercise + 15 mins warmup/transition
+    // This provides a more balanced estimate than just sets or fixed high numbers
+    const estDuration = ((activeWorkout.exercises?.length || 0) * 12) + 15;
+    
+    // Use the current recommended RPE from calibration if available, otherwise default to 7
+    // If a session is active, prioritize its target RPE
+    const targetRpe = activeWorkout.targetRpe || calibration.recommendedRpe || 7;
+    
+    const calories = calculateProgramCalories(weightKg, estDuration, targetRpe, totalTonnage);
+    return { predictedCalories: calories, estimatedDuration: estDuration };
+  }, [nextWorkout, currentSession, profile, calibration, calculateProgramCalories]);
 
   const tacticalName = useMemo(() => {
-    if (profile?.gender === 'male') return 'Dominus';
-    if (profile?.gender === 'female') return 'Domina';
-    return profile?.displayName || 'Operator';
-  }, [profile?.gender, profile?.displayName]);
+    if (!profile?.displayName) return 'Operator';
+    return profile.displayName.split(' ')[0];
+  }, [profile?.displayName]);
 
   return (
     <div className="pt-6 pb-6 px-4 md:px-6 bg-black border-b border-zinc-900 mb-6">
@@ -104,8 +126,8 @@ const WelcomeModule = ({ onStart, onViewBriefing }: { onStart: () => void, onVie
           {greeting}, <span className="text-volt">{tacticalName}</span>
         </h1>
         <p className="font-mono text-xs text-zinc-400 leading-relaxed border-l border-zinc-700 pl-4 max-w-2xl">
-          Your readiness is sitting at <span className="text-white">{readinessScore}%</span> today. 
-          When you're ready, we've got <span className="text-white">{nextWorkout?.title || 'an active recovery session'}</span> on the agenda. It should take about <span className="text-white">{nextWorkout?.duration || 'around 45 minutes'}</span> and burn roughly <span className="text-white">{predictedCalories} kcal</span>.
+          Your readiness is sitting at <span className="text-white font-bold">{readinessScore}%</span> today. 
+          When you're ready, we've got <span className="text-white font-bold">{nextWorkout?.title || 'an active recovery mission'}</span> on the agenda. It should take about <span className="text-white font-bold">{estimatedDuration} minutes</span> and burn roughly <span className="text-white font-bold">{predictedCalories} kcal</span>.
         </p>
         
         <div className="flex flex-col sm:flex-row gap-3 mt-4">
@@ -119,7 +141,7 @@ const WelcomeModule = ({ onStart, onViewBriefing }: { onStart: () => void, onVie
           
           <button 
             onClick={onViewBriefing}
-            className="flex-[2] btn-secondary w-full min-h-[44px] px-4 sm:px-8 py-4"
+            className="flex-[2] btn-secondary w-full min-h-[44px] px-4 sm:px-8 py-4 uppercase tracking-widest font-black"
           >
             Mission Briefing
             <ChevronRight size={16} className="ml-2" />
@@ -441,7 +463,7 @@ export const RecoveryWidget = () => {
       )}>
         {hasHistory ? t('analysis.optimalStrain') : t('analysis.awaitingData')}
       </span>
-      <p className="text-[9px] xl:text-[10px] text-zinc-500 leading-relaxed font-bold uppercase tracking-widest max-w-[200px]">
+      <p className="text-[9px] xl:text-[10px] text-zinc-500 leading-relaxed font-bold uppercase tracking-widest">
         {hasHistory ? t('analysis.cnsReady') : t('analysis.completeFirstWorkout')}
       </p>
     </div>
@@ -766,7 +788,7 @@ const PRWidget = () => {
           )}
         </h2>
         <p className="text-[9px] xl:text-[10px] font-black uppercase tracking-widest text-white/60">
-          {hasHistory ? `${prDiff} ${weightUnit} from last session • RPE 9.0` : t('analysis.startLiftingToTrack')}
+          {hasHistory ? `${prDiff} ${weightUnit} from last mission • RPE 9.0` : t('analysis.startLiftingToTrack')}
         </p>
       </div>
       {hasHistory && (
@@ -1042,8 +1064,8 @@ export const ExternalActivityWidget = () => {
              <span className="block text-[10px] font-black uppercase tracking-widest text-volt mb-1">Volt Arena AI Tip</span>
              <p className="text-xs text-zinc-400">
                {calibration.hasAerobicInterference 
-                 ? "You're accumulating too much systemic fatigue from extracurricular activities. Consider lowering the RPE of your tactical sessions or reducing duration to preserve force production for the barbell."
-                 : "Keep tactical sessions at an RPE of 7 or lower on days prior to lower-body training to prevent central nervous system fatigue."}
+                 ? "You're accumulating too much systemic fatigue from extracurricular activities. Consider lowering the RPE of your tactical missions or reducing duration to preserve force production for the barbell."
+                 : "Keep tactical missions at an RPE of 7 or lower on days prior to lower-body training to prevent central nervous system fatigue."}
              </p>
            </div>
         </div>

@@ -1153,14 +1153,18 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     sessionRpe: number,
     totalTonnage: number
   ) => {
-    // 1. Time-based component (MET)
-    const baseMET = 6.0; 
+    // 1. Time-based component (Base Metabolic Rate during workout)
+    // We use a base MET of 3.5 (standard moderate weightlifting) to represent the general
+    // time spent in the gym (rest periods, setup, etc.) rather than 6.0 (circuit training).
+    // This prevents double-counting since we add volume-based work on top.
+    const baseMET = 3.5; 
     const intensityScalar = 1 + (Number(sessionRpe || 7) - 7) * 0.05;
     const timeBurn = (baseMET * 3.5 * weightKg / 200) * durationMins * intensityScalar;
 
     // 2. Volume-based bonus (The "Work" component)
-    // Approx 0.05 kcal per 100 lbs moved is a standard sports science estimate for hypertrophy
-    // Weight converted to lbs for this specific calculation if in kg
+    // Approx 0.05 kcal per 100 lbs moved is a standard empirical estimate for hypertrophy work.
+    // Tonnage is intentionally converted to LBS here to match the historical empirical formula,
+    // which harmonizes safely with the metric-based MET calculation above.
     const tonnageInLbs = unit === 'metric' ? totalTonnage * 2.20462 : totalTonnage;
     const volumeBurn = (tonnageInLbs / 100) * 0.05;
 

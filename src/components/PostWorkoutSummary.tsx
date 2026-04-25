@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Trophy, 
@@ -19,8 +19,17 @@ interface PostWorkoutSummaryProps {
   onFinish: (data: { rpe: number; note: string }) => void;
 }
 
+const MISSION_SUCCESS_HEADINGS = [
+  "Mission Accomplished",
+  "Phenomenal Performance",
+  "Superior Execution",
+  "Objective Secured",
+  "Apex Performance",
+  "Standard Surpassed"
+] as const;
+
 export const PostWorkoutSummary = ({ initialRpe, onFinish }: PostWorkoutSummaryProps) => {
-  const { t } = useSettings();
+  const { t, profile } = useSettings();
   const { currentSession } = useWorkout();
   const [rpe, setRpe] = useState(Math.round(initialRpe));
   const [note, setNote] = useState('');
@@ -38,38 +47,55 @@ export const PostWorkoutSummary = ({ initialRpe, onFinish }: PostWorkoutSummaryP
   const handleFinish = () => {
     onFinish({ rpe, note });
   };
+  
+  const missionHeading = useMemo(() => {
+    return MISSION_SUCCESS_HEADINGS[Math.floor(Math.random() * MISSION_SUCCESS_HEADINGS.length)];
+  }, []);
+
+  const userFirstName = useMemo(() => {
+    if (!profile?.displayName) return 'Operator';
+    return profile.displayName.split(' ')[0];
+  }, [profile?.displayName]);
 
   return (
     <motion.div 
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="w-full max-w-2xl mx-auto glass-panel p-3 md:p-12 border-none shadow-[0_0_100px_var(--primary-glow)] relative overflow-hidden"
+      className="w-full mx-auto relative overflow-hidden"
     >
       {/* Background Accents */}
       <div className="absolute top-0 right-0 w-64 h-64 bg-volt/5 blur-[80px] -z-10" />
       <div className="absolute bottom-0 left-0 w-64 h-64 bg-crimson/5 blur-[80px] -z-10" />
 
-      <div className="text-center mb-8 md:mb-12">
+      {/* Mission Success Container */}
+      <div className="flex flex-col items-center justify-center space-y-4 py-8 animate-in fade-in zoom-in-95 duration-700">
+        
         <motion.div 
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="inline-flex items-center justify-center w-16 h-16 md:w-20 md:h-20 bg-volt/10 text-volt border-none mb-4 md:mb-6"
+          className="inline-flex items-center justify-center w-16 h-16 md:w-20 md:h-20 bg-volt/10 text-volt border-none mb-4 md:mb-2 rounded-full"
         >
           <Trophy size={32} className="md:w-10 md:h-10" strokeWidth={2.5} />
         </motion.div>
-        <h1 className="font-headline text-3xl md:text-5xl font-black uppercase italic tracking-tighter mb-2">Nice Job, Athlete!</h1>
-        <p className="text-zinc-500 font-headline text-[8px] md:text-[10px] font-black uppercase tracking-[0.3em]">
-          Session Complete • {currentSession?.title || 'Heavy Legs W3D3'}
-        </p>
-      </div>
 
-      <div className="space-y-8 md:space-y-10">
-        {/* Session RPE */}
+        {/* Header Group */}
+        <div className="text-center">
+          <h2 className="text-4xl font-black italic tracking-tighter uppercase text-[var(--primary-color)] drop-shadow-[0_0_15px_var(--primary-color-glow)] px-4 text-center leading-tight">
+            {missionHeading}, {userFirstName}.
+          </h2>
+        </div>
+        
+        <p className="text-zinc-500 font-headline text-[8px] md:text-[10px] font-black uppercase tracking-[0.3em] mt-2 mb-8">
+          {currentSession?.title || 'Heavy Legs W3D3'}
+        </p>
+
+        <div className="w-full max-w-2xl bg-zinc-900/50 border border-zinc-800 p-4 rounded-sm space-y-8 md:space-y-10 mt-6 glass-panel md:p-12">
+          {/* Mission RPE */}
         <div className="space-y-4">
-          <div className="flex justify-between items-end">
+          <div className="flex justify-between items-center">
             <div className="flex items-center gap-2 text-zinc-400">
               <Star size={14} className="text-volt md:w-4 md:h-4" />
-              <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest">Session RPE</span>
+              <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest">Mission RPE</span>
             </div>
             <div className="flex items-baseline gap-4">
               {currentSession?.targetRpe && (
@@ -134,11 +160,12 @@ export const PostWorkoutSummary = ({ initialRpe, onFinish }: PostWorkoutSummaryP
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           onClick={handleFinish}
-          className="w-full py-6 bg-volt text-void font-headline text-lg font-black uppercase italic tracking-widest hover:bg-white transition-all shadow-[0_0_30px_var(--primary-glow)] flex items-center justify-center gap-3 group"
+          className="flex-[2] btn-primary w-full min-h-[44px] px-4 sm:px-8 py-4"
         >
           <span>{t('workout.saveAndFinish')}</span>
           <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
         </motion.button>
+      </div>
       </div>
     </motion.div>
   );

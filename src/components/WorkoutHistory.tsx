@@ -111,7 +111,7 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
             <ChevronLeft size={20} className="md:w-6 md:h-6" />
           </button>
           <div>
-            <h1 className="text-2xl md:text-4xl font-black italic uppercase tracking-tighter">Mission History</h1>
+            <h1 className="text-2xl md:text-4xl font-black italic uppercase tracking-tighter">Mission Logs</h1>
             <p className="text-[8px] md:text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500">{t('analysis.reviewPerformance')}</p>
           </div>
         </div>
@@ -329,8 +329,8 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
                           )}
                         </>
                       ) : (
-                        <span className="text-[9px] font-sans italic text-zinc-500 line-clamp-1">
-                          {log.note || 'No session notes recorded.'}
+                        <span className="text-[9px] font-sans italic text-zinc-500 leading-relaxed">
+                          {log.note || 'No mission notes recorded.'}
                         </span>
                       )}
                     </div>
@@ -476,7 +476,7 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
                     ) : selectedWorkout.logType === 'recovery' ? (
                       <div className="col-span-2 md:col-span-3 bg-zinc-500/10 p-3 md:p-4 border-none flex justify-between items-center">
                         <div>
-                          <span className="block text-[7px] md:text-[8px] font-black uppercase tracking-widest text-zinc-500 mb-1">Session Type</span>
+                          <span className="block text-[7px] md:text-[8px] font-black uppercase tracking-widest text-zinc-500 mb-1">Mission Type</span>
                           <span className="text-xs md:text-sm font-black italic text-zinc-400 uppercase">Non-Program Recovery</span>
                         </div>
                         <div className="text-right">
@@ -525,7 +525,7 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
                           <span className="text-[10px] font-black uppercase tracking-widest">Fatigue Context</span>
                         </div>
                         <div className="p-6 bg-zinc-900/40 border border-white/5 text-sm text-zinc-400 font-sans leading-relaxed">
-                          This session contributes to your systemic fatigue score. Non-program activities with an RPE {'>'} 5 may impact your next heavy lifting session by reducing your starting readiness score.
+                          This mission contributes to your systemic fatigue score. Non-program activities with an RPE {'>'} 5 may impact your next heavy lifting mission by reducing your starting readiness score.
                         </div>
                       </div>
                     )}
@@ -569,7 +569,7 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
       {mounted && createPortal(
         <AnimatePresence>
           {isEditing && editWorkout && (
-            <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 md:p-8">
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 md:p-8">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -582,7 +582,7 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-4xl max-h-[90vh] glass-panel border-none flex flex-col overflow-hidden shadow-[0_0_100px_var(--primary-glow)]"
+              className="relative w-full max-w-4xl max-h-[90vh] glass-panel border-none flex flex-col overflow-hidden shadow-[0_0_100px_var(--primary-glow)] z-[9999]"
             >
               {/* Modal Header */}
               <div className="p-6 md:p-8 flex items-center justify-between bg-surface-container-high">
