@@ -20,7 +20,8 @@ import {
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useSettings } from '../contexts/SettingsContext';
-import { useWorkout, WorkoutSession } from '../contexts/WorkoutContext';
+import { useWorkout, WorkoutSession, Exercise } from '../contexts/WorkoutContext';
+import { getExerciseName, isMainLiftMatch } from '../utils/workoutUtils';
 import { calculateTier } from '../lib/strength';
 import { BlockWidget } from './AnalysisView';
 
@@ -96,9 +97,9 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
 
   const displayTitle = activeOrNext.title;
   const getFocusText = (workout: any) => {
-    if (workout.title.includes('Foundation')) return "Focusing on structural integrity and movement patterns.";
-    if (workout.title.includes('Power')) return "Focusing on maximal force production and explosive concentric phases.";
-    if (workout.title.includes('Hypertrophy')) return "Focusing on metabolic stress and muscle fiber recruitment.";
+    if (workout.title.includes('Foundation')) return t('analysis.focusFoundation');
+    if (workout.title.includes('Power')) return t('analysis.focusPower');
+    if (workout.title.includes('Hypertrophy')) return t('analysis.focusHypertrophy');
     return t('analysis.focusingOn');
   };
   const focusText = getFocusText(activeOrNext);
@@ -110,7 +111,7 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
     ? currentSession.exercises[currentExIdx] 
     : activeOrNext?.exercises?.[0];
     
-  const exName = (isActiveSession ? mainLift?.name : currentEx?.name) || t('analysis.barbellSquat');
+  const exName = (isActiveSession ? (mainLift ? getExerciseName(mainLift, t) : '') : (currentEx ? getExerciseName(currentEx, t) : '')) || t('analysis.barbellSquat');
   
   const totalSets = currentEx?.sets?.length || 5;
   const currentSetIdx = isActiveSession && currentSession ? (currentSession.currentSetIndex || 0) : 0;
@@ -135,7 +136,7 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
   const readinessScore = hasHistory || currentSession?.readiness ? readinessScoreValue : '–';
   const readinessY = 40 - (readinessScoreValue / 100) * 35;
   const totalLoad = calculateVolume(activeOrNext);
-  const weightUnit = unit === 'metric' ? 'Kg' : 'LBS';
+  const weightUnit = unit === 'metric' ? t('workout.kg') : t('workout.lbs');
   
   // Estimate duration: 12 mins per exercise + 15 mins warmup/cool
   const estDuration = ((activeOrNext?.exercises?.length || 0) * 12) + 15;
@@ -163,14 +164,22 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
   const estCalories = calculateProgramCalories(weightKg, estDuration, sessionRpe, totalVolumeNum);
   
   // Calculate dynamic PRs
-  const getPR = (exerciseName: string) => {
+  const getPR = (exerciseName: string, flag?: 'isSquat' | 'isBench' | 'isDeadlift') => {
     let maxWeight = 0;
     let prDate = '–';
-    let prWorkoutId = null;
+    let prWorkoutId: string | null = null;
     
     history.forEach(session => {
       session.exercises?.forEach(ex => {
-        if (ex.name.toLowerCase().includes(exerciseName.toLowerCase())) {
+        const matchesFlag = flag ? ex[flag] : false;
+        
+        let matchesName = false;
+        if (flag === 'isSquat') matchesName = isMainLiftMatch(ex.name, 'Squat');
+        else if (flag === 'isBench') matchesName = isMainLiftMatch(ex.name, 'Bench Press');
+        else if (flag === 'isDeadlift') matchesName = isMainLiftMatch(ex.name, 'Deadlift');
+        else matchesName = ex.name.toLowerCase() === exerciseName.toLowerCase();
+        
+        if (matchesFlag || matchesName) {
           ex.sets?.forEach(set => {
             const w = parseFloat(set.weight) || 0;
             if (w > maxWeight) {
@@ -186,9 +195,11 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
     return { weight: maxWeight > 0 ? maxWeight.toString() : '–', date: prDate, workoutId: prWorkoutId };
   };
 
-  const squatPR = getPR(t('stage.squat'));
-  const benchPR = getPR(t('stage.benchPress'));
-  const deadliftPR = getPR(t('stage.deadlift'));
+  const squatPR = getPR('squat', 'isSquat');
+  const benchPR = getPR('bench', 'isBench');
+  const deadliftPR = getPR('deadlift', 'isDeadlift');
+
+  const prCount = [squatPR, benchPR, deadliftPR].filter(p => p.weight !== '–').length;
 
   const calculateProgress = (session: WorkoutSession | null) => {
     if (!session || !session.exercises) return 0;
@@ -228,7 +239,7 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
                   <span className="text-volt font-headline text-[10px] font-black uppercase tracking-widest">{t('analysis.activeSession')}</span>
                   {currentSession?.penaltyType && (
                     <span className="text-zinc-400 font-headline text-[10px] font-black uppercase tracking-widest px-2 border-l border-white/10">
-                      {currentSession.penaltyType === 'REDLINE' ? 'REDLINE OVERRIDE' : 'RECOVERY LIMIT'}
+                      {currentSession.penaltyType === 'REDLINE' ? t('analysis.redlineOverride') : t('analysis.recoveryLimit')}
                     </span>
                   )}
                 </div>
@@ -243,7 +254,7 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
                     calibration.isRedline ? "text-crimson" : calibration.readiness >= 90 ? "text-emerald-500" : "text-zinc-400"
                   )}>
                     {calibration.isRedline 
-                      ? 'Overridden by Redline Safety' 
+                      ? t('analysis.overriddenByRedline') 
                       : `${calibration.readiness >= 90 ? t('analysis.primeCondition') : t('analysis.readiness')}: ${hasHistory ? `${calibration.readiness}%` : '–'}`}
                   </span>
                 </div>
@@ -262,10 +273,9 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
               >
                 <AlertTriangle className="text-crimson shrink-0" size={18} />
                 <div className="flex flex-col gap-1">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-crimson">Redline Safety Override Active</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-crimson">{t('analysis.redlineSafetyActive')}</span>
                   <p className="text-[9px] font-bold uppercase tracking-wider text-zinc-400 leading-[1.4]">
-                    Mechanical failure risk detected. System has enforced a 25% load reduction. 
-                    Readiness scores have been suppressed in favor of structural integrity.
+                    {t('analysis.redlineMechanicalFailureRisk')}
                   </p>
                 </div>
               </div>
@@ -278,9 +288,9 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
                >
                 <Activity className="text-crimson shrink-0" size={18} />
                 <div className="flex flex-col gap-1">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-crimson">Aerobic Interference Active</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-crimson">{t('analysis.aerobicInterferenceActive')}</span>
                   <p className="text-[9px] font-bold uppercase tracking-wider text-zinc-400 leading-[1.4]">
-                    Recent high-intensity recovery activity detected. System has applied a 15% CNS tax.
+                    {t('analysis.aerobicInterferenceWarning')}
                   </p>
                 </div>
               </div>
@@ -305,10 +315,10 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
                 </div>
                 <div className="w-px h-6 bg-white/10" />
                 <div className="flex flex-col items-end">
-                  <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500">Mission Status</span>
+                  <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500">{t('analysis.missionStatus')}</span>
                   <div className="flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-volt animate-pulse shadow-[0_0_8px_var(--primary-glow)]" />
-                    <span className="text-sm font-black italic text-volt uppercase">Active</span>
+                    <span className="text-sm font-black italic text-volt uppercase">{t('analysis.active')}</span>
                   </div>
                 </div>
               </div>
@@ -372,15 +382,15 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
             <h2 className="font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tighter break-words line-clamp-none">{exName}</h2>
               <span aria-live="polite" className="text-zinc-400 text-[10px] md:text-xs font-medium uppercase tracking-widest block mt-1">
                 {isActiveSession 
-                  ? <span aria-live="assertive">Set {currentSetIdx + 1} of {displayTotalSets} @ {displayTargetWeight}{weightUnit}</span> 
-                  : `${displayTotalSets} sets x ${displayTargetReps} reps @ ${displayTargetWeight}${weightUnit}`}
+                  ? <span aria-live="assertive">{t('analysis.setOfPattern', { current: currentSetIdx + 1, total: displayTotalSets, weight: displayTargetWeight, unit: weightUnit })}</span> 
+                  : t('analysis.repsAtPattern', { sets: displayTotalSets, reps: displayTargetReps, weight: displayTargetWeight, unit: weightUnit })}
               </span>
               <button 
                 onClick={() => setShowRoutineModal(true)}
                 className="mt-3 text-[10px] font-black uppercase tracking-[0.2em] text-volt hover:text-white transition-colors flex items-center gap-1.5"
               >
                 <ListOrdered size={12} />
-                All Details
+                {t('analysis.allDetails')}
               </button>
           </div>
         </div>
@@ -395,16 +405,16 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
                 >
                   <div className="flex items-center gap-2">
                     <Play size={16} md:size={18} className="fill-white group-hover:scale-110 transition-transform" />
-                    <span>Continue Mission Anyway</span>
+                    <span>{t('analysis.continueMissionAnyway')}</span>
                   </div>
-                  <span className="text-[8px] opacity-70 italic font-black uppercase tracking-widest">25% Intensity Safety Penalty Applied</span>
+                  <span className="text-[8px] opacity-70 italic font-black uppercase tracking-widest">{t('analysis.safetyPenaltyApplied')}</span>
                 </button>
                 <button 
                   onClick={onAddActivity}
                   className="flex-1 btn-secondary min-h-[44px] w-full min-h-[44px] px-4 sm:px-8 py-4 text-xs md:text-sm"
                 >
                   <Plus size={14} className="group-hover:rotate-90 transition-transform" />
-                  Log Non-Program Activity
+                  {t('analysis.logNonProgramActivity')}
                 </button>
               </div>
             </div>
@@ -423,7 +433,7 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
                 className="flex-1 btn-secondary w-full min-h-[44px] px-4 sm:px-8 py-4"
               >
                 <Plus size={14} className="group-hover:rotate-90 transition-transform" />
-                Log Non-Program Activity
+                {t('analysis.logNonProgramActivity')}
               </button>
             </>
           )}
@@ -431,7 +441,7 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
 
         <div className="mt-4 flex justify-between items-center px-1 opacity-60">
           <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">
-            SYS_STATUS: ACTIVE {currentSession?.penaltyType ? '[RECOVERY_RESTRICTED]' : ''}
+            SYS_STATUS: {t('analysis.active')} {currentSession?.penaltyType ? '[RECOVERY_RESTRICTED]' : ''}
           </span>
           <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">REF_ID: {activeOrNext.id}</span>
         </div>
@@ -482,7 +492,7 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
                   <span className="text-[10px] md:text-xs font-medium text-zinc-400">{pr.date}</span>
                   
                   <button onClick={() => onViewHistory?.(pr.workoutId)} className="flex items-center gap-2 bg-white/10 hover:bg-volt hover:text-void transition-colors px-6 py-3 border-none group/btn backdrop-blur-sm">
-                    <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest">{t('View Log')}</span>
+                    <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest">{t('analysis.viewLog')}</span>
                     <ArrowRight size={14} className="text-volt group-hover/btn:text-void transition-colors" />
                   </button>
                 </div>
@@ -500,8 +510,8 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
         )}
 
         <div className="mt-4 flex justify-between items-center px-1 opacity-60">
-          <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">PR_DATABASE: SYNCED</span>
-          <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">RECORDS: {hasHistory ? '3' : '0'}</span>
+          <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">{t('analysis.prDatabaseSynced')}</span>
+          <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">{t('analysis.recordsCount', { count: prCount })}</span>
         </div>
       </motion.div>
 
@@ -513,7 +523,7 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
         className="col-span-1 md:col-span-2 lg:col-span-3 shrink-0 glass-panel p-4 md:p-8 flex flex-col w-full"
       >
         <div className="flex items-center gap-3 mb-6 md:mb-10">
-          <h2 className="font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tight">Mission Logs</h2>
+          <h2 className="font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tight">{t('analysis.missionLogs')}</h2>
         </div>
         
         {hasHistory ? (
@@ -536,7 +546,7 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
                     <div className="flex flex-wrap gap-1.5">
                       {log.exercises?.slice(0, 3).map((ex, idx) => (
                         <span key={idx} className="text-[8px] font-black uppercase tracking-widest text-zinc-600 bg-white/5 px-1.5 py-0.5 whitespace-nowrap">
-                          {ex.name}
+                          {getExerciseName(ex, t)}
                         </span>
                       ))}
                       {(log.exercises?.length || 0) > 3 && <span className="text-[8px] font-black text-zinc-600">+{log.exercises.length - 3}</span>}
@@ -565,8 +575,8 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
         )}
 
         <div className="mt-6 flex justify-between items-center px-1 opacity-40">
-          <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">LOG_STREAM: ACTIVE</span>
-          <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">TOTAL_RECORDS: {history.length}</span>
+          <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">{t('analysis.logStreamActive')}</span>
+          <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">{t('analysis.totalRecordsCount', { count: history.length })}</span>
         </div>
       </motion.div>
       {/* Routine Detail Modal */}

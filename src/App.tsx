@@ -52,6 +52,7 @@ import { Mail, Lock, UserPlus, Languages } from 'lucide-react';
 import { ReadinessCheck } from './components/ReadinessCheck';
 import { ReflectionModal } from './components/ReflectionModal';
 import { InstallPrompt } from './components/InstallPrompt';
+import { PwaUpdater } from './components/PwaUpdater';
 
 declare global {
   interface Window {
@@ -88,6 +89,7 @@ const SHOW_EXPERIMENTAL_FEATURES = false;
 export default function App() {
   return (
     <WorkoutProvider>
+      <PwaUpdater />
       <AppContent />
     </WorkoutProvider>
   );

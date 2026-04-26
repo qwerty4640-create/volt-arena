@@ -193,7 +193,7 @@ export const NonProgramActivityModal = ({ isOpen, onClose, initialData }: NonPro
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search operations..."
+                    placeholder={t('workout.searchPlaceholder')}
                     className="block w-full pl-10 pr-3 py-3 border border-zinc-800 bg-black text-white focus:outline-none focus:ring-1 focus:ring-volt focus:border-volt sm:text-sm transition-colors rounded-none placeholder-zinc-700 font-sans uppercase tracking-widest text-[11px] font-black"
                   />
                 </div>
@@ -210,7 +210,7 @@ export const NonProgramActivityModal = ({ isOpen, onClose, initialData }: NonPro
                           : "bg-black text-zinc-500 hover:text-zinc-300"
                       )}
                     >
-                      {category}
+                      {t(`analysis.${category.toLowerCase()}` as any) || category}
                     </button>
                   ))}
                 </div>
@@ -230,13 +230,13 @@ export const NonProgramActivityModal = ({ isOpen, onClose, initialData }: NonPro
                         )}
                       >
                         <ActivityIcon size={14} className="shrink-0" />
-                        <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest break-words leading-tight">{activity.label}</span>
+                        <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest break-words leading-tight">{t(`activity.${activity.id}` as any) || activity.label}</span>
                       </button>
                     );
                   })}
                   {filteredActivities.length === 0 && (
                     <div className="col-span-full py-4 text-center text-[10px] font-black uppercase tracking-widest text-zinc-600">
-                      No matching activities found.
+                      {t('nonProgram.noMatches')}
                     </div>
                   )}
                 </div>
@@ -245,7 +245,7 @@ export const NonProgramActivityModal = ({ isOpen, onClose, initialData }: NonPro
               {/* Dynamic Estimated Burn */}
               <div className="bg-zinc-900 border border-zinc-800 p-4 rounded-none flex items-center justify-between">
                 <div>
-                  <h4 className="text-zinc-500 text-[10px] uppercase tracking-widest font-black mb-1">Estimated Burn</h4>
+                  <h4 className="text-zinc-500 text-[10px] uppercase tracking-widest font-black mb-1">{t('nonProgram.estimatedBurn')}</h4>
                   <div className="flex items-baseline gap-1">
                     <span className="text-3xl font-headline font-black italic text-volt tracking-tight">{estimatedCalories}</span>
                     <span className="text-xs text-volt/70 uppercase tracking-widest font-black">kcal</span>
@@ -261,7 +261,7 @@ export const NonProgramActivityModal = ({ isOpen, onClose, initialData }: NonPro
                 {/* RPE Selector */}
                 <div className="space-y-4">
                   <div className="flex justify-between items-end">
-                    <label htmlFor="intensity-range" className="block text-[10px] font-black uppercase tracking-widest text-zinc-500">Intensity (RPE)</label>
+                    <label htmlFor="intensity-range" className="block text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('nonProgram.intensity')}</label>
                     <span className="text-2xl font-black italic text-volt">{rpe}</span>
                   </div>
                   <input
@@ -275,15 +275,15 @@ export const NonProgramActivityModal = ({ isOpen, onClose, initialData }: NonPro
                     className="w-full tactical-range accent-volt h-1 bg-zinc-800 border-none outline-none appearance-none cursor-pointer rounded-none"
                   />
                   <div className="flex justify-between text-[8px] font-black uppercase tracking-widest text-zinc-500">
-                    <span>Recovery</span>
-                    <span>Max Effort</span>
+                    <span>{t('nonProgram.recovery')}</span>
+                    <span>{t('nonProgram.maxEffort')}</span>
                   </div>
                 </div>
 
                 {/* Duration */}
                 <div className="space-y-4">
                   <div className="flex justify-between items-end">
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500">Duration (Minutes)</label>
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('nonProgram.duration')}</label>
                     <span className="text-2xl font-black italic text-white">{duration}</span>
                   </div>
                   <div className="flex gap-2">
@@ -308,7 +308,7 @@ export const NonProgramActivityModal = ({ isOpen, onClose, initialData }: NonPro
               {/* Temporal Anchor & Note */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
-                  <label htmlFor="performedAt" className="block text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('Performed At')}</label>
+                  <label htmlFor="performedAt" className="block text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('nonProgram.performedAt')}</label>
                   <div className="relative">
                     <input
                       id="performedAt"
@@ -316,7 +316,7 @@ export const NonProgramActivityModal = ({ isOpen, onClose, initialData }: NonPro
                       value={performedAt}
                       max={new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16)}
                       onChange={(e) => setPerformedAt(e.target.value)}
-                      className="w-full bg-black border border-zinc-800 p-4 text-[11px] font-black uppercase tracking-widest text-white focus:border-volt outline-none transition-all [color-scheme:dark] rounded-none"
+                      className="w-full max-w-full bg-black border border-zinc-800 p-3 text-[11px] font-black uppercase tracking-widest text-white focus:border-volt outline-none transition-all [color-scheme:dark] rounded-none"
                     />
                     <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-600">
                       <Clock size={16} />
@@ -325,12 +325,12 @@ export const NonProgramActivityModal = ({ isOpen, onClose, initialData }: NonPro
                 </div>
 
                 <div className="space-y-4">
-                  <label htmlFor="sessionNote" className="block text-[10px] font-black uppercase tracking-widest text-zinc-500">Notes</label>
+                  <label htmlFor="sessionNote" className="block text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('nonProgram.notes')}</label>
                   <textarea
                     id="sessionNote"
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
-                    placeholder="Terrain, conditions..."
+                    placeholder={t('nonProgram.notesPlaceholder')}
                     className="w-full bg-black border border-zinc-800 p-4 text-xs text-white placeholder:text-zinc-700 focus:border-volt outline-none transition-all h-[54px] resize-none rounded-none font-sans"
                   />
                 </div>
@@ -345,7 +345,7 @@ export const NonProgramActivityModal = ({ isOpen, onClose, initialData }: NonPro
                 >
                   <Info className="text-crimson shrink-0" size={16} />
                   <p className="text-[10px] font-black uppercase tracking-widest leading-relaxed text-crimson">
-                    High intensity aerobic load detected. Readiness scores for primary lifts will be adjusted for recovery bias.
+                    {t('nonProgram.highIntensityWarning')}
                   </p>
                 </motion.div>
               )}
@@ -364,7 +364,7 @@ export const NonProgramActivityModal = ({ isOpen, onClose, initialData }: NonPro
                   onClick={onClose}
                   className="flex-1 btn-secondary py-4"
                 >
-                  <X size={16} /> Close
+                  <X size={16} /> {t('common.close')}
                 </button>
                 <button
                   onClick={handleSubmit}
@@ -372,7 +372,7 @@ export const NonProgramActivityModal = ({ isOpen, onClose, initialData }: NonPro
                   className="flex-[2] btn-primary py-4 rounded-none"
                 >
                   {isSubmitting ? <Zap className="animate-spin" size={16} /> : <Zap size={16} />}
-                  Log
+                  {t('common.log')}
                 </button>
               </div>
             </div>

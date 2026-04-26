@@ -22,9 +22,10 @@ import {
 } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
 import { cn } from '../lib/utils';
-import { useWorkout, WorkoutSession, ActiveRecovery } from '../contexts/WorkoutContext';
+import { useWorkout, WorkoutSession, ActiveRecovery, Exercise } from '../contexts/WorkoutContext';
 import { BlockType } from '../constants/periodization';
 import { ConfirmationModal } from './ConfirmationModal';
+import { ExerciseSelectorModal } from './ExerciseSelectorModal';
 
 type HistoryLog = 
   | (WorkoutSession & { logType: 'workout' }) 
@@ -38,11 +39,21 @@ interface WorkoutHistoryProps {
 export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHistoryProps) => {
   const { t, unit } = useSettings();
   const { history, recoveryHistory, updateHistoryWorkout, deleteHistoryWorkout, deleteActiveRecovery } = useWorkout();
+  
+  const getExerciseName = (exName: string, isSquat?: boolean, isBench?: boolean, isDeadlift?: boolean) => {
+    const name = exName.toLowerCase();
+    if (name === 'squat' || name === 'barbell squat') return t('onboarding.squat');
+    if (name === 'bench' || name === 'bench press' || name === 'barbell bench press') return t('onboarding.bench');
+    if (name === 'deadlift' || name === 'barbell deadlift') return t('onboarding.deadlift');
+    return exName;
+  };
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedWorkout, setSelectedWorkout] = useState<HistoryLog | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editWorkout, setEditWorkout] = useState<WorkoutSession | null>(null);
   const [logToDelete, setLogToDelete] = useState<{ id: string, type: 'workout' | 'recovery' } | null>(null);
+  const [isAddExerciseOpen, setIsAddExerciseOpen] = useState(false);
   
   // Filter States
   const [showFilters, setShowFilters] = useState(false);
@@ -290,7 +301,7 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
                           </div>
                         ) : (
                           <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 bg-zinc-800 text-zinc-400 border-none">
-                            Tactical Recovery
+                            {t('analysis.tacticalRecovery')}
                           </span>
                         )}
                       </div>
@@ -319,12 +330,12 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
                         <>
                           {log.exercises?.slice(0, 2).map((ex, idx) => (
                             <span key={idx} className="px-3 py-1 bg-white/5 border-none text-[9px] font-black uppercase tracking-widest text-zinc-400">
-                              {ex.name}
+                              {getExerciseName(ex.name, ex.isSquat, ex.isBench, ex.isDeadlift)}
                             </span>
                           ))}
                           {log.exercises && log.exercises.length > 2 && (
                             <span className="px-3 py-1 bg-white/5 border-none text-[9px] font-black uppercase tracking-widest text-zinc-600">
-                              +{log.exercises.length - 2} More
+                              +{log.exercises.length - 2} {t('analysis.more')}
                             </span>
                           )}
                         </>
@@ -446,10 +457,10 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
                     <div className="bg-void/40 p-3 md:p-4 border border-white/5">
                       <span className="block text-[7px] md:text-[8px] font-black uppercase tracking-widest text-zinc-600 mb-1">
-                        {selectedWorkout.logType === 'workout' ? t('analytics.volume') : 'INTERFERENCE'}
+                        {selectedWorkout.logType === 'workout' ? t('analytics.volume') : t('analysis.missionType').toUpperCase()}
                       </span>
                       <span className="text-xs md:text-sm font-black italic">
-                        {selectedWorkout.logType === 'workout' ? selectedWorkout.volume : (selectedWorkout.durationMinutes * selectedWorkout.rpe).toFixed(0)}
+                        {selectedWorkout.logType === 'workout' ? selectedWorkout.volume : t('analysis.nonProgramRecovery')}
                       </span>
                     </div>
                     <div className="bg-void/40 p-3 md:p-4 border border-white/5">
@@ -476,11 +487,11 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
                     ) : selectedWorkout.logType === 'recovery' ? (
                       <div className="col-span-2 md:col-span-3 bg-zinc-500/10 p-3 md:p-4 border-none flex justify-between items-center">
                         <div>
-                          <span className="block text-[7px] md:text-[8px] font-black uppercase tracking-widest text-zinc-500 mb-1">Mission Type</span>
-                          <span className="text-xs md:text-sm font-black italic text-zinc-400 uppercase">Non-Program Recovery</span>
+                          <span className="block text-[7px] md:text-[8px] font-black uppercase tracking-widest text-zinc-500 mb-1">{t('analysis.missionType')}</span>
+                          <span className="text-xs md:text-sm font-black italic text-zinc-400 uppercase">{t('analysis.nonProgramRecovery')}</span>
                         </div>
                         <div className="text-right">
-                          <span className="block text-[7px] md:text-[8px] font-black uppercase tracking-widest text-zinc-500 mb-1">Impact Score</span>
+                          <span className="block text-[7px] md:text-[8px] font-black uppercase tracking-widest text-zinc-500 mb-1">{t('analysis.impactScore')}</span>
                           <span className="text-xs md:text-sm font-black italic text-white uppercase tracking-tight">{((selectedWorkout.durationMinutes * selectedWorkout.rpe) / 100).toFixed(1)}x</span>
                         </div>
                       </div>
@@ -502,7 +513,7 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
                                   <div className="w-8 h-8 bg-zinc-900 flex items-center justify-center text-[10px] font-black text-zinc-600 italic">
                                     {idx + 1}
                                   </div>
-                                  <span className="text-sm font-black uppercase italic">{ex.name}</span>
+                                  <span className="text-sm font-black uppercase italic">{getExerciseName(ex.name, ex.isSquat, ex.isBench, ex.isDeadlift)}</span>
                                 </div>
                                 <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{ex.sets?.length || 0} {t('analysis.sets')}</span>
                               </div>
@@ -522,10 +533,10 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
                       <div className="space-y-4">
                          <div className="flex items-center gap-2 text-zinc-400">
                           <Activity size={16} />
-                          <span className="text-[10px] font-black uppercase tracking-widest">Fatigue Context</span>
+                          <span className="text-[10px] font-black uppercase tracking-widest">{t('analysis.fatigueContext')}</span>
                         </div>
                         <div className="p-6 bg-zinc-900/40 border border-white/5 text-sm text-zinc-400 font-sans leading-relaxed">
-                          This mission contributes to your systemic fatigue score. Non-program activities with an RPE {'>'} 5 may impact your next heavy lifting mission by reducing your starting readiness score.
+                          {t('analysis.fatigueContextDesc')}
                         </div>
                       </div>
                     )}
@@ -742,20 +753,7 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
                     ))}
 
                     <button 
-                      onClick={() => {
-                        const newExercises = [...editWorkout.exercises, {
-                          id: Math.random().toString(36).substr(2, 9),
-                          name: 'New Exercise',
-                          sets: [{
-                            id: Math.random().toString(36).substr(2, 9),
-                            weight: '0',
-                            reps: '0',
-                            rpe: '7',
-                            isCompleted: true
-                          }]
-                        }];
-                        setEditWorkout({ ...editWorkout, exercises: newExercises });
-                      }}
+                      onClick={() => setIsAddExerciseOpen(true)}
                       className="w-full py-5 bg-surface-container-lowest border border-dashed border-white/5 text-[10px] font-black uppercase tracking-widest text-zinc-600 hover:text-volt hover:border-volt/30 transition-all flex items-center justify-center gap-2"
                     >
                       <Plus size={16} />
@@ -785,9 +783,14 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
                 </button>
                 <button 
                   onClick={async () => {
-                    await updateHistoryWorkout(editWorkout);
-                    setSelectedWorkout(editWorkout);
-                    setIsEditing(false);
+                    try {
+                      await updateHistoryWorkout(editWorkout);
+                      setSelectedWorkout(editWorkout);
+                      setIsEditing(false);
+                    } catch (error) {
+                      console.error("Failed to save workout edits:", error);
+                      // Toast is already shown by context, but we keep modal open
+                    }
                   }}
                   className="flex-[2] btn-primary py-4"
                 >
@@ -796,6 +799,37 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
                 </button>
               </div>
             </motion.div>
+
+            <ExerciseSelectorModal 
+              isOpen={isAddExerciseOpen}
+              onClose={() => setIsAddExerciseOpen(false)}
+              onSelect={(exerciseNames, groupTitle) => {
+                if (!editWorkout) return;
+                
+                const groupId = groupTitle ? Math.random().toString(36).substr(2, 9) : undefined;
+                const newExercises: Exercise[] = exerciseNames.map(name => ({
+                  id: Math.random().toString(36).substr(2, 9),
+                  name,
+                  groupId,
+                  groupTitle,
+                  sets: [
+                    {
+                      id: Math.random().toString(36).substr(2, 9),
+                      weight: '0',
+                      reps: '0',
+                      rpe: '7',
+                      isCompleted: true
+                    }
+                  ]
+                }));
+                
+                setEditWorkout({
+                  ...editWorkout,
+                  exercises: [...editWorkout.exercises, ...newExercises]
+                });
+                setIsAddExerciseOpen(false);
+              }}
+            />
           </div>
         )}
       </AnimatePresence>,

@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { X } from 'lucide-react';
 import { TRAINING_TERMS, TermKey } from '../data/trainingTerms';
 import { cn } from '../lib/utils';
+import { useSettings } from '../contexts/SettingsContext';
 
 interface InfoTooltipProps {
   term: TermKey;
@@ -13,6 +14,7 @@ interface InfoTooltipProps {
 export const InfoTooltip = ({ term, className }: InfoTooltipProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const { t } = useSettings();
   const data = TRAINING_TERMS[term];
 
   useEffect(() => {
@@ -33,7 +35,7 @@ export const InfoTooltip = ({ term, className }: InfoTooltipProps) => {
             setIsOpen(true);
           }}
           aria-expanded={isOpen}
-          aria-label={`Show information about ${data.title}`}
+          aria-label={`${t('tooltip.showInfo')} ${data.title}`}
           className={cn(
             "w-4 h-4 flex items-center justify-center rounded-full border border-volt/30 text-volt hover:bg-volt hover:text-void transition-all duration-300"
           )}
@@ -66,31 +68,23 @@ export const InfoTooltip = ({ term, className }: InfoTooltipProps) => {
                   <div className="flex items-center gap-3">
                     <div className="w-1.5 h-6 bg-volt" />
                     <h2 className="text-xl font-black uppercase italic tracking-tight text-white">
-                      {data.title}
+                      {t(`tooltip.${term}.title`)}
                     </h2>
                   </div>
-                  {/*... X button hidden}
-                  <button 
-                    onClick={() => setIsOpen(false)}
-                    className="p-2 text-zinc-500 hover:text-white transition-colors"
-                  >
-                    <X size={20} />
-                  </button>
-                  {...*/}
                 </div>
                 
                 <div className="space-y-4">
                   <div className="p-4 bg-volt/5 border border-volt/10">
-                    <p className="text-xs font-bold text-volt uppercase tracking-widest mb-1">Brief</p>
+                    <p className="text-xs font-bold text-volt uppercase tracking-widest mb-1">{t('tooltip.brief')}</p>
                     <p className="text-sm text-zinc-200 leading-relaxed">
-                      {data.short}
+                      {t(`tooltip.${term}.short`)}
                     </p>
                   </div>
 
                   <div className="p-4 bg-zinc-900/50 border border-white/5">
-                    <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-1">Details</p>
+                    <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-1">{t('tooltip.details')}</p>
                     <p className="text-sm text-zinc-400 leading-relaxed font-medium">
-                      {data.long}
+                      {t(`tooltip.${term}.long`)}
                     </p>
                   </div>
                 </div>
@@ -99,7 +93,7 @@ export const InfoTooltip = ({ term, className }: InfoTooltipProps) => {
                   onClick={() => setIsOpen(false)}
                   className="w-full mt-8 btn-secondary py-4"
                 >
-                  <X size={16} /> Close
+                  <X size={16} /> {t('tooltip.close')}
                 </button>
               </motion.div>
             </div>

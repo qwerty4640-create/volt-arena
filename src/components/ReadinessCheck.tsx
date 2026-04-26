@@ -52,6 +52,44 @@ const QUESTIONS = [
 export const ReadinessCheck = ({ onComplete, onCancel }: ReadinessCheckProps) => {
   const { t } = useSettings();
   const { getCalibrationStatus } = useWorkout();
+  
+  const QUESTIONS = useMemo(() => [
+    {
+      id: 'sleep',
+      category: t('readiness.sleep.category'),
+      question: t('readiness.sleep.question'),
+      icon: Moon,
+      labels: [t('readiness.sleep.label1'), t('readiness.sleep.label2')]
+    },
+    {
+      id: 'fatigue',
+      category: t('readiness.fatigue.category'),
+      question: t('readiness.fatigue.question'),
+      icon: Battery,
+      labels: [t('readiness.fatigue.label1'), t('readiness.fatigue.label2')]
+    },
+    {
+      id: 'soreness',
+      category: t('readiness.soreness.category'),
+      question: t('readiness.soreness.question'),
+      icon: Activity,
+      labels: [t('readiness.soreness.label1'), t('readiness.soreness.label2')]
+    },
+    {
+      id: 'stress',
+      category: t('readiness.stress.category'),
+      question: t('readiness.stress.question'),
+      icon: Brain,
+      labels: [t('readiness.stress.label1'), t('readiness.stress.label2')]
+    },
+    {
+      id: 'mood',
+      category: t('readiness.mood.category'),
+      question: t('readiness.mood.question'),
+      icon: Heart,
+      labels: [t('readiness.mood.label1'), t('readiness.mood.label2')]
+    }
+  ], [t]);
   const calibration = getCalibrationStatus();
   const { recommendedRpe: baselineRecommendedRpe, isRedline } = calibration;
   
@@ -164,8 +202,8 @@ export const ReadinessCheck = ({ onComplete, onCancel }: ReadinessCheckProps) =>
             </button>
             {...*/}
             <div className="space-y-1">
-              <h2 className="font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tight text-white">Pre-Training Questionnaire</h2>
-              <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Hooper-Mackinnon Scale</p>
+              <h2 className="font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tight text-white">{t('readiness.title')}</h2>
+              <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('readiness.scale')}</p>
             </div>
           </div>
         </div>
@@ -236,20 +274,9 @@ export const ReadinessCheck = ({ onComplete, onCancel }: ReadinessCheckProps) =>
                       </div>
                       <div className="flex-1 min-w-0">
                         <h3 className={cn("font-headline text-base md:text-lg font-black uppercase italic tracking-tight leading-tight", isRedline ? "text-crimson" : scenario.color)}>
-                          {readinessPercentage}%
+                          {readinessPercentage}% {t(`readiness.scenario.${scenario.type}.title`)}
                         </h3>
-                        {isRedline ? (
-                           <p className="text-[8px] font-black uppercase tracking-widest text-crimson">Overridden by Redline Safety (-25%)</p>
-                        ) : (
-                          <>
-                            {scenario.type === 'red' && (
-                              <p className="text-[8px] font-black uppercase tracking-widest text-crimson">Intensity -10%</p>
-                            )}
-                            {scenario.type === 'green' && (
-                              <p className="text-[8px] font-black uppercase tracking-widest text-volt">Intensity +5%</p>
-                            )}
-                          </>
-                        )}
+                        <p className="text-xs text-zinc-400 mt-1">{t(`readiness.scenario.${scenario.type}.message`)}</p>
                       </div>
                     </div>
                   </div>
@@ -259,8 +286,8 @@ export const ReadinessCheck = ({ onComplete, onCancel }: ReadinessCheckProps) =>
                 <div className="space-y-4 p-3 bg-surface-container-lowest border border-white/5">
                   <div className="flex items-center justify-between">
                     <div className="space-y-1">
-                      <h3 className="font-headline text-sm font-black uppercase tracking-widest text-white">Mission Target RPE</h3>
-                      <p className="text-[10px] text-zinc-500 uppercase font-bold">Self-Regulation Intensity Target</p>
+                      <h3 className="font-headline text-sm font-black uppercase tracking-widest text-white">{t('readiness.rpe.title')}</h3>
+                      <p className="text-[10px] text-zinc-500 uppercase font-bold">{t('readiness.rpe.subtitle')}</p>
                     </div>
                     <div className="font-headline text-3xl font-black italic text-volt">
                       {targetRpe}
@@ -282,15 +309,15 @@ export const ReadinessCheck = ({ onComplete, onCancel }: ReadinessCheckProps) =>
                         {val}
                         {val === adjustedRecommendedRpe && (
                           <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-volt text-void text-[6px] font-black px-1 py-0.5 uppercase tracking-tighter whitespace-nowrap">
-                            Recommended
+                            {t('readiness.rpe.recommended')}
                           </div>
                         )}
                       </button>
                     ))}
                   </div>
                   <div className="flex justify-between text-[8px] font-black uppercase tracking-widest text-zinc-600">
-                    <span>Technical / Speed</span>
-                    <span>Max Effort</span>
+                    <span>{t('readiness.rpe.label1')}</span>
+                    <span>{t('readiness.rpe.label2')}</span>
                   </div>
 
                   {/* The Audible Rule Warning */}
@@ -302,9 +329,9 @@ export const ReadinessCheck = ({ onComplete, onCancel }: ReadinessCheckProps) =>
                     >
                       <AlertTriangle className="text-crimson shrink-0" size={16} />
                       <div className="space-y-1">
-                        <p className="text-[10px] text-crimson font-black uppercase tracking-widest">The Audible Rule Triggered</p>
+                        <p className="text-[10px] text-crimson font-black uppercase tracking-widest">{t('readiness.audible.title')}</p>
                         <p className="text-[10px] text-zinc-300 font-bold leading-relaxed">
-                          Your readiness is low today ({readinessPercentage}%). We recommend dropping your Target sRPE from <span className="text-white">{targetRpe}</span> to <span className="text-volt">6</span> to prioritize recovery and longevity.
+                          {t('readiness.audible.message', { percentage: readinessPercentage, from: targetRpe, to: 6 })}
                         </p>
                       </div>
                     </motion.div>
@@ -313,7 +340,7 @@ export const ReadinessCheck = ({ onComplete, onCancel }: ReadinessCheckProps) =>
                   <div className="p-3 bg-white/5 flex gap-3">
                     <Info className="text-zinc-500 shrink-0" size={12} />
                     <p className="text-[8px] text-zinc-500 font-bold uppercase leading-relaxed">
-                      <span className="text-zinc-300">Note:</span> Target sRPE is a <span className="text-white">ceiling</span>, not a floor. It is okay to finish under the target if your body isn't performing.
+                      <span className="text-zinc-300">Note:</span> {t('readiness.note')}
                     </p>
                   </div>
                 </div>
@@ -328,7 +355,7 @@ export const ReadinessCheck = ({ onComplete, onCancel }: ReadinessCheckProps) =>
               onClick={onCancel}
               className="flex-1 btn-secondary py-4"
             >
-              <X size={16} /> Close
+              <X size={16} /> {t('common.close')}
             </button>
             {!showResult ? (
               <button
@@ -336,16 +363,17 @@ export const ReadinessCheck = ({ onComplete, onCancel }: ReadinessCheckProps) =>
                 disabled={!isComplete}
                 className="flex-[2] btn-primary py-4 disabled:opacity-50"
               >
-                Analyze <ChevronRight size={16} />
+                {t('readiness.analyze')} <ChevronRight size={16} />
               </button>
             ) : (
               <button
                 onClick={handleComplete}
                 className="flex-[2] btn-primary py-4"
               >
-                Enter Mission <Zap size={16} />
+                {t('readiness.enter')} <Zap size={16} />
               </button>
             )}
+
           </div>
         </div>
       </motion.div>

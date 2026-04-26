@@ -6,6 +6,7 @@ import { useSettings } from '../contexts/SettingsContext';
 import { EXERCISE_DATABASE } from '../constants/exercises';
 import { cn } from '../lib/utils';
 import { useToast } from '../contexts/ToastContext';
+import { getExerciseName } from '../utils/workoutUtils';
 
 interface MovementExclusionModalProps {
   isOpen: boolean;
@@ -34,9 +35,9 @@ export const MovementExclusionModal: React.FC<MovementExclusionModalProps> = ({
     updateProfile({ excludedMovements: updated });
     
     if (updated.includes(movementName)) {
-      showToast(`${movementName} restricted for next Mission.`, 3000, 'info');
+      showToast(t('toast.movementRestricted', { name: movementName }), 3000, 'info');
     } else {
-      showToast(`Protocol Updated. ${movementName} re-authorized for next Mission.`, 3000, 'success');
+      showToast(t('toast.protocolUpdated', { name: movementName }), 3000, 'success');
     }
   };
 
@@ -70,7 +71,7 @@ export const MovementExclusionModal: React.FC<MovementExclusionModalProps> = ({
                 <Activity size={24} />
               </div>
               <h2 className="font-sans text-xl md:text-2xl font-black uppercase italic tracking-tight text-white">
-                Movement Restrictions
+                {t('settings.movementRestrictions')}
               </h2>
             </div>
 
@@ -85,31 +86,54 @@ export const MovementExclusionModal: React.FC<MovementExclusionModalProps> = ({
               />
             </div>
 
-            <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-2 mb-6">
+            <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-1 mb-6">
               {filteredExercises.map(mvmt => (
-                <label key={mvmt.name} className="flex items-center justify-between p-4 bg-surface-container-low border-none hover:bg-surface-container-high transition-all cursor-pointer group">
-                  <span className="font-sans text-sm font-black uppercase italic tracking-tight group-hover:text-[var(--primary-color)] transition-colors">{mvmt.name}</span>
+                <label 
+                  key={mvmt.name} 
+                  className={cn(
+                    "flex items-center justify-between p-4 bg-void/20 border border-white/5 transition-all cursor-pointer group",
+                    profile?.excludedMovements?.includes(mvmt.name) ? "border-volt/30 bg-volt/5" : "hover:border-volt/20 hover:bg-white/5"
+                  )}
+                >
+                  <div className="flex flex-col">
+                    <span className={cn(
+                      "font-sans text-[11px] font-black uppercase italic tracking-tight transition-colors",
+                      profile?.excludedMovements?.includes(mvmt.name) ? "text-volt" : "text-zinc-200 group-hover:text-white"
+                    )}>
+                      {getExerciseName(mvmt, t)}
+                    </span>
+                    <span className="text-[7px] text-zinc-600 font-bold uppercase tracking-widest mt-0.5">
+                      {mvmt.category}
+                    </span>
+                  </div>
                   <input 
                     type="checkbox" 
                     checked={profile?.excludedMovements?.includes(mvmt.name) || false}
                     onChange={() => handleToggleMovement(mvmt.name)}
-                    className="accent-[var(--primary-color)] h-5 w-5 bg-transparent border-white/20"
+                    className="accent-volt h-5 w-5 bg-transparent border-white/20 cursor-pointer"
                   />
                 </label>
               ))}
               {filteredExercises.length === 0 && (
-                <div className="text-center py-8 text-zinc-600 italic text-sm">
-                  {t('workout.noAltsFound') || "NO MOVEMENTS FOUND"}
+                <div className="text-center py-12 border border-dashed border-white/5 bg-void/20">
+                  <Activity size={24} className="text-zinc-800 mx-auto mb-2 opacity-20" />
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-700 italic">
+                    {t('workout.noAltsFound') || "NO MOVEMENTS FOUND"}
+                  </p>
                 </div>
               )}
             </div>
+
+            <p className="text-[8px] text-zinc-600 uppercase font-black tracking-widest mb-6 px-1 leading-relaxed opacity-60">
+              {t('settings.deselectToEnable')}
+            </p>
             
             <button
               onClick={onClose}
-              className="w-full flex items-center justify-center gap-2 py-4 border border-zinc-700 text-zinc-400 font-bold text-xs uppercase tracking-widest hover:border-zinc-500 hover:text-white transition-colors"
+              className="w-full flex items-center justify-center gap-2 py-5 bg-white/5 border border-white/10 text-white font-black text-[10px] uppercase tracking-[0.2em] hover:bg-white/10 hover:border-volt/50 hover:text-volt transition-all group active:scale-[0.99]"
             >
-              <X size={16} className="text-volt" />
-              Close
+              <X size={14} className="text-zinc-500 group-hover:text-volt transition-colors" />
+              {t('common.close')}
             </button>
 
           </motion.div>

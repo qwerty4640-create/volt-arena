@@ -49,7 +49,8 @@
         "rpe": { "type": "number", "description": "Average RPE of the session." },
         "note": { "type": "string", "description": "User notes for the session." },
         "duration": { "type": "string", "description": "Duration of the session." },
-        "volume": { "type": "string", "description": "Total volume lifted." },
+        "volume": { "type": "number", "description": "Total volume lifted." },
+        "caloriesBurned": { "type": "number", "description": "Estimated calories burned." },
         "exercises": {
           "type": "array",
           "items": {
@@ -57,6 +58,9 @@
             "properties": {
               "id": { "type": "string" },
               "name": { "type": "string" },
+              "groupId": { "type": "string" },
+              "groupTitle": { "type": "string" },
+              "isAdditional": { "type": "boolean" },
               "sets": {
                 "type": "array",
                 "items": {
@@ -64,7 +68,9 @@
                   "properties": {
                     "id": { "type": "string" },
                     "weight": { "type": "string" },
+                    "baseWeight": { "type": "string" },
                     "reps": { "type": "string" },
+                    "baseReps": { "type": "string" },
                     "rpe": { "type": "string" },
                     "isCompleted": { "type": "boolean" }
                   }
@@ -91,7 +97,8 @@
         "date": { "type": "string", "description": "Human-readable date." },
         "timestamp": { "type": "integer", "description": "Timestamp of when the activity was performed." },
         "performedAt": { "type": "string", "description": "ISO date string of when the activity was performed." },
-        "note": { "type": "string", "description": "User notes." }
+        "note": { "type": "string", "description": "User notes." },
+        "updatedAt": { "type": "integer", "description": "Timestamp of update." }
       },
       "required": ["id", "uid", "type", "rpe", "timestamp", "activityId"]
     }

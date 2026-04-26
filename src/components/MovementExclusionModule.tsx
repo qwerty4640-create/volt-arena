@@ -4,6 +4,7 @@ import { useSettings } from '../contexts/SettingsContext';
 import { EXERCISE_DATABASE } from '../constants/exercises';
 import { cn } from '../lib/utils';
 import { useToast } from '../contexts/ToastContext';
+import { getExerciseName } from '../utils/workoutUtils';
 
 export const MovementExclusionModule = () => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -19,9 +20,9 @@ export const MovementExclusionModule = () => {
     updateProfile({ excludedMovements: updated });
     
     if (updated.includes(movementName)) {
-      showToast(`${movementName} restricted for next Mission.`, 3000, 'info');
+      showToast(t('toast.movementRestricted', { name: movementName }), 3000, 'info');
     } else {
-      showToast(`Protocol Updated. ${movementName} re-authorized for next Mission.`, 3000, 'success');
+      showToast(t('toast.protocolUpdated', { name: movementName }), 3000, 'success');
     }
   };
 
@@ -33,7 +34,7 @@ export const MovementExclusionModule = () => {
       >
         <span className="text-xs font-bold tracking-widest uppercase flex items-center gap-2">
           <Activity size={14} className="text-[var(--primary-color)]" />
-          Movement Restrictions
+          {t('settings.movementRestrictions')}
         </span>
         <ChevronDown className={cn("transition-transform", isExpanded ? 'rotate-180' : '')} size={16} />
       </button>
@@ -41,18 +42,20 @@ export const MovementExclusionModule = () => {
       {isExpanded && (
         <div className="p-4 pt-0 grid grid-cols-1 gap-2 animate-in slide-in-from-top-2 duration-300">
           {EXERCISE_DATABASE.map(mvmt => (
-            <label key={mvmt.name} className="flex items-center justify-between p-2 rounded bg-black/20 border border-zinc-800/50 cursor-pointer">
-              <span className="text-[11px] text-zinc-300 uppercase tracking-tighter">{mvmt.name}</span>
+            <label key={mvmt.name} className="flex items-center justify-between p-3 bg-void/40 border border-white/5 hover:border-volt/30 transition-all cursor-pointer group">
+              <span className="text-[10px] text-zinc-300 uppercase font-black tracking-widest group-hover:text-white transition-colors">
+                {getExerciseName(mvmt, t)}
+              </span>
               <input 
                 type="checkbox" 
                 checked={profile?.excludedMovements?.includes(mvmt.name) || false}
                 onChange={() => handleToggleMovement(mvmt.name)}
-                className="accent-[var(--primary-color)] h-4 w-4"
+                className="accent-volt h-4 w-4 bg-transparent border-white/20"
               />
             </label>
           ))}
-          <p className="text-[9px] text-zinc-500 italic mt-2">
-            * Deselect a movement to re-enable it for future Mission Calibration.
+          <p className="text-[8px] text-zinc-600 uppercase font-black tracking-widest mt-4 leading-relaxed italic">
+            {t('settings.deselectToEnable')}
           </p>
         </div>
       )}

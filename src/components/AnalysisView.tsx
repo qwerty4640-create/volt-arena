@@ -58,19 +58,20 @@ import { ConfirmationModal } from './ConfirmationModal';
 import { NonProgramActivityModal } from './NonProgramActivityModal';
 import { TacticalChart } from './TacticalChart';
 import { getTacticalImpact } from '../utils/analyticsEngine';
+import { getExerciseName } from '../utils/workoutUtils';
 
 import { useWorkout, WorkoutSession, ActiveRecovery } from '../contexts/WorkoutContext';
 import { auth } from '../firebase';
 import { BlockType, getPlanForDuration } from '../constants/periodization';
 
 const WelcomeModule = ({ onStart, onViewBriefing }: { onStart: () => void, onViewBriefing: () => void }) => {
-  const { profile } = useSettings();
+  const { profile, t } = useSettings();
   const { history, getCalibrationStatus, getNextWorkoutTemplate, calculateProgramCalories, currentSession } = useWorkout();
   
   const greeting = useMemo(() => {
-    const greetings = ["Mission Start", "Welcome", "Systems Nominal", "Good Day"];
+    const greetings = [t('analysis.missionStart'), t('analysis.welcome'), t('analysis.systemsNominal'), t('analysis.goodDay')];
     return greetings[Math.floor(Math.random() * greetings.length)];
-  }, []);
+  }, [t]);
   
   const calibration = getCalibrationStatus();
   const readinessScore = history.length > 0 ? calibration.readiness : 100;
@@ -112,23 +113,28 @@ const WelcomeModule = ({ onStart, onViewBriefing }: { onStart: () => void, onVie
   }, [nextWorkout, currentSession, profile, calibration, calculateProgramCalories]);
 
   const tacticalName = useMemo(() => {
-    if (!profile?.displayName) return 'Operator';
+    if (!profile?.displayName) return t('analysis.operator');
     return profile.displayName.split(' ')[0];
-  }, [profile?.displayName]);
+  }, [profile?.displayName, t]);
 
   return (
     <div className="pt-6 pb-6 px-4 md:px-6 bg-black border-b border-zinc-900 mb-6">
       <div className="flex flex-col gap-6">
         <span className="font-mono text-[9px] tracking-[widest] text-zinc-500 uppercase mb-2">
-          // STATUS REPORT
+          {t('analysis.statusReport')}
         </span>
         <h1 className="text-3xl font-black italic uppercase leading-none">
           {greeting}, <span className="text-volt">{tacticalName}</span>
         </h1>
-        <p className="font-mono text-xs text-zinc-400 leading-relaxed border-l border-zinc-700 pl-4 max-w-2xl">
-          Your readiness is sitting at <span className="text-white font-bold">{readinessScore}%</span> today. 
-          When you're ready, we've got <span className="text-white font-bold">{nextWorkout?.title || 'an active recovery mission'}</span> on the agenda. It should take about <span className="text-white font-bold">{estimatedDuration} minutes</span> and burn roughly <span className="text-white font-bold">{predictedCalories} kcal</span>.
-        </p>
+        <p 
+          className="font-mono text-xs text-zinc-400 leading-relaxed border-l border-zinc-700 pl-4 max-w-2xl"
+          dangerouslySetInnerHTML={{ __html: t('analysis.readinessGreeting', { 
+            score: `<span class="font-black text-white">${readinessScore}</span>`,
+            workout: `<span class="font-black text-white">${nextWorkout?.title || t('analysis.activeRecoveryMission')}</span>`,
+            duration: `<span class="font-black text-white">${estimatedDuration}</span>`,
+            calories: `<span class="font-black text-white">${predictedCalories}</span>`
+          })}}
+        />
         
         <div className="flex flex-col sm:flex-row gap-3 mt-4">
           <button 
@@ -136,14 +142,14 @@ const WelcomeModule = ({ onStart, onViewBriefing }: { onStart: () => void, onVie
             className="flex-[2] w-full min-h-[44px] px-4 sm:px-8 py-4 bg-volt text-void font-headline text-xs md:text-sm font-black uppercase tracking-widest hover:bg-white transition-all flex items-center justify-center gap-2 group"
           >
             <Play size={16} className="fill-void group-hover:scale-110 transition-transform" />
-            {currentSession ? 'Continue Mission' : 'Start Mission'}
+            {currentSession ? t('analysis.continueMission') : t('analysis.startMission')}
           </button>
           
           <button 
             onClick={onViewBriefing}
             className="flex-[2] btn-secondary w-full min-h-[44px] px-4 sm:px-8 py-4 uppercase tracking-widest font-black"
           >
-            Mission Briefing
+            {t('analysis.missionBriefing')}
             <ChevronRight size={16} className="ml-2" />
           </button>
         </div>
@@ -163,10 +169,10 @@ interface Widget {
 }
 
 const ALL_WIDGETS: Widget[] = [
-  { id: 'recovery-analysis', label: 'Recovery Analysis', icon: Activity, span: 'col-span-1 md:col-span-2 xl:col-span-3' },
+  { id: 'recovery-analysis', label: 'analysis.recoveryAnalysis', icon: Activity, span: 'col-span-1 md:col-span-2 xl:col-span-3' },
   { id: 'pr', label: 'analysis.personalRecord', icon: Star, span: 'col-span-1 md:col-span-2 xl:col-span-1' },
   { id: 'macros', label: 'analysis.macroDistribution', icon: Utensils, span: 'col-span-1 md:col-span-2 xl:col-span-2' },
-  { id: 'block', label: 'Block Progression', icon: Zap, span: 'col-span-1 md:col-span-2 xl:col-span-3' },
+  { id: 'block', label: 'analysis.blockProgression', icon: Zap, span: 'col-span-1 md:col-span-2 xl:col-span-3' },
 ];
 
 
@@ -262,7 +268,7 @@ export const RecoveryAnalysisWidget = () => {
     <div className="w-full relative h-28 md:h-32 bg-surface-container-lowest border border-white/5 flex items-end justify-between p-3 mt-auto">
        {!hasHistory && (
          <div className="absolute inset-0 flex items-center justify-center p-4">
-           <span className="text-[10px] font-black uppercase tracking-widest text-zinc-600 italic">Awaiting Data</span>
+           <span className="text-[10px] font-black uppercase tracking-widest text-zinc-600 italic">{t('analysis.awaitingData')}</span>
          </div>
        )}
        {children}
@@ -275,7 +281,7 @@ export const RecoveryAnalysisWidget = () => {
            style={{ backgroundImage: 'radial-gradient(var(--primary-color) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
       
       <div className="flex items-center justify-start mb-6 md:mb-10 relative z-10 w-full">
-        <h2 className="font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tight text-left">Recovery Analysis</h2>
+        <h2 className="font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tight text-left">{t('analysis.recoveryAnalysis')}</h2>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 md:gap-12 relative z-10 w-full flex-1">
@@ -292,9 +298,8 @@ export const RecoveryAnalysisWidget = () => {
             </span>
             <span className="text-xl md:text-2xl font-black italic text-zinc-600 mb-1">%</span>
           </div>
-          <span className="font-headline text-[10px] md:text-xs font-black uppercase tracking-widest border-l-2 pl-3 block mb-6 transition-colors text-zinc-600 border-zinc-800
-">
-            {hasHistory ? t('analysis.optimalState') : 'AWAITING DATA'}
+          <span className="font-headline text-[10px] md:text-xs font-black uppercase tracking-widest border-l-2 pl-3 block mb-6 transition-colors text-zinc-600 border-zinc-800">
+            {hasHistory ? t('analysis.optimalState') : t('analysis.awaitingData')}
           </span>
           
           <GraphContainer>
@@ -324,8 +329,8 @@ export const RecoveryAnalysisWidget = () => {
             </span>
             <span className="text-xl md:text-2xl font-black italic text-zinc-600 mb-1">%</span>
           </div>
-          <span className={cn("font-headline text-[10px] md:text-xs font-black uppercase tracking-widest border-l-2 pl-3 block mb-6 transition-colors", hasHistory ? statusColor : "text-zinc-600", statusBorderClass)}>
-            {hasHistory ? t('analysis.cnsReady') : 'AWAITING DATA'}
+          <span className="font-headline text-[10px] md:text-xs font-black uppercase tracking-widest border-l-2 pl-3 block mb-6 transition-colors" style={{color: hasHistory ? recoveryScoreValue >= 85 ? '#10b981' : recoveryScoreValue >= 60 ? '#f59e0b' : '#e11d48' : '#52525b', borderColor: hasHistory ? recoveryScoreValue >= 85 ? '#10b981' : recoveryScoreValue >= 60 ? '#f59e0b' : '#e11d48' : '#27272a' }}>
+            {hasHistory ? t('analysis.cnsReady') : t('analysis.awaitingData')}
           </span>
           
           <GraphContainer>
@@ -360,9 +365,8 @@ export const RecoveryAnalysisWidget = () => {
             </span>
             <span className="text-xl md:text-2xl font-black italic text-zinc-600 mb-1">{unit === 'metric' ? 'kg' : 'LBS'}</span>
           </div>
-          <span className="font-headline text-[10px] md:text-xs font-black uppercase tracking-widest border-l-2 pl-3 block mb-6 transition-colors text-zinc-600 border-zinc-800
-">
-            {hasHistory ? '7-DAY LOAD' : 'AWAITING DATA'}
+          <span className="font-headline text-[10px] md:text-xs font-black uppercase tracking-widest border-l-2 pl-3 block mb-6 transition-colors text-zinc-600 border-zinc-800">
+            {hasHistory ? t('analysis.7dayLoad') : t('analysis.awaitingData')}
           </span>
 
           <GraphContainer>
@@ -546,7 +550,7 @@ export const BlockWidget = () => {
       
       <div className="flex items-center justify-between mb-6 md:mb-8 relative z-10">
         <div className="flex items-center gap-3">
-          <h3 className="font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tight mb-2">{t('Block Progression')}</h3>
+          <h3 className="font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tight mb-2">{t('analysis.blockProgression')}</h3>
         </div>
         {/*...week number hidden}
         <div className="flex items-center gap-2 px-3 py-1 bg-volt/10 border border-volt/20">
@@ -706,7 +710,7 @@ export const BlockWidget = () => {
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-1.5">
                 <div className="w-2 h-2 bg-volt" />
-                <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500">Intensity %</span>
+                <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500">{t('analysis.intensityPercent')}</span>
               </div>
             </div>
             <span className="text-[8px] font-black uppercase tracking-widest text-zinc-600 italic">
@@ -731,7 +735,7 @@ const PRWidget = () => {
   const hasHistory = (history?.length || 0) > 0;
   
   // Find the highest weight lifted in history
-  let bestLift = { name: t('analysis.deadlift'), weight: 0, date: '' };
+  let bestLift = { name: t('onboarding.deadlift'), weight: 0, date: '', rawEx: null as any };
   
   if (hasHistory) {
     history.forEach(session => {
@@ -739,7 +743,7 @@ const PRWidget = () => {
         ex.sets?.forEach(set => {
           const w = parseFloat(set.weight) || 0;
           if (w > bestLift.weight) {
-            bestLift = { name: ex.name, weight: w, date: session.date };
+            bestLift = { name: getExerciseName(ex, t), weight: w, date: session.date, rawEx: ex };
           }
         });
       });
@@ -748,7 +752,7 @@ const PRWidget = () => {
 
   const prWeight = hasHistory ? bestLift.weight.toFixed(1) : '–';
   const prDiff = hasHistory ? (unit === 'metric' ? '+2.5' : '+5.0') : '0.0';
-  const weightUnit = unit === 'metric' ? 'Kg' : 'LBS';
+  const weightUnit = unit === 'metric' ? t('workout.kg') : t('workout.lbs');
 
   const getBackgroundImage = (liftName: string) => {
     const name = liftName.toLowerCase();
@@ -788,7 +792,7 @@ const PRWidget = () => {
           )}
         </h2>
         <p className="text-[9px] xl:text-[10px] font-black uppercase tracking-widest text-white/60">
-          {hasHistory ? `${prDiff} ${weightUnit} from last mission • RPE 9.0` : t('analysis.startLiftingToTrack')}
+          {hasHistory ? t('analysis.fromLastMissionPattern', { diff: prDiff, unit: weightUnit }) : t('analysis.startLiftingToTrack')}
         </p>
       </div>
       {hasHistory && (
@@ -965,7 +969,7 @@ const MacrosWidget = () => {
 
 
 export const ExternalActivityWidget = () => {
-
+  const { t } = useSettings();
   const { recoveryHistory, getCalibrationStatus } = useWorkout();
   const calibration = getCalibrationStatus();
   
@@ -1003,26 +1007,26 @@ export const ExternalActivityWidget = () => {
            style={{ backgroundImage: 'radial-gradient(var(--primary-color) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
       
       <div className="flex items-center gap-3 mb-6 md:mb-8 relative z-10">
-        <h2 className="font-headline text-2xl font-black uppercase italic tracking-tight">Tactical Integration</h2>
+        <h2 className="font-headline text-2xl font-black uppercase italic tracking-tight">{t('analysis.tacticalIntegration')}</h2>
       </div>
       
       <div className="grid grid-cols-3 mb-6 relative z-10 w-full max-w-sm">
         <div className="flex flex-col">
-          <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">Weekly</span>
+          <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">{t('analysis.weekly')}</span>
           <div className="flex items-end gap-1">
             <span className="text-3xl lg:text-4xl font-black italic">{hoursWeek.toFixed(1)}</span>
             <span className="text-xs font-bold text-zinc-600 mb-1">hrs</span>
           </div>
         </div>
         <div className="flex flex-col border-l border-white/10 pl-4">
-          <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">Monthly</span>
+          <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">{t('analysis.monthly')}</span>
           <div className="flex items-end gap-1">
             <span className="text-3xl lg:text-4xl font-black italic">{hoursMonth.toFixed(1)}</span>
             <span className="text-xs font-bold text-zinc-600 mb-1">hrs</span>
           </div>
         </div>
         <div className="flex flex-col border-l border-white/10 pl-4">
-          <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">Yearly</span>
+          <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">{t('analysis.yearly')}</span>
           <div className="flex items-end gap-1">
             <span className="text-3xl lg:text-4xl font-black italic">{hoursYear.toFixed(1)}</span>
             <span className="text-xs font-bold text-zinc-600 mb-1">hrs</span>
@@ -1305,7 +1309,7 @@ export const AnalysisView = ({ onContinueSession, onViewBriefing, onViewHistory,
                               <Icon size={24} className="md:w-6 md:h-6 w-5 h-5" />
                             </div>
                             <span className="text-[7px] md:text-[8px] font-black uppercase tracking-widest opacity-60 group-hover:opacity-100 text-center">
-                              {t(w.label).split(' ')[0]}
+                              {t(w.label as any).split(' ')[0]}
                             </span>
                           </motion.button>
                         );
@@ -1336,7 +1340,7 @@ export const AnalysisView = ({ onContinueSession, onViewBriefing, onViewHistory,
       <ConfirmationModal 
         isOpen={!!widgetToRemove}
         title={t('analysis.removeModule')}
-        message={t('analysis.removeModuleMessage', { module: widgetToRemove ? t(ALL_WIDGETS.find(w => w.id === widgetToRemove)?.label || '') : '' })}
+        message={t('analysis.removeModuleMessage', { module: widgetToRemove ? t(ALL_WIDGETS.find(w => w.id === widgetToRemove)?.label as any || '') : '' })}
         confirmLabel={t('analysis.remove')}
         cancelLabel={t('analysis.keep')}
         onConfirm={confirmRemoveWidget}

@@ -86,32 +86,31 @@ export const FieldManual = ({ isOpen, onClose }: FieldManualProps) => {
                         <div className="flex items-center gap-3">
                           <div className="w-1 h-6 bg-volt" />
                           <h4 className="text-lg font-black uppercase italic tracking-tighter text-white">
-                            {data.title}
+                            {t(`tooltip.${key}.title`)}
                           </h4>
                         </div>
                         <div className="px-2 py-0.5 bg-zinc-900 border border-white/10 text-[8px] font-black uppercase tracking-widest text-zinc-500">
-                          ID: {key.toUpperCase()}
+                          {t('common.id')}: {key.toUpperCase()}
                         </div>
                       </div>
-                      
-                      <div className="space-y-4">
+                                            <div className="space-y-4">
                         <div className="space-y-1.5">
                           <p className="text-[9px] font-black text-volt uppercase tracking-[0.2em] flex items-center gap-2">
-                             {/*...icon hidden}}<Info size={10} />{...*/}
-                             Summary
+                             <Info size={10} />
+                             {t('fieldManual.summary')}
                           </p>
                           <p className="text-zinc-200 text-sm leading-relaxed font-medium pl-4 border-l border-volt/20">
-                            {data.short}
+                            {t(`tooltip.${key}.short`)}
                           </p>
                         </div>
                         
                         <div className="space-y-1.5 pt-2">
                            <p className="text-[9px] font-black text-zinc-500 uppercase tracking-[0.2em] flex items-center gap-2">
                              <span className="w-1.5 h-1.5 bg-zinc-700 rounded-full" />
-                             Tactical Doctrine
+                             {t('fieldManual.doctrine')}
                            </p>
                            <p className="text-zinc-400 text-xs leading-relaxed italic pl-4 border-l border-zinc-800">
-                             {data.long}
+                             {t(`tooltip.${key}.long`)}
                            </p>
                         </div>
                       </div>
@@ -122,7 +121,7 @@ export const FieldManual = ({ isOpen, onClose }: FieldManualProps) => {
 
               <div className="p-8 mt-4 border border-dashed border-white/5 text-center opacity-50">
                 <p className="text-[9px] font-black text-zinc-500 uppercase tracking-[0.4em]">
-                  End of Synchronized Tactical Definitions
+                  {t('fieldManual.endOfDefinitions')}
                 </p>
               </div>
             </div>
@@ -133,7 +132,7 @@ export const FieldManual = ({ isOpen, onClose }: FieldManualProps) => {
                 onClick={onClose}
                 className="w-full btn-secondary py-4"
               >
-                <X size={16} /> Close
+                <X size={16} /> {t('tooltip.close')}
               </button>
             </div>
           </motion.div>

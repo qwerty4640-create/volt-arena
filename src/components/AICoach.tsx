@@ -28,7 +28,7 @@ export const AICoach = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
     );
 
     if (highIntensitySessions.length > 3) {
-      const alertMsg = "TACTICAL ALERT: Heavy aerobic load detected. This may interfere with neurological force production for your upcoming block. Consider reducing cardio frequency to preserve Peaking effectiveness.";
+      const alertMsg = t('coach.tacticalAlert');
       // Check if alert was already sent recently (to avoid spamming)
       setMessages(prev => {
         if (prev.some(m => m.text.includes("TACTICAL ALERT"))) return prev;
@@ -227,13 +227,13 @@ export const AICoach = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
                     {msg.role === 'coach' && pendingAction && i === messages.length - 1 && (
                       <div className="mt-3 flex gap-2">
                         <button 
-                          onClick={() => handleSend("Yes")}
+                          onClick={() => handleSend(t('common.yes'))}
                           className="px-3 py-1 bg-volt text-void text-[8px] font-black uppercase tracking-widest hover:bg-white transition-all"
                         >
                           {t('coach.confirm')}
                         </button>
                         <button 
-                          onClick={() => handleSend("No")}
+                          onClick={() => handleSend(t('common.no'))}
                           className="px-3 py-1 bg-white/10 text-white text-[8px] font-black uppercase tracking-widest hover:bg-white/20 transition-all"
                         >
                           {t('coach.cancel')}
@@ -290,13 +290,13 @@ export const AICoach = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
               <div className="mt-3 flex items-center justify-between">
                 <div className="flex gap-2">
                   <button 
-                    onClick={() => handleSend("Surprise me")}
+                    onClick={() => handleSend(t('coach.surpriseMe'))}
                     className="px-3 py-1.5 bg-volt/10 border border-volt/30 text-volt text-[8px] font-black uppercase tracking-widest hover:bg-volt hover:text-void transition-all"
                   >
                     {t('coach.surpriseMe')}
                   </button>
                   <button 
-                    onClick={() => handleSend("How is my form?")}
+                    onClick={() => handleSend(t('coach.formCheck'))}
                     className="px-3 py-1.5 bg-white/5 border border-white/10 text-zinc-400 text-[8px] font-black uppercase tracking-widest hover:bg-white/10 hover:text-white transition-all"
                   >
                     {t('coach.formCheck')}

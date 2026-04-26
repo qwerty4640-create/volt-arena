@@ -18,12 +18,14 @@ import { useToast } from './ToastContext';
 import { BlockType, getBlockForWeek } from '../constants/periodization';
 import { calculateTier } from '../lib/strength';
 import { ACTIVITY_LIBRARY } from '../data/activityLibrary';
+import { isMainLiftMatch } from '../utils/workoutUtils';
 
 export interface Set {
   id: string;
   weight: string;
   baseWeight?: string;
   reps: string;
+  baseReps?: string;
   rpe: string;
   isCompleted: boolean;
 }
@@ -36,6 +38,7 @@ export interface Exercise {
   groupId?: string;
   groupTitle?: string;
   isSquat?: boolean;
+  isBench?: boolean;
   isDeadlift?: boolean;
 }
 
@@ -122,6 +125,25 @@ interface WorkoutContextType {
   calculateProgramCalories: (weightKg: number, durationMins: number, sessionRpe: number, totalTonnage: number) => number;
 }
 
+const cleanObject = (obj: any): any => {
+  if (obj === null || typeof obj !== 'object') {
+    return obj;
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map(item => cleanObject(item));
+  }
+
+  const cleaned: any = {};
+  Object.keys(obj).forEach(key => {
+    const value = cleanObject(obj[key]);
+    if (value !== undefined) {
+      cleaned[key] = value;
+    }
+  });
+  return cleaned;
+};
+
 const WorkoutContext = createContext<WorkoutContextType | undefined>(undefined);
 
 const WORKOUT_TEMPLATES = [
@@ -180,19 +202,19 @@ const calculateFallback1RM = (
   let multiplier = 0;
   const isFemale = gender === 'female';
 
-  if (name.includes('squat')) {
+  if (isMainLiftMatch(name, 'Squat')) {
     if (isFemale) {
       multiplier = { 'untrained': 0.5, 'novice': 0.8, 'intermediate': 1.0, 'advanced': 1.3, 'elite': 1.6 }[level] || 0.5;
     } else {
       multiplier = { 'untrained': 0.8, 'novice': 1.2, 'intermediate': 1.5, 'advanced': 2.0, 'elite': 2.4 }[level] || 0.8;
     }
-  } else if (name.includes('bench')) {
+  } else if (isMainLiftMatch(name, 'Bench Press')) {
     if (isFemale) {
       multiplier = { 'untrained': 0.4, 'novice': 0.5, 'intermediate': 0.7, 'advanced': 0.9, 'elite': 1.2 }[level] || 0.4;
     } else {
       multiplier = { 'untrained': 0.6, 'novice': 0.9, 'intermediate': 1.2, 'advanced': 1.5, 'elite': 1.9 }[level] || 0.6;
     }
-  } else if (name.includes('deadlift')) {
+  } else if (isMainLiftMatch(name, 'Deadlift')) {
     if (isFemale) {
       multiplier = { 'untrained': 0.6, 'novice': 1.0, 'intermediate': 1.2, 'advanced': 1.6, 'elite': 2.0 }[level] || 0.6;
     } else {
@@ -291,9 +313,9 @@ const createSessionFromTemplate = (
     exercises: template.exercises.map((ex, i) => {
       let weight = 0;
       
-      const isSquat = ex.name.toLowerCase().includes('squat');
-      const isBench = ex.name.toLowerCase().includes('bench');
-      const isDeadlift = ex.name.toLowerCase().includes('deadlift');
+      const isSquat = isMainLiftMatch(ex.name, 'Squat');
+      const isBench = isMainLiftMatch(ex.name, 'Bench Press');
+      const isDeadlift = isMainLiftMatch(ex.name, 'Deadlift');
       const isMainLift = isSquat || isBench || isDeadlift;
 
       const currentTier = profile ? calculateTier(
@@ -350,6 +372,7 @@ const createSessionFromTemplate = (
         id: `e${i}`,
         name: exerciseName,
         isSquat,
+        isBench,
         isDeadlift,
         sets: Array.from({ length: sets }).map((_, j) => {
           let targetSetRpe = '';
@@ -389,6 +412,7 @@ const createSessionFromTemplate = (
             weight: weight.toString(),
             baseWeight: weight.toString(),
             reps: reps,
+            baseReps: reps,
             rpe: targetSetRpe,
             isCompleted: false
           };
@@ -990,9 +1014,9 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
         
         // Apply the modifier to the weights
         session.exercises = (session.exercises || []).map(ex => {
-          const isMainLift = ex.name?.toLowerCase().includes('squat') || 
-                             ex.name?.toLowerCase().includes('bench') || 
-                             ex.name?.toLowerCase().includes('deadlift');
+          const isMainLift = isMainLiftMatch(ex.name || '', 'Squat') || 
+                             isMainLiftMatch(ex.name || '', 'Bench Press') || 
+                             isMainLiftMatch(ex.name || '', 'Deadlift');
           
           let updatedSets = ex.sets || [];
           
@@ -1086,7 +1110,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const durationMinutes = (hrs * 60) + finalMins;
     const caloriesBurned = calculateProgramCalories(weightKg, durationMinutes, data.rpe, totalVolume);
 
-    const completedSession: any = {
+    const completedSession: any = cleanObject({
       ...sessionToSave,
       uid: currentUid,
       rpe: data.rpe,
@@ -1097,19 +1121,13 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
       caloriesBurned,
       date: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
       time: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
-    };
-
-    // Filter out undefined values to prevent Firestore crashes
-    Object.keys(completedSession).forEach(key => {
-      if (completedSession[key] === undefined) {
-        delete completedSession[key];
-      }
     });
 
     try {
       if (auth.currentUser) {
         const workoutsPath = `users/${currentUid}/workouts`;
-        await addDoc(collection(db, workoutsPath), completedSession);
+        // Use setDoc with the local session ID to ensure id matching
+        await setDoc(doc(db, workoutsPath, completedSession.id), completedSession);
       } else {
         const guestHistory = JSON.parse(localStorage.getItem('volt_ghost_history') || '[]');
         const newId = `guest_w_${Date.now()}`;
@@ -1227,20 +1245,27 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const updateHistoryWorkout = async (workout: WorkoutSession) => {
-    // Recalculate volume
-    const updatedWorkout = {
+    // Recalculate volume and clean object of undefined values
+    const updatedWorkout = cleanObject({
       ...workout,
-      uid: auth.currentUser ? auth.currentUser.uid : 'guest',
-      volume: calculateVolume(workout)
-    };
+      volume: calculateVolume(workout),
+      updatedAt: Date.now()
+    });
+
+    // Do not include id and uid in the merge to avoid existing ID conflicts
+    // where local ID differed from the auto-generated Firestore doc ID.
+    const { logType, ...updatePayload } = updatedWorkout as any;
+    console.log("UPDATE PAYLOAD:", JSON.stringify(updatePayload));
 
     if (auth.currentUser) {
       const workoutPath = `users/${auth.currentUser.uid}/workouts/${workout.id}`;
       try {
-        await setDoc(doc(db, `users/${auth.currentUser.uid}/workouts`, workout.id), updatedWorkout);
+        await setDoc(doc(db, `users/${auth.currentUser.uid}/workouts`, workout.id), updatePayload, { merge: true });
         showToast('Action Successful.', 3000, 'success');
       } catch (error) {
         handleFirestoreError(error, OperationType.UPDATE, workoutPath);
+        // Rethrow to allow UI to handle it if needed, but the handler logs it
+        throw error;
       }
     } else {
       const guestHistory = JSON.parse(localStorage.getItem('volt_ghost_history') || '[]');

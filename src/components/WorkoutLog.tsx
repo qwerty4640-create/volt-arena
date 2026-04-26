@@ -24,10 +24,12 @@ import { InfoTooltip } from './InfoTooltip';
 import { useSettings } from '../contexts/SettingsContext';
 import { cn, isDumbbell } from '../lib/utils';
 import { useWorkout, Exercise, Set as WorkoutSet } from '../contexts/WorkoutContext';
+import { getExerciseName } from '../utils/workoutUtils';
 import { useToast } from '../contexts/ToastContext';
 import { ConfirmationModal } from './ConfirmationModal';
-import { getSwappableExercises, EXERCISE_DATABASE } from '../constants/exercises';
+import { getSwappableExercises } from '../constants/exercises';
 import { AICoach } from './AICoach';
+import { ExerciseSelectorModal } from './ExerciseSelectorModal';
 
 interface WorkoutLogProps {
   onBack: () => void;
@@ -45,11 +47,7 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
   const [isEndConfirmOpen, setIsEndConfirmOpen] = useState(false);
   const [swappingExerciseId, setSwappingExerciseId] = useState<string | null>(null);
   const [isAddExerciseOpen, setIsAddExerciseOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
   const [exerciseToRemove, setExerciseToRemove] = useState<string | null>(null);
-  const [isCircuitMode, setIsCircuitMode] = useState(false);
-  const [selectedCircuitExercises, setSelectedCircuitExercises] = useState<string[]>([]);
-  const [circuitTitle, setCircuitTitle] = useState('');
   const [isAICoachOpen, setIsAICoachOpen] = useState(false);
   const [showIntensityWarning, setShowIntensityWarning] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -128,12 +126,12 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
       return ex;
     }));
     setSwappingExerciseId(null);
-    showToast('Action Successful.', 3000, 'info');
+    showToast(t('toast.actionSuccessful'), 3000, 'info');
   };
 
   const getExerciseHistory = (exerciseName: string) => {
     const lastSession = history.find(session => 
-      session.exercises?.some(ex => ex.name === exerciseName)
+      session.exercises?.some(ex => ex.name.toLowerCase() === exerciseName.toLowerCase())
     );
     if (!lastSession) return null;
 
@@ -203,17 +201,13 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
 
     setExercises(prev => [...prev, ...newExercises]);
     setIsAddExerciseOpen(false);
-    setIsCircuitMode(false);
-    setSelectedCircuitExercises([]);
-    setCircuitTitle('');
-    setSearchQuery('');
-    showToast('Action Successful.', 3000, 'success');
+    showToast(t('toast.actionSuccessful'), 3000, 'success');
   };
 
   const removeExercise = (exerciseId: string) => {
     setExercises(prev => prev.filter(ex => ex.id !== exerciseId));
     setExerciseToRemove(null);
-    showToast('Action Successful.', 3000, 'success');
+    showToast(t('toast.actionSuccessful'), 3000, 'success');
   };
 
   const addSet = (exerciseId: string) => {
@@ -248,7 +242,7 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
       }
       return ex;
     }));
-    showToast('Action Successful.', 3000, 'success');
+    showToast(t('toast.actionSuccessful'), 3000, 'success');
   };
 
   const toggleSetCompletion = (exerciseId: string, setId: string) => {
@@ -271,7 +265,7 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
         const remainingSets = totalSets - completedSets;
         
         // Use tactical green success toast
-        showToast(`Set Completed. ${remainingSets} more sets to go.`, 3000, 'success');
+        showToast(t('toast.setCompleted', { remaining: remainingSets }), 3000, 'success');
 
         // Set-Level Overrides: Check if first completed set of session is high RPE
         const allCompletedSets = newExercises.flatMap(ex => ex.sets).filter(s => s.isCompleted);
@@ -293,28 +287,60 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
 
     // Predictive check prior to state update for toast logic
     const ex = exercises.find(e => e.id === exerciseId);
-    if (ex && field === 'rpe' && value !== '') {
-      const actualRpe = parseFloat(value);
+    const setIndex = ex?.sets.findIndex(s => s.id === setId) ?? -1;
+    
+    if (ex && setIndex !== -1 && (field === 'rpe' || field === 'weight' || field === 'reps')) {
+      const currentSet = ex.sets[setIndex];
+      const actualRpe = field === 'rpe' ? parseFloat(value) : parseFloat(currentSet.rpe);
       const targetRpe = currentSession.targetRpe || 7;
-      if (!isNaN(actualRpe)) {
-        const setIndex = ex.sets.findIndex(s => s.id === setId);
-        if (setIndex !== -1 && setIndex < ex.sets.length - 1) {
-          const rpeDiff = actualRpe - targetRpe;
-          
-          const currentSet = ex.sets[setIndex];
-          const actualWeight = parseFloat(currentSet.weight) || 0;
-          const prescribedWeight = parseFloat(currentSet.baseWeight || currentSet.weight) || 0;
-          
-          let weightRatio = 1;
-          if (prescribedWeight > 0 && actualWeight > 0) {
-            weightRatio = actualWeight / prescribedWeight;
-          }
-          
-          const adjustmentFactor = 1 - (rpeDiff * 0.04);
-          const totalFactor = weightRatio * adjustmentFactor;
+      
+      if (!isNaN(actualRpe) && setIndex < ex.sets.length - 1) {
+        const actualWeight = field === 'weight' ? parseFloat(value) : parseFloat(currentSet.weight);
+        const prescribedWeight = parseFloat(currentSet.baseWeight || currentSet.weight) || 0;
+        
+        const actualReps = field === 'reps' ? parseInt(value) : parseInt(currentSet.reps);
+        const prescribedReps = parseInt(currentSet.baseReps || currentSet.reps) || 0;
 
-          // Apply changes if RPE is off by 0.5 or weight modified
-          if (Math.abs(rpeDiff) >= 0.5 || Math.abs(weightRatio - 1) > 0.01) {
+        let weightRatio = 1;
+        if (prescribedWeight > 0 && actualWeight > 0) {
+          weightRatio = actualWeight / prescribedWeight;
+        }
+
+        let repFactor = 1;
+        if (prescribedReps > 0 && actualReps > 0) {
+          repFactor = 1 + (actualReps - prescribedReps) * 0.03;
+        }
+        
+        const rpeDiff = actualRpe - targetRpe;
+        const adjustmentFactor = 1 - (rpeDiff * 0.04);
+        const totalFactor = weightRatio * repFactor * adjustmentFactor;
+
+        // Apply changes if intensity is off or parameters modified
+        if (Math.abs(rpeDiff) >= 0.5 || Math.abs(weightRatio - 1) > 0.01 || Math.abs(repFactor - 1) > 0.01) {
+          // Check if at least ONE future set weight will actually change after rounding
+          let anyWeightChanges = false;
+          for (let i = setIndex + 1; i < ex.sets.length; i++) {
+            const s = ex.sets[i];
+            if (!s.isCompleted) {
+              const referenceWeightLocal = parseFloat(s.baseWeight || s.weight);
+              if (!isNaN(referenceWeightLocal) && referenceWeightLocal > 0) {
+                let newWeight = referenceWeightLocal * totalFactor;
+                if (unit === 'metric') {
+                  newWeight = Math.round(newWeight / 2.5) * 2.5;
+                } else {
+                  newWeight = Math.round(newWeight / 5) * 5;
+                }
+                newWeight = Math.max(0, newWeight);
+                
+                if (Math.abs(newWeight - (parseFloat(s.weight) || 0)) > 0.1) {
+                  anyWeightChanges = true;
+                  break;
+                }
+              }
+            }
+          }
+
+          if (anyWeightChanges) {
             if (totalFactor < 0.98) {
               willAutoRegulate = true;
               autoRegDirection = 'decreased';
@@ -332,52 +358,59 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
         let updatedSets = ex.sets.map(s => s.id === setId ? { ...s, [field]: value } : s);
         
         // Autoregulation implementation
-        if (field === 'rpe' && value !== '') {
-          const actualRpe = parseFloat(value);
-          const targetRpe = currentSession.targetRpe || 7;
+        const currentSet = updatedSets.find(s => s.id === setId);
+        const actualRpe = parseFloat(currentSet?.rpe || '');
+        const targetRpe = currentSession.targetRpe || 7;
+        
+        if (!isNaN(actualRpe)) {
+          const setIndex = updatedSets.findIndex(s => s.id === setId);
           
-          if (!isNaN(actualRpe)) {
-            const setIndex = updatedSets.findIndex(s => s.id === setId);
+          if (setIndex !== -1 && setIndex < updatedSets.length - 1) {
+            const actualWeight = parseFloat(currentSet?.weight || '0') || 0;
+            const prescribedWeight = parseFloat(currentSet?.baseWeight || currentSet?.weight || '0') || 0;
             
-            if (setIndex !== -1 && setIndex < updatedSets.length - 1) {
-              const currentSet = updatedSets[setIndex];
-              const actualWeight = parseFloat(currentSet.weight) || 0;
-              const prescribedWeight = parseFloat(currentSet.baseWeight || currentSet.weight) || 0;
-              
-              let weightRatio = 1;
-              if (prescribedWeight > 0 && actualWeight > 0) {
-                weightRatio = actualWeight / prescribedWeight;
-              }
+            const actualReps = parseInt(currentSet?.reps || '0') || 0;
+            const prescribedReps = parseInt(currentSet?.baseReps || currentSet?.reps || '0') || 0;
 
-              const rpeDiff = actualRpe - targetRpe;
-              const adjustmentFactor = 1 - (rpeDiff * 0.04);
-              const totalFactor = weightRatio * adjustmentFactor;
-              
-              if (Math.abs(rpeDiff) >= 0.5 || Math.abs(weightRatio - 1) > 0.01) {
-                updatedSets = updatedSets.map((s, idx) => {
-                  // Adjust only remaining, uncompleted sets
-                  if (idx > setIndex && !s.isCompleted) {
-                    const referenceWeightLocal = parseFloat(s.baseWeight || s.weight);
-                    if (!isNaN(referenceWeightLocal) && referenceWeightLocal > 0) {
-                      let newWeight = referenceWeightLocal * totalFactor;
-                      // Rounding rules based on unit
-                      if (unit === 'metric') {
-                        newWeight = Math.round(newWeight / 2.5) * 2.5;
-                      } else {
-                        newWeight = Math.round(newWeight / 5) * 5;
-                      }
-                      newWeight = Math.max(0, newWeight);
-                      
-                      return {
-                        ...s,
-                        baseWeight: s.baseWeight || s.weight, // Preserve original starting base weight if not saved yet
-                        weight: newWeight.toString()
-                      };
+            let weightRatio = 1;
+            if (prescribedWeight > 0 && actualWeight > 0) {
+              weightRatio = actualWeight / prescribedWeight;
+            }
+
+            let repFactor = 1;
+            if (prescribedReps > 0 && actualReps > 0) {
+              repFactor = 1 + (actualReps - prescribedReps) * 0.03;
+            }
+
+            const rpeDiff = actualRpe - targetRpe;
+            const adjustmentFactor = 1 - (rpeDiff * 0.04);
+            const totalFactor = weightRatio * repFactor * adjustmentFactor;
+            
+            if (Math.abs(rpeDiff) >= 0.5 || Math.abs(weightRatio - 1) > 0.01 || Math.abs(repFactor - 1) > 0.01) {
+              updatedSets = updatedSets.map((s, idx) => {
+                // Adjust only remaining, uncompleted sets
+                if (idx > setIndex && !s.isCompleted) {
+                  const referenceWeightLocal = parseFloat(s.baseWeight || s.weight);
+                  if (!isNaN(referenceWeightLocal) && referenceWeightLocal > 0) {
+                    let newWeight = referenceWeightLocal * totalFactor;
+                    // Rounding rules based on unit
+                    if (unit === 'metric') {
+                      newWeight = Math.round(newWeight / 2.5) * 2.5;
+                    } else {
+                      newWeight = Math.round(newWeight / 5) * 5;
                     }
+                    newWeight = Math.max(0, newWeight);
+                    
+                    return {
+                      ...s,
+                      baseWeight: s.baseWeight || s.weight,
+                      baseReps: s.baseReps || s.reps,
+                      weight: newWeight.toString()
+                    };
                   }
-                  return s;
-                });
-              }
+                }
+                return s;
+              });
             }
           }
         }
@@ -400,7 +433,7 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
         lastAutoRegToastRef.current[toastKey] = now;
         const targetRpe = currentSession.targetRpe || 7;
         const toastType = autoRegDirection === 'decreased' ? 'warning' : 'success';
-        showToast(`Auto-Regulation: Loads ${autoRegDirection} to hit Target RPE ${targetRpe}`, 5000, toastType);
+        showToast(t('toast.autoReg', { direction: t(`workout.${autoRegDirection}` as any), rpe: targetRpe }), 5000, toastType);
       }
     }
   };
@@ -443,7 +476,7 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
           </button>
           <div className="flex items-center gap-3">
             <ClipboardList className="text-volt" size={16} />
-            <span className="text-volt font-sans text-[10px] font-black uppercase tracking-widest">{t('mission log')}</span>
+            <span className="text-volt font-sans text-[10px] font-black uppercase tracking-widest">{t('workout.missionLog')}</span>
           </div>
         </div>
 
@@ -454,7 +487,7 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 font-mono text-[10px] md:text-xs font-bold uppercase tracking-widest text-zinc-500 p-4 y-4 bg-surface-container-low">
           <div className="flex flex-col gap-2">
             <span className="flex items-center gap-2">
-              READINESS <InfoTooltip term="Readiness" />
+              {t('analysis.readiness')} <InfoTooltip term="Readiness" />
             </span>
             <span className={cn(
               "font-black tracking-tighter text-white text-xl md:text-2xl italic",
@@ -464,21 +497,21 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
           </div>
           <div className="flex flex-col gap-2">
             <span className="flex items-center gap-2">
-              TARGET RPE <InfoTooltip term="sRPE" />
+              {t('workout.targetRpe')} <InfoTooltip term="sRPE" />
             </span>
             <span className="font-black text-white text-xl md:text-2xl italic">{currentSession.targetRpe || '–'}</span>
           </div>
           <div className="flex flex-col gap-2">
             <span className="flex items-center gap-2">
-              TIME <Clock size={12} className="md:w-3.5 md:h-3.5" />
+              {t('workout.time')} <Clock size={12} className="md:w-3.5 md:h-3.5" />
             </span>
             <span className="font-black text-white text-xl md:text-2xl italic">{formatDuration(elapsedMs)}</span>
           </div>
           <div className="flex flex-col gap-2">
             <span className="flex items-center gap-2">
-              EST. BURN <Flame size={12} className="md:w-3.5 md:h-3.5" />
+              {t('workout.estBurn')} <Flame size={12} className="md:w-3.5 md:h-3.5" />
             </span>
-            <span className="font-black text-white text-xl md:text-2xl italic">{estimatedCalories} KCAL</span>
+            <span className="font-black text-white text-xl md:text-2xl italic">{estimatedCalories} {t('workout.kcal')}</span>
           </div>
         </div>
       </div>
@@ -496,9 +529,9 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
               <div className="flex items-center gap-3">
                 <AlertTriangle className="text-crimson shrink-0" size={20} />
                 <div className="space-y-1">
-                  <p className="text-[10px] text-crimson font-black uppercase tracking-widest">High Intensity Detected</p>
+                  <p className="text-[10px] text-crimson font-black uppercase tracking-widest">{t('workout.highIntensityDetected')}</p>
                   <p className="text-[10px] text-zinc-300 font-bold uppercase">
-                    First set RPE is high. We recommend lowering your Mission Target to prioritize recovery.
+                    {t('workout.highIntensityDesc')}
                   </p>
                 </div>
               </div>
@@ -550,7 +583,7 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
                           <div className="w-8 h-8 md:w-10 md:h-10 bg-volt/10 flex items-center justify-center text-volt shrink-0">
                             <Dumbbell size={16} className="md:w-5 md:h-5" />
                           </div>
-                          <h3 className="font-sans text-xl md:text-2xl font-black uppercase italic tracking-tight">{ex.name}</h3>
+                          <h3 className="font-sans text-xl md:text-2xl font-black uppercase italic tracking-tight">{getExerciseName(ex, t)}</h3>
                         </div>
                         
                         <div className="flex gap-2 items-center">
@@ -582,7 +615,7 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
 
                       <div className="hidden md:grid md:grid-cols-[60px_1fr_1fr_1fr_60px_60px] gap-4 px-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500">
                         <div className="text-center">{t('workout.set')}</div>
-                        <div>{t('workout.weight')} ({weightUnit}{isDumbbell(ex.name) ? ' per side' : ''})</div>
+                        <div>{t('workout.weight')} ({weightUnit}{isDumbbell(ex.name) ? ` ${t('workout.perSide')}` : ''})</div>
                         <div>{t('workout.reps')}</div>
                         <div>{t('workout.rpe')}</div>
                         <div className="text-center">{t('workout.done')}</div>
@@ -613,7 +646,7 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
                               </div>
                               
                               <div className="flex flex-col w-full md:w-auto gap-1">
-                                <div className="md:hidden text-[8px] font-bold uppercase tracking-widest text-zinc-500 ml-1">{t('workout.weight')} ({weightUnit}{isDumbbell(ex.name) ? ' per side' : ''})</div>
+                                <div className="md:hidden text-[8px] font-bold uppercase tracking-widest text-zinc-500 ml-1">{t('workout.weight')} ({weightUnit}{isDumbbell(ex.name) ? ` ${t('workout.perSide')}` : ''})</div>
                                 <input 
                                   type="text" 
                                   value={set.weight}
@@ -906,177 +939,11 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
       )}
 
       {/* Add Exercise Modal */}
-      {mounted && createPortal(
-        <AnimatePresence>
-          {isAddExerciseOpen && (
-            <div className="fixed inset-0 z-[10000] flex items-center justify-center p-6">
-              <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setIsAddExerciseOpen(false)}
-                className="absolute inset-0 bg-void/80 backdrop-blur-md"
-              />
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                className="relative w-full max-w-md glass-panel p-6 md:p-8 border-volt/20 shadow-[0_0_50px_var(--primary-glow)] flex flex-col max-h-[80vh]"
-              >
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-3">
-                    <PlusCircle className="text-volt" size={24} />
-                    <h2 className="font-sans text-2xl font-black uppercase italic tracking-tight">
-                      {isCircuitMode ? t('workout.createCircuit') : t('workout.addExercise')}
-                    </h2>
-                  </div>
-                  <button 
-                    onClick={() => {
-                      setIsCircuitMode(!isCircuitMode);
-                      setSelectedCircuitExercises([]);
-                      setCircuitTitle('');
-                    }}
-                    className={cn(
-                      "px-4 py-2 text-[8px] font-black uppercase tracking-widest transition-all",
-                      isCircuitMode ? "bg-volt text-void" : "bg-white/5 text-zinc-400 hover:text-volt"
-                    )}
-                  >
-                    {isCircuitMode ? t('workout.switchSingle') : t('workout.switchCircuit')}
-                  </button>
-                </div>
-
-                {isCircuitMode && (
-                  <div className="mb-6">
-                    <input 
-                      type="text"
-                      placeholder={t('workout.circuitTitlePlaceholder')}
-                      value={circuitTitle}
-                      onChange={(e) => setCircuitTitle(e.target.value)}
-                      className="w-full bg-surface-container-lowest border-none py-3 px-4 text-xs text-white placeholder:text-zinc-600 focus:border-volt/50 outline-none transition-all"
-                    />
-                  </div>
-                )}
-                
-                <div className="relative mb-6">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
-                  <input 
-                    type="text"
-                    placeholder={t('workout.searchPlaceholder')}
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full bg-surface-container-lowest border-none py-4 pl-12 pr-4 text-sm text-white placeholder:text-zinc-600 focus:border-volt/50 outline-none transition-all"
-                  />
-                </div>
-
-                <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-2">
-                  {(() => {
-                    const filtered = EXERCISE_DATABASE.filter(ex => 
-                      ex.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                      ex.category.toLowerCase().includes(searchQuery.toLowerCase())
-                    );
-
-                    return (
-                      <>
-                        {filtered.map((ex) => {
-                          const isSelected = selectedCircuitExercises.includes(ex.name);
-                          return (
-                            <button
-                              key={ex.name}
-                              onClick={() => {
-                                if (isCircuitMode) {
-                                  setSelectedCircuitExercises(prev => 
-                                    prev.includes(ex.name) 
-                                      ? prev.filter(n => n !== ex.name) 
-                                      : [...prev, ex.name]
-                                  );
-                                } else {
-                                  addExercises([ex.name]);
-                                }
-                              }}
-                              className={cn(
-                                "w-full p-4 border-none text-left transition-all group flex justify-between items-center",
-                                isSelected ? "bg-volt/20 border-l-2 border-volt" : "bg-surface-container-low hover:bg-surface-container-high"
-                              )}
-                            >
-                              <div>
-                                <div className={cn(
-                                  "font-headline text-lg font-black uppercase italic tracking-tight transition-colors",
-                                  isSelected ? "text-volt" : "group-hover:text-volt"
-                                )}>
-                                  {ex.name}
-                                </div>
-                                <div className="text-[8px] font-black uppercase tracking-widest text-zinc-500">
-                                  {ex.category}
-                                </div>
-                              </div>
-                              {isCircuitMode ? (
-                                <div className={cn(
-                                  "w-5 h-5 border-2 flex items-center justify-center transition-all",
-                                  isSelected ? "border-volt bg-volt text-void" : "border-zinc-700"
-                                )}>
-                                  {isSelected && <Check size={14} strokeWidth={4} />}
-                                </div>
-                              ) : (
-                                <Plus size={16} className="text-zinc-500 group-hover:text-volt transition-colors" />
-                              )}
-                            </button>
-                          );
-                        })}
-                        
-                        {searchQuery && !filtered.some(ex => ex.name.toLowerCase() === searchQuery.toLowerCase()) && (
-                          <button
-                            onClick={() => {
-                              if (isCircuitMode) {
-                                setSelectedCircuitExercises(prev => [...prev, searchQuery]);
-                              } else {
-                                addExercises([searchQuery]);
-                              }
-                              setSearchQuery('');
-                            }}
-                            className="w-full p-6 bg-volt/5 border border-dashed border-volt/30 hover:bg-volt/10 transition-all group flex flex-col items-center gap-2"
-                          >
-                            <PlusCircle size={24} className="text-volt" />
-                            <div className="text-center">
-                              <div className="text-[10px] font-black uppercase tracking-widest text-volt">{t('workout.createCustom')}</div>
-                              <div className="text-lg font-black uppercase italic text-white">"{searchQuery}"</div>
-                            </div>
-                          </button>
-                        )}
-
-                        {filtered.length === 0 && !searchQuery && (
-                          <div className="text-center py-8 text-zinc-600 italic text-sm">
-                            {t('workout.searchEmpty')}
-                          </div>
-                        )}
-                      </>
-                    );
-                  })()}
-                </div>
-
-                {isCircuitMode && selectedCircuitExercises.length > 0 && (
-                  <div className="mt-6 pt-6 border-t border-white/5">
-                    <button 
-                      onClick={() => addExercises(selectedCircuitExercises, circuitTitle || t('workout.tacticalCircuit'))}
-                      className="w-full py-4 bg-volt text-void font-headline text-sm font-black uppercase italic tracking-widest hover:bg-white transition-all flex items-center justify-center gap-3"
-                    >
-                      <PlusCircle size={20} />
-                      <span>Add Circuit ({selectedCircuitExercises.length} Exercises)</span>
-                    </button>
-                  </div>
-                )}
-
-                <button 
-                  onClick={() => setIsAddExerciseOpen(false)}
-                  className="w-full mt-6 btn-secondary py-4"
-                >
-                  Close
-                </button>
-              </motion.div>
-            </div>
-          )}
-        </AnimatePresence>,
-        document.body
-      )}
+      <ExerciseSelectorModal 
+        isOpen={isAddExerciseOpen}
+        onClose={() => setIsAddExerciseOpen(false)}
+        onSelect={addExercises}
+      />
     </>
   );
 };

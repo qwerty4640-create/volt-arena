@@ -35,7 +35,16 @@ async function startServer() {
   } else {
     console.log("Serving static files from dist...");
     const distPath = path.join(process.cwd(), 'dist');
-    app.use(express.static(distPath));
+    app.use(express.static(distPath, {
+      setHeaders: (res, filepath) => {
+        // Ensure Service Worker and related files are never cached
+        if (filepath.endsWith('sw.js') || filepath.endsWith('manifest.json') || filepath.endsWith('index.html')) {
+          res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+          res.setHeader('Pragma', 'no-cache');
+          res.setHeader('Expires', '0');
+        }
+      }
+    }));
     app.get('*', (req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });

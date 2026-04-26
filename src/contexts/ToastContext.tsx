@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { CheckCircle2, AlertTriangle, Info, XCircle, X } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { useSettings } from './SettingsContext';
 
 type ToastType = 'success' | 'warning' | 'info' | 'error';
 
@@ -20,6 +21,7 @@ interface ToastContextType {
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
 export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { t } = useSettings();
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   const hideToast = useCallback((id: string) => {
@@ -70,16 +72,21 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                   toast.type === 'info' && "bg-volt"
                 )} />
 
-                <div className="shrink-0">
-                  {toast.type === 'success' && <CheckCircle2 size={18} className="drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]" />}
-                  {toast.type === 'warning' && <AlertTriangle size={18} className="drop-shadow-[0_0_8px_rgba(249,115,22,0.5)]" />}
-                  {toast.type === 'error' && <XCircle size={18} />}
-                  {toast.type === 'info' && <Info size={18} />}
+                <div className="shrink-0 pt-0.5">
+                  {toast.type === 'success' && <CheckCircle2 size={16} className="drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]" />}
+                  {toast.type === 'warning' && <AlertTriangle size={16} className="drop-shadow-[0_0_8px_rgba(249,115,22,0.5)]" />}
+                  {toast.type === 'error' && <XCircle size={16} />}
+                  {toast.type === 'info' && <Info size={16} />}
                 </div>
 
-                <p className="text-[10px] sm:text-xs font-black uppercase tracking-[0.1em] flex-1 leading-tight">
-                  {toast.message}
-                </p>
+                <div className="flex flex-col gap-0.5 flex-1 min-w-0">
+                  <span className="text-[7px] font-black uppercase tracking-[0.2em] opacity-50 block leading-none">
+                    {t(`toast.${toast.type}`)}
+                  </span>
+                  <p className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.05em] leading-tight">
+                    {toast.message}
+                  </p>
+                </div>
 
                 <button 
                   onClick={() => hideToast(toast.id)}

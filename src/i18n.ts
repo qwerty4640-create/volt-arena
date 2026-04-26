@@ -18,7 +18,7 @@ export function getTranslation(lang: SupportedLanguage, key: string, params?: Re
 
   if (params) {
     Object.entries(params).forEach(([k, v]) => {
-      text = text.replace(new RegExp(`{{${k}}}`, 'g'), String(v));
+      text = text.replace(new RegExp(`\\{+${k}\\}+`, 'g'), String(v));
     });
   }
 

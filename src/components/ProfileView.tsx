@@ -59,7 +59,7 @@ export const ProfileView = () => {
         deadliftPR: edit1RMData.deadliftPR,
         level: newTier as any,
       });
-      showToast('Action Successful.', 3000, 'success');
+      showToast(t('toast.actionSuccessful'), 3000, 'success');
       setShow1RMModal(false);
     } finally {
       setLoading(false);
@@ -83,7 +83,7 @@ export const ProfileView = () => {
         competitionDate: newCompetitionDate,
         trainingWeekOffset: 0
       });
-      showToast('Action Successful.', 3000, 'success');
+      showToast(t('toast.actionSuccessful'), 3000, 'success');
       setShowProtocolModal(false);
     } finally {
       setLoading(false);
@@ -160,7 +160,7 @@ export const ProfileView = () => {
         trainingDurationMonths: editData.trainingDurationMonths,
         level: newTier as any,
       });
-      showToast('Action Successful.', 3000, 'success');
+      showToast(t('toast.actionSuccessful'), 3000, 'success');
       setShowBiometricsModal(false);
     } finally {
       setLoading(false);
@@ -180,10 +180,10 @@ export const ProfileView = () => {
   const isElite = profile.level === 'elite';
 
   const stats = [
-    { label: 'Squat', value: profile.squatPR || 0, icon: Dumbbell, color: 'text-volt', glow: 'drop-shadow-[0_0_5px_rgba(0,182,255,0.5)]', animation: '' },
-    { label: 'Bench', value: profile.benchPR || 0, icon: Dumbbell, color: 'text-volt', glow: 'drop-shadow-[0_0_5px_rgba(0,182,255,0.5)]', animation: '' },
-    { label: 'Deadlift', value: profile.deadliftPR || 0, icon: Dumbbell, color: 'text-volt', glow: 'drop-shadow-[0_0_5px_rgba(0,182,255,0.5)]', animation: '' },
-    { label: 'Total', value: (profile.squatPR || 0) + (profile.benchPR || 0) + (profile.deadliftPR || 0), icon: tierStyle.icon, color: tierStyle.color, glow: tierStyle.glow, animation: tierStyle.animation },
+    { label: t('onboarding.squat'), value: profile.squatPR || 0, icon: Dumbbell, color: 'text-volt', glow: 'drop-shadow-[0_0_5px_rgba(0,182,255,0.5)]', animation: '' },
+    { label: t('onboarding.bench'), value: profile.benchPR || 0, icon: Dumbbell, color: 'text-volt', glow: 'drop-shadow-[0_0_5px_rgba(0,182,255,0.5)]', animation: '' },
+    { label: t('onboarding.deadlift'), value: profile.deadliftPR || 0, icon: Dumbbell, color: 'text-volt', glow: 'drop-shadow-[0_0_5px_rgba(0,182,255,0.5)]', animation: '' },
+    { label: t('analysis.total'), value: (profile.squatPR || 0) + (profile.benchPR || 0) + (profile.deadliftPR || 0), icon: tierStyle.icon, color: tierStyle.color, glow: tierStyle.glow, animation: tierStyle.animation },
   ];
 
   return (
@@ -235,7 +235,7 @@ export const ProfileView = () => {
             </div>
             <div className="flex items-center gap-2">
               <Calendar size={14} md:size={16} />
-              <span className="text-[10px] md:text-xs font-medium uppercase tracking-widest">Joined {new Date(profile.createdAt).toLocaleDateString()}</span>
+              <span className="text-[10px] md:text-xs font-medium uppercase tracking-widest">{t('analysis.joined')} {new Date(profile.createdAt).toLocaleDateString()}</span>
             </div>
           </div>
         </div>
@@ -251,7 +251,7 @@ export const ProfileView = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Trophy className="text-volt" size={20} />
-              <h3 className="font-sans text-sm font-bold uppercase tracking-widest text-white">Performance Metrics</h3>
+              <h3 className="font-sans text-sm font-bold uppercase tracking-widest text-white">{t('analysis.performanceMetrics')}</h3>
             </div>
             <button 
               onClick={() => {
@@ -270,7 +270,7 @@ export const ProfileView = () => {
 
           <div className="space-y-4">
             <div className="p-8 bg-void/60 border-l-4 border-volt relative overflow-hidden">
-              <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-500 mb-4 relative z-10">Total Lift Weight</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-500 mb-4 relative z-10">{t('analysis.totalLiftWeight')}</p>
               <div className="flex items-baseline gap-4 relative z-10">
                 <span className="text-7xl font-sans font-black text-volt italic tracking-tighter drop-shadow-[0_0_30px_rgba(0,182,255,0.4)]">
                   {(profile.squatPR || 0) + (profile.benchPR || 0) + (profile.deadliftPR || 0)}
@@ -309,7 +309,7 @@ export const ProfileView = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Activity className="text-volt" size={20} />
-              <h3 className="font-sans text-sm font-bold uppercase tracking-widest text-white">Biometrics</h3>
+              <h3 className="font-sans text-sm font-bold uppercase tracking-widest text-white">{t('settings.biometrics')}</h3>
             </div>
             <button 
               onClick={() => setShowBiometricsModal(true)}
@@ -323,7 +323,7 @@ export const ProfileView = () => {
             <div className="col-span-2 flex items-center gap-4 p-4 bg-void/40 border border-white/5">
               <Target size={18} className="text-zinc-500" />
               <div className="flex-1">
-                <p className="text-[8px] font-black uppercase tracking-widest text-zinc-500">Objective</p>
+                <p className="text-[8px] font-black uppercase tracking-widest text-zinc-500">{t('settings.objective')}</p>
                 <p className="text-xs font-bold text-white uppercase tracking-widest">{t(`goal.${profile.trainingGoal}`)}</p>
               </div>
             </div>
@@ -331,15 +331,15 @@ export const ProfileView = () => {
             <div className="flex items-center gap-4 p-4 bg-void/40 border border-white/5">
               <User size={18} className="text-zinc-500" />
               <div>
-                <p className="text-[8px] font-black uppercase tracking-widest text-zinc-500">Gender</p>
-                <p className="text-xs font-bold text-white uppercase">{profile.gender || 'N/A'}</p>
+                <p className="text-[8px] font-black uppercase tracking-widest text-zinc-500">{t('settings.gender')}</p>
+                <p className="text-xs font-bold text-white uppercase">{t(`gender.${profile.gender}` || 'gender.other')}</p>
               </div>
             </div>
 
             <div className="flex items-center gap-4 p-4 bg-void/40 border border-white/5">
               <User size={18} className="text-zinc-500" />
               <div>
-                <p className="text-[8px] font-black uppercase tracking-widest text-zinc-500">Age</p>
+                <p className="text-[8px] font-black uppercase tracking-widest text-zinc-500">{t('settings.age')}</p>
                 <p className="text-xs font-bold text-white uppercase">{profile.age || 'N/A'}</p>
               </div>
             </div>
@@ -347,7 +347,7 @@ export const ProfileView = () => {
             <div className="flex items-center gap-4 p-4 bg-void/40 border border-white/5">
               <Ruler size={18} className="text-zinc-500" />
               <div>
-                <p className="text-[8px] font-black uppercase tracking-widest text-zinc-500">Height</p>
+                <p className="text-[8px] font-black uppercase tracking-widest text-zinc-500">{t('settings.height')}</p>
                 <p className="text-xs font-bold text-white uppercase">{formatHeight(profile.height || 0)}</p>
               </div>
             </div>
@@ -355,7 +355,7 @@ export const ProfileView = () => {
             <div className="flex items-center gap-4 p-4 bg-void/40 border border-white/5">
               <Scale size={18} className="text-zinc-500" />
               <div>
-                <p className="text-[8px] font-black uppercase tracking-widest text-zinc-500">Weight</p>
+                <p className="text-[8px] font-black uppercase tracking-widest text-zinc-500">{t('settings.weight')}</p>
                 <p className="text-xs font-bold text-white uppercase">{profile.weight || 0} {unit === 'metric' ? 'kg' : 'LBS'}</p>
               </div>
             </div>
@@ -363,21 +363,24 @@ export const ProfileView = () => {
           <motion.div 
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            className="col-span-2 relative overflow-hidden border border-volt/40 bg-zinc-900/40 shadow-[0_0_30px_rgba(204,255,0,0.06)]"
+            className="col-span-2 relative overflow-hidden border border-volt/20 bg-surface-container-low shadow-[0_0_20px_rgba(204,255,0,0.03)] hover:border-volt/50 transition-colors"
           >
             <button 
               onClick={() => setShowExclusionModal(true)}
-              className="w-full px-4 py-6 flex items-center justify-between hover:bg-volt/[0.06] transition-all group active:scale-[0.995]"
+              className="w-full px-4 py-5 flex items-center justify-between hover:bg-volt/[0.04] transition-all group active:scale-[0.995]"
             >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-volt/10 flex items-center justify-center text-volt border border-volt/20 group-hover:border-volt/50 transition-colors">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 bg-volt/10 flex items-center justify-center text-volt border border-volt/20 group-hover:border-volt/40 transition-colors">
                   <Activity size={20} />
                 </div>
                 <div className="text-left">
-                  <h3 className="font-sans text-sm font-bold uppercase tracking-widest text-white group-hover:text-volt transition-colors">Movement Restrictions</h3>
-                  <p className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest mt-1 opacity-80">Manual Calibration</p>
+                  <h3 className="font-sans text-[11px] font-black uppercase tracking-[0.1em] text-white group-hover:text-volt transition-colors">{t('settings.movementRestrictions')}</h3>
+                  <p className="text-[8px] text-zinc-500 uppercase font-black tracking-widest mt-1 opacity-80">
+                    {profile.excludedMovements?.length || 0} {t('workout.active')} {profile.excludedMovements?.length === 1 ? 'Restriction' : 'Restrictions'}
+                  </p>
                 </div>
               </div>
+              <ChevronDown size={14} className="text-zinc-700 group-hover:text-volt -rotate-90 transition-all" />
             </button>
           </motion.div>
           <MovementExclusionModal isOpen={showExclusionModal} onClose={() => setShowExclusionModal(false)} />
@@ -395,7 +398,7 @@ export const ProfileView = () => {
           <div className="flex items-center justify-between mb-6 relative z-10">
             <div className="flex items-center gap-3">
               <Zap className="text-volt" size={20} />
-              <h3 className="font-sans text-sm font-bold uppercase tracking-widest text-white">Timeline & Frequency</h3>
+              <h3 className="font-sans text-sm font-bold uppercase tracking-widest text-white">{t('settings.timelineFrequency')}</h3>
             </div>
             <button 
               onClick={() => setShowProtocolModal(true)}
@@ -408,20 +411,20 @@ export const ProfileView = () => {
           <div className="space-y-4 relative z-10">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="p-4 bg-void/40 border border-white/5">
-                <p className="text-[7px] font-bold uppercase tracking-widest text-zinc-500 mb-1">Current Block</p>
+                <p className="text-[7px] font-bold uppercase tracking-widest text-zinc-500 mb-1">{t('settings.currentBlock')}</p>
                 <p className="text-xl font-sans font-black text-white italic uppercase leading-tight">{block.label || block.type}</p>
                 <div className="flex justify-between items-center mt-2">
-                  <span className="text-[8px] font-bold italic text-zinc-400">Week {weekInBlock} / {block.durationWeeks}</span>
-                  <span className="text-[10px] font-bold uppercase text-volt">Week {currentWeek}</span>
+                  <span className="text-[8px] font-bold italic text-zinc-400">{t('workout.week')} {weekInBlock} / {block.durationWeeks}</span>
+                  <span className="text-[10px] font-bold uppercase text-volt">{t('workout.week')} {currentWeek}</span>
                 </div>
               </div>
 
               <div className="p-4 bg-void/40 border border-white/5">
-                <p className="text-[7px] font-bold uppercase tracking-widest text-zinc-500 mb-1">Training Load</p>
+                <p className="text-[7px] font-bold uppercase tracking-widest text-zinc-500 mb-1">{t('settings.trainingLoad')}</p>
                 <p className="text-xl font-sans font-black text-white italic uppercase">{profile.trainingFrequency || 3} Missions / Wk</p>
                 <div className="mt-4 space-y-1.5">
                   <div className="flex justify-between text-[6px] font-black uppercase tracking-widest text-zinc-500">
-                    <span>Weekly Distribution</span>
+                    <span>{t('settings.weeklyDistribution')}</span>
                     <span>{Math.round(((profile.trainingFrequency || 3) / 7) * 100)}%</span>
                   </div>
                   <div className="h-0.5 bg-white/5 overflow-hidden">
@@ -436,15 +439,15 @@ export const ProfileView = () => {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="p-3 bg-void/40 border border-white/5 text-left">
-                <p className="text-[7px] font-bold uppercase tracking-widest text-zinc-500 mb-1">To Competition</p>
+                <p className="text-[7px] font-bold uppercase tracking-widest text-zinc-500 mb-1">{t('settings.toCompetition')}</p>
                 <p className="text-base font-sans font-black text-volt italic uppercase">
                   {profile.competitionDate ? Math.max(0, Math.ceil((profile.competitionDate - Date.now()) / (7 * 24 * 60 * 60 * 1000))) : (profile.trainingDurationMonths || 3) * 4} WKS
                 </p>
               </div>
               <div className="p-3 bg-void/40 border border-white/5 text-left">
-                <p className="text-[7px] font-bold uppercase tracking-widest text-zinc-500 mb-1">Total Duration</p>
+                <p className="text-[7px] font-bold uppercase tracking-widest text-zinc-500 mb-1">{t('settings.totalDuration')}</p>
                 <p className="text-base font-sans font-black text-white italic uppercase">
-                  {profile.trainingDurationMonths || 3} MONTHS
+                  {profile.trainingDurationMonths || 3} {t('onboarding.months').toUpperCase()}
                 </p>
               </div>
             </div>
@@ -478,8 +481,8 @@ export const ProfileView = () => {
                   <User size={32} />
                 </div>
                 <div>
-                  <h3 className="font-sans text-2xl font-black uppercase italic tracking-tight text-white">Biometrics</h3>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Update Physical Data</p>
+                  <h3 className="font-sans text-2xl font-black uppercase italic tracking-tight text-white">{t('settings.biometrics')}</h3>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">{t('settings.physicalData')}</p>
                 </div>
               </div>
 
@@ -487,21 +490,21 @@ export const ProfileView = () => {
                 <div className="space-y-4">
                   {/* Gender */}
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Gender</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('settings.gender')}</label>
                     <select
                       value={editData.gender}
                       onChange={(e) => setEditData({ ...editData, gender: e.target.value as any })}
                       className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black italic focus:border-volt outline-none transition-all"
                     >
-                      <option value="male">Male</option>
-                      <option value="female">Female</option>
-                      <option value="other">Other</option>
+                      <option value="male">{t('gender.male')}</option>
+                      <option value="female">{t('gender.female')}</option>
+                      <option value="other">{t('gender.other')}</option>
                     </select>
                   </div>
 
                   {/* Age */}
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Age</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('settings.age')}</label>
                     <input
                       type="number"
                       step="1"
@@ -510,7 +513,7 @@ export const ProfileView = () => {
                         const val = parseFloat(e.target.value);
                         setEditData({ ...editData, age: isNaN(val) ? 0 : val });
                         if (val % 1 !== 0) {
-                          setAgeError('Age must be a whole number');
+                          setAgeError(t('auth.invalidAgeWholeNumber') || 'Age must be a whole number');
                         } else {
                           setAgeError(null);
                         }
@@ -527,7 +530,7 @@ export const ProfileView = () => {
 
                   {/* Height */}
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Height</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('settings.height')}</label>
                     {unit === 'metric' ? (
                       <div className="flex items-center gap-2">
                         <input
@@ -547,7 +550,7 @@ export const ProfileView = () => {
                             onChange={(e) => setEditData({ ...editData, heightFeet: parseInt(e.target.value) || 0 })}
                             className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black italic focus:border-volt outline-none transition-all text-center"
                           />
-                          <p className="text-[8px] font-bold text-zinc-500 text-center uppercase">Feet</p>
+                          <p className="text-[8px] font-bold text-zinc-500 text-center uppercase">{t('settings.feet')}</p>
                         </div>
                         <div className="flex-1 space-y-1">
                           <input
@@ -556,7 +559,7 @@ export const ProfileView = () => {
                             onChange={(e) => setEditData({ ...editData, heightInches: parseInt(e.target.value) || 0 })}
                             className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black italic focus:border-volt outline-none transition-all text-center"
                           />
-                          <p className="text-[8px] font-bold text-zinc-500 text-center uppercase">Inches</p>
+                          <p className="text-[8px] font-bold text-zinc-500 text-center uppercase">{t('settings.inches')}</p>
                         </div>
                       </div>
                     )}
@@ -564,7 +567,7 @@ export const ProfileView = () => {
 
                   {/* Weight */}
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Weight ({unit === 'metric' ? 'kg' : 'LBS'})</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('settings.weight')} ({unit === 'metric' ? 'kg' : 'LBS'})</label>
                     <input
                       type="number"
                       value={editData.weight}
@@ -575,7 +578,7 @@ export const ProfileView = () => {
 
                   {/* Training Goal */}
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Training Objective</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('settings.trainingObjective')}</label>
                     <div className="grid grid-cols-1 gap-2">
                       {(['pure_strength', 'powerbuilding', 'hypertrophy', 'peaking', 'longevity'] as TrainingGoal[]).map(goal => (
                         <button
@@ -611,14 +614,14 @@ export const ProfileView = () => {
                     }}
                     className="flex-1 py-4 bg-white/5 text-zinc-500 font-sans text-xs font-bold uppercase tracking-widest hover:text-white transition-all"
                   >
-                    Cancel
+                    {t('common.cancel')}
                   </button>
                   <button 
                     onClick={handleSave}
                     disabled={loading || !!ageError}
                     className="flex-1 py-4 bg-volt text-void font-sans text-xs font-bold uppercase tracking-widest hover:bg-white hover:shadow-[0_0_20px_var(--primary-glow)] transition-all disabled:opacity-50"
                   >
-                    {loading ? 'Saving...' : 'Confirm'}
+                    {loading ? t('settings.recalculate') : t('coach.confirm')}
                   </button>
                 </div>
               </div>
@@ -652,8 +655,8 @@ export const ProfileView = () => {
                   <Zap size={32} />
                 </div>
                 <div>
-                  <h3 className="font-sans text-2xl font-black uppercase italic tracking-tight text-white">Full Protocol</h3>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Recalibrate Timeline & Frequency</p>
+                  <h3 className="font-sans text-2xl font-black uppercase italic tracking-tight text-white">{t('settings.timelineFrequency')}</h3>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">{t('settings.protocolRecalibrate')}</p>
                 </div>
               </div>
 
@@ -661,7 +664,7 @@ export const ProfileView = () => {
                 {/* Timeline Column */}
                 <div className="space-y-6">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Months until Competition</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('settings.monthsToComp')}</label>
                     <div className="grid grid-cols-4 gap-2">
                       {[3, 6, 9, 12].map((m) => (
                         <button
@@ -679,12 +682,12 @@ export const ProfileView = () => {
                   </div>
 
                   <div className="p-4 bg-void/40 border border-white/5">
-                    <p className="text-[8px] font-bold uppercase tracking-widest text-zinc-500 mb-2">Block Redistribution ({adjustingDuration * 4} Weeks)</p>
+                    <p className="text-[8px] font-bold uppercase tracking-widest text-zinc-500 mb-2">{t('settings.blockRedistribution')} ({adjustingDuration * 4} {t('onboarding.weeks')})</p>
                     <div className="space-y-2">
                       {getPlanForDuration(adjustingDuration * 4, profile?.trainingGoal || 'powerbuilding').map((b, i) => (
                         <div key={i} className="flex justify-between items-center text-[10px]">
                           <span className="font-bold uppercase text-zinc-400">{b.label || b.type}</span>
-                          <span className="font-bold text-volt">{b.durationWeeks} Weeks</span>
+                          <span className="font-bold text-volt">{b.durationWeeks} {t('onboarding.weeks')}</span>
                         </div>
                       ))}
                     </div>
@@ -694,7 +697,7 @@ export const ProfileView = () => {
                 {/* Frequency Column */}
                 <div className="space-y-6">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Training Frequency</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('onboarding.frequency')}</label>
                     <div className="grid grid-cols-5 gap-2">
                       {[3, 4, 5, 6, 7].map((f) => (
                         <button
@@ -712,12 +715,12 @@ export const ProfileView = () => {
                   </div>
 
                   <div className="p-4 bg-void/40 border border-white/5">
-                    <p className="text-[8px] font-bold uppercase tracking-widest text-zinc-500 mb-2">Weekly Volume Preview</p>
+                    <p className="text-[8px] font-bold uppercase tracking-widest text-zinc-500 mb-2">{t('settings.weeklyVolumePreview')}</p>
                     <p className="text-xs font-bold text-white uppercase tracking-widest">
-                      {adjustingFrequency} Missions / Week
+                      {adjustingFrequency} {t('nav.training')} / {t('workout.week')}
                     </p>
                     <p className="text-[10px] text-zinc-500 mt-1 uppercase">
-                      Total Monthly Missions: {adjustingFrequency * 4}
+                      {t('settings.monthlyMissions')}: {adjustingFrequency * 4}
                     </p>
                   </div>
                 </div>
@@ -727,9 +730,8 @@ export const ProfileView = () => {
                 <div className="flex items-start gap-3 text-left">
                   <Info size={16} className="text-volt shrink-0 mt-0.5" />
                   <p className="text-[10px] text-volt font-bold uppercase tracking-widest leading-relaxed">
-                    Adjusting your protocol will recalibrate your training cycle. History and PRs are always preserved.
-                    {adjustingDuration !== profile.trainingDurationMonths && " Changing duration will restart your cycle from Week 1."}
-                     
+                    {t('settings.protocolWarning')}
+                    {adjustingDuration !== profile.trainingDurationMonths && ` ${t('settings.durationRestartWarning')}`}
                   </p>
                 </div>
               </div>
@@ -739,14 +741,14 @@ export const ProfileView = () => {
                   onClick={() => setShowProtocolModal(false)}
                   className="flex-1 btn-secondary py-4"
                 >
-                  Close
+                  {t('common.close')}
                 </button>
                 <button 
                   onClick={handleAdjustProtocol}
                   disabled={loading}
                   className="flex-1 btn-primary py-4 disabled:opacity-50"
                 >
-                  {loading ? 'Recalculating...' : 'Confirm Protocol'}
+                  {loading ? t('settings.recalculate') : t('settings.confirmProtocol')}
                 </button>
               </div>
             </motion.div>
@@ -779,8 +781,8 @@ export const ProfileView = () => {
                   <Dumbbell size={32} />
                 </div>
                 <div>
-                  <h3 className="font-sans text-2xl font-black uppercase italic tracking-tight text-white">Update 1RM</h3>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Current Maxes</p>
+                  <h3 className="font-sans text-2xl font-black uppercase italic tracking-tight text-white">{t('settings.update1rm')}</h3>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">{t('settings.currentMaxes')}</p>
                 </div>
               </div>
 
@@ -818,7 +820,7 @@ export const ProfileView = () => {
                 {/* Tier Preview */}
                 <div className="p-4 bg-void/40 border border-white/5">
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Projected Tier</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('settings.projectedTier') || "Projected Tier"}</span>
                     <span className={cn(
                       "text-[10px] font-black uppercase tracking-widest px-2 py-0.5",
                       getTierStyleLocal(calculateTier(
@@ -846,8 +848,7 @@ export const ProfileView = () => {
                     </span>
                   </div>
                   <p className="text-[8px] text-zinc-500 font-medium uppercase tracking-widest leading-relaxed">
-                    Based on these PRs and your current biometrics, 
-                    your tier will be recalibrated to <span className="text-white font-bold">{calculateTier(
+                    {t('settings.tierRecalibrationNote')} <span className="text-white font-bold">{calculateTier(
                       edit1RMData.squatPR,
                       edit1RMData.benchPR,
                       edit1RMData.deadliftPR,
@@ -860,16 +861,16 @@ export const ProfileView = () => {
                 <div className="flex gap-4">
                   <button 
                     onClick={() => setShow1RMModal(false)}
-                    className="flex-1 btn-secondary py-4"
+                    className="flex-1 py-4 bg-white/5 text-zinc-500 font-sans text-xs font-bold uppercase tracking-widest hover:text-white transition-all"
                   >
-                    Close
+                    {t('common.close')}
                   </button>
                   <button 
                     onClick={handleUpdate1RM}
                     disabled={loading}
-                    className="flex-1 btn-primary py-4 disabled:opacity-50"
+                    className="flex-1 py-4 bg-volt text-void font-sans text-xs font-bold uppercase tracking-widest hover:bg-white hover:shadow-[0_0_20px_var(--primary-glow)] transition-all disabled:opacity-50"
                   >
-                    {loading ? 'Saving...' : 'Confirm'}
+                    {loading ? t('settings.recalculate') : t('coach.confirm')}
                   </button>
                 </div>
               </div>

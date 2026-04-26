@@ -72,7 +72,7 @@ interface SettingsContextType {
   profile: UserProfile | null;
   updateProfile: (data: Partial<UserProfile>) => Promise<void>;
   isProfileLoading: boolean;
-  t: (key: string) => string;
+  t: (key: string, params?: Record<string, string | number>) => string;
 }
 
 
@@ -386,7 +386,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
     document.documentElement.setAttribute('data-light-scheme', lightColorScheme);
   }, []);
 
-  const t = (key: string): string => getTranslation(language as SupportedLanguage, key);
+  const t = (key: string, params?: Record<string, string | number>): string => getTranslation(language as SupportedLanguage, key, params);
 
   return (
     <SettingsContext.Provider value={{ 

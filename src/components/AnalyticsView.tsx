@@ -4,6 +4,7 @@ import { Trophy, Target, TrendingUp, BarChart3, Calendar, Filter, ChevronDown } 
 import { useSettings } from '../contexts/SettingsContext';
 import { useWorkout } from '../contexts/WorkoutContext';
 import { ExternalActivityWidget } from './AnalysisView';
+import { isMainLiftMatch } from '../utils/workoutUtils';
 import { 
   LineChart, 
   Line, 
@@ -12,7 +13,7 @@ import {
   CartesianGrid, 
   Tooltip, 
   ResponsiveContainer,
-  AreaChart,
+  ComposedChart,
   Area
 } from 'recharts';
 import { cn } from '../lib/utils';
@@ -22,7 +23,7 @@ type TimeFrame = '1M' | '3M' | '6M' | 'ALL';
 export const AnalyticsView = () => {
   const { t, unit } = useSettings();
   const { history } = useWorkout();
-  const weightUnit = unit === 'metric' ? 'KG' : 'LBS';
+  const weightUnit = unit === 'metric' ? t('workout.kg') : t('workout.lbs');
 
   const [timeFrame, setTimeFrame] = useState<TimeFrame>('6M');
   const [selectedLifts, setSelectedLifts] = useState<string[]>(['Squat', 'Bench Press', 'Deadlift']);
@@ -61,7 +62,7 @@ export const AnalyticsView = () => {
       };
 
       selectedLifts.forEach(lift => {
-        const exercise = session.exercises.find(ex => ex.name.toLowerCase().includes(lift.toLowerCase()));
+        const exercise = session.exercises.find(ex => isMainLiftMatch(ex.name, lift));
         if (exercise) {
           const maxWeight = Math.max(...exercise.sets.map(s => parseFloat(s.weight) || 0));
           dataPoint[lift] = maxWeight > 0 ? maxWeight : null;
@@ -81,7 +82,7 @@ export const AnalyticsView = () => {
     else if (timeFrame === '3M') startDate = new Date(now.setMonth(now.getMonth() - 3));
     else if (timeFrame === '6M') startDate = new Date(now.setMonth(now.getMonth() - 6));
 
-    const weeks: Record<string, { volume: number, timestamp: number }> = {};
+    const weeks: Record<string, { volume: number, rpeSum: number, rpeCount: number, timestamp: number }> = {};
     
     history.forEach(session => {
       const date = session.completedAt ? new Date(session.completedAt) : new Date(session.date);
@@ -93,6 +94,54 @@ export const AnalyticsView = () => {
       const weekKey = startOfWeek.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
       
       let sessionVolume = 0;
+      let rpeSum = 0;
+      let rpeCount = 0;
+
+      session.exercises?.forEach(ex => {
+        ex.sets?.forEach(s => {
+          if (s.isCompleted) {
+            sessionVolume += (parseFloat(s.weight) || 0) * (parseInt(s.reps) || 0);
+            const rpeVal = parseFloat(s.rpe);
+            if (!isNaN(rpeVal)) {
+               rpeSum += rpeVal;
+               rpeCount += 1;
+            }
+          }
+        });
+      });
+      
+      if (!weeks[weekKey]) {
+        weeks[weekKey] = { volume: 0, rpeSum: 0, rpeCount: 0, timestamp: startOfWeek.getTime() };
+      }
+      weeks[weekKey].volume += sessionVolume;
+      weeks[weekKey].rpeSum += rpeSum;
+      weeks[weekKey].rpeCount += rpeCount;
+    });
+
+    return Object.entries(weeks)
+      .map(([week, data]) => ({
+        week,
+        volume: data.volume,
+        avgRpe: data.rpeCount > 0 ? Number((data.rpeSum / data.rpeCount).toFixed(1)) : null,
+        timestamp: data.timestamp
+      }))
+      .sort((a, b) => a.timestamp - b.timestamp);
+  }, [history, timeFrame]);
+
+  const acwrData = useMemo(() => {
+    if (!history || history.length === 0) return null;
+
+    const weeks: Record<string, number> = {};
+    const weekTimestamps: Record<string, number> = {};
+
+    history.forEach(session => {
+      const date = session.completedAt ? new Date(session.completedAt) : new Date(session.date);
+      const startOfWeek = new Date(date);
+      startOfWeek.setDate(date.getDate() - date.getDay());
+      startOfWeek.setHours(0, 0, 0, 0);
+      const weekKey = startOfWeek.getTime().toString();
+      
+      let sessionVolume = 0;
       session.exercises?.forEach(ex => {
         ex.sets?.forEach(s => {
           if (s.isCompleted) {
@@ -102,19 +151,32 @@ export const AnalyticsView = () => {
       });
       
       if (!weeks[weekKey]) {
-        weeks[weekKey] = { volume: 0, timestamp: startOfWeek.getTime() };
+        weeks[weekKey] = 0;
+        weekTimestamps[weekKey] = startOfWeek.getTime();
       }
-      weeks[weekKey].volume += sessionVolume;
+      weeks[weekKey] += sessionVolume;
     });
 
-    return Object.entries(weeks)
-      .map(([week, data]) => ({
-        week,
-        volume: data.volume,
-        timestamp: data.timestamp
-      }))
+    const sortedWeeks = Object.keys(weeks)
+      .map(k => ({ timestamp: weekTimestamps[k], volume: weeks[k] }))
       .sort((a, b) => a.timestamp - b.timestamp);
-  }, [history, timeFrame]);
+
+    if (sortedWeeks.length === 0) return null;
+
+    const acuteWorkload = sortedWeeks[sortedWeeks.length - 1].volume;
+    
+    // Chronic workload: Average of the up to 4 weeks prior to the acute week
+    const chronicWeeks = sortedWeeks.slice(Math.max(0, sortedWeeks.length - 5), sortedWeeks.length - 1);
+    
+    if (chronicWeeks.length === 0) {
+      return { ratio: 1.0, acute: acuteWorkload, chronic: acuteWorkload };
+    }
+
+    const chronicWorkload = chronicWeeks.reduce((acc, w) => acc + w.volume, 0) / chronicWeeks.length;
+    const ratio = chronicWorkload > 0 ? acuteWorkload / chronicWorkload : 1.0;
+
+    return { ratio: Number(ratio.toFixed(2)), acute: acuteWorkload, chronic: chronicWorkload };
+  }, [history]);
 
   const toggleLift = (liftId: string) => {
     setSelectedLifts(prev => 
@@ -135,13 +197,21 @@ export const AnalyticsView = () => {
               <p className="text-[8px] font-black uppercase tracking-[0.3em] text-zinc-500 mb-1">{t('analysis.volumeTelemetry')}</p>
               <p className="text-xs font-black italic uppercase text-white">{t('analysis.weekOf')} {data.week}</p>
             </div>
-            <div className="pt-3 border-t border-white/5">
+            <div className="pt-3 border-t border-white/5 space-y-2">
               <div className="flex items-center justify-between gap-4">
                 <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">{t('analysis.totalVolume')}</span>
                 <span className="text-sm font-black italic text-white">
                   {data.volume.toLocaleString()} <span className="text-[8px] uppercase not-italic text-zinc-500">{weightUnit}</span>
                 </span>
               </div>
+              {data.avgRpe !== null && data.avgRpe !== undefined && (
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Avg RPE</span>
+                  <span className="text-sm font-black italic text-[#FF7162]">
+                    {data.avgRpe}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -313,7 +383,7 @@ export const AnalyticsView = () => {
           <div className="flex-1 min-h-[300px] w-full mt-4">
             {volumeTrendData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={volumeTrendData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
+                <ComposedChart data={volumeTrendData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
                   <defs>
                     <linearGradient id="colorVolume" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#00B6FF" stopOpacity={0.3}/>
@@ -329,12 +399,22 @@ export const AnalyticsView = () => {
                     dy={10}
                   />
                   <YAxis 
+                    yAxisId="left"
                     axisLine={false}
                     tickLine={false}
                     tick={{ fill: '#52525b', fontSize: 10, fontWeight: 900, fontFamily: 'Inter' }}
                   />
+                  <YAxis 
+                    yAxisId="right"
+                    orientation="right"
+                    domain={[0, 10]}
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: '#FF7162', fontSize: 10, fontWeight: 900, fontFamily: 'Inter' }}
+                  />
                   <Tooltip content={<VolumeTooltip />} cursor={{ stroke: '#00B6FF', strokeWidth: 1, strokeDasharray: '4 4' }} />
                   <Area 
+                    yAxisId="left"
                     type="monotone" 
                     dataKey="volume" 
                     stroke="#00B6FF" 
@@ -342,7 +422,18 @@ export const AnalyticsView = () => {
                     fill="url(#colorVolume)" 
                     strokeWidth={3}
                   />
-                </AreaChart>
+                  <Line 
+                    yAxisId="right"
+                    type="monotone" 
+                    dataKey="avgRpe" 
+                    stroke="#FF7162" 
+                    strokeWidth={3}
+                    dot={{ r: 4, fill: '#FF7162', strokeWidth: 0 }}
+                    activeDot={{ r: 6, stroke: '#FF7162', strokeWidth: 2, fill: '#131313' }}
+                    animationDuration={1500}
+                    connectNulls
+                  />
+                </ComposedChart>
               </ResponsiveContainer>
             ) : (
               <div className="h-full flex flex-col items-center justify-center text-zinc-600 space-y-4">
@@ -351,6 +442,48 @@ export const AnalyticsView = () => {
               </div>
             )}
           </div>
+        </motion.div>
+
+        {/* ACWR Widget */}
+        <motion.div 
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.28 }}
+          className="col-span-12 glass-panel px-4 py-6 md:p-8 flex flex-col relative overflow-hidden"
+        >
+          <div className="absolute inset-0 opacity-[0.03] pointer-events-none transition-opacity duration-700" 
+               style={{ backgroundImage: 'radial-gradient(var(--primary-color) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
+          
+          <h2 className="font-headline text-2xl font-black uppercase italic tracking-tight mb-6">ACUTE:CHRONIC WORKLOAD (ACWR)</h2>
+
+          {acwrData ? (
+            <div className="bg-void/40 border border-white/5 p-4 flex flex-col sm:flex-row items-start sm:items-center relative z-10 w-full md:w-auto self-start">
+               <div className="flex flex-col justify-center min-w-[70px]">
+                 <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">RATIO</span>
+                 <span className={cn(
+                   "text-2xl md:text-3xl font-black italic",
+                   acwrData.ratio > 1.5 ? "text-crimson" : acwrData.ratio >= 0.8 && acwrData.ratio <= 1.3 ? "text-volt" : "text-zinc-300"
+                 )}>
+                   {acwrData.ratio.toFixed(2)}
+                 </span>
+               </div>
+               <div className="sm:border-l sm:border-white/5 pt-2 sm:pt-0 sm:pl-4 flex-1 w-full border-t border-white/5 sm:border-t-0 mt-2 sm:mt-0">
+                 <div className="flex items-center gap-2 mb-1">
+                   <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 block">
+                     System Status
+                   </span>
+                 </div>
+                 <span className={cn(
+                   "text-xs font-black uppercase tracking-widest",
+                   acwrData.ratio > 1.5 ? "text-crimson" : acwrData.ratio >= 0.8 && acwrData.ratio <= 1.3 ? "text-volt" : "text-zinc-400"
+                 )}>
+                   {acwrData.ratio > 1.5 ? "ELEVATED FATIGUE" : acwrData.ratio >= 0.8 && acwrData.ratio <= 1.3 ? "OPTIMAL" : "MONITOR LOAD"}
+                 </span>
+               </div>
+            </div>
+          ) : (
+            <p className="text-zinc-500 text-xs font-black uppercase">Insufficient data for ACWR calculation.</p>
+          )}
         </motion.div>
 
         {/* 1RM Growth Bento */}
@@ -375,10 +508,10 @@ export const AnalyticsView = () => {
           <h3 className="font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tight mb-12">
             {t('analysis.est1rmGrowth')}
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
             {liftOptions.map((lift, i) => {
-              const liftHistory = history.filter(s => s.exercises.some(ex => ex.name.toLowerCase().includes(lift.id.toLowerCase())));
-              const weights = liftHistory.flatMap(s => s.exercises.find(ex => ex.name.toLowerCase().includes(lift.id.toLowerCase()))?.sets.map(set => parseFloat(set.weight) || 0) || []);
+              const liftHistory = history.filter(s => s.exercises.some(ex => isMainLiftMatch(ex.name, lift.id)));
+              const weights = liftHistory.flatMap(s => s.exercises.find(ex => isMainLiftMatch(ex.name, lift.id))?.sets.map(set => parseFloat(set.weight) || 0) || []);
               const maxWeight = weights.length > 0 ? Math.max(...weights) : 0;
               const firstWeight = weights.length > 0 ? weights[0] : 0;
               const growth = firstWeight > 0 ? ((maxWeight - firstWeight) / firstWeight * 100).toFixed(1) : '0.0';
@@ -397,6 +530,38 @@ export const AnalyticsView = () => {
                 </div>
               );
             })}
+
+            {(() => {
+              const latestWeights = liftOptions.map(lift => {
+                const liftHistory = history.filter(s => s.exercises.some(ex => isMainLiftMatch(ex.name, lift.id)));
+                const weights = liftHistory.flatMap(s => s.exercises.find(ex => isMainLiftMatch(ex.name, lift.id))?.sets.map(set => parseFloat(set.weight) || 0) || []);
+                return weights.length > 0 ? Math.max(...weights) : 0;
+              });
+              const total = latestWeights.reduce((a, b) => a + b, 0);
+
+              const firstWeights = liftOptions.map(lift => {
+                const liftHistory = history.filter(s => s.exercises.some(ex => isMainLiftMatch(ex.name, lift.id)));
+                const weights = liftHistory.flatMap(s => s.exercises.find(ex => isMainLiftMatch(ex.name, lift.id))?.sets.map(set => parseFloat(set.weight) || 0) || []);
+                return weights.length > 0 ? weights[0] : 0;
+              });
+              const firstTotal = firstWeights.reduce((a, b) => a + b, 0);
+              
+              const growth = firstTotal > 0 ? ((total - firstTotal) / firstTotal * 100).toFixed(1) : '0.0';
+              const diff = total - firstTotal;
+
+              return (
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-2">SBD TOTAL</span>
+                  <div className="flex items-baseline gap-3">
+                    <span className="font-headline text-5xl md:text-6xl font-black italic">{total > 0 ? total : '–'}</span>
+                    <span className="font-headline text-xl font-black text-zinc-400">{weightUnit}</span>
+                  </div>
+                  <span className="text-[10px] font-black text-volt tracking-widest mt-3 uppercase">
+                    +{diff.toFixed(1)}{weightUnit} ({growth}%)
+                  </span>
+                </div>
+              );
+            })()}
           </div>
         </motion.div>
 
