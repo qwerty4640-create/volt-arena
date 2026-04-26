@@ -46,15 +46,7 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
-      
-      allow create: if isOwner(userId) && isValidUser(incoming()) && 
-                      incoming().get('role', 'user') == 'user';
-                      
-      allow update: if isOwner(userId) && isValidUser(incoming()) &&
-                      incoming().uid == existing().uid &&
-                      incoming().email == existing().email &&
-                      (incoming().get('role', 'user') == existing().get('role', 'user') || isAdmin());
+      allow read, update, create: if request.auth != null && request.auth.uid == userId;
 
       // ===============================================================
       // WORKOUTS

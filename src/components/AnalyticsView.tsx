@@ -4,7 +4,7 @@ import { Trophy, Target, TrendingUp, BarChart3, Calendar, Filter, ChevronDown } 
 import { useSettings } from '../contexts/SettingsContext';
 import { useWorkout } from '../contexts/WorkoutContext';
 import { ExternalActivityWidget } from './AnalysisView';
-import { isMainLiftMatch } from '../utils/workoutUtils';
+import { isMainLiftMatch, calculateE1RM } from '../utils/workoutUtils';
 import { 
   LineChart, 
   Line, 
@@ -511,17 +511,17 @@ export const AnalyticsView = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
             {liftOptions.map((lift, i) => {
               const liftHistory = history.filter(s => s.exercises.some(ex => isMainLiftMatch(ex.name, lift.id)));
-              const weights = liftHistory.flatMap(s => s.exercises.find(ex => isMainLiftMatch(ex.name, lift.id))?.sets.map(set => parseFloat(set.weight) || 0) || []);
-              const maxWeight = weights.length > 0 ? Math.max(...weights) : 0;
-              const firstWeight = weights.length > 0 ? weights[0] : 0;
-              const growth = firstWeight > 0 ? ((maxWeight - firstWeight) / firstWeight * 100).toFixed(1) : '0.0';
-              const diff = maxWeight - firstWeight;
+              const e1rms = liftHistory.flatMap(s => s.exercises.find(ex => isMainLiftMatch(ex.name, lift.id))?.sets.map(set => calculateE1RM(parseFloat(set.weight) || 0, parseInt(set.reps) || 0)) || []);
+              const maxE1RM = e1rms.length > 0 ? Math.round(Math.max(...e1rms)) : 0;
+              const firstE1RM = e1rms.length > 0 ? Math.round(e1rms[0]) : 0;
+              const growth = firstE1RM > 0 ? ((maxE1RM - firstE1RM) / firstE1RM * 100).toFixed(1) : '0.0';
+              const diff = maxE1RM - firstE1RM;
 
               return (
                 <div key={i} className="flex flex-col">
                   <span className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-2">{lift.label}</span>
                   <div className="flex items-baseline gap-3">
-                    <span className="font-headline text-5xl md:text-6xl font-black italic">{maxWeight > 0 ? maxWeight : '–'}</span>
+                    <span className="font-headline text-5xl md:text-6xl font-black italic">{maxE1RM > 0 ? maxE1RM : '–'}</span>
                     <span className="font-headline text-xl font-black text-zinc-400">{weightUnit}</span>
                   </div>
                   <span className="text-[10px] font-black text-volt tracking-widest mt-3 uppercase">
@@ -532,19 +532,19 @@ export const AnalyticsView = () => {
             })}
 
             {(() => {
-              const latestWeights = liftOptions.map(lift => {
+              const latestE1RMs = liftOptions.map(lift => {
                 const liftHistory = history.filter(s => s.exercises.some(ex => isMainLiftMatch(ex.name, lift.id)));
-                const weights = liftHistory.flatMap(s => s.exercises.find(ex => isMainLiftMatch(ex.name, lift.id))?.sets.map(set => parseFloat(set.weight) || 0) || []);
-                return weights.length > 0 ? Math.max(...weights) : 0;
+                const e1rms = liftHistory.flatMap(s => s.exercises.find(ex => isMainLiftMatch(ex.name, lift.id))?.sets.map(set => calculateE1RM(parseFloat(set.weight) || 0, parseInt(set.reps) || 0)) || []);
+                return e1rms.length > 0 ? Math.round(Math.max(...e1rms)) : 0;
               });
-              const total = latestWeights.reduce((a, b) => a + b, 0);
+              const total = latestE1RMs.reduce((a, b) => a + b, 0);
 
-              const firstWeights = liftOptions.map(lift => {
+              const firstE1RMs = liftOptions.map(lift => {
                 const liftHistory = history.filter(s => s.exercises.some(ex => isMainLiftMatch(ex.name, lift.id)));
-                const weights = liftHistory.flatMap(s => s.exercises.find(ex => isMainLiftMatch(ex.name, lift.id))?.sets.map(set => parseFloat(set.weight) || 0) || []);
-                return weights.length > 0 ? weights[0] : 0;
+                const e1rms = liftHistory.flatMap(s => s.exercises.find(ex => isMainLiftMatch(ex.name, lift.id))?.sets.map(set => calculateE1RM(parseFloat(set.weight) || 0, parseInt(set.reps) || 0)) || []);
+                return e1rms.length > 0 ? Math.round(e1rms[0]) : 0;
               });
-              const firstTotal = firstWeights.reduce((a, b) => a + b, 0);
+              const firstTotal = firstE1RMs.reduce((a, b) => a + b, 0);
               
               const growth = firstTotal > 0 ? ((total - firstTotal) / firstTotal * 100).toFixed(1) : '0.0';
               const diff = total - firstTotal;

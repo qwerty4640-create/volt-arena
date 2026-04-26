@@ -31,3 +31,10 @@ export function isMainLiftMatch(exName: string, liftType: 'Squat' | 'Bench Press
   }
   return false;
 }
+
+export function calculateE1RM(weight: number, reps: number): number {
+  if (weight <= 0 || reps <= 0) return 0;
+  // Brzycki formula: 1RM = weight * (36 / (37 - reps))
+  const effectiveReps = Math.min(reps, 12);
+  return weight * (36 / (37 - effectiveReps));
+}
