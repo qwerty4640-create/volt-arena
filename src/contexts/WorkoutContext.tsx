@@ -19,6 +19,9 @@ import { BlockType, getBlockForWeek } from '../constants/periodization';
 import { calculateTier } from '../lib/strength';
 import { ACTIVITY_LIBRARY } from '../data/activityLibrary';
 import { isMainLiftMatch } from '../utils/workoutUtils';
+import { RECOVERY_ACTIVITIES } from '../data/recoveryLibrary';
+
+const READINESS_STORAGE_KEY = 'volt_readiness_scores';
 
 export interface Set {
   id: string;
@@ -101,17 +104,22 @@ interface WorkoutContextType {
   replaceExerciseInSession: (oldExerciseId: string, newExercise: Exercise) => void;
   discardSession: () => void;
   getNextWorkoutTemplate: () => WorkoutSession;
-  getCalibrationStatus: () => {
-    readiness: number;
-    readinessModifier: number;
-    recoveryModifier: number;
-    hasAerobicInterference: boolean;
-    isDeload: boolean;
-    isPeak: boolean;
-    isRedline: boolean;
-    cumulativeFatigueScore: number;
-    recommendedRpe: number;
-  };
+    getCalibrationStatus: () => {
+      readiness: number;
+      readinessModifier: number;
+      recoveryModifier: number;
+      hasAerobicInterference: boolean;
+      isDeload: boolean;
+      isPeak: boolean;
+      isRedline: boolean;
+      cumulativeFatigueScore: number;
+      recommendedRpe: number;
+      subjectiveScores: {
+        sleepScore: number;
+        stressScore: number;
+        fatigueScore: number;
+      } | null;
+    };
   mockWorkoutCount: number | null;
   setMockWorkoutCount: (count: number | null) => void;
   resetProgress: () => Promise<void>;
@@ -121,6 +129,7 @@ interface WorkoutContextType {
   saveReflection: (workoutId: string, actualRpe: number) => Promise<void>;
   pendingReflection: WorkoutSession | null;
   setPendingReflection: (workout: WorkoutSession | null) => void;
+  recalibrateRecovery: (scores: { sleep: number; stress: number; fatigue: number }) => void;
   isLoading: boolean;
   calculateProgramCalories: (weightKg: number, durationMins: number, sessionRpe: number, totalTonnage: number) => number;
 }
@@ -671,8 +680,14 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const logNonProgramActivity = async (data: Omit<ActiveRecovery, 'id' | 'uid' | 'timestamp' | 'date' | 'caloriesBurned' | 'type'> & { activityId: string }) => {
     if (!auth.currentUser) return;
 
-    const activity = ACTIVITY_LIBRARY.find(a => a.id === data.activityId);
-    if (!activity) return;
+    // Search in both standard library and recovery library
+    const activity = ACTIVITY_LIBRARY.find(a => a.id === data.activityId) || 
+                     RECOVERY_ACTIVITIES.find(a => a.id === data.activityId);
+                     
+    if (!activity) {
+      console.error('Activity not found in any library:', data.activityId);
+      return;
+    }
 
     let weightKg = 75;
     if (profile?.weight) {
@@ -767,181 +782,110 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
+  const [subjectiveReadiness, setSubjectiveReadiness] = useState<{ sleep: number; stress: number; fatigue: number; timestamp: number } | null>(() => {
+    try {
+      const raw = localStorage.getItem(READINESS_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Date.now() - (parsed.timestamp || 0) < 24 * 60 * 60 * 1000) {
+          return parsed;
+        }
+      }
+    } catch { /* noop */ }
+    return null;
+  });
+
+  const recalibrateRecovery = (scores: { sleep: number; stress: number; fatigue: number } | null) => {
+    if (scores === null) {
+      localStorage.removeItem(READINESS_STORAGE_KEY);
+      setSubjectiveReadiness(null);
+      // Optional: Clear active recovery history from the last 24h if "ignore" means clear
+      setRecoveryHistory(prev => prev.filter(r => (Date.now() - r.timestamp) / 3600000 >= 24));
+      showToast('System Reset: Using Objective Metrics.', 2000, 'info');
+      return;
+    }
+    const newData = { ...scores, timestamp: Date.now() };
+    localStorage.setItem(READINESS_STORAGE_KEY, JSON.stringify(newData));
+    setSubjectiveReadiness(newData);
+    showToast('Recovery Profile Updated.', 2000, 'success');
+  };
+
   const getCalibrationStatus = (recoveryOverride?: ActiveRecovery[]) => {
-    let currentReadiness = 85; // Default baseline
     const activeRecoveryHistory = recoveryOverride || recoveryHistory;
 
-    if (history.length > 0) {
-      const now = Date.now();
-      const msPerDay = 24 * 60 * 60 * 1000;
-      
-      // Calculate numerical volume for a session
-      const getSessionLoad = (session: WorkoutSession) => {
-        let totalVolume = 0;
-        if (session.exercises) {
-          session.exercises.forEach(ex => {
-            if (ex.sets) {
-              ex.sets.forEach(s => {
-                if (s.isCompleted) {
-                  totalVolume += (parseFloat(s.weight) || 0) * (parseInt(s.reps) || 0);
-                }
-              });
-            }
-          });
-        }
-        // Load = Volume * RPE (if RPE is missing, assume 7)
-        return totalVolume * (session.rpe || 7);
-      };
+    // 1. Calculate Objective Fatigue (Cumulative Volume/RPE)
+    let objectiveFatigueVal = 100;
+    const last24hTotalHistory = activeRecoveryHistory.filter(r => 
+      (Date.now() - r.timestamp) / 3600000 < 24
+    );
+    const cumulativeFatigueScore = last24hTotalHistory.reduce((sum, r) => sum + r.rpe, 0);
+    objectiveFatigueVal = Math.max(0, 100 - (Math.min(cumulativeFatigueScore, 18) / 18) * 100);
 
-      // Calculate Acute Load (last 3 days)
-      let acuteLoad = 0;
-      // Calculate Chronic Load (last 7 days)
-      let chronicLoadTotal = 0;
-      
-      const oneHour = 3600000;
+    // 2. Resolve Subjective Factors
+    const hasSubjectiveData = subjectiveReadiness !== null;
+    let sleepVal = hasSubjectiveData ? (subjectiveReadiness?.sleep || 5) * 20 : 70;
+    let stressPeaceVal = hasSubjectiveData ? (subjectiveReadiness?.stress || 5) * 20 : 70;
+    let subjectiveFatigueVal = hasSubjectiveData ? (subjectiveReadiness?.fatigue || 5) * 20 : 100;
 
-      history.forEach(session => {
-        const completedAt = session.completedAt || 0;
-        const daysAgo = (now - completedAt) / msPerDay;
-        const load = getSessionLoad(session);
-        
-        if (daysAgo <= 3) {
-          acuteLoad += load;
-        }
-        if (daysAgo <= 7) {
-          chronicLoadTotal += load;
-        }
-      });
-      
-      // Chronic load is the average 3-day load over the 7 day period
-      // (Total load in 7 days) / (7 / 3)
-      const chronicLoad = chronicLoadTotal / (7 / 3);
-      
-      // Calculate ACWR (Acute:Chronic Workload Ratio)
-      let acwr = 1.0;
-      if (history.length >= 2) { // Lowered threshold to 2 for earlier feedback
-        if (chronicLoad > 0) {
-          acwr = acuteLoad / chronicLoad;
-        } else if (acuteLoad > 0) {
-          acwr = 1.5; // High acute load with no chronic load = danger zone
-        }
+    // 3. Final Fatigue (Conservative model: take the minimum of objective and subjective)
+    const finalFatigueVal = hasSubjectiveData 
+      ? Math.min(objectiveFatigueVal, subjectiveFatigueVal)
+      : objectiveFatigueVal;
+
+    // 4. Calculate Base Readiness (Mean of Sleep, Stress, and Fatigue)
+    const baseReadiness = (sleepVal + stressPeaceVal + finalFatigueVal) / 3;
+
+    // 5. Active Recovery Boost
+    const recentRecoveries = activeRecoveryHistory.filter(r => 
+      (Date.now() - r.timestamp) / 3600000 < 24 && r.activityId?.startsWith('recovery_')
+    );
+    
+    let totalBoost = 0;
+    const currentFatigueDeficit = 100 - finalFatigueVal;
+
+    recentRecoveries.forEach(r => {
+      const activity = RECOVERY_ACTIVITIES.find(a => a.id === r.activityId);
+      if (activity) {
+        const durationRatio = Math.min(1.2, r.durationMinutes / activity.recommendedDuration);
+        const fatigueMultiplier = 1 + (currentFatigueDeficit / 100);
+        totalBoost += activity.boostPercentage * durationRatio * fatigueMultiplier;
       }
-      
-      // Map ACWR to readiness score
-      // Optimal ACWR is 0.8 - 1.3
-      
-      // Factor in the time since last session for acute recovery
-      // Support for multi-session days: use the second most recent if both occurred today 
-      const recentWorkoutsToday = history.filter(s => (now - (s.completedAt || 0)) < msPerDay);
-      let hoursSinceLast = 0;
-      
-      if (recentWorkoutsToday.length > 1) {
-          hoursSinceLast = (now - (recentWorkoutsToday[1].completedAt || now)) / oneHour;
-      } else if (history[0]) {
-          hoursSinceLast = (now - (history[0].completedAt || now)) / oneHour;
-      }
-      
-      // Factor in Active Recovery
-      const lastRecovery = activeRecoveryHistory[0];
-      const hoursSinceRecovery = lastRecovery ? (now - lastRecovery.timestamp) / oneHour : Infinity;
-      
-      const acuteRecoveryFactor = Math.min(1.0, hoursSinceLast / 48); // Full acute recovery at 48 hours
-      
-      if (history.length < 2) {
-        // Not enough data for ACWR, rely purely on acute recovery
-        currentReadiness = 60 + (40 * acuteRecoveryFactor); // 60-100
-      } else if (acwr < 0.8) {
-        currentReadiness = 90 + (10 * acuteRecoveryFactor); // 90-100
-      } else if (acwr <= 1.3) {
-        currentReadiness = 80 + (15 * acuteRecoveryFactor); // 80-95
-      } else if (acwr <= 1.5) {
-        currentReadiness = 60 + (20 * acuteRecoveryFactor); // 60-80
-      } else {
-        currentReadiness = 40 + (20 * acuteRecoveryFactor); // 40-60 (Danger zone)
-      }
-
-      // Penalty for high intensity cardio in the last 24 hours
-      const recentHighIntensityRecovery = activeRecoveryHistory.find(r => 
-        (now - r.timestamp) / 3600000 < 24 && r.rpe >= 7
-      );
-      if (recentHighIntensityRecovery) {
-        currentReadiness = Math.round(currentReadiness * 0.85);
-      }
-      
-      currentReadiness = Math.round(Math.max(0, Math.min(100, currentReadiness)));
-    }
-
-    // Calculate Recommended RPE
-    let recommendedRpe = 7; // Baseline
-    if (currentReadiness >= 90) recommendedRpe = 8;
-    else if (currentReadiness < 50) recommendedRpe = 5;
-    else if (currentReadiness < 70) recommendedRpe = 6;
-
-    // Adjust based on recent intensity (last 7 days)
-    const last7Days = history.filter(s => {
-      const daysAgo = (Date.now() - (s.completedAt || 0)) / (24 * 60 * 60 * 1000);
-      return daysAgo <= 7;
     });
 
-    if (last7Days.length > 0) {
-      const avgRecentRpe = last7Days.reduce((acc, s) => acc + (s.rpe || 7), 0) / last7Days.length;
-      if (avgRecentRpe >= 8.5) recommendedRpe = Math.max(5, recommendedRpe - 1);
-      if (avgRecentRpe <= 6.0 && currentReadiness > 80) recommendedRpe = Math.min(9, recommendedRpe + 1);
-    }
-
-    // CNS Recovery check (Last session intensity)
-    const lastSession = history.length > 0 ? history[0] : null;
-    if (lastSession && lastSession.rpe && lastSession.rpe >= 9) {
-      recommendedRpe = Math.max(5, recommendedRpe - 1);
-    }
+    // 6. Readiness Score (Capped at 100, and also capped by the highest possible factor to avoid "fake 100")
+    const currentReadiness = Math.round(Math.min(100, baseReadiness + totalBoost));
 
     let readinessModifier = 1.0;
     if (currentReadiness >= 90) readinessModifier = 1.05;
     else if (currentReadiness < 70 && currentReadiness >= 50) readinessModifier = 0.90;
     else if (currentReadiness < 50) readinessModifier = 0.80;
 
-    let recoveryModifier = 1.0;
-    if (lastSession) {
-      if (lastSession.rpe && lastSession.rpe >= 9) {
-        recoveryModifier *= 0.95;
-      }
-      const hoursSinceLast = (Date.now() - (lastSession.completedAt || 0)) / 3600000;
-      if (hoursSinceLast < 24) {
-        recoveryModifier *= 0.90;
-      }
+    // Redline Logic: Cumulative Fatigue Check
+    const isRedline = cumulativeFatigueScore >= 18;
+
+    let recommendedRpe = 7;
+    if (isRedline) {
+      readinessModifier = 0.75;
+      recommendedRpe = Math.min(recommendedRpe, 5);
     }
 
-    // Heavy aerobic penalty modifier
-    const recentHighIntensityRecovery = activeRecoveryHistory.find(r => 
-      (Date.now() - r.timestamp) / 3600000 < 24 && r.rpe >= 7
-    );
-
-      // Redline Logic: Cumulative Fatigue Check
-      const last24hRecovery = activeRecoveryHistory.filter(r => 
-        (Date.now() - r.timestamp) / 3600000 < 24
-      );
-      const cumulativeFatigueScore = last24hRecovery.reduce((sum, r) => sum + r.rpe, 0);
-      const isRedline = cumulativeFatigueScore >= 18;
-
-      // Overrides for Redline status
-      if (isRedline) {
-        readinessModifier = 0.75;
-        recoveryModifier = 1.0; // Reset to avoid double penalty
-        recommendedRpe = Math.min(recommendedRpe, 5);
-      }
-
-      return {
-        readiness: currentReadiness,
-        readinessModifier,
-        recoveryModifier,
-        hasAerobicInterference: !!recentHighIntensityRecovery && !isRedline, // Redline replaces aerobic penalty
-        isDeload: currentReadiness < 50,
-        isPeak: currentReadiness >= 90,
-        isRedline,
-        cumulativeFatigueScore,
-        recommendedRpe
-      };
+    return {
+      readiness: currentReadiness,
+      readinessModifier,
+      recoveryModifier: 1.0,
+      hasAerobicInterference: false, 
+      isDeload: currentReadiness < 50,
+      isPeak: currentReadiness >= 90,
+      isRedline,
+      cumulativeFatigueScore,
+      recommendedRpe,
+      subjectiveScores: hasSubjectiveData ? {
+        sleepScore: subjectiveReadiness?.sleep || 5,
+        stressScore: subjectiveReadiness?.stress || 5,
+        fatigueScore: subjectiveReadiness?.fatigue || 5
+      } : null
     };
+  };
 
   const getNextWorkoutTemplate = () => {
     const filteredHistory = profile?.programResetAt 
@@ -1365,6 +1309,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
       saveReflection,
       pendingReflection,
       setPendingReflection,
+      recalibrateRecovery,
       isLoading,
       calculateProgramCalories
     }}>

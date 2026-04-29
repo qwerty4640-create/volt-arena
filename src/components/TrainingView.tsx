@@ -16,14 +16,16 @@ import {
   AlertTriangle,
   ChevronRight,
   X,
-  ListOrdered
+  ListOrdered,
+  Book
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useSettings } from '../contexts/SettingsContext';
 import { useWorkout, WorkoutSession, Exercise } from '../contexts/WorkoutContext';
 import { getExerciseName, isMainLiftMatch } from '../utils/workoutUtils';
 import { calculateTier } from '../lib/strength';
-import { BlockWidget } from './AnalysisView';
+import { FieldManual } from './FieldManual';
+import { WelcomeModule } from './WelcomeModule';
 
 interface TrainingViewProps {
   onContinueSession?: () => void;
@@ -42,6 +44,7 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
   
   const isActiveSession = isLifting && !!currentSession;
   const [showRoutineModal, setShowRoutineModal] = useState(false);
+  const [showFieldManual, setShowFieldManual] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -217,6 +220,12 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 auto-rows-min w-full">
+      {/* Welcome Module moved from Recovery page */}
+      <WelcomeModule 
+        onStart={() => onContinueSession?.()} 
+        onViewBriefing={() => setShowRoutineModal(true)} 
+      />
+
       {/* Active/Next Mission Module */}
       <motion.div 
         initial={{ y: 20, opacity: 0 }}
@@ -386,11 +395,11 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
                   : t('analysis.repsAtPattern', { sets: displayTotalSets, reps: displayTargetReps, weight: displayTargetWeight, unit: weightUnit })}
               </span>
               <button 
-                onClick={() => setShowRoutineModal(true)}
+                onClick={() => setShowFieldManual(true)}
                 className="mt-3 text-[10px] font-black uppercase tracking-[0.2em] text-volt hover:text-white transition-colors flex items-center gap-1.5"
               >
-                <ListOrdered size={12} />
-                {t('analysis.allDetails')}
+                <Book size={12} />
+                {t('settings.fieldManual')}
               </button>
           </div>
         </div>
@@ -664,6 +673,7 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
       </AnimatePresence>,
       document.body
     )}
+      <FieldManual isOpen={showFieldManual} onClose={() => setShowFieldManual(false)} />
     </div>
   );
 };

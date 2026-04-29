@@ -29,6 +29,16 @@ export const TRAINING_TERMS = {
     title: "Readiness",
     short: "Your physical and psychological preparedeness for training.",
     long: "Calculated based on recent volume, CNS load, and sleep data. A high Readiness score (80%+) suggests you are primed for high-intensity work.",
+  },
+  Sleep: {
+    title: "Sleep Quality",
+    short: "The foundation of systemic recovery.",
+    long: "Deep sleep cycles are where hormonal regulation and tissue repair occur. Poor sleep quality directly reduces neurological drive and force production capability.",
+  },
+  Stress: {
+    title: "Allostatic Load",
+    short: "Non-training stressors impacting recovery.",
+    long: "Life stress (work, psychological) competes for the same adaptive resources as training. High allostatic load reduces your recovery ceiling and increases injury risk.",
   }
 } as const;
 

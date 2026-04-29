@@ -1,3 +1,4 @@
+// i18n initialization and translation utility
 import en from './locales/en.json';
 import es from './locales/es.json';
 import ko from './locales/ko.json';

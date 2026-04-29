@@ -128,10 +128,10 @@
   "app.exitSessionMessage": "您确定要终止当前的训练任务吗？此区块的所有未保存生物识别数据和进度都将丢失。",
   "app.exitSessionConfirm": "退出任务",
   "app.stay": "留在任务",
-  "nav.dashboard": "仪表盘",
+  "nav.dashboard": "恢复",
   "nav.training": "任务",
   "nav.competition": "比赛",
-  "nav.analytics": "分析",
+  "nav.analytics": "表现",
   "nav.untrained": "未受训",
   "nav.novice": "新手",
   "nav.intermediate": "中级",
@@ -623,5 +623,8 @@
   "readiness.audible.message": "今天你的准备状态较低 ({percentage}%)。为了更好地恢复并追求长期表现，我们建议将你的目标 sRPE 从 {from} 降至 {to}。",
   "readiness.note": "注意：目标 sRPE 是上限，而非下限。如果你的身体感觉不佳，可以低于该目标完成训练。",
   "readiness.analyze": "分析",
-  "readiness.enter": "进入任务"
+  "readiness.enter": "进入任务",
+  "common.cancel": "取消",
+  "analysis.recalibrate": "重新校准",
+  "analysis.recalibrateReadiness": "重新校准准备状态"
 }

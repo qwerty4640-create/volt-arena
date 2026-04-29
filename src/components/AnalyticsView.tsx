@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Trophy, Target, TrendingUp, BarChart3, Calendar, Filter, ChevronDown } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
 import { useWorkout } from '../contexts/WorkoutContext';
-import { ExternalActivityWidget } from './AnalysisView';
+import { ExternalActivityWidget, BlockWidget } from './AnalysisView';
 import { isMainLiftMatch, calculateE1RM } from '../utils/workoutUtils';
 import { 
   LineChart, 
@@ -356,6 +356,16 @@ export const AnalyticsView = () => {
               </div>
             )}
           </div>
+        </motion.div>
+
+        {/* Block Progression Module moved from Recovery page */}
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.15 }}
+          className="col-span-12"
+        >
+          <BlockWidget />
         </motion.div>
 
         {/* Weekly Volume Trend */}

@@ -14,7 +14,6 @@ import {
   History,
   Eye,
   Box,
-  LayoutDashboard,
   Mic,
   MicOff,
   Volume2,
@@ -78,8 +77,28 @@ const MissionIcon = ({ size = 24, strokeWidth = 2, className }: { size?: number,
   </svg>
 );
 
+const RecoveryIcon = ({ size = 24, strokeWidth = 2, className }: { size?: number, strokeWidth?: number, className?: string }) => (
+  <svg 
+    xmlns="http://www.w3.org/2000/svg" 
+    width={size} 
+    height={size} 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth={strokeWidth} 
+    strokeLinecap="round" 
+    strokeLinejoin="round" 
+    className={cn("lucide lucide-battery-charging", className)}
+  >
+    <path d="m11 7-3 5h4l-3 5"/>
+    <path d="M14.856 6H16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.935"/>
+    <path d="M22 14v-4"/>
+    <path d="M5.14 18H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h2.936"/>
+  </svg>
+);
+
 const NAV_ITEMS: NavItem[] = [
-  { id: 'analysis', label: 'nav.dashboard', icon: LayoutDashboard },
+  { id: 'analysis', label: 'nav.dashboard', icon: RecoveryIcon },
   { id: 'training', label: 'nav.training', icon: MissionIcon },
   { id: 'analytics', label: 'nav.analytics', icon: BarChart3 },
 ];

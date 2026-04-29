@@ -165,6 +165,15 @@ export const ReadinessCheck = ({ onComplete, onCancel }: ReadinessCheckProps) =>
   const scenario = getScenario();
 
   const handleComplete = () => {
+    // Persist the scores so the Recovery page can display them
+    try {
+      localStorage.setItem('volt_last_readiness', JSON.stringify({
+        ...scores,
+        timestamp: Date.now(),
+      }));
+    } catch (e) {
+      // localStorage unavailable, silently skip
+    }
     onComplete(readinessPercentage, scenario.modifier, targetRpe);
   };
 
