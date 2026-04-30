@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Settings, Globe, Scale, CheckCircle2, Terminal, Mic, MicOff, Eye, Box, Zap, Trash2, Loader2, AlertTriangle, Power, Target, RotateCcw, Monitor, Sun, Moon, Paintbrush, Book } from 'lucide-react';
+import { Settings, Globe, Scale, CheckCircle2, Terminal, Mic, MicOff, Eye, Box, Zap, Trash2, Loader2, AlertTriangle, Power, Target, RotateCcw, Monitor, Sun, Moon, Paintbrush, Book, SunMoon } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useSettings, TrainingGoal } from '../contexts/SettingsContext';
 import { useWorkout } from '../contexts/WorkoutContext';
@@ -85,6 +85,70 @@ export const SettingsView = ({ onExit }: { onExit?: () => void }) => {
       <FieldManual isOpen={showFieldManual} onClose={() => setShowFieldManual(false)} />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {/* Theme Settings */}
+        <motion.div 
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.12 }}
+          className="glass-panel px-4 py-6 md:p-8 flex flex-col md:col-span-2 border-b border-white/5"
+        >
+          <div className="flex items-center gap-3 mb-6 md:mb-8">
+            <SunMoon className="text-volt" size={20} />
+            <h3 className="font-sans text-sm font-bold uppercase tracking-widest text-white">Visual Output</h3>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+            {/* Theme Toggle */}
+            <div className="space-y-4">
+              <span className="font-sans text-[10px] font-bold uppercase tracking-widest text-zinc-500">Interface Theme</span>
+              <div className="flex bg-surface-lowest p-1 border border-white/5">
+                {(['dark', 'light'] as const).map(tOpt => (
+                  <button
+                    key={tOpt}
+                    onClick={() => setTheme(tOpt)}
+                    className={cn(
+                      "flex-1 flex items-center justify-center gap-2 py-3 transition-colors",
+                      theme === tOpt 
+                        ? "bg-volt text-void font-bold" 
+                        : "text-zinc-500 hover:text-zinc-300"
+                    )}
+                  >
+                    {tOpt === 'dark' ? <Moon size={16} /> : <Sun size={16} />}
+                    <span className="font-headline text-xs font-black uppercase tracking-widest">{tOpt}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Light Color Scheme */}
+            {theme === 'light' && (
+              <div className="space-y-4">
+                <span className="font-sans text-[10px] font-bold uppercase tracking-widest text-zinc-500">Active Scheme (Light Mode)</span>
+                <div className="grid grid-cols-1 gap-2">
+                  {(['default', 'ocean', 'neon', 'solar', 'monochrome'] as const).map(scheme => (
+                    <button
+                      key={scheme}
+                      onClick={() => setLightColorScheme(scheme)}
+                      className={cn(
+                        "flex items-center justify-between p-3 transition-all",
+                        lightColorScheme === scheme 
+                          ? "bg-volt/10 text-volt border-l-[3px] border-volt" 
+                          : "bg-surface-variant text-zinc-400 hover:bg-white/5 hover:text-zinc-200 border-l-[3px] border-white/5"
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Paintbrush size={16} className={lightColorScheme === scheme ? "text-volt" : "text-zinc-500"} />
+                        <span className="font-headline text-sm font-black uppercase tracking-widest">{scheme}</span>
+                      </div>
+                      {lightColorScheme === scheme && <CheckCircle2 size={16} className="text-volt" />}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </motion.div>
+
         {/* Language Settings */}
         <motion.div 
           initial={{ y: 20, opacity: 0 }}
@@ -141,70 +205,6 @@ export const SettingsView = ({ onExit }: { onExit?: () => void }) => {
                 {unit === u.id && <CheckCircle2 size={18} className="text-volt" />}
               </button>
             ))}
-          </div>
-        </motion.div>
-
-        {/* Theme Settings */}
-        <motion.div 
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.12 }}
-          className="glass-panel px-4 py-6 md:p-8 flex flex-col md:col-span-2 border-b border-white/5"
-        >
-          <div className="flex items-center gap-3 mb-6 md:mb-8">
-            <Monitor className="text-volt" size={20} />
-            <h3 className="font-sans text-sm font-bold uppercase tracking-widest text-white">Visual Output</h3>
-          </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-            {/* Theme Toggle */}
-            <div className="space-y-4">
-              <span className="font-sans text-[10px] font-bold uppercase tracking-widest text-zinc-500">Interface Theme</span>
-              <div className="flex bg-surface-lowest p-1 border border-white/5">
-                {(['dark', 'light'] as const).map(tOpt => (
-                  <button
-                    key={tOpt}
-                    onClick={() => setTheme(tOpt)}
-                    className={cn(
-                      "flex-1 flex items-center justify-center gap-2 py-3 transition-colors",
-                      theme === tOpt 
-                        ? "bg-volt text-void font-bold" 
-                        : "text-zinc-500 hover:text-zinc-300"
-                    )}
-                  >
-                    {tOpt === 'dark' ? <Moon size={16} /> : <Sun size={16} />}
-                    <span className="font-headline text-xs font-black uppercase tracking-widest">{tOpt}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Light Color Scheme */}
-            {theme === 'light' && (
-              <div className="space-y-4">
-                <span className="font-sans text-[10px] font-bold uppercase tracking-widest text-zinc-500">Active Scheme (Light Mode)</span>
-                <div className="grid grid-cols-1 gap-2">
-                  {(['default', 'ocean', 'neon', 'solar', 'monochrome'] as const).map(scheme => (
-                    <button
-                      key={scheme}
-                      onClick={() => setLightColorScheme(scheme)}
-                      className={cn(
-                        "flex items-center justify-between p-3 transition-all",
-                        lightColorScheme === scheme 
-                          ? "bg-volt/10 text-volt border-l-[3px] border-volt" 
-                          : "bg-surface-variant text-zinc-400 hover:bg-white/5 hover:text-zinc-200 border-l-[3px] border-white/5"
-                      )}
-                    >
-                      <div className="flex items-center gap-3">
-                        <Paintbrush size={16} className={lightColorScheme === scheme ? "text-volt" : "text-zinc-500"} />
-                        <span className="font-headline text-sm font-black uppercase tracking-widest">{scheme}</span>
-                      </div>
-                      {lightColorScheme === scheme && <CheckCircle2 size={16} className="text-volt" />}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         </motion.div>
 

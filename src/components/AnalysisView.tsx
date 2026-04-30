@@ -33,7 +33,6 @@ import {
   ResponsiveContainer,
   ReferenceLine
 } from 'recharts';
-import { AnalysisCharts } from './AnalysisCharts';
 import { ActiveRecoveryWidget } from './ActiveRecoveryWidget';
 import { cn } from '../lib/utils';
 import { useSettings } from '../contexts/SettingsContext';
