@@ -31,9 +31,9 @@ export const MovementExclusionModal: React.FC<MovementExclusionModalProps> = ({
     const updated = currentExclusions.includes(movementName)
       ? currentExclusions.filter(name => name !== movementName)
       : [...currentExclusions, movementName];
-    
+
     updateProfile({ excludedMovements: updated });
-    
+
     if (updated.includes(movementName)) {
       showToast(t('toast.movementRestricted', { name: movementName }), 3000, 'info');
     } else {
@@ -41,7 +41,7 @@ export const MovementExclusionModal: React.FC<MovementExclusionModalProps> = ({
     }
   };
 
-  const filteredExercises = EXERCISE_DATABASE.filter(ex => 
+  const filteredExercises = EXERCISE_DATABASE.filter(ex =>
     ex.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     ex.category.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -59,7 +59,7 @@ export const MovementExclusionModal: React.FC<MovementExclusionModalProps> = ({
             onClick={onClose}
             className="absolute inset-0 bg-void/80 backdrop-blur-md"
           />
-          
+
           <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -77,7 +77,7 @@ export const MovementExclusionModal: React.FC<MovementExclusionModalProps> = ({
 
             <div className="relative mb-6">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
-              <input 
+              <input
                 type="text"
                 placeholder={t('workout.searchPlaceholder') || "SEARCH..."}
                 value={searchQuery}
@@ -88,8 +88,8 @@ export const MovementExclusionModal: React.FC<MovementExclusionModalProps> = ({
 
             <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-1 mb-6">
               {filteredExercises.map(mvmt => (
-                <label 
-                  key={mvmt.name} 
+                <label
+                  key={mvmt.name}
                   className={cn(
                     "flex items-center justify-between p-4 bg-void/20 border border-white/5 transition-all cursor-pointer group",
                     profile?.excludedMovements?.includes(mvmt.name) ? "border-volt/30 bg-volt/5" : "hover:border-volt/20 hover:bg-white/5"
@@ -97,7 +97,7 @@ export const MovementExclusionModal: React.FC<MovementExclusionModalProps> = ({
                 >
                   <div className="flex flex-col">
                     <span className={cn(
-                      "font-sans text-[11px] font-black uppercase italic tracking-tight transition-colors",
+                      "font-sans text-sm font-black uppercase italic tracking-tight transition-colors",
                       profile?.excludedMovements?.includes(mvmt.name) ? "text-volt" : "text-zinc-200 group-hover:text-white"
                     )}>
                       {getExerciseName(mvmt, t)}
@@ -106,8 +106,8 @@ export const MovementExclusionModal: React.FC<MovementExclusionModalProps> = ({
                       {mvmt.category}
                     </span>
                   </div>
-                  <input 
-                    type="checkbox" 
+                  <input
+                    type="checkbox"
                     checked={profile?.excludedMovements?.includes(mvmt.name) || false}
                     onChange={() => handleToggleMovement(mvmt.name)}
                     className="accent-volt h-5 w-5 bg-transparent border-white/20 cursor-pointer"
@@ -127,7 +127,7 @@ export const MovementExclusionModal: React.FC<MovementExclusionModalProps> = ({
             <p className="text-[8px] text-zinc-600 uppercase font-black tracking-widest mb-6 px-1 leading-relaxed opacity-60">
               {t('settings.deselectToEnable')}
             </p>
-            
+
             <button
               onClick={onClose}
               className="w-full flex items-center justify-center gap-2 py-5 bg-white/5 border border-white/10 text-white font-black text-[10px] uppercase tracking-[0.2em] hover:bg-white/10 hover:border-volt/50 hover:text-volt transition-all group active:scale-[0.99]"

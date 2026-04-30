@@ -6,7 +6,7 @@ import { useSettings, TrainingGoal } from '../contexts/SettingsContext';
 import { useWorkout } from '../contexts/WorkoutContext';
 import { ConfirmationModal } from './ConfirmationModal';
 import { FieldManual } from './FieldManual';
- 
+
 const LANGUAGES = [
   { id: 'en', label: 'English' },
   { id: 'zh', label: 'Mandarin (中文)' },
@@ -20,9 +20,9 @@ const UNITS = [
 ] as const;
 
 export const SettingsView = ({ onExit }: { onExit?: () => void }) => {
-  const { 
-    language, setLanguage, 
-    unit, setUnit, 
+  const {
+    language, setLanguage,
+    unit, setUnit,
     isVoiceActive, setIsVoiceActive,
     immersionMode, setImmersionMode,
     showExperimentalMenus, setShowExperimentalMenus,
@@ -30,7 +30,7 @@ export const SettingsView = ({ onExit }: { onExit?: () => void }) => {
     profile, updateProfile,
     theme, setTheme,
     lightColorScheme, setLightColorScheme,
-    t 
+    t
   } = useSettings();
   const { mockWorkoutCount, setMockWorkoutCount, history, resetProgress, resetProgram } = useWorkout();
   const [showFieldManual, setShowFieldManual] = React.useState(false);
@@ -57,12 +57,12 @@ export const SettingsView = ({ onExit }: { onExit?: () => void }) => {
   return (
     <div className="w-full max-w-7xl space-y-6 md:space-y-8 pb-20 pt-8">
       {/* Field Manual - Top Positioned Modal Trigger */}
-      <motion.div 
+      <motion.div
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         className="relative overflow-hidden border border-volt/40 bg-zinc-900/40 shadow-[0_0_30px_rgba(204,255,0,0.06)]"
       >
-        <button 
+        <button
           onClick={() => setShowFieldManual(true)}
           className="w-full px-4 py-6 md:p-8 flex items-center justify-between hover:bg-volt/[0.06] transition-all group active:scale-[0.995]"
         >
@@ -71,7 +71,7 @@ export const SettingsView = ({ onExit }: { onExit?: () => void }) => {
               <Book size={20} />
             </div>
             <div className="text-left">
-              <h3 className="font-sans text-sm font-bold uppercase tracking-widest text-white group-hover:text-volt transition-colors">{t('settings.fieldManual')}</h3>
+              <h3 className="font-sans text-xl italic font-black uppercase tracking-tight text-white group-hover:text-volt transition-colors">{t('settings.fieldManual')}</h3>
               <p className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest mt-1 opacity-80">{t('settings.fieldManualSubtitle')}</p>
             </div>
           </div>
@@ -86,7 +86,7 @@ export const SettingsView = ({ onExit }: { onExit?: () => void }) => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Theme Settings */}
-        <motion.div 
+        <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.12 }}
@@ -96,7 +96,7 @@ export const SettingsView = ({ onExit }: { onExit?: () => void }) => {
             <SunMoon className="text-volt" size={20} />
             <h3 className="font-sans text-sm font-bold uppercase tracking-widest text-white">Visual Output</h3>
           </div>
-          
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
             {/* Theme Toggle */}
             <div className="space-y-4">
@@ -108,8 +108,8 @@ export const SettingsView = ({ onExit }: { onExit?: () => void }) => {
                     onClick={() => setTheme(tOpt)}
                     className={cn(
                       "flex-1 flex items-center justify-center gap-2 py-3 transition-colors",
-                      theme === tOpt 
-                        ? "bg-volt text-void font-bold" 
+                      theme === tOpt
+                        ? "bg-volt text-void font-bold"
                         : "text-zinc-500 hover:text-zinc-300"
                     )}
                   >
@@ -131,8 +131,8 @@ export const SettingsView = ({ onExit }: { onExit?: () => void }) => {
                       onClick={() => setLightColorScheme(scheme)}
                       className={cn(
                         "flex items-center justify-between p-3 transition-all",
-                        lightColorScheme === scheme 
-                          ? "bg-volt/10 text-volt border-l-[3px] border-volt" 
+                        lightColorScheme === scheme
+                          ? "bg-volt/10 text-volt border-l-[3px] border-volt"
                           : "bg-surface-variant text-zinc-400 hover:bg-white/5 hover:text-zinc-200 border-l-[3px] border-white/5"
                       )}
                     >
@@ -150,7 +150,7 @@ export const SettingsView = ({ onExit }: { onExit?: () => void }) => {
         </motion.div>
 
         {/* Language Settings */}
-        <motion.div 
+        <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           className="glass-panel px-4 py-6 md:p-8 flex flex-col"
@@ -166,8 +166,8 @@ export const SettingsView = ({ onExit }: { onExit?: () => void }) => {
                 onClick={() => setLanguage(lang.id)}
                 className={cn(
                   "flex items-center justify-between p-4 border-none transition-all",
-                  language === lang.id 
-                    ? "bg-volt/10 text-white" 
+                  language === lang.id
+                    ? "bg-volt/10 text-white"
                     : "bg-surface-variant text-zinc-400 hover:bg-white/5 hover:text-zinc-200"
                 )}
               >
@@ -179,7 +179,7 @@ export const SettingsView = ({ onExit }: { onExit?: () => void }) => {
         </motion.div>
 
         {/* Unit Settings */}
-        <motion.div 
+        <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.1 }}
@@ -196,8 +196,8 @@ export const SettingsView = ({ onExit }: { onExit?: () => void }) => {
                 onClick={() => setUnit(u.id)}
                 className={cn(
                   "flex items-center justify-between p-4 border-none transition-all",
-                  unit === u.id 
-                    ? "bg-volt/10 text-white" 
+                  unit === u.id
+                    ? "bg-volt/10 text-white"
                     : "bg-surface-variant text-zinc-400 hover:bg-white/5 hover:text-zinc-200"
                 )}
               >
@@ -210,7 +210,7 @@ export const SettingsView = ({ onExit }: { onExit?: () => void }) => {
 
         {/* Experience Settings */}
         {(profile?.role === 'admin' || profile?.role === 'engineer') && (
-          <motion.div 
+          <motion.div
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.15 }}
@@ -220,7 +220,7 @@ export const SettingsView = ({ onExit }: { onExit?: () => void }) => {
               <Zap className="text-volt" size={20} />
               <h3 className="font-sans text-sm font-bold uppercase tracking-widest text-white">{t('settings.experience')}</h3>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Voice Control */}
               <div className="space-y-4">
@@ -232,8 +232,8 @@ export const SettingsView = ({ onExit }: { onExit?: () => void }) => {
                   onClick={() => setIsVoiceActive(!isVoiceActive)}
                   className={cn(
                     "w-full flex items-center justify-between p-4 border-none transition-all",
-                    isVoiceActive 
-                      ? "bg-volt/10 text-white" 
+                    isVoiceActive
+                      ? "bg-volt/10 text-white"
                       : "bg-surface-variant text-zinc-400 hover:bg-white/5 hover:text-zinc-200"
                   )}
                 >
@@ -271,8 +271,8 @@ export const SettingsView = ({ onExit }: { onExit?: () => void }) => {
                       onClick={() => setImmersionMode(mode.id as any)}
                       className={cn(
                         "flex-1 flex items-center justify-center gap-3 p-4 border-none transition-all",
-                        immersionMode === mode.id 
-                          ? "bg-volt/10 text-white" 
+                        immersionMode === mode.id
+                          ? "bg-volt/10 text-white"
                           : "bg-surface-variant text-zinc-400 hover:bg-white/5 hover:text-zinc-200"
                       )}
                     >
@@ -287,7 +287,7 @@ export const SettingsView = ({ onExit }: { onExit?: () => void }) => {
         )}
 
         {/* Program Management */}
-        <motion.div 
+        <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.18 }}
@@ -297,7 +297,7 @@ export const SettingsView = ({ onExit }: { onExit?: () => void }) => {
             <Target className="text-volt" size={20} />
             <h3 className="font-sans text-sm font-bold uppercase tracking-widest text-white">{t('settings.programManagement')}</h3>
           </div>
-          
+
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <p className="text-white text-xs font-black uppercase tracking-widest">{t('settings.resetProgram')}</p>
@@ -316,7 +316,7 @@ export const SettingsView = ({ onExit }: { onExit?: () => void }) => {
         </motion.div>
 
         {/* System Operations */}
-        <motion.div 
+        <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.2 }}
@@ -326,7 +326,7 @@ export const SettingsView = ({ onExit }: { onExit?: () => void }) => {
             <Settings className="text-volt" size={20} />
             <h3 className="font-sans text-sm font-bold uppercase tracking-widest text-white">{t('settings.systemOps')}</h3>
           </div>
-          
+
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <p className="text-white text-xs font-black uppercase tracking-widest">{t('settings.accountSession')}</p>
@@ -347,7 +347,7 @@ export const SettingsView = ({ onExit }: { onExit?: () => void }) => {
 
       {/* Developer Tools */}
       {(profile?.role === 'admin' || profile?.role === 'engineer') && (
-        <motion.div 
+        <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.2 }}
@@ -357,129 +357,129 @@ export const SettingsView = ({ onExit }: { onExit?: () => void }) => {
             <Terminal className="text-volt" size={20} />
             <h3 className="font-sans text-sm font-bold uppercase tracking-widest text-white">{t('settings.devTools')}</h3>
           </div>
-          
+
           <div className="space-y-6">
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <p className="text-zinc-400 text-[10px] font-black uppercase tracking-widest">{t('settings.manualLevel')}</p>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-volt shadow-[0_0_10px_var(--primary-glow)]" />
-                <span className="text-[8px] font-black uppercase tracking-widest text-volt">{t('settings.themeSync')}</span>
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-zinc-400 text-[10px] font-black uppercase tracking-widest">{t('settings.manualLevel')}</p>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-volt shadow-[0_0_10px_var(--primary-glow)]" />
+                  <span className="text-[8px] font-black uppercase tracking-widest text-volt">{t('settings.themeSync')}</span>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+                {[
+                  { label: t('settings.tier.reset'), value: null, color: 'text-zinc-500' },
+                  { label: t('settings.tier.untrained'), value: 0, color: 'text-volt' },
+                  { label: t('settings.tier.novice'), value: 10, color: 'text-volt' },
+                  { label: t('settings.tier.intermediate'), value: 25, color: 'text-volt' },
+                  { label: t('settings.tier.advanced'), value: 40, color: 'text-[#FFD700]' },
+                  { label: t('settings.tier.elite'), value: 60, color: 'text-[#A855F7]' },
+                ].map((tier) => (
+                  <button
+                    key={tier.label}
+                    onClick={() => setMockWorkoutCount(tier.value)}
+                    className={cn(
+                      "p-4 border-none transition-all font-headline text-[10px] font-black uppercase tracking-widest flex flex-col items-center gap-2",
+                      (mockWorkoutCount === tier.value)
+                        ? "bg-volt/10 text-white ring-1 ring-volt/30"
+                        : "bg-surface-variant text-zinc-400 hover:bg-white/5 hover:text-zinc-200"
+                    )}
+                  >
+                    <span className={cn("text-[8px]", tier.color)}>●</span>
+                    {tier.label}
+                  </button>
+                ))}
               </div>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
-              {[
-                { label: t('settings.tier.reset'), value: null, color: 'text-zinc-500' },
-                { label: t('settings.tier.untrained'), value: 0, color: 'text-volt' },
-                { label: t('settings.tier.novice'), value: 10, color: 'text-volt' },
-                { label: t('settings.tier.intermediate'), value: 25, color: 'text-volt' },
-                { label: t('settings.tier.advanced'), value: 40, color: 'text-[#FFD700]' },
-                { label: t('settings.tier.elite'), value: 60, color: 'text-[#A855F7]' },
-              ].map((tier) => (
+
+            <div className="p-4 bg-volt/5 border-none">
+              <p className="text-volt text-[10px] font-black uppercase tracking-widest">
+                {t('settings.effectiveCount')}: <span className="text-white ml-2">{currentCount}</span>
+              </p>
+              <p className="text-zinc-500 text-[8px] font-medium uppercase tracking-widest mt-1">
+                {mockWorkoutCount !== null ? t('settings.usingManual') : t('settings.usingActual')}
+              </p>
+            </div>
+
+            <div className="pt-4 border-t border-white/5">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-white text-xs font-black uppercase tracking-widest">{t('settings.experimentalFeatures')}</p>
+                  <p className="text-zinc-500 text-[8px] font-medium uppercase tracking-widest mt-1">
+                    {t('settings.experimentalFeaturesDesc')}
+                  </p>
+                </div>
                 <button
-                  key={tier.label}
-                  onClick={() => setMockWorkoutCount(tier.value)}
+                  onClick={() => setExperimentalFeatures(!experimentalFeatures)}
                   className={cn(
-                    "p-4 border-none transition-all font-headline text-[10px] font-black uppercase tracking-widest flex flex-col items-center gap-2",
-                    (mockWorkoutCount === tier.value)
-                      ? "bg-volt/10 text-white ring-1 ring-volt/30" 
-                      : "bg-surface-variant text-zinc-400 hover:bg-white/5 hover:text-zinc-200"
+                    "w-12 h-6 shrink-0 relative transition-colors duration-300",
+                    experimentalFeatures ? "bg-volt" : "bg-zinc-700"
                   )}
                 >
-                  <span className={cn("text-[8px]", tier.color)}>●</span>
-                  {tier.label}
+                  <div className={cn(
+                    "absolute top-1 w-4 h-4 bg-white transition-all duration-300",
+                    experimentalFeatures ? "left-7" : "left-1"
+                  )} />
                 </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="p-4 bg-volt/5 border-none">
-            <p className="text-volt text-[10px] font-black uppercase tracking-widest">
-              {t('settings.effectiveCount')}: <span className="text-white ml-2">{currentCount}</span>
-            </p>
-            <p className="text-zinc-500 text-[8px] font-medium uppercase tracking-widest mt-1">
-              {mockWorkoutCount !== null ? t('settings.usingManual') : t('settings.usingActual')}
-            </p>
-          </div>
-
-          <div className="pt-4 border-t border-white/5">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="text-white text-xs font-black uppercase tracking-widest">{t('settings.experimentalFeatures')}</p>
-                <p className="text-zinc-500 text-[8px] font-medium uppercase tracking-widest mt-1">
-                  {t('settings.experimentalFeaturesDesc')}
-                </p>
               </div>
-              <button
-                onClick={() => setExperimentalFeatures(!experimentalFeatures)}
-                className={cn(
-                  "w-12 h-6 shrink-0 relative transition-colors duration-300",
-                  experimentalFeatures ? "bg-volt" : "bg-zinc-700"
-                )}
-              >
-                <div className={cn(
-                  "absolute top-1 w-4 h-4 bg-white transition-all duration-300",
-                  experimentalFeatures ? "left-7" : "left-1"
-                )} />
-              </button>
             </div>
-          </div>
 
-          <div className="pt-4 border-t border-white/5">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="text-white text-xs font-black uppercase tracking-widest">{t('settings.experimentalMenus')}</p>
-                <p className="text-zinc-500 text-[8px] font-medium uppercase tracking-widest mt-1">
-                  {t('settings.experimentalMenusDesc')}
-                </p>
+            <div className="pt-4 border-t border-white/5">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-white text-xs font-black uppercase tracking-widest">{t('settings.experimentalMenus')}</p>
+                  <p className="text-zinc-500 text-[8px] font-medium uppercase tracking-widest mt-1">
+                    {t('settings.experimentalMenusDesc')}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowExperimentalMenus(!showExperimentalMenus)}
+                  className={cn(
+                    "w-12 h-6 shrink-0 relative transition-colors duration-300",
+                    showExperimentalMenus ? "bg-volt" : "bg-zinc-700"
+                  )}
+                >
+                  <div className={cn(
+                    "absolute top-1 w-4 h-4 bg-white transition-all duration-300",
+                    showExperimentalMenus ? "left-7" : "left-1"
+                  )} />
+                </button>
               </div>
-              <button
-                onClick={() => setShowExperimentalMenus(!showExperimentalMenus)}
-                className={cn(
-                  "w-12 h-6 shrink-0 relative transition-colors duration-300",
-                  showExperimentalMenus ? "bg-volt" : "bg-zinc-700"
-                )}
-              >
-                <div className={cn(
-                  "absolute top-1 w-4 h-4 bg-white transition-all duration-300",
-                  showExperimentalMenus ? "left-7" : "left-1"
-                )} />
-              </button>
             </div>
-          </div>
 
-          <div className="pt-6 border-t border-white/5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <p className="text-crimson text-xs font-black uppercase tracking-widest">{t('settings.resetProgress')}</p>
-                <p className="text-zinc-500 text-[8px] font-medium uppercase tracking-widest mt-1">
-                  {t('settings.resetProgressDesc')}
-                </p>
+            <div className="pt-6 border-t border-white/5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <p className="text-crimson text-xs font-black uppercase tracking-widest">{t('settings.resetProgress')}</p>
+                  <p className="text-zinc-500 text-[8px] font-medium uppercase tracking-widest mt-1">
+                    {t('settings.resetProgressDesc')}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowResetConfirm(true)}
+                  disabled={isResetting}
+                  className={cn(
+                    "w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 btn-destructive font-headline text-[10px] font-black uppercase tracking-widest shrink-0 transition-all rounded",
+                    isResetting && "opacity-50 cursor-not-allowed"
+                  )}
+                >
+                  {isResetting ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" />
+                      <span>{t('settings.resetting')}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 size={14} />
+                      <span>{t('settings.resetProgressBtn')}</span>
+                    </>
+                  )}
+                </button>
               </div>
-              <button
-                onClick={() => setShowResetConfirm(true)}
-                disabled={isResetting}
-                className={cn(
-                  "w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 btn-destructive font-headline text-[10px] font-black uppercase tracking-widest shrink-0 transition-all rounded",
-                  isResetting && "opacity-50 cursor-not-allowed"
-                )}
-              >
-                {isResetting ? (
-                  <>
-                    <Loader2 size={14} className="animate-spin" />
-                    <span>{t('settings.resetting')}</span>
-                  </>
-                ) : (
-                  <>
-                    <Trash2 size={14} />
-                    <span>{t('settings.resetProgressBtn')}</span>
-                  </>
-                )}
-              </button>
             </div>
           </div>
-        </div>
-      </motion.div>
+        </motion.div>
       )}
 
       <ConfirmationModal

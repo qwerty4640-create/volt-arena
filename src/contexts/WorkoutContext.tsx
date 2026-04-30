@@ -1,11 +1,11 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { 
-  collection, 
-  query, 
-  where, 
-  orderBy, 
-  onSnapshot, 
-  addDoc, 
+import {
+  collection,
+  query,
+  where,
+  orderBy,
+  onSnapshot,
+  addDoc,
   serverTimestamp,
   doc,
   setDoc,
@@ -104,22 +104,22 @@ interface WorkoutContextType {
   replaceExerciseInSession: (oldExerciseId: string, newExercise: Exercise) => void;
   discardSession: () => void;
   getNextWorkoutTemplate: () => WorkoutSession;
-    getCalibrationStatus: () => {
-      readiness: number;
-      readinessModifier: number;
-      recoveryModifier: number;
-      hasAerobicInterference: boolean;
-      isDeload: boolean;
-      isPeak: boolean;
-      isRedline: boolean;
-      cumulativeFatigueScore: number;
-      recommendedRpe: number;
-      subjectiveScores: {
-        sleepScore: number;
-        stressScore: number;
-        fatigueScore: number;
-      } | null;
-    };
+  getCalibrationStatus: () => {
+    readiness: number;
+    readinessModifier: number;
+    recoveryModifier: number;
+    hasAerobicInterference: boolean;
+    isDeload: boolean;
+    isPeak: boolean;
+    isRedline: boolean;
+    cumulativeFatigueScore: number;
+    recommendedRpe: number;
+    subjectiveScores: {
+      sleepScore: number;
+      stressScore: number;
+      fatigueScore: number;
+    } | null;
+  };
   mockWorkoutCount: number | null;
   setMockWorkoutCount: (count: number | null) => void;
   resetProgress: () => Promise<void>;
@@ -183,10 +183,10 @@ const WORKOUT_TEMPLATES = [
 ];
 
 const calculateFallback1RM = (
-  exerciseName: string, 
-  bodyweight: number | undefined, 
-  level: string, 
-  unit: string, 
+  exerciseName: string,
+  bodyweight: number | undefined,
+  level: string,
+  unit: string,
   templateBaseWeight: number,
   age: number | undefined,
   gender: string | undefined,
@@ -202,11 +202,11 @@ const calculateFallback1RM = (
   if (!bw) {
     bw = unit === 'imperial' ? 175 : 80;
   }
-  
+
   // Cap bodyweight for multiplier logic to prevent absurd numbers for very heavy lifters
   const maxBw = unit === 'imperial' ? 250 : 115;
   const effectiveBw = Math.min(bw, maxBw);
-  
+
   const name = exerciseName.toLowerCase();
   let multiplier = 0;
   const isFemale = gender === 'female';
@@ -252,9 +252,9 @@ const calculateFallback1RM = (
 };
 
 const createSessionFromTemplate = (
-  week: number, 
-  day: number, 
-  profile: UserProfile | null, 
+  week: number,
+  day: number,
+  profile: UserProfile | null,
   currentUnit: 'imperial' | 'metric',
   lastSession: WorkoutSession | null,
   currentReadiness: number,
@@ -266,10 +266,10 @@ const createSessionFromTemplate = (
   const { block, weekInBlock } = getBlockForWeek(week, totalDurationWeeks, goal);
   const templateIndex = (day - 1) % WORKOUT_TEMPLATES.length;
   const template = WORKOUT_TEMPLATES[templateIndex];
-  
+
   // 1. Base Intensity from Block + Weekly Progression
   let blockIntensity = block.baseIntensity + (weekInBlock - 1) * block.intensityIncrementPerWeek;
-  
+
   // 2. Readiness Adjustment
   let readinessModifier = 1.0;
   if (currentReadiness >= 90) readinessModifier = 1.05;
@@ -301,10 +301,10 @@ const createSessionFromTemplate = (
   }
 
   // If the last sessions were overshoots (Actual RPE > Target RPE), reduce volume further
-  const recentSessions = lastSession ? [lastSession] : []; 
+  const recentSessions = lastSession ? [lastSession] : [];
   const overshoots = recentSessions.filter(s => s.rpe && s.targetRpe && s.rpe > s.targetRpe);
   if (overshoots.length >= 1) {
-    volumeModifier *= 0.8; 
+    volumeModifier *= 0.8;
   }
 
   const finalIntensity = blockIntensity * readinessModifier * recoveryModifier;
@@ -321,7 +321,7 @@ const createSessionFromTemplate = (
     totalWeek: week,
     exercises: template.exercises.map((ex, i) => {
       let weight = 0;
-      
+
       const isSquat = isMainLiftMatch(ex.name, 'Squat');
       const isBench = isMainLiftMatch(ex.name, 'Bench Press');
       const isDeadlift = isMainLiftMatch(ex.name, 'Deadlift');
@@ -367,7 +367,7 @@ const createSessionFromTemplate = (
       let reps = isMainLift ? block.baseReps : ex.reps;
       let sets = isMainLift ? block.baseSets : ex.sets;
       let exerciseName = ex.name;
-      
+
       if (volumeModifier < 1.0) {
         sets = Math.max(1, Math.floor(sets * volumeModifier));
       }
@@ -385,7 +385,7 @@ const createSessionFromTemplate = (
         isDeadlift,
         sets: Array.from({ length: sets }).map((_, j) => {
           let targetSetRpe = '';
-          
+
           // Apply RPE Logic based on Goal
           if (isMainLift) {
             if (block.type === BlockType.PEAKING || block.type === BlockType.MAX_EFFORT || block.type === BlockType.OVERREACH || block.type === BlockType.COMPETITION) {
@@ -492,7 +492,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       console.log("Auth: State changed in WorkoutContext. User:", user ? user.email : "NULL");
-      
+
       if (unsubscribeFirestore) {
         unsubscribeFirestore();
         unsubscribeFirestore = undefined;
@@ -530,19 +530,19 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
             id: doc.id
           } as WorkoutSession));
           setHistory(workouts);
-          
+
           // Check for pending reflections
           const now = Date.now();
           const fifteenMins = 15 * 60 * 1000;
           const twentyFourHours = 24 * 60 * 60 * 1000;
-          
-          const needsReflection = workouts.find(s => 
-            s.completedAt && 
-            !s.reflectionSaved && 
-            (now - s.completedAt) > fifteenMins && 
+
+          const needsReflection = workouts.find(s =>
+            s.completedAt &&
+            !s.reflectionSaved &&
+            (now - s.completedAt) > fifteenMins &&
             (now - s.completedAt) < twentyFourHours
           );
-          
+
           setPendingReflection(needsReflection || null);
           setIsLoading(false);
         }, (error) => {
@@ -566,14 +566,14 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
             parsedHistory = JSON.parse(guestHistory);
           }
           setHistory(parsedHistory);
-          
+
           const now = Date.now();
           const fifteenMins = 15 * 60 * 1000;
           const twentyFourHours = 24 * 60 * 60 * 1000;
-          const needsReflection = parsedHistory.find(s => 
-            s.completedAt && 
-            !s.reflectionSaved && 
-            (now - s.completedAt) > fifteenMins && 
+          const needsReflection = parsedHistory.find(s =>
+            s.completedAt &&
+            !s.reflectionSaved &&
+            (now - s.completedAt) > fifteenMins &&
             (now - s.completedAt) < twentyFourHours
           );
           setPendingReflection(needsReflection || null);
@@ -612,11 +612,11 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const applyIntensityModifications = (session: WorkoutSession, recoveryHistoryOverride?: ActiveRecovery[]): WorkoutSession => {
     const calibration = getCalibrationStatus(recoveryHistoryOverride);
-    
+
     // Logic: Redline takes precedence over aerobic interference
     let finalModifier = 1.0;
     let currentPenaltyType: 'REDLINE' | 'AEROBIC' | null = null;
-    
+
     if (calibration.isRedline) {
       finalModifier = 0.75;
       currentPenaltyType = 'REDLINE';
@@ -634,15 +634,15 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     const updatedExercises = (session.exercises || []).map(ex => {
       // Prime Movers check
-      const isPrimeMover = ex.isSquat || ex.isDeadlift || 
-                         ex.name.toLowerCase().includes('squat') || 
-                         ex.name.toLowerCase().includes('deadlift');
+      const isPrimeMover = ex.isSquat || ex.isDeadlift ||
+        ex.name.toLowerCase().includes('squat') ||
+        ex.name.toLowerCase().includes('deadlift');
 
       if (!isPrimeMover) return ex;
 
       const updatedSets = (ex.sets || []).map(set => {
         if (set.isCompleted) return set;
-        
+
         const baseWeightValue = parseFloat(set.baseWeight || set.weight) || 0;
         if (baseWeightValue <= 0) return set;
 
@@ -681,9 +681,9 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (!auth.currentUser) return;
 
     // Search in both standard library and recovery library
-    const activity = ACTIVITY_LIBRARY.find(a => a.id === data.activityId) || 
-                     RECOVERY_ACTIVITIES.find(a => a.id === data.activityId);
-                     
+    const activity = ACTIVITY_LIBRARY.find(a => a.id === data.activityId) ||
+      RECOVERY_ACTIVITIES.find(a => a.id === data.activityId);
+
     if (!activity) {
       console.error('Activity not found in any library:', data.activityId);
       return;
@@ -752,7 +752,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const updateActiveRecovery = async (id: string, data: Partial<ActiveRecovery>) => {
     if (!auth.currentUser) return;
     const recoveryPath = `users/${auth.currentUser.uid}/active_recovery/${id}`;
-    
+
     // If the performedAt date changes, we need to recalculate the timestamp and date strings
     const updates = { ...data };
     if (updates.performedAt) {
@@ -799,6 +799,8 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (scores === null) {
       localStorage.removeItem(READINESS_STORAGE_KEY);
       setSubjectiveReadiness(null);
+      // Optional: Clear active recovery history from the last 24h if "ignore" means clear
+      setRecoveryHistory(prev => prev.filter(r => (Date.now() - r.timestamp) / 3600000 >= 24));
       showToast('System Reset: Using Objective Metrics.', 2000, 'info');
       return;
     }
@@ -813,18 +815,10 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     // 1. Calculate Objective Fatigue (Cumulative Volume/RPE)
     let objectiveFatigueVal = 100;
-    
-    const last24hRecovery = activeRecoveryHistory.filter(r => 
+    const last24hTotalHistory = activeRecoveryHistory.filter(r =>
       (Date.now() - r.timestamp) / 3600000 < 24
     );
-    const recoveryFatigue = last24hRecovery.reduce((sum, r) => sum + (r.rpe || 0), 0);
-    
-    const last24hWorkouts = history.filter(w => 
-      w.completedAt && (Date.now() - w.completedAt) / 3600000 < 24
-    );
-    const workoutFatigue = last24hWorkouts.reduce((sum, w) => sum + (Number(w.rpe) || Number(w.actualRpe) || 0), 0);
-
-    const cumulativeFatigueScore = recoveryFatigue + workoutFatigue;
+    const cumulativeFatigueScore = last24hTotalHistory.reduce((sum, r) => sum + r.rpe, 0);
     objectiveFatigueVal = Math.max(0, 100 - (Math.min(cumulativeFatigueScore, 18) / 18) * 100);
 
     // 2. Resolve Subjective Factors
@@ -834,7 +828,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     let subjectiveFatigueVal = hasSubjectiveData ? (subjectiveReadiness?.fatigue || 5) * 20 : 100;
 
     // 3. Final Fatigue (Conservative model: take the minimum of objective and subjective)
-    const finalFatigueVal = hasSubjectiveData 
+    const finalFatigueVal = hasSubjectiveData
       ? Math.min(objectiveFatigueVal, subjectiveFatigueVal)
       : objectiveFatigueVal;
 
@@ -842,10 +836,10 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const baseReadiness = (sleepVal + stressPeaceVal + finalFatigueVal) / 3;
 
     // 5. Active Recovery Boost
-    const recentRecoveries = activeRecoveryHistory.filter(r => 
+    const recentRecoveries = activeRecoveryHistory.filter(r =>
       (Date.now() - r.timestamp) / 3600000 < 24 && r.activityId?.startsWith('recovery_')
     );
-    
+
     let totalBoost = 0;
     const currentFatigueDeficit = 100 - finalFatigueVal;
 
@@ -858,9 +852,6 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
     });
 
-    // Hard cap the total active recovery boost so it doesn't mask extreme fatigue
-    totalBoost = Math.min(totalBoost, 15);
-
     // 6. Readiness Score (Capped at 100, and also capped by the highest possible factor to avoid "fake 100")
     const currentReadiness = Math.round(Math.min(100, baseReadiness + totalBoost));
 
@@ -872,83 +863,17 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     // Redline Logic: Cumulative Fatigue Check
     const isRedline = cumulativeFatigueScore >= 18;
 
-    // 7. Calculate Recommended RPE based on Block Progression and Readiness
-    const filteredHistory = profile?.programResetAt 
-      ? history.filter(s => (s.completedAt || 0) > profile.programResetAt!)
-      : history;
-
-    let nextWeek = 1;
-    if (filteredHistory.length > 0) {
-      const lastWorkout = filteredHistory[0];
-      const weekMatch = lastWorkout.title?.match(/W(\d+)/);
-      nextWeek = weekMatch ? parseInt(weekMatch[1]) : 1;
-      const dayMatch = lastWorkout.title?.match(/D(\d+)/);
-      let nextDay = dayMatch ? parseInt(dayMatch[1]) + 1 : 1;
-      const frequency = profile?.trainingFrequency || 3;
-      if (nextDay > frequency) {
-        nextWeek += 1;
-      }
-      const durationMonths = profile?.trainingDurationMonths || 3;
-      const totalDurationWeeks = durationMonths * 4;
-      if (nextWeek > totalDurationWeeks) {
-        nextWeek = 1;
-      }
-    }
-    const finalWeek = nextWeek + (profile?.trainingWeekOffset || 0);
-    const durationMonths = profile?.trainingDurationMonths || 3;
-    const { block, weekInBlock } = getBlockForWeek(finalWeek, durationMonths * 4, profile?.trainingGoal || 'powerbuilding');
-    
-    let baseRecommendedRpe = 7;
-    const isFinalWeek = weekInBlock === block.durationWeeks;
-    
-    switch (block.type) {
-      case BlockType.DELOAD:
-      case BlockType.REGENERATION:
-        baseRecommendedRpe = 6;
-        break;
-      case BlockType.PEAKING:
-      case BlockType.COMPETITION:
-      case BlockType.MAX_EFFORT:
-      case BlockType.OVERREACH:
-        baseRecommendedRpe = isFinalWeek ? 9 : 8;
-        break;
-      case BlockType.POWER:
-      case BlockType.STRENGTH:
-        baseRecommendedRpe = 7.5 + (weekInBlock - 1) * 0.5;
-        break;
-      case BlockType.HYPERTROPHY:
-      case BlockType.FOUNDATION:
-      default:
-        baseRecommendedRpe = 7 + (weekInBlock - 1) * 0.5;
-        break;
-    }
-    
-    // Cap base recommended RPE safely
-    baseRecommendedRpe = Math.min(Math.max(baseRecommendedRpe, 6), 9.5);
-
-    let recommendedRpe = Math.floor(baseRecommendedRpe);
-    
-    // Readiness Modifiers
-    if (currentReadiness < 40) {
-      recommendedRpe -= 3;
-    } else if (currentReadiness < 65) {
-      recommendedRpe -= 2;
-    } else if (currentReadiness < 85) {
-      recommendedRpe -= 1;
-    }
-
+    let recommendedRpe = 7;
     if (isRedline) {
       readinessModifier = 0.75;
       recommendedRpe = Math.min(recommendedRpe, 5);
     }
-    
-    recommendedRpe = Math.max(recommendedRpe, 4);
 
     return {
       readiness: currentReadiness,
       readinessModifier,
       recoveryModifier: 1.0,
-      hasAerobicInterference: false, 
+      hasAerobicInterference: false,
       isDeload: currentReadiness < 50,
       isPeak: currentReadiness >= 90,
       isRedline,
@@ -963,7 +888,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const getNextWorkoutTemplate = () => {
-    const filteredHistory = profile?.programResetAt 
+    const filteredHistory = profile?.programResetAt
       ? history.filter(s => (s.completedAt || 0) > profile.programResetAt!)
       : history;
 
@@ -976,14 +901,14 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const startWeek = 1 + (profile?.trainingWeekOffset || 0);
       return createSessionFromTemplate(startWeek, 1, profile, unit, null, currentReadiness, hasAerobicInterference);
     }
-    
+
     const lastWorkout = filteredHistory[0];
     const dayMatch = lastWorkout.title?.match(/D(\d+)/);
     const weekMatch = lastWorkout.title?.match(/W(\d+)/);
-    
+
     let nextDay = dayMatch ? parseInt(dayMatch[1]) + 1 : 1;
     let nextWeek = weekMatch ? parseInt(weekMatch[1]) : 1;
-    
+
     const frequency = profile?.trainingFrequency || 3;
     if (nextDay > frequency) {
       nextDay = 1;
@@ -1006,12 +931,12 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     let session: WorkoutSession;
 
     if (template) {
-      session = { 
-        ...template, 
+      session = {
+        ...template,
         startTime: template.startTime || Date.now(),
-        penaltyApplied: false, 
-        currentExerciseIndex: 0, 
-        currentSetIndex: 0 
+        penaltyApplied: false,
+        currentExerciseIndex: 0,
+        currentSetIndex: 0
       };
       // Normalization check: Ensure baseWeight exists
       session.exercises = (session.exercises || []).map(ex => ({
@@ -1030,15 +955,15 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
       if (!calibration.isRedline && readinessScore !== undefined && readinessModifier !== undefined) {
         session.readiness = readinessScore;
         session.targetRpe = targetRpe;
-        
+
         // Apply the modifier to the weights
         session.exercises = (session.exercises || []).map(ex => {
-          const isMainLift = isMainLiftMatch(ex.name || '', 'Squat') || 
-                             isMainLiftMatch(ex.name || '', 'Bench Press') || 
-                             isMainLiftMatch(ex.name || '', 'Deadlift');
-          
+          const isMainLift = isMainLiftMatch(ex.name || '', 'Squat') ||
+            isMainLiftMatch(ex.name || '', 'Bench Press') ||
+            isMainLiftMatch(ex.name || '', 'Deadlift');
+
           let updatedSets = ex.sets || [];
-          
+
           // Cut accessory volume if red light (modifier < 1.0)
           if (!isMainLift && readinessModifier < 1.0 && updatedSets.length > 2) {
             updatedSets = updatedSets.slice(0, updatedSets.length - 1);
@@ -1061,7 +986,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     // Engineering Update: Applied penalized weights at birth if safety triggers active
     session = applyIntensityModifications(session);
-    
+
     setCurrentSession(session);
   };
 
@@ -1081,7 +1006,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (!currentSession) return;
     setCurrentSession({
       ...currentSession,
-      exercises: (currentSession.exercises || []).map(ex => 
+      exercises: (currentSession.exercises || []).map(ex =>
         ex.id === oldExerciseId ? newExercise : ex
       )
     });
@@ -1111,7 +1036,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const secs = Math.floor((sessionDurationMs % 60000) / 1000);
     const hrs = Math.floor(mins / 60);
     const finalMins = mins % 60;
-    
+
     let durationStr = '';
     if (hrs > 0) {
       durationStr = `${hrs}h ${finalMins}m`;
@@ -1185,8 +1110,8 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   // Calculation for Program Workouts
   const calculateProgramCalories = (
-    weightKg: number, 
-    durationMins: number, 
+    weightKg: number,
+    durationMins: number,
     sessionRpe: number,
     totalTonnage: number
   ) => {
@@ -1194,7 +1119,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     // We use a base MET of 3.5 (standard moderate weightlifting) to represent the general
     // time spent in the gym (rest periods, setup, etc.) rather than 6.0 (circuit training).
     // This prevents double-counting since we add volume-based work on top.
-    const baseMET = 3.5; 
+    const baseMET = 3.5;
     const intensityScalar = 1 + (Number(sessionRpe || 7) - 7) * 0.05;
     const timeBurn = (baseMET * 3.5 * weightKg / 200) * durationMins * intensityScalar;
 
@@ -1210,23 +1135,23 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const resetProgress = async () => {
     if (!auth.currentUser) return;
-    
+
     const workoutsPath = `users/${auth.currentUser.uid}/workouts`;
     try {
       const { getDocs, deleteDoc, doc, writeBatch, collection } = await import('firebase/firestore');
       const { db } = await import('../firebase');
-      
+
       const snapshot = await getDocs(collection(db, workoutsPath));
       const batch = writeBatch(db);
-      
+
       snapshot.docs.forEach((d) => {
         batch.delete(doc(db, workoutsPath, d.id));
       });
-      
+
       // Commit the batch deletion
       await batch.commit();
       showToast('Action Successful.', 3000, 'success');
-      
+
       // Reset profile fields to start fresh
       await updateProfile({
         trainingWeekOffset: 0,
@@ -1235,7 +1160,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
         deadliftPR: 0,
         programResetAt: 0
       });
-      
+
       setCurrentSession(null);
       localStorage.removeItem('berserker_current_session');
       setMockWorkoutCount(null);
@@ -1254,7 +1179,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
         trainingWeekOffset: 0,
         programResetAt: Date.now()
       });
-      
+
       setCurrentSession(null);
       localStorage.removeItem('berserker_current_session');
       showToast('Action Successful.', 3000, 'success');
@@ -1320,7 +1245,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (!auth.currentUser?.uid) {
       // Guest mode handling
       const guestHistory = JSON.parse(localStorage.getItem('volt_ghost_history') || '[]');
-      const updatedHistory = guestHistory.map((w: any) => 
+      const updatedHistory = guestHistory.map((w: any) =>
         w.id === workoutId ? { ...w, actualRpe: Number(actualRpe), reflectionSaved: true } : w
       );
       localStorage.setItem('volt_ghost_history', JSON.stringify(updatedHistory));
@@ -1360,12 +1285,12 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, [history, pendingReflection]);
 
   return (
-    <WorkoutContext.Provider value={{ 
-      history, 
+    <WorkoutContext.Provider value={{
+      history,
       recoveryHistory,
-      currentSession, 
-      startNewSession, 
-      completeSession, 
+      currentSession,
+      startNewSession,
+      completeSession,
       logNonProgramActivity,
       updateActiveRecovery,
       deleteActiveRecovery,

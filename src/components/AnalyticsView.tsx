@@ -5,13 +5,13 @@ import { useSettings } from '../contexts/SettingsContext';
 import { useWorkout } from '../contexts/WorkoutContext';
 import { ExternalActivityWidget, BlockWidget } from './AnalysisView';
 import { isMainLiftMatch, calculateE1RM } from '../utils/workoutUtils';
-import { 
-  LineChart, 
-  Line, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
   ComposedChart,
   Area
@@ -83,7 +83,7 @@ export const AnalyticsView = () => {
     else if (timeFrame === '6M') startDate = new Date(now.setMonth(now.getMonth() - 6));
 
     const weeks: Record<string, { volume: number, rpeSum: number, rpeCount: number, timestamp: number }> = {};
-    
+
     history.forEach(session => {
       const date = session.completedAt ? new Date(session.completedAt) : new Date(session.date);
       if (date < startDate) return;
@@ -92,7 +92,7 @@ export const AnalyticsView = () => {
       startOfWeek.setDate(date.getDate() - date.getDay());
       startOfWeek.setHours(0, 0, 0, 0);
       const weekKey = startOfWeek.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      
+
       let sessionVolume = 0;
       let rpeSum = 0;
       let rpeCount = 0;
@@ -103,13 +103,13 @@ export const AnalyticsView = () => {
             sessionVolume += (parseFloat(s.weight) || 0) * (parseInt(s.reps) || 0);
             const rpeVal = parseFloat(s.rpe);
             if (!isNaN(rpeVal)) {
-               rpeSum += rpeVal;
-               rpeCount += 1;
+              rpeSum += rpeVal;
+              rpeCount += 1;
             }
           }
         });
       });
-      
+
       if (!weeks[weekKey]) {
         weeks[weekKey] = { volume: 0, rpeSum: 0, rpeCount: 0, timestamp: startOfWeek.getTime() };
       }
@@ -140,7 +140,7 @@ export const AnalyticsView = () => {
       startOfWeek.setDate(date.getDate() - date.getDay());
       startOfWeek.setHours(0, 0, 0, 0);
       const weekKey = startOfWeek.getTime().toString();
-      
+
       let sessionVolume = 0;
       session.exercises?.forEach(ex => {
         ex.sets?.forEach(s => {
@@ -149,7 +149,7 @@ export const AnalyticsView = () => {
           }
         });
       });
-      
+
       if (!weeks[weekKey]) {
         weeks[weekKey] = 0;
         weekTimestamps[weekKey] = startOfWeek.getTime();
@@ -164,10 +164,10 @@ export const AnalyticsView = () => {
     if (sortedWeeks.length === 0) return null;
 
     const acuteWorkload = sortedWeeks[sortedWeeks.length - 1].volume;
-    
+
     // Chronic workload: Average of the up to 4 weeks prior to the acute week
     const chronicWeeks = sortedWeeks.slice(Math.max(0, sortedWeeks.length - 5), sortedWeeks.length - 1);
-    
+
     if (chronicWeeks.length === 0) {
       return { ratio: 1.0, acute: acuteWorkload, chronic: acuteWorkload };
     }
@@ -179,9 +179,9 @@ export const AnalyticsView = () => {
   }, [history]);
 
   const toggleLift = (liftId: string) => {
-    setSelectedLifts(prev => 
-      prev.includes(liftId) 
-        ? prev.filter(id => id !== liftId) 
+    setSelectedLifts(prev =>
+      prev.includes(liftId)
+        ? prev.filter(id => id !== liftId)
         : [...prev, liftId]
     );
   };
@@ -227,7 +227,7 @@ export const AnalyticsView = () => {
         <div className="bg-void/95 backdrop-blur-2xl border border-white/10 p-5 shadow-[0_0_50px_rgba(0,0,0,0.5)] min-w-[200px] relative overflow-hidden">
           {/* Tactical Accent */}
           <div className="absolute top-0 left-0 w-1 h-full bg-volt" />
-          
+
           <div className="space-y-4">
             <div>
               <p className="text-[8px] font-black uppercase tracking-[0.3em] text-zinc-500 mb-1">{t('analysis.telemetryLog')}</p>
@@ -263,7 +263,7 @@ export const AnalyticsView = () => {
     <div className="w-full space-y-12">
       <div className="grid grid-cols-12 gap-8">
         {/* Strength Trend Chart */}
-        <motion.div 
+        <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.1 }}
@@ -278,7 +278,7 @@ export const AnalyticsView = () => {
               </div>
               */}
               <h2 className="font-headline text-3xl md:text-5xl font-black uppercase italic tracking-tight mb-2">{t('analysis.strengthTrend')}</h2>
-              <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed mb-8">
+              <p className="text-zinc-400 text-xs font-medium max-w-md mb-8 leading-relaxed">
                 {t('analysis.strengthTrendDesc')}
               </p>
               <div className="flex flex-wrap gap-4">
@@ -288,8 +288,8 @@ export const AnalyticsView = () => {
                     onClick={() => toggleLift(lift.id)}
                     className={cn(
                       "flex items-center gap-3 px-4 py-2 border transition-all duration-300",
-                      selectedLifts.includes(lift.id) 
-                        ? "bg-white/5 border-white/20" 
+                      selectedLifts.includes(lift.id)
+                        ? "bg-white/5 border-white/20"
                         : "bg-transparent border-transparent opacity-40 grayscale"
                     )}
                   >
@@ -299,10 +299,10 @@ export const AnalyticsView = () => {
                 ))}
               </div>
             </div>
-            
+
             <div className="flex gap-1 bg-void p-1 border border-white/5">
               {(['1M', '3M', '6M', 'ALL'] as TimeFrame[]).map((tf) => (
-                <button 
+                <button
                   key={tf}
                   onClick={() => setTimeFrame(tf)}
                   className={cn(
@@ -321,14 +321,14 @@ export const AnalyticsView = () => {
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={filteredData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
-                  <XAxis 
-                    dataKey="displayDate" 
+                  <XAxis
+                    dataKey="displayDate"
                     axisLine={false}
                     tickLine={false}
                     tick={{ fill: '#52525b', fontSize: 10, fontWeight: 900, textTransform: 'uppercase', fontFamily: 'Inter' }}
                     dy={10}
                   />
-                  <YAxis 
+                  <YAxis
                     axisLine={false}
                     tickLine={false}
                     tick={{ fill: '#52525b', fontSize: 10, fontWeight: 900, fontFamily: 'Inter' }}
@@ -369,7 +369,7 @@ export const AnalyticsView = () => {
         </motion.div>
 
         {/* Weekly Volume Trend */}
-        <motion.div 
+        <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.25 }}
@@ -396,25 +396,25 @@ export const AnalyticsView = () => {
                 <ComposedChart data={volumeTrendData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
                   <defs>
                     <linearGradient id="colorVolume" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#00B6FF" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#00B6FF" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="#00B6FF" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#00B6FF" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
-                  <XAxis 
-                    dataKey="week" 
+                  <XAxis
+                    dataKey="week"
                     axisLine={false}
                     tickLine={false}
                     tick={{ fill: '#52525b', fontSize: 10, fontWeight: 900, textTransform: 'uppercase', fontFamily: 'Inter' }}
                     dy={10}
                   />
-                  <YAxis 
+                  <YAxis
                     yAxisId="left"
                     axisLine={false}
                     tickLine={false}
                     tick={{ fill: '#52525b', fontSize: 10, fontWeight: 900, fontFamily: 'Inter' }}
                   />
-                  <YAxis 
+                  <YAxis
                     yAxisId="right"
                     orientation="right"
                     domain={[0, 10]}
@@ -423,20 +423,20 @@ export const AnalyticsView = () => {
                     tick={{ fill: '#FF7162', fontSize: 10, fontWeight: 900, fontFamily: 'Inter' }}
                   />
                   <Tooltip content={<VolumeTooltip />} cursor={{ stroke: '#00B6FF', strokeWidth: 1, strokeDasharray: '4 4' }} />
-                  <Area 
+                  <Area
                     yAxisId="left"
-                    type="monotone" 
-                    dataKey="volume" 
-                    stroke="#00B6FF" 
-                    fillOpacity={1} 
-                    fill="url(#colorVolume)" 
+                    type="monotone"
+                    dataKey="volume"
+                    stroke="#00B6FF"
+                    fillOpacity={1}
+                    fill="url(#colorVolume)"
                     strokeWidth={3}
                   />
-                  <Line 
+                  <Line
                     yAxisId="right"
-                    type="monotone" 
-                    dataKey="avgRpe" 
-                    stroke="#FF7162" 
+                    type="monotone"
+                    dataKey="avgRpe"
+                    stroke="#FF7162"
                     strokeWidth={3}
                     dot={{ r: 4, fill: '#FF7162', strokeWidth: 0 }}
                     activeDot={{ r: 6, stroke: '#FF7162', strokeWidth: 2, fill: '#131313' }}
@@ -455,41 +455,41 @@ export const AnalyticsView = () => {
         </motion.div>
 
         {/* ACWR Widget */}
-        <motion.div 
+        <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.28 }}
           className="col-span-12 glass-panel px-4 py-6 md:p-8 flex flex-col relative overflow-hidden"
         >
-          <div className="absolute inset-0 opacity-[0.03] pointer-events-none transition-opacity duration-700" 
-               style={{ backgroundImage: 'radial-gradient(var(--primary-color) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
-          
+          <div className="absolute inset-0 opacity-[0.03] pointer-events-none transition-opacity duration-700"
+            style={{ backgroundImage: 'radial-gradient(var(--primary-color) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
+
           <h2 className="font-headline text-2xl font-black uppercase italic tracking-tight mb-6">ACUTE:CHRONIC WORKLOAD (ACWR)</h2>
 
           {acwrData ? (
             <div className="bg-void/40 border border-white/5 p-4 flex flex-col sm:flex-row items-start sm:items-center relative z-10 w-full md:w-auto self-start">
-               <div className="flex flex-col justify-center min-w-[70px]">
-                 <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">RATIO</span>
-                 <span className={cn(
-                   "text-2xl md:text-3xl font-black italic",
-                   acwrData.ratio > 1.5 ? "text-crimson" : acwrData.ratio >= 0.8 && acwrData.ratio <= 1.3 ? "text-volt" : "text-zinc-300"
-                 )}>
-                   {acwrData.ratio.toFixed(2)}
-                 </span>
-               </div>
-               <div className="sm:border-l sm:border-white/5 pt-2 sm:pt-0 sm:pl-4 flex-1 w-full border-t border-white/5 sm:border-t-0 mt-2 sm:mt-0">
-                 <div className="flex items-center gap-2 mb-1">
-                   <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 block">
-                     System Status
-                   </span>
-                 </div>
-                 <span className={cn(
-                   "text-xs font-black uppercase tracking-widest",
-                   acwrData.ratio > 1.5 ? "text-crimson" : acwrData.ratio >= 0.8 && acwrData.ratio <= 1.3 ? "text-volt" : "text-zinc-400"
-                 )}>
-                   {acwrData.ratio > 1.5 ? "ELEVATED FATIGUE" : acwrData.ratio >= 0.8 && acwrData.ratio <= 1.3 ? "OPTIMAL" : "MONITOR LOAD"}
-                 </span>
-               </div>
+              <div className="flex flex-col justify-center min-w-[70px]">
+                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">RATIO</span>
+                <span className={cn(
+                  "text-2xl md:text-3xl font-black italic",
+                  acwrData.ratio > 1.5 ? "text-crimson" : acwrData.ratio >= 0.8 && acwrData.ratio <= 1.3 ? "text-volt" : "text-zinc-300"
+                )}>
+                  {acwrData.ratio.toFixed(2)}
+                </span>
+              </div>
+              <div className="sm:border-l sm:border-white/5 pt-2 sm:pt-0 sm:pl-4 flex-1 w-full border-t border-white/5 sm:border-t-0 mt-2 sm:mt-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 block">
+                    System Status
+                  </span>
+                </div>
+                <span className={cn(
+                  "text-xs font-black uppercase tracking-widest",
+                  acwrData.ratio > 1.5 ? "text-crimson" : acwrData.ratio >= 0.8 && acwrData.ratio <= 1.3 ? "text-volt" : "text-zinc-400"
+                )}>
+                  {acwrData.ratio > 1.5 ? "ELEVATED FATIGUE" : acwrData.ratio >= 0.8 && acwrData.ratio <= 1.3 ? "OPTIMAL" : "MONITOR LOAD"}
+                </span>
+              </div>
             </div>
           ) : (
             <p className="text-zinc-500 text-xs font-black uppercase">Insufficient data for ACWR calculation.</p>
@@ -497,17 +497,17 @@ export const AnalyticsView = () => {
         </motion.div>
 
         {/* 1RM Growth Bento */}
-        <motion.div 
+        <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.3 }}
           className="col-span-12 glass-panel px-4 py-6 md:p-8 relative overflow-hidden"
         >
-        
+
           <div className="absolute top-0 right-0 p-8 opacity-5">
-          
-           <Trophy size={200} />
-          
+
+            <Trophy size={200} />
+
           </div>
           {/* 
           <div className="flex items-center gap-2 mb-4">
@@ -555,7 +555,7 @@ export const AnalyticsView = () => {
                 return e1rms.length > 0 ? Math.round(e1rms[0]) : 0;
               });
               const firstTotal = firstE1RMs.reduce((a, b) => a + b, 0);
-              
+
               const growth = firstTotal > 0 ? ((total - firstTotal) / firstTotal * 100).toFixed(1) : '0.0';
               const diff = total - firstTotal;
 
@@ -576,7 +576,7 @@ export const AnalyticsView = () => {
         </motion.div>
 
         {/* Tactical Integration Analytics */}
-        <motion.div 
+        <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.4 }}

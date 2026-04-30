@@ -214,7 +214,7 @@ const ExerciseSetsCarousel = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3 md:gap-6 mb-8 flex-1">
+              <div className="grid grid-cols-3 gap-3 md:gap-6 flex-1">
                 <div className="flex flex-col gap-2">
                   <span className="text-[8px] md:text-[10px] text-zinc-500 font-bold uppercase tracking-widest text-center">
                     {t('workout.weight')} {isDumbbell(exercise.name) ? `(${t('workout.perSide')})` : `(${weightUnit})`}
@@ -1066,7 +1066,7 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
                 initial={{ opacity: 0, scale: 0.9, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                className="relative w-full max-w-md glass-panel p-3 md:p-6 border-volt/20 shadow-[0_0_50px_var(--primary-glow)]"
+                className="relative w-full max-w-md glass-panel p-4 md:p-8 border-volt/20 shadow-[0_0_50px_var(--primary-glow)]"
               >
                 <div className="flex items-center gap-3 mb-6">
                   <RefreshCw className="text-volt" size={24} />

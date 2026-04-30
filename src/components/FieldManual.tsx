@@ -93,25 +93,25 @@ export const FieldManual = ({ isOpen, onClose }: FieldManualProps) => {
                           {t('common.id')}: {key.toUpperCase()}
                         </div>
                       </div>
-                                            <div className="space-y-4">
+                      <div className="space-y-4">
                         <div className="space-y-1.5">
-                          <p className="text-[9px] font-black text-volt uppercase tracking-[0.2em] flex items-center gap-2">
-                             <Info size={10} />
-                             {t('fieldManual.summary')}
+                          <p className="text-[10px] font-black text-volt uppercase tracking-[0.2em] flex items-center gap-2">
+                            {/*}<Info size={10} />{*/}
+                            {t('fieldManual.summary')}
                           </p>
                           <p className="text-zinc-200 text-sm leading-relaxed font-medium pl-4 border-l border-volt/20">
                             {t(`tooltip.${key}.short`)}
                           </p>
                         </div>
-                        
+
                         <div className="space-y-1.5 pt-2">
-                           <p className="text-[9px] font-black text-zinc-500 uppercase tracking-[0.2em] flex items-center gap-2">
-                             <span className="w-1.5 h-1.5 bg-zinc-700 rounded-full" />
-                             {t('fieldManual.doctrine')}
-                           </p>
-                           <p className="text-zinc-400 text-xs leading-relaxed italic pl-4 border-l border-zinc-800">
-                             {t(`tooltip.${key}.long`)}
-                           </p>
+                          <p className="text-[9px] font-black text-zinc-500 uppercase tracking-[0.2em] flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 bg-zinc-700 rounded-full" />
+                            {t('fieldManual.doctrine')}
+                          </p>
+                          <p className="text-zinc-400 text-xs leading-relaxed pl-4 border-l border-zinc-800">
+                            {t(`tooltip.${key}.long`)}
+                          </p>
                         </div>
                       </div>
                     </div>

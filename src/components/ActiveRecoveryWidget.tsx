@@ -6,13 +6,13 @@ import { useSettings } from '../contexts/SettingsContext';
 import { useToast } from '../contexts/ToastContext';
 import { RECOVERY_ACTIVITIES, RecoveryActivity } from '../data/recoveryLibrary';
 
-const SwipeCard = ({ 
-  activity, 
-  onSwipe, 
+const SwipeCard = ({
+  activity,
+  onSwipe,
   onDone,
-  isTop 
-}: { 
-  activity: RecoveryActivity; 
+  isTop
+}: {
+  activity: RecoveryActivity;
   onSwipe: (id: string, direction: 'left' | 'right') => void;
   onDone: (activity: RecoveryActivity) => void;
   isTop: boolean;
@@ -57,10 +57,10 @@ const SwipeCard = ({
         </div>
 
         <div className="flex-1 flex flex-col justify-center relative z-10">
-          <h3 className="font-headline text-3xl md:text-4xl font-black uppercase italic leading-tight mb-2 tracking-tighter">
+          <h3 className="font-headline text-2xl md:text-3xl font-black uppercase italic leading-tight mb-2 tracking-tighter">
             {activity.label}
           </h3>
-          <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest leading-relaxed mb-6 max-w-[280px]">
+          <p className="text-[12px] text-zinc-500 font-medium mb-6 max-w-[280px]">
             {activity.description}
           </p>
           <div className="flex items-center gap-4 text-zinc-400 font-mono text-xs uppercase tracking-widest">
@@ -90,7 +90,7 @@ const SwipeCard = ({
         </div>
 
         {/* Swipe Indicators */}
-        <motion.div 
+        <motion.div
           style={{ opacity: useTransform(x, [50, 150], [0, 1]) }}
           className="absolute inset-0 flex items-center justify-center pointer-events-none z-50"
         >
@@ -98,7 +98,7 @@ const SwipeCard = ({
             <Check size={64} className="text-emerald-500" strokeWidth={5} />
           </div>
         </motion.div>
-        <motion.div 
+        <motion.div
           style={{ opacity: useTransform(x, [-50, -150], [0, 1]) }}
           className="absolute inset-0 flex items-center justify-center pointer-events-none z-50"
         >
@@ -156,7 +156,7 @@ export const ActiveRecoveryWidget = () => {
             Regeneration Protocols • Swipe to Navigate
           </span>
         </div>
-        <button 
+        <button
           onClick={resetStack}
           className="p-2 text-zinc-500 hover:text-volt transition-colors"
           title="Reset Stack"
@@ -169,7 +169,7 @@ export const ActiveRecoveryWidget = () => {
         <AnimatePresence mode="popLayout">
           {activities.map((activity, index) => {
             if (index < currentIndex || index > currentIndex + 2) return null;
-            
+
             const isTop = index === currentIndex;
             const position = index - currentIndex;
 
@@ -177,23 +177,23 @@ export const ActiveRecoveryWidget = () => {
               <motion.div
                 key={activity.id}
                 initial={{ scale: 0.9, x: 20, y: 20, opacity: 0 }}
-                animate={{ 
-                  x: position * 20, 
-                  y: position * 15, 
+                animate={{
+                  x: position * 20,
+                  y: position * 15,
                   scale: 1 - position * 0.04,
                   opacity: 1 - position * 0.3,
                   zIndex: activities.length - index
                 }}
-                exit={{ 
-                  x: 800, 
-                  opacity: 0, 
+                exit={{
+                  x: 800,
+                  opacity: 0,
                   transition: { duration: 0.4, ease: "easeIn" }
                 }}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
                 className="absolute inset-0"
               >
-                <SwipeCard 
-                  activity={activity} 
+                <SwipeCard
+                  activity={activity}
                   isTop={isTop}
                   onSwipe={handleSwipe}
                   onDone={handleMarkAsDone}
@@ -202,9 +202,9 @@ export const ActiveRecoveryWidget = () => {
             );
           })}
         </AnimatePresence>
-        
+
         {currentIndex >= activities.length && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="absolute inset-0 flex flex-col items-center justify-center text-center p-8 glass-panel border-dashed border-white/10"
@@ -214,7 +214,7 @@ export const ActiveRecoveryWidget = () => {
             </div>
             <h3 className="font-headline text-2xl font-black uppercase italic mb-2 text-white">All Protocols Cleared</h3>
             <p className="text-zinc-500 text-xs uppercase tracking-widest font-bold">Systems Fully Optimized for Tactical Performance</p>
-            <button 
+            <button
               onClick={resetStack}
               className="mt-8 px-6 py-3 bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-[0.2em] hover:bg-white/10 transition-all"
             >

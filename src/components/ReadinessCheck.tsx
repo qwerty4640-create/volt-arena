@@ -52,7 +52,7 @@ const QUESTIONS = [
 export const ReadinessCheck = ({ onComplete, onCancel }: ReadinessCheckProps) => {
   const { t } = useSettings();
   const { getCalibrationStatus } = useWorkout();
-  
+
   const QUESTIONS = useMemo(() => [
     {
       id: 'sleep',
@@ -92,17 +92,17 @@ export const ReadinessCheck = ({ onComplete, onCancel }: ReadinessCheckProps) =>
   ], [t]);
   const calibration = getCalibrationStatus();
   const { recommendedRpe: baselineRecommendedRpe, isRedline } = calibration;
-  
+
   const [scores, setScores] = useState<Record<string, number>>({});
   const [showResult, setShowResult] = useState(false);
-  
+
   const totalScore = (Object.values(scores) as number[]).reduce((a, b) => a + b, 0);
   const isComplete = Object.keys(scores).length === QUESTIONS.length;
   const readinessPercentage = Math.round((totalScore / 25) * 100);
 
   const adjustedRecommendedRpe = useMemo(() => {
     if (!showResult) return baselineRecommendedRpe;
-    
+
     let adjusted = baselineRecommendedRpe;
     // Audible Rule: If readiness < 70 and baseline recommendation is high (>= 8), drop to 6
     if (readinessPercentage < 70 && baselineRecommendedRpe >= 8) {
@@ -187,13 +187,13 @@ export const ReadinessCheck = ({ onComplete, onCancel }: ReadinessCheckProps) =>
 
   return (
     <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className="absolute inset-0 bg-void/90 backdrop-blur-md"
       />
-      
+
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -202,7 +202,7 @@ export const ReadinessCheck = ({ onComplete, onCancel }: ReadinessCheckProps) =>
       >
         <div className="p-3 md:p-8 border-b border-white/5 shrink-0 relative">
           <div className="flex items-center gap-6">
-          {/*...}
+            {/*...}
             <button 
               onClick={onCancel}
               className="w-12 h-12 btn-secondary"
@@ -217,7 +217,7 @@ export const ReadinessCheck = ({ onComplete, onCancel }: ReadinessCheckProps) =>
           </div>
         </div>
 
-        <div 
+        <div
           ref={scrollContainerRef}
           className="p-3 md:p-8 overflow-y-auto flex-1 custom-scrollbar"
         >
@@ -241,7 +241,7 @@ export const ReadinessCheck = ({ onComplete, onCancel }: ReadinessCheckProps) =>
                         <p className="text-xs text-zinc-400">{q.question}</p>
                       </div>
                     </div>
-                    
+
                     <div className="space-y-2">
                       <div className="flex justify-between gap-2">
                         {[1, 2, 3, 4, 5].map((val) => (
@@ -250,8 +250,8 @@ export const ReadinessCheck = ({ onComplete, onCancel }: ReadinessCheckProps) =>
                             onClick={() => setScores({ ...scores, [q.id]: val })}
                             className={cn(
                               "flex-1 py-3 border font-headline text-sm font-black transition-all",
-                              scores[q.id] === val 
-                                ? "bg-volt/20 border-volt text-volt shadow-[0_0_15px_var(--primary-glow)]" 
+                              scores[q.id] === val
+                                ? "bg-volt/20 border-volt text-volt shadow-[0_0_15px_var(--primary-glow)]"
                                 : "bg-surface-container-lowest border-white/5 text-zinc-500 hover:border-white/20 hover:text-white"
                             )}
                           >
@@ -302,7 +302,7 @@ export const ReadinessCheck = ({ onComplete, onCancel }: ReadinessCheckProps) =>
                       {targetRpe}
                     </div>
                   </div>
-                  
+
                   <div className="flex gap-1">
                     {[5, 6, 7, 8, 9, 10].map((val) => (
                       <button
@@ -310,8 +310,8 @@ export const ReadinessCheck = ({ onComplete, onCancel }: ReadinessCheckProps) =>
                         onClick={() => setTargetRpe(val)}
                         className={cn(
                           "flex-1 py-3 border font-headline text-sm font-black transition-all relative",
-                          targetRpe === val 
-                            ? "bg-volt/20 border-volt text-volt shadow-[0_0_15px_var(--primary-glow)]" 
+                          targetRpe === val
+                            ? "bg-volt/20 border-volt text-volt shadow-[0_0_15px_var(--primary-glow)]"
                             : "bg-surface border-white/5 text-zinc-500 hover:border-white/20 hover:text-white"
                         )}
                       >
@@ -331,7 +331,7 @@ export const ReadinessCheck = ({ onComplete, onCancel }: ReadinessCheckProps) =>
 
                   {/* The Audible Rule Warning */}
                   {readinessPercentage < 70 && targetRpe >= 8 && (
-                    <motion.div 
+                    <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       className="p-4 bg-crimson/10 border border-crimson/30 flex gap-3"
@@ -346,10 +346,10 @@ export const ReadinessCheck = ({ onComplete, onCancel }: ReadinessCheckProps) =>
                     </motion.div>
                   )}
 
-                  <div className="p-3 bg-white/5 flex gap-3">
+                  <div className="p-3 bg-white/5 flex gap-2">
                     <Info className="text-zinc-500 shrink-0" size={12} />
-                    <p className="text-[8px] text-zinc-500 font-bold uppercase leading-relaxed">
-                      <span className="text-zinc-300">Note:</span> {t('readiness.note')}
+                    <p className="text-xs text-zinc-400">
+                      <span className="text-zinc-300"></span> {t('readiness.note')}
                     </p>
                   </div>
                 </div>

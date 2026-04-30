@@ -71,13 +71,13 @@ export const ProfileView = () => {
     try {
       // Calculate new competition date based on duration from now
       const newCompetitionDate = Date.now() + (adjustingDuration * 30 * 24 * 60 * 60 * 1000);
-      
+
       // If duration changed, we reset the program cycle
       if (adjustingDuration !== profile?.trainingDurationMonths) {
         await resetProgram();
       }
-      
-      await updateProfile({ 
+
+      await updateProfile({
         trainingDurationMonths: adjustingDuration,
         trainingFrequency: adjustingFrequency,
         competitionDate: newCompetitionDate,
@@ -134,8 +134,8 @@ export const ProfileView = () => {
 
     setLoading(true);
     try {
-      const heightVal = unit === 'metric' 
-        ? editData.height 
+      const heightVal = unit === 'metric'
+        ? editData.height
         : (editData.heightFeet * 12) + editData.heightInches;
 
       const newTier = calculateTier(
@@ -192,9 +192,9 @@ export const ProfileView = () => {
       <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8 mb-8 md:mb-12">
         <div className="relative group">
           <div className="w-24 h-24 md:w-32 md:h-32 border-none overflow-hidden bg-surface-high shadow-2xl">
-            <img 
-              src={profile.photoURL || "https://picsum.photos/seed/athlete/200/200"} 
-              alt={profile.displayName || "Athlete"} 
+            <img
+              src={profile.photoURL || "https://picsum.photos/seed/athlete/200/200"}
+              alt={profile.displayName || "Athlete"}
               className="w-full h-full object-cover"
               referrerPolicy="no-referrer"
             />
@@ -211,16 +211,16 @@ export const ProfileView = () => {
             </h2>
             <div className={cn(
               "flex items-center gap-2 px-3 py-1 border text-[10px] font-black uppercase tracking-widest transition-all",
-              profile.level === 'elite' ? "bg-[#9333EA]/20 border-[#9333EA] text-[#9333EA] shadow-[0_0_15px_rgba(147,51,234,0.3)]" : 
-              profile.level === 'advanced' ? "bg-[#FFD700]/20 border-[#FFD700] text-[#FFD700]" :
-              profile.level === 'intermediate' ? "bg-white/20 border-white text-white shadow-[0_0_15px_rgba(255,255,255,0.3)]" :
-              "bg-volt/20 border-volt text-volt"
+              profile.level === 'elite' ? "bg-[#9333EA]/20 border-[#9333EA] text-[#9333EA] shadow-[0_0_15px_rgba(147,51,234,0.3)]" :
+                profile.level === 'advanced' ? "bg-[#FFD700]/20 border-[#FFD700] text-[#FFD700]" :
+                  profile.level === 'intermediate' ? "bg-white/20 border-white text-white shadow-[0_0_15px_rgba(255,255,255,0.3)]" :
+                    "bg-volt/20 border-volt text-volt"
             )}>
               <div className={cn("flex items-center justify-center", tierStyle.animation)}>
                 <tierStyle.icon size={10} className={cn(tierStyle.glow)} />
               </div>
               {profile.level}
-              <button 
+              <button
                 onClick={() => setShowTierInfo(true)}
                 className="ml-1 p-0.5 hover:bg-white/10 transition-colors"
               >
@@ -253,7 +253,7 @@ export const ProfileView = () => {
               <Trophy className="text-volt" size={20} />
               <h3 className="font-sans text-sm font-bold uppercase tracking-widest text-white">{t('analysis.performanceMetrics')}</h3>
             </div>
-            <button 
+            <button
               onClick={() => {
                 setEdit1RMData({
                   squatPR: profile.squatPR || 0,
@@ -311,7 +311,7 @@ export const ProfileView = () => {
               <Activity className="text-volt" size={20} />
               <h3 className="font-sans text-sm font-bold uppercase tracking-widest text-white">{t('settings.biometrics')}</h3>
             </div>
-            <button 
+            <button
               onClick={() => setShowBiometricsModal(true)}
               className="p-2 bg-volt/10 border border-volt/30 text-volt hover:bg-volt/20 hover:border-volt transition-all shadow-[0_0_10px_rgba(0,182,255,0.1)]"
             >
@@ -360,12 +360,12 @@ export const ProfileView = () => {
               </div>
             </div>
           </div>
-          <motion.div 
+          <motion.div
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             className="col-span-2 relative overflow-hidden border border-volt/20 bg-surface-container-low shadow-[0_0_20px_rgba(204,255,0,0.03)] hover:border-volt/50 transition-colors"
           >
-            <button 
+            <button
               onClick={() => setShowExclusionModal(true)}
               className="w-full px-4 py-5 flex items-center justify-between hover:bg-volt/[0.04] transition-all group active:scale-[0.995]"
             >
@@ -376,7 +376,7 @@ export const ProfileView = () => {
                 <div className="text-left">
                   <h3 className="font-sans text-[11px] font-black uppercase tracking-[0.1em] text-white group-hover:text-volt transition-colors">{t('settings.movementRestrictions')}</h3>
                   <p className="text-[8px] text-zinc-500 uppercase font-black tracking-widest mt-1 opacity-80">
-                    {profile.excludedMovements?.length || 0} {t('workout.active')} {profile.excludedMovements?.length === 1 ? 'Restriction' : 'Restrictions'}
+                    {profile.excludedMovements?.length || 0} {t('active')} {profile.excludedMovements?.length === 1 ? 'Restriction' : 'Restrictions'}
                   </p>
                 </div>
               </div>
@@ -394,13 +394,13 @@ export const ProfileView = () => {
           className="glass-panel px-4 py-8 md:p-6 border-white/5 relative overflow-hidden"
         >
           <div className="absolute top-0 right-0 w-32 h-32 bg-volt/5 rounded-full blur-3xl pointer-events-none" />
-          
+
           <div className="flex items-center justify-between mb-6 relative z-10">
             <div className="flex items-center gap-3">
               <Zap className="text-volt" size={20} />
               <h3 className="font-sans text-sm font-bold uppercase tracking-widest text-white">{t('settings.timelineFrequency')}</h3>
             </div>
-            <button 
+            <button
               onClick={() => setShowProtocolModal(true)}
               className="p-2 bg-volt/10 border border-volt/30 text-volt hover:bg-volt/20 hover:border-volt transition-all shadow-[0_0_10px_rgba(0,182,255,0.1)]"
             >
@@ -428,7 +428,7 @@ export const ProfileView = () => {
                     <span>{Math.round(((profile.trainingFrequency || 3) / 7) * 100)}%</span>
                   </div>
                   <div className="h-0.5 bg-white/5 overflow-hidden">
-                    <motion.div 
+                    <motion.div
                       animate={{ width: `${((profile.trainingFrequency || 3) / 7) * 100}%` }}
                       className="h-full bg-volt shadow-[0_0_5px_var(--primary-glow)]"
                     />
@@ -460,508 +460,511 @@ export const ProfileView = () => {
         <AnimatePresence>
           {showBiometricsModal && (
             <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 overflow-y-auto custom-scrollbar">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => {
-                setShowBiometricsModal(false);
-                setAgeError(null);
-              }}
-              className="fixed inset-0 bg-void/80 backdrop-blur-sm"
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-md glass-panel p-3 md:p-6 border-volt/30 shadow-2xl my-auto"
-            >
-              <div className="flex items-center gap-4 mb-8">
-                <div className="p-2 md:p-4 bg-volt/10 text-volt">
-                  <User size={32} />
-                </div>
-                <div>
-                  <h3 className="font-sans text-2xl font-black uppercase italic tracking-tight text-white">{t('settings.biometrics')}</h3>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">{t('settings.physicalData')}</p>
-                </div>
-              </div>
-
-              <div className="space-y-6">
-                <div className="space-y-4">
-                  {/* Gender */}
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('settings.gender')}</label>
-                    <select
-                      value={editData.gender}
-                      onChange={(e) => setEditData({ ...editData, gender: e.target.value as any })}
-                      className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black italic focus:border-volt outline-none transition-all"
-                    >
-                      <option value="male">{t('gender.male')}</option>
-                      <option value="female">{t('gender.female')}</option>
-                      <option value="other">{t('gender.other')}</option>
-                    </select>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => {
+                  setShowBiometricsModal(false);
+                  setAgeError(null);
+                }}
+                className="fixed inset-0 bg-void/80 backdrop-blur-sm"
+              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className="relative w-full max-w-md glass-panel p-3 md:p-6 border-volt/30 shadow-2xl my-auto"
+              >
+                <div className="flex items-center gap-4 mb-8">
+                  <div className="p-2 md:p-4 bg-volt/10 text-volt">
+                    <User size={32} />
                   </div>
+                  <div>
+                    <h3 className="font-sans text-2xl font-black uppercase italic tracking-tight text-white">{t('settings.biometrics')}</h3>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">{t('settings.physicalData')}</p>
+                  </div>
+                </div>
 
-                  {/* Age */}
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('settings.age')}</label>
-                    <input
-                      type="number"
-                      step="1"
-                      value={editData.age}
-                      onChange={(e) => {
-                        const val = parseFloat(e.target.value);
-                        setEditData({ ...editData, age: isNaN(val) ? 0 : val });
-                        if (val % 1 !== 0) {
-                          setAgeError(t('auth.invalidAgeWholeNumber') || 'Age must be a whole number');
-                        } else {
-                          setAgeError(null);
-                        }
-                      }}
-                      className={cn(
-                        "w-full bg-surface-container-lowest border-b-2 p-4 text-white font-sans text-xl font-black italic outline-none transition-all text-center",
-                        ageError ? "border-crimson text-crimson" : "border-white/5 focus:border-volt"
+                <div className="space-y-6">
+                  <div className="space-y-4">
+                    {/* Gender */}
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('settings.gender')}</label>
+                      <select
+                        value={editData.gender}
+                        onChange={(e) => setEditData({ ...editData, gender: e.target.value as any })}
+                        className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black italic focus:border-volt outline-none transition-all"
+                      >
+                        <option value="male">{t('gender.male')}</option>
+                        <option value="female">{t('gender.female')}</option>
+                        <option value="other">{t('gender.other')}</option>
+                      </select>
+                    </div>
+
+                    {/* Age */}
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('settings.age')}</label>
+                      <input
+                        type="number"
+                        step="1"
+                        value={editData.age}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value);
+                          setEditData({ ...editData, age: isNaN(val) ? 0 : val });
+                          if (val % 1 !== 0) {
+                            setAgeError(t('auth.invalidAgeWholeNumber') || 'Age must be a whole number');
+                          } else {
+                            setAgeError(null);
+                          }
+                        }}
+                        className={cn(
+                          "w-full bg-surface-container-lowest border-b-2 p-4 text-white font-sans text-xl font-black italic outline-none transition-all text-center",
+                          ageError ? "border-crimson text-crimson" : "border-white/5 focus:border-volt"
+                        )}
+                      />
+                      {ageError && (
+                        <p className="text-[8px] font-bold uppercase tracking-widest text-crimson mt-1 text-center">{ageError}</p>
                       )}
-                    />
-                    {ageError && (
-                      <p className="text-[8px] font-bold uppercase tracking-widest text-crimson mt-1 text-center">{ageError}</p>
-                    )}
-                  </div>
+                    </div>
 
-                  {/* Height */}
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('settings.height')}</label>
-                    {unit === 'metric' ? (
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="number"
-                          value={editData.height}
-                          onChange={(e) => setEditData({ ...editData, height: parseFloat(e.target.value) || 0 })}
-                          className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black italic focus:border-volt outline-none transition-all text-center"
-                        />
-                        <span className="text-xs font-bold text-zinc-500">CM</span>
-                      </div>
-                    ) : (
-                      <div className="flex gap-4">
-                        <div className="flex-1 space-y-1">
+                    {/* Height */}
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('settings.height')}</label>
+                      {unit === 'metric' ? (
+                        <div className="flex items-center gap-2">
                           <input
                             type="number"
-                            value={editData.heightFeet}
-                            onChange={(e) => setEditData({ ...editData, heightFeet: parseInt(e.target.value) || 0 })}
+                            value={editData.height}
+                            onChange={(e) => setEditData({ ...editData, height: parseFloat(e.target.value) || 0 })}
                             className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black italic focus:border-volt outline-none transition-all text-center"
                           />
-                          <p className="text-[8px] font-bold text-zinc-500 text-center uppercase">{t('settings.feet')}</p>
+                          <span className="text-xs font-bold text-zinc-500">CM</span>
                         </div>
-                        <div className="flex-1 space-y-1">
-                          <input
-                            type="number"
-                            value={editData.heightInches}
-                            onChange={(e) => setEditData({ ...editData, heightInches: parseInt(e.target.value) || 0 })}
-                            className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black italic focus:border-volt outline-none transition-all text-center"
-                          />
-                          <p className="text-[8px] font-bold text-zinc-500 text-center uppercase">{t('settings.inches')}</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Weight */}
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('settings.weight')} ({unit === 'metric' ? 'kg' : 'LBS'})</label>
-                    <input
-                      type="number"
-                      value={editData.weight}
-                      onChange={(e) => setEditData({ ...editData, weight: parseFloat(e.target.value) || 0 })}
-                      className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black italic focus:border-volt outline-none transition-all text-center"
-                    />
-                  </div>
-
-                  {/* Training Goal */}
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('settings.trainingObjective')}</label>
-                    <div className="grid grid-cols-1 gap-2">
-                      {(['pure_strength', 'powerbuilding', 'hypertrophy', 'peaking', 'longevity'] as TrainingGoal[]).map(goal => (
-                        <button
-                          key={goal}
-                          onClick={() => setEditData({ ...editData, trainingGoal: goal })}
-                          className={cn(
-                            "flex flex-col gap-1 p-3 border-none transition-all text-left relative group",
-                            editData.trainingGoal === goal 
-                              ? "bg-volt/10 text-white ring-1 ring-volt/30" 
-                              : "bg-surface-variant text-zinc-400 hover:bg-white/5 hover:text-zinc-200"
-                          )}
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="font-sans text-[10px] font-bold uppercase tracking-widest">{t(`goal.${goal}`)}</span>
-                            {editData.trainingGoal === goal && (
-                              <CheckCircle2 size={12} className="text-volt" />
-                            )}
+                      ) : (
+                        <div className="flex gap-4">
+                          <div className="flex-1 space-y-1">
+                            <input
+                              type="number"
+                              value={editData.heightFeet}
+                              onChange={(e) => setEditData({ ...editData, heightFeet: parseInt(e.target.value) || 0 })}
+                              className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black italic focus:border-volt outline-none transition-all text-center"
+                            />
+                            <p className="text-[8px] font-bold text-zinc-500 text-center uppercase">{t('settings.feet')}</p>
                           </div>
-                          <p className="text-[8px] text-zinc-500 font-medium uppercase tracking-widest leading-tight">
-                            {t(`goal.${goal}.desc`)}
-                          </p>
-                        </button>
-                      ))}
+                          <div className="flex-1 space-y-1">
+                            <input
+                              type="number"
+                              value={editData.heightInches}
+                              onChange={(e) => setEditData({ ...editData, heightInches: parseInt(e.target.value) || 0 })}
+                              className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black italic focus:border-volt outline-none transition-all text-center"
+                            />
+                            <p className="text-[8px] font-bold text-zinc-500 text-center uppercase">{t('settings.inches')}</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Weight */}
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('settings.weight')} ({unit === 'metric' ? 'kg' : 'LBS'})</label>
+                      <input
+                        type="number"
+                        value={editData.weight}
+                        onChange={(e) => setEditData({ ...editData, weight: parseFloat(e.target.value) || 0 })}
+                        className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black italic focus:border-volt outline-none transition-all text-center"
+                      />
+                    </div>
+
+                    {/* Training Goal */}
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('settings.trainingObjective')}</label>
+                      <div className="grid grid-cols-1 gap-2">
+                        {(['pure_strength', 'powerbuilding', 'hypertrophy', 'peaking', 'longevity'] as TrainingGoal[]).map(goal => (
+                          <button
+                            key={goal}
+                            onClick={() => setEditData({ ...editData, trainingGoal: goal })}
+                            className={cn(
+                              "flex flex-col gap-1 p-3 border-none transition-all text-left relative group",
+                              editData.trainingGoal === goal
+                                ? "bg-volt/10 text-white ring-1 ring-volt/30"
+                                : "bg-surface-variant text-zinc-400 hover:bg-white/5 hover:text-zinc-200"
+                            )}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="font-sans text-[10px] font-bold uppercase tracking-widest">{t(`goal.${goal}`)}</span>
+                              {editData.trainingGoal === goal && (
+                                <CheckCircle2 size={12} className="text-volt" />
+                              )}
+                            </div>
+                            <p className="text-[8px] text-zinc-500 font-medium uppercase tracking-widest leading-tight">
+                              {t(`goal.${goal}.desc`)}
+                            </p>
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="flex gap-4">
-                  <button 
-                    onClick={() => {
-                      setShowBiometricsModal(false);
-                      setAgeError(null);
-                    }}
-                    className="flex-1 py-4 bg-white/5 text-zinc-500 font-sans text-xs font-bold uppercase tracking-widest hover:text-white transition-all"
-                  >
-                    {t('common.cancel')}
-                  </button>
-                  <button 
-                    onClick={handleSave}
-                    disabled={loading || !!ageError}
-                    className="flex-1 py-4 bg-volt text-void font-sans text-xs font-bold uppercase tracking-widest hover:bg-white hover:shadow-[0_0_20px_var(--primary-glow)] transition-all disabled:opacity-50"
-                  >
-                    {loading ? t('settings.recalculate') : t('coach.confirm')}
-                  </button>
+                  <div className="flex gap-4">
+                    <button
+                      onClick={() => {
+                        setShowBiometricsModal(false);
+                        setAgeError(null);
+                      }}
+                      className="flex-1 py-4 bg-white/5 text-zinc-500 font-sans text-xs font-bold uppercase tracking-widest hover:text-white transition-all"
+                    >
+                      {t('common.cancel')}
+                    </button>
+                    <button
+                      onClick={handleSave}
+                      disabled={loading || !!ageError}
+                      className="flex-1 py-4 bg-volt text-void font-sans text-xs font-bold uppercase tracking-widest hover:bg-white hover:shadow-[0_0_20px_var(--primary-glow)] transition-all disabled:opacity-50"
+                    >
+                      {loading ? t('settings.recalculate') : t('coach.confirm')}
+                    </button>
+                  </div>
                 </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>,
-      document.body
-    )}
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
 
       {/* Protocol Adjustment Modal */}
       {mounted && createPortal(
         <AnimatePresence>
           {showProtocolModal && (
             <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 overflow-y-auto custom-scrollbar">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowProtocolModal(false)}
-              className="fixed inset-0 bg-void/80 backdrop-blur-sm"
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-2xl glass-panel p-3 md:p-6 border-volt/30 shadow-2xl my-auto"
-            >
-              <div className="flex items-center gap-4 mb-8">
-                <div className="p-2 md:p-4 bg-volt/10 text-volt">
-                  <Zap size={32} />
-                </div>
-                <div>
-                  <h3 className="font-sans text-2xl font-black uppercase italic tracking-tight text-white">{t('settings.timelineFrequency')}</h3>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">{t('settings.protocolRecalibrate')}</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                {/* Timeline Column */}
-                <div className="space-y-6">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('settings.monthsToComp')}</label>
-                    <div className="grid grid-cols-4 gap-2">
-                      {[3, 6, 9, 12].map((m) => (
-                        <button
-                          key={m}
-                          onClick={() => setAdjustingDuration(m)}
-                          className={cn(
-                            "py-3 border font-sans text-xs font-bold uppercase tracking-widest transition-all",
-                            adjustingDuration === m ? "bg-volt/10 border-volt text-white" : "bg-surface-variant border-white/5 text-zinc-500"
-                          )}
-                        >
-                          {m}M
-                        </button>
-                      ))}
-                    </div>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setShowProtocolModal(false)}
+                className="fixed inset-0 bg-void/80 backdrop-blur-sm"
+              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className="relative w-full max-w-2xl glass-panel p-3 md:p-6 border-volt/30 shadow-2xl my-auto"
+              >
+                <div className="flex items-center gap-4 mb-8">
+                  <div className="p-2 md:p-4 bg-volt/10 text-volt">
+                    <Zap size={32} />
                   </div>
+                  <div>
+                    <h3 className="font-sans text-2xl font-black uppercase italic tracking-tight text-white">{t('settings.timelineFrequency')}</h3>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">{t('settings.protocolRecalibrate')}</p>
+                  </div>
+                </div>
 
-                  <div className="p-4 bg-void/40 border border-white/5">
-                    <p className="text-[8px] font-bold uppercase tracking-widest text-zinc-500 mb-2">{t('settings.blockRedistribution')} ({adjustingDuration * 4} {t('onboarding.weeks')})</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                  {/* Timeline Column */}
+                  <div className="space-y-6">
                     <div className="space-y-2">
-                      {getPlanForDuration(adjustingDuration * 4, profile?.trainingGoal || 'powerbuilding').map((b, i) => (
-                        <div key={i} className="flex justify-between items-center text-[10px]">
-                          <span className="font-bold uppercase text-zinc-400">{b.label || b.type}</span>
-                          <span className="font-bold text-volt">{b.durationWeeks} {t('onboarding.weeks')}</span>
-                        </div>
-                      ))}
+                      <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('settings.monthsToComp')}</label>
+                      <div className="grid grid-cols-4 gap-2">
+                        {[3, 6, 9, 12].map((m) => (
+                          <button
+                            key={m}
+                            onClick={() => setAdjustingDuration(m)}
+                            className={cn(
+                              "py-3 border font-sans text-xs font-bold uppercase tracking-widest transition-all",
+                              adjustingDuration === m ? "bg-volt/10 border-volt text-white" : "bg-surface-variant border-white/5 text-zinc-500"
+                            )}
+                          >
+                            {m}M
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="p-4 bg-void/40 border border-white/5">
+                      <p className="text-[8px] font-bold uppercase tracking-widest text-zinc-500 mb-2">{t('settings.blockRedistribution')} ({adjustingDuration * 4} {t('onboarding.weeks')})</p>
+                      <div className="space-y-2">
+                        {getPlanForDuration(adjustingDuration * 4, profile?.trainingGoal || 'powerbuilding').map((b, i) => (
+                          <div key={i} className="flex justify-between items-center text-[10px]">
+                            <span className="font-bold uppercase text-zinc-400">{b.label || b.type}</span>
+                            <span className="font-bold text-volt">{b.durationWeeks} {t('onboarding.weeks')}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Frequency Column */}
+                  <div className="space-y-6">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('onboarding.frequency')}</label>
+                      <div className="grid grid-cols-5 gap-2">
+                        {[3, 4, 5, 6, 7].map((f) => (
+                          <button
+                            key={f}
+                            onClick={() => setAdjustingFrequency(f)}
+                            className={cn(
+                              "py-3 border font-sans text-xs font-bold uppercase tracking-widest transition-all",
+                              adjustingFrequency === f ? "bg-volt/10 border-volt text-white" : "bg-surface-variant border-white/5 text-zinc-500"
+                            )}
+                          >
+                            {f}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="p-4 bg-void/40 border border-white/5">
+                      <p className="text-[8px] font-bold uppercase tracking-widest text-zinc-500 mb-2">{t('settings.weeklyVolumePreview')}</p>
+                      <p className="text-xs font-bold text-white uppercase tracking-widest">
+                        {adjustingFrequency} {t('nav.training')} / {t('workout.week')}
+                      </p>
+                      <p className="text-[10px] text-zinc-500 mt-1 uppercase">
+                        {t('settings.monthlyMissions')}: {adjustingFrequency * 4}
+                      </p>
                     </div>
                   </div>
                 </div>
 
-                {/* Frequency Column */}
-                <div className="space-y-6">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('onboarding.frequency')}</label>
-                    <div className="grid grid-cols-5 gap-2">
-                      {[3, 4, 5, 6, 7].map((f) => (
-                        <button
-                          key={f}
-                          onClick={() => setAdjustingFrequency(f)}
-                          className={cn(
-                            "py-3 border font-sans text-xs font-bold uppercase tracking-widest transition-all",
-                            adjustingFrequency === f ? "bg-volt/10 border-volt text-white" : "bg-surface-variant border-white/5 text-zinc-500"
-                          )}
-                        >
-                          {f}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="p-4 bg-void/40 border border-white/5">
-                    <p className="text-[8px] font-bold uppercase tracking-widest text-zinc-500 mb-2">{t('settings.weeklyVolumePreview')}</p>
-                    <p className="text-xs font-bold text-white uppercase tracking-widest">
-                      {adjustingFrequency} {t('nav.training')} / {t('workout.week')}
-                    </p>
-                    <p className="text-[10px] text-zinc-500 mt-1 uppercase">
-                      {t('settings.monthlyMissions')}: {adjustingFrequency * 4}
+                <div className="p-4 bg-volt/10 border border-volt/30 mb-8">
+                  <div className="flex items-start gap-3 text-left">
+                    <Info size={16} className="text-volt shrink-0 mt-0.5" />
+                    <p className="text-[10px] text-volt font-bold uppercase tracking-widest leading-relaxed">
+                      {t('settings.protocolWarning')}
+                      {adjustingDuration !== profile.trainingDurationMonths && ` ${t('settings.durationRestartWarning')}`}
                     </p>
                   </div>
                 </div>
-              </div>
 
-              <div className="p-4 bg-volt/10 border border-volt/30 mb-8">
-                <div className="flex items-start gap-3 text-left">
-                  <Info size={16} className="text-volt shrink-0 mt-0.5" />
-                  <p className="text-[10px] text-volt font-bold uppercase tracking-widest leading-relaxed">
-                    {t('settings.protocolWarning')}
-                    {adjustingDuration !== profile.trainingDurationMonths && ` ${t('settings.durationRestartWarning')}`}
-                  </p>
+                <div className="flex gap-4">
+                  <button
+                    onClick={() => setShowProtocolModal(false)}
+                    className="flex-1 btn-secondary py-4"
+                  >
+                    {t('common.close')}
+                  </button>
+                  <button
+                    onClick={handleAdjustProtocol}
+                    disabled={loading}
+                    className="flex-1 btn-primary py-4 disabled:opacity-50"
+                  >
+                    {loading ? t('settings.recalculate') : t('settings.confirmProtocol')}
+                  </button>
                 </div>
-              </div>
-
-              <div className="flex gap-4">
-                <button 
-                  onClick={() => setShowProtocolModal(false)}
-                  className="flex-1 btn-secondary py-4"
-                >
-                  {t('common.close')}
-                </button>
-                <button 
-                  onClick={handleAdjustProtocol}
-                  disabled={loading}
-                  className="flex-1 btn-primary py-4 disabled:opacity-50"
-                >
-                  {loading ? t('settings.recalculate') : t('settings.confirmProtocol')}
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>,
-      document.body
-    )}
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
 
       {/* 1RM Adjustment Modal */}
       {mounted && createPortal(
         <AnimatePresence>
           {show1RMModal && (
             <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 overflow-y-auto custom-scrollbar">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShow1RMModal(false)}
-              className="fixed inset-0 bg-void/80 backdrop-blur-sm"
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-md glass-panel p-3 md:p-6 border-volt/30 shadow-2xl my-auto"
-            >
-              <div className="flex items-center gap-4 mb-8">
-                <div className="p-2 md:p-4 bg-volt/10 text-volt">
-                  <Dumbbell size={32} />
-                </div>
-                <div>
-                  <h3 className="font-sans text-2xl font-black uppercase italic tracking-tight text-white">{t('settings.update1rm')}</h3>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">{t('settings.currentMaxes')}</p>
-                </div>
-              </div>
-
-              <div className="space-y-6">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Squat ({unit === 'metric' ? 'kg' : 'LBS'})</label>
-                    <input
-                      type="number"
-                      value={edit1RMData.squatPR || ''}
-                      onChange={(e) => setEdit1RMData({ ...edit1RMData, squatPR: parseFloat(e.target.value) || 0 })}
-                      className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black italic focus:border-volt outline-none transition-all text-center"
-                    />
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setShow1RMModal(false)}
+                className="fixed inset-0 bg-void/80 backdrop-blur-sm"
+              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className="relative w-full max-w-md glass-panel p-3 md:p-6 border-volt/30 shadow-2xl my-auto"
+              >
+                <div className="flex items-center gap-4 mb-8">
+                  <div className="p-2 md:p-4 bg-volt/10 text-volt">
+                    <Dumbbell size={32} />
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Bench ({unit === 'metric' ? 'kg' : 'LBS'})</label>
-                    <input
-                      type="number"
-                      value={edit1RMData.benchPR || ''}
-                      onChange={(e) => setEdit1RMData({ ...edit1RMData, benchPR: parseFloat(e.target.value) || 0 })}
-                      className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black italic focus:border-volt outline-none transition-all text-center"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Deadlift ({unit === 'metric' ? 'kg' : 'LBS'})</label>
-                    <input
-                      type="number"
-                      value={edit1RMData.deadliftPR || ''}
-                      onChange={(e) => setEdit1RMData({ ...edit1RMData, deadliftPR: parseFloat(e.target.value) || 0 })}
-                      className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black italic focus:border-volt outline-none transition-all text-center"
-                    />
+                  <div>
+                    <h3 className="font-sans text-2xl font-black uppercase italic tracking-tight text-white">{t('settings.update1rm')}</h3>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">{t('settings.currentMaxes')}</p>
                   </div>
                 </div>
 
-                {/* Tier Preview */}
-                <div className="p-4 bg-void/40 border border-white/5">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('settings.projectedTier') || "Projected Tier"}</span>
-                    <span className={cn(
-                      "text-[10px] font-black uppercase tracking-widest px-2 py-0.5",
-                      getTierStyleLocal(calculateTier(
-                        edit1RMData.squatPR,
-                        edit1RMData.benchPR,
-                        edit1RMData.deadliftPR,
-                        profile?.weight || 0,
-                        profile?.gender || 'male'
-                      )).bg,
-                      getTierStyleLocal(calculateTier(
-                        edit1RMData.squatPR,
-                        edit1RMData.benchPR,
-                        edit1RMData.deadliftPR,
-                        profile?.weight || 0,
-                        profile?.gender || 'male'
-                      )).color
-                    )}>
-                      {calculateTier(
+                <div className="space-y-6">
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Squat ({unit === 'metric' ? 'kg' : 'LBS'})</label>
+                      <input
+                        type="number"
+                        value={edit1RMData.squatPR || ''}
+                        onChange={(e) => setEdit1RMData({ ...edit1RMData, squatPR: parseFloat(e.target.value) || 0 })}
+                        className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black italic focus:border-volt outline-none transition-all text-center"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Bench ({unit === 'metric' ? 'kg' : 'LBS'})</label>
+                      <input
+                        type="number"
+                        value={edit1RMData.benchPR || ''}
+                        onChange={(e) => setEdit1RMData({ ...edit1RMData, benchPR: parseFloat(e.target.value) || 0 })}
+                        className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black italic focus:border-volt outline-none transition-all text-center"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Deadlift ({unit === 'metric' ? 'kg' : 'LBS'})</label>
+                      <input
+                        type="number"
+                        value={edit1RMData.deadliftPR || ''}
+                        onChange={(e) => setEdit1RMData({ ...edit1RMData, deadliftPR: parseFloat(e.target.value) || 0 })}
+                        className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black italic focus:border-volt outline-none transition-all text-center"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Tier Preview */}
+                  <div className="p-4 bg-void/40 border border-white/5">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('settings.projectedTier') || "Projected Tier"}</span>
+                      <span className={cn(
+                        "text-[10px] font-black uppercase tracking-widest px-2 py-0.5",
+                        getTierStyleLocal(calculateTier(
+                          edit1RMData.squatPR,
+                          edit1RMData.benchPR,
+                          edit1RMData.deadliftPR,
+                          profile?.weight || 0,
+                          profile?.gender || 'male'
+                        )).bg,
+                        getTierStyleLocal(calculateTier(
+                          edit1RMData.squatPR,
+                          edit1RMData.benchPR,
+                          edit1RMData.deadliftPR,
+                          profile?.weight || 0,
+                          profile?.gender || 'male'
+                        )).color
+                      )}>
+                        {calculateTier(
+                          edit1RMData.squatPR,
+                          edit1RMData.benchPR,
+                          edit1RMData.deadliftPR,
+                          profile.weight || 0,
+                          profile.gender || 'male'
+                        )}
+                      </span>
+                    </div>
+                    <p className="text-[8px] text-zinc-500 font-medium uppercase tracking-widest leading-relaxed">
+                      {t('settings.tierRecalibrationNote')} <span className="text-white font-bold">{calculateTier(
                         edit1RMData.squatPR,
                         edit1RMData.benchPR,
                         edit1RMData.deadliftPR,
                         profile.weight || 0,
                         profile.gender || 'male'
-                      )}
-                    </span>
+                      )}</span>.
+                    </p>
                   </div>
-                  <p className="text-[8px] text-zinc-500 font-medium uppercase tracking-widest leading-relaxed">
-                    {t('settings.tierRecalibrationNote')} <span className="text-white font-bold">{calculateTier(
-                      edit1RMData.squatPR,
-                      edit1RMData.benchPR,
-                      edit1RMData.deadliftPR,
-                      profile.weight || 0,
-                      profile.gender || 'male'
-                    )}</span>.
-                  </p>
-                </div>
 
-                <div className="flex gap-4">
-                  <button 
-                    onClick={() => setShow1RMModal(false)}
-                    className="flex-1 py-4 bg-white/5 text-zinc-500 font-sans text-xs font-bold uppercase tracking-widest hover:text-white transition-all"
-                  >
-                    {t('common.close')}
-                  </button>
-                  <button 
-                    onClick={handleUpdate1RM}
-                    disabled={loading}
-                    className="flex-1 py-4 bg-volt text-void font-sans text-xs font-bold uppercase tracking-widest hover:bg-white hover:shadow-[0_0_20px_var(--primary-glow)] transition-all disabled:opacity-50"
-                  >
-                    {loading ? t('settings.recalculate') : t('coach.confirm')}
-                  </button>
+                  <div className="flex gap-4">
+                    <button
+                      onClick={() => setShow1RMModal(false)}
+                      className="flex-1 py-4 bg-white/5 text-zinc-500 font-sans text-xs font-bold uppercase tracking-widest hover:text-white transition-all"
+                    >
+                      {t('common.close')}
+                    </button>
+                    <button
+                      onClick={handleUpdate1RM}
+                      disabled={loading}
+                      className="flex-1 py-4 bg-volt text-void font-sans text-xs font-bold uppercase tracking-widest hover:bg-white hover:shadow-[0_0_20px_var(--primary-glow)] transition-all disabled:opacity-50"
+                    >
+                      {loading ? t('settings.recalculate') : t('coach.confirm')}
+                    </button>
+                  </div>
                 </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>,
-      document.body
-    )}
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
 
       {/* Tier Info Modal */}
       {mounted && createPortal(
         <AnimatePresence>
           {showTierInfo && (
             <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 overflow-y-auto custom-scrollbar">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowTierInfo(false)}
-              className="fixed inset-0 bg-void/80 backdrop-blur-sm"
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-lg glass-panel p-3 md:p-6 border-volt/30 shadow-2xl my-auto"
-            >
-              <div className="absolute top-0 right-0 p-6">
-                <button 
-                  onClick={() => setShowTierInfo(false)}
-                  className="p-2 bg-white/5 text-zinc-500 hover:text-white transition-all"
-                >
-                  <X size={20} />
-                </button>
-              </div>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setShowTierInfo(false)}
+                className="fixed inset-0 bg-void/80 backdrop-blur-sm"
+              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className="relative w-full max-w-lg glass-panel p-3 md:p-6 border-volt/30 shadow-2xl my-auto"
+              >
 
-              <div className="flex items-center gap-4 mb-8">
-                <div className="p-2 md:p-4 bg-volt/10 text-volt">
-                  <ListOrdered size={32} />
+                <div className="absolute top-0 right-0 p-6">
+                  <button
+                    onClick={() => setShowTierInfo(false)}
+                    className="p-2 bg-white/5 text-zinc-500 hover:text-white transition-all"
+                  >
+                    <X size={20} />
+                  </button>
                 </div>
-                <div>
-                  <h3 className="font-sans text-2xl font-black uppercase italic tracking-tight text-white">Strength Standards</h3>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Tier Designation Logic</p>
+
+                <div className="flex items-center gap-4 mb-8">
+                  {/*}
+                  <div className="p-2 md:p-4 bg-volt/10 text-volt">
+                    <ListOrdered size={32} />
+                  </div>
+                  {*/}
+                  <div>
+                    <h3 className="font-sans text-2xl font-black uppercase italic tracking-tight text-white">Strength Standards</h3>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Tier Designation Logic</p>
+                  </div>
                 </div>
-              </div>
 
-              <div className="space-y-6">
-                <p className="text-zinc-400 text-sm leading-relaxed">
-                  Your tier is calculated based on your <span className="text-white font-bold italic uppercase">Strength-to-Bodyweight Ratio</span>. 
-                  This is the sum of your Squat, Bench, and Deadlift PRs divided by your bodyweight.
-                </p>
+                <div className="space-y-6">
+                  <p className="text-zinc-400 text-xs leading-relaxed">
+                    Your tier is calculated based on your <span className="text-white font-bold italic uppercase">Strength-to-Bodyweight Ratio</span>.
+                    This is the sum of your Squat, Bench, and Deadlift PRs divided by your bodyweight.
+                  </p>
 
-                <div className="space-y-4">
-                  {[
-                    { name: 'Elite', male: '> 5.8x', female: '> 3.8x', icon: Skull, color: 'text-[#9333EA]', bg: 'bg-[#9333EA]/10', glow: 'drop-shadow-[0_0_20px_#3b82f6]', animation: '' },
-                    { name: 'Advanced', male: '> 4.5x', female: '> 2.9x', icon: Trophy, color: 'text-[#8B8000]', bg: 'bg-[#8B8000]/10', glow: 'drop-shadow-[0_0_15px_#8B8000]', animation: '' },
-                    { name: 'Intermediate', male: '> 3.6x', female: '> 2.3x', icon: Trophy, color: 'text-white', bg: 'bg-white/10', glow: 'drop-shadow-[0_0_10px_rgba(255,255,255,0.8)]', animation: '' },
-                    { name: 'Novice', male: '> 2.4x', female: '> 1.5x', icon: Medal, color: 'text-volt', bg: 'bg-volt/10', glow: '', animation: '' },
-                    { name: 'Untrained', male: 'Baseline', female: 'Baseline', icon: Medal, color: 'text-zinc-500', bg: 'bg-zinc-500/10', glow: '', animation: '' },
-                  ].map((tier) => (
-                    <div key={tier.name} className={cn(
-                      "flex items-center justify-between p-4 border transition-all",
-                      profile.level === tier.name.toLowerCase() ? `bg-white/5 border-white/50 shadow-[0_0_20px_rgba(255,255,255,0.05)]` : "bg-void/40 border-white/5"
-                    )}
-                    style={profile.level === tier.name.toLowerCase() ? { borderColor: tier.color.includes('[') ? tier.color.split('[')[1].split(']')[0] : 'var(--primary-color)' } : {}}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className={cn("p-2 relative overflow-hidden", tier.bg)}>
-                          <div className={cn("flex items-center justify-center", tier.animation)}>
-                            <tier.icon size={16} className={cn(tier.color, tier.glow)} />
+                  <div className="space-y-4">
+                    {[
+                      { name: 'Elite', male: '> 5.8x', female: '> 3.8x', icon: Skull, color: 'text-[#9333EA]', bg: 'bg-[#9333EA]/10', glow: 'drop-shadow-[0_0_20px_#3b82f6]', animation: '' },
+                      { name: 'Advanced', male: '> 4.5x', female: '> 2.9x', icon: Trophy, color: 'text-[#8B8000]', bg: 'bg-[#8B8000]/10', glow: 'drop-shadow-[0_0_15px_#8B8000]', animation: '' },
+                      { name: 'Intermediate', male: '> 3.6x', female: '> 2.3x', icon: Trophy, color: 'text-white', bg: 'bg-white/10', glow: 'drop-shadow-[0_0_10px_rgba(255,255,255,0.8)]', animation: '' },
+                      { name: 'Novice', male: '> 2.4x', female: '> 1.5x', icon: Medal, color: 'text-volt', bg: 'bg-volt/10', glow: '', animation: '' },
+                      { name: 'Untrained', male: 'Baseline', female: 'Baseline', icon: Medal, color: 'text-zinc-500', bg: 'bg-zinc-500/10', glow: '', animation: '' },
+                    ].map((tier) => (
+                      <div key={tier.name} className={cn(
+                        "flex items-center justify-between p-4 border transition-all",
+                        profile.level === tier.name.toLowerCase() ? `bg-white/5 border-white/50 shadow-[0_0_20px_rgba(255,255,255,0.05)]` : "bg-void/40 border-white/5"
+                      )}
+                        style={profile.level === tier.name.toLowerCase() ? { borderColor: tier.color.includes('[') ? tier.color.split('[')[1].split(']')[0] : 'var(--primary-color)' } : {}}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={cn("p-2 relative overflow-hidden", tier.bg)}>
+                            <div className={cn("flex items-center justify-center", tier.animation)}>
+                              <tier.icon size={16} className={cn(tier.color, tier.glow)} />
+                            </div>
                           </div>
+                          <span className={cn("font-sans text-sm font-black uppercase tracking-widest", tier.color)}>
+                            {tier.name}
+                          </span>
                         </div>
-                        <span className={cn("font-sans text-sm font-black uppercase tracking-widest", tier.color)}>
-                          {tier.name}
-                        </span>
+                        <div className="text-right">
+                          <p className="text-[8px] font-black uppercase tracking-widest text-zinc-500 mb-0.5">Ratio (M/F)</p>
+                          <p className="text-xs font-bold text-white uppercase tracking-tighter">{tier.male} / {tier.female}</p>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-[8px] font-black uppercase tracking-widest text-zinc-500 mb-0.5">Ratio (M/F)</p>
-                        <p className="text-xs font-bold text-white uppercase tracking-tighter">{tier.male} / {tier.female}</p>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>,
-      document.body
-    )}
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   );
 };

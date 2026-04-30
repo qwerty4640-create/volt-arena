@@ -36,7 +36,7 @@ const getIcon = (name: string) => {
 export const NonProgramActivityModal = ({ isOpen, onClose, initialData }: NonProgramActivityModalProps) => {
   const { logNonProgramActivity, updateActiveRecovery } = useWorkout();
   const { t, profile, unit } = useSettings();
-  
+
   const [activityId, setActivityId] = useState<string>('cardio_running');
   const [rpe, setRpe] = useState(5);
   const [duration, setDuration] = useState(30);
@@ -49,7 +49,7 @@ export const NonProgramActivityModal = ({ isOpen, onClose, initialData }: NonPro
     return now.toISOString().slice(0, 16);
   });
   const [note, setNote] = useState('');
-  
+
   React.useEffect(() => {
     if (isOpen && initialData) {
       setActivityId(initialData.activityId || 'cardio_running');
@@ -101,7 +101,7 @@ export const NonProgramActivityModal = ({ isOpen, onClose, initialData }: NonPro
   const handleSubmit = async () => {
     const selectedTime = new Date(performedAt).getTime();
     const now = Date.now();
-    
+
     if (selectedTime > now) {
       setError("Temporal Error: Cannot log activity in the future.");
       return;
@@ -125,7 +125,7 @@ export const NonProgramActivityModal = ({ isOpen, onClose, initialData }: NonPro
           performedAt: new Date(performedAt).toISOString(),
           caloriesBurned: estimatedCalories
         });
-        
+
         const liveRegion = document.getElementById('a11y-live-region');
         if (liveRegion) liveRegion.textContent = 'Activity logged successfully updated.';
       } else {
@@ -157,7 +157,7 @@ export const NonProgramActivityModal = ({ isOpen, onClose, initialData }: NonPro
             onClick={onClose}
             className="absolute inset-0 bg-void/90 backdrop-blur-xl"
           />
-          
+
           <motion.div
             initial={{ scale: 0.95, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
@@ -168,7 +168,7 @@ export const NonProgramActivityModal = ({ isOpen, onClose, initialData }: NonPro
             <div className="p-4 md:p-6 bg-zinc-900 border-b border-zinc-800 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-4">
                 <div>
-                  <h3 className={cn("font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tight text-white")}>{t('Non-Program Activity')}</h3>
+                  <h3 className={cn("text-xl md:text-2xl font-black uppercase italic tracking-tight text-white")}>{t('Non-Program Activity')}</h3>
                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">
                     {t('Tactical Integration Log')}
                   </p>
@@ -182,7 +182,7 @@ export const NonProgramActivityModal = ({ isOpen, onClose, initialData }: NonPro
             </div>
 
             <div className="p-4 md:p-6 space-y-6 overflow-y-auto custom-scrollbar flex-1">
-              
+
               {/* Activity Selection Area */}
               <div className="space-y-4">
                 <div className="relative">
@@ -197,7 +197,7 @@ export const NonProgramActivityModal = ({ isOpen, onClose, initialData }: NonPro
                     className="block w-full pl-10 pr-3 py-3 border border-zinc-800 bg-black text-white focus:outline-none focus:ring-1 focus:ring-volt focus:border-volt sm:text-sm transition-colors rounded-none placeholder-zinc-700 font-sans uppercase tracking-widest text-[11px] font-black"
                   />
                 </div>
-                
+
                 <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar">
                   {(['All', 'Cardio', 'Combat', 'Strength', 'Sport', 'Recovery'] as const).map(category => (
                     <button
@@ -205,7 +205,7 @@ export const NonProgramActivityModal = ({ isOpen, onClose, initialData }: NonPro
                       onClick={() => setSelectedCategory(category)}
                       className={cn(
                         "px-3 py-1.5 text-[10px] sm:text-xs font-black uppercase tracking-wider whitespace-nowrap transition-colors rounded-none border border-zinc-800",
-                        selectedCategory === category 
+                        selectedCategory === category
                           ? (category === 'All' ? 'bg-volt/20 text-volt border-volt/30' : CATEGORY_COLORS[category as ActivityCategory])
                           : "bg-black text-zinc-500 hover:text-zinc-300"
                       )}
@@ -224,8 +224,8 @@ export const NonProgramActivityModal = ({ isOpen, onClose, initialData }: NonPro
                         onClick={() => setActivityId(activity.id)}
                         className={cn(
                           "flex items-center gap-2 p-3 border transition-colors text-left rounded-none overflow-hidden",
-                          activityId === activity.id 
-                            ? "bg-volt/10 border-volt text-volt shadow-[0_0_10px_rgba(206,255,0,0.1)]" 
+                          activityId === activity.id
+                            ? "bg-volt/10 border-volt text-volt shadow-[0_0_10px_rgba(206,255,0,0.1)]"
                             : "bg-black border-zinc-800 text-zinc-400 hover:border-zinc-700 hover:text-white"
                         )}
                       >
@@ -252,7 +252,7 @@ export const NonProgramActivityModal = ({ isOpen, onClose, initialData }: NonPro
                   </div>
                 </div>
                 <div className="w-12 h-12 bg-black border border-zinc-800 flex items-center justify-center">
-                   <Flame className="text-volt" size={24} />
+                  <Flame className="text-volt" size={24} />
                 </div>
               </div>
 
@@ -338,7 +338,7 @@ export const NonProgramActivityModal = ({ isOpen, onClose, initialData }: NonPro
 
               {/* Impact Information */}
               {rpe >= 7 && (
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   className="flex gap-3 bg-crimson/10 border border-crimson/30 p-4 rounded-none"

@@ -55,15 +55,12 @@ export const WelcomeModule = ({ onStart, onViewBriefing }: WelcomeModuleProps) =
   }, [nextWorkout, currentSession, profile, calibration, calculateProgramCalories]);
 
   return (
-    <div className="col-span-1 md:col-span-2 lg:col-span-3 mb-6 md:mb-8">
-      <div className="glass-panel p-6 md:p-10 border-none flex flex-col gap-6 relative overflow-hidden group">
+    <div className="col-span-1 md:col-span-2 lg:col-span-3">
+      <div className="glass-panel p-4 md:p-8 border-none flex flex-col gap-6 relative overflow-hidden group">
         <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity duration-1000 pointer-events-none">
-          <Play size={240} className="fill-volt" />
+          {/*}<Play size={240} className="fill-volt" />{*/}
         </div>
 
-        <span className="font-mono text-[9px] tracking-[widest] text-zinc-500 uppercase">
-          {t('analysis.statusReport')}
-        </span>
         <h1 className="text-3xl font-black italic uppercase leading-none">
           {greeting}, <span className="text-volt">{tacticalName}</span>
         </h1>
