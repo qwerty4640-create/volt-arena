@@ -54,11 +54,11 @@ export const OnboardingFlow = () => {
 
   const isHeightError = unit === 'metric'
     ? (formData.height !== '' && (heightVal < 50 || heightVal > 300))
-    : ((formData.heightFeet !== '' && (heightFeetVal < 2 || heightFeetVal > 9)) || 
-       (formData.heightInches !== '' && (heightInchesVal < 0 || heightInchesVal > 11)));
+    : ((formData.heightFeet !== '' && (heightFeetVal < 2 || heightFeetVal > 9)) ||
+      (formData.heightInches !== '' && (heightInchesVal < 0 || heightInchesVal > 11)));
 
   const isWeightError = formData.weight !== '' && (
-    unit === 'metric' 
+    unit === 'metric'
       ? (weightVal < 20 || weightVal > 600)
       : (weightVal < 40 || weightVal > 1300)
   );
@@ -94,7 +94,7 @@ export const OnboardingFlow = () => {
 
   const handleUnitChange = (newUnit: 'imperial' | 'metric') => {
     if (newUnit === unit) return;
-    
+
     // Convert current formData values
     const weightVal = parseFloat(formData.weight);
     const heightVal = parseFloat(formData.height);
@@ -148,7 +148,7 @@ export const OnboardingFlow = () => {
     } else if (step === 'objective') {
       setLoading(true);
       try {
-        const heightVal = unit === 'metric' 
+        const heightVal = unit === 'metric'
           ? (parseFloat(formData.height) || 0)
           : ((parseFloat(formData.heightFeet) || 0) * 12) + (parseFloat(formData.heightInches) || 0);
 
@@ -193,10 +193,10 @@ export const OnboardingFlow = () => {
   const getRecommendedGoal = (): TrainingGoal => {
     const age = parseInt(formData.age) || 30;
     const weight = parseFloat(formData.weight) || 80;
-    const height = unit === 'metric' 
-      ? (parseFloat(formData.height) || 175) 
+    const height = unit === 'metric'
+      ? (parseFloat(formData.height) || 175)
       : ((parseFloat(formData.heightFeet) || 5) * 30.48 + (parseFloat(formData.heightInches) || 9) * 2.54);
-    
+
     const heightM = height / 100;
     const weightKg = unit === 'metric' ? weight : weight / 2.20462;
     const bmi = weightKg / (heightM * heightM);
@@ -205,17 +205,17 @@ export const OnboardingFlow = () => {
     if (formData.trainingAge === 'untrained' || formData.trainingAge === 'novice') return 'hypertrophy';
     if (formData.trainingAge === 'intermediate') return 'powerbuilding';
     if ((formData.trainingAge === 'advanced' || formData.trainingAge === 'elite') && formData.trainingFrequency >= 5) return 'pure_strength';
-    
+
     return 'powerbuilding';
   };
 
   const getRecommendationRationale = (goal: TrainingGoal): string => {
     const age = parseInt(formData.age) || 30;
     const weight = parseFloat(formData.weight) || 80;
-    const height = unit === 'metric' 
-      ? (parseFloat(formData.height) || 175) 
+    const height = unit === 'metric'
+      ? (parseFloat(formData.height) || 175)
       : ((parseFloat(formData.heightFeet) || 5) * 30.48 + (parseFloat(formData.heightInches) || 9) * 2.54);
-    
+
     const heightM = height / 100;
     const weightKg = unit === 'metric' ? weight : weight / 2.20462;
     const bmi = weightKg / (heightM * heightM);
@@ -254,7 +254,7 @@ export const OnboardingFlow = () => {
   }, [step]);
 
   return (
-    <div 
+    <div
       ref={scrollContainerRef}
       className="fixed inset-0 z-[100] bg-void flex justify-center p-2 md:p-6 overflow-y-auto custom-scrollbar"
     >
@@ -266,10 +266,10 @@ export const OnboardingFlow = () => {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              className="glass-panel px-2 md:px-4 py-6 md:p-10 space-y-6 md:space-y-8"
+              className="glass-panel px-4 md:px-8 py-6 md:p-10 space-y-6 md:space-y-8"
             >
               <div className="flex items-center gap-6">
-                <button 
+                <button
                   onClick={() => logout()} // Back to Step 1 (Signup) means logging out
                   className="w-12 h-12 shrink-0 bg-surface-container-lowest border border-white/5 flex items-center justify-center text-zinc-400 hover:text-white hover:border-volt transition-all"
                 >
@@ -455,10 +455,10 @@ export const OnboardingFlow = () => {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              className="glass-panel px-2 md:px-4 py-6 md:p-10 space-y-6 md:space-y-8"
+              className="glass-panel px-4 md:px-8 py-6 md:p-10 space-y-6 md:space-y-8"
             >
               <div className="flex items-center gap-6">
-                <button 
+                <button
                   onClick={() => setStep('biometrics')}
                   className="w-12 h-12 shrink-0 bg-surface-container-lowest border border-white/5 flex items-center justify-center text-zinc-400 hover:text-white hover:border-volt transition-all"
                 >
@@ -633,7 +633,7 @@ export const OnboardingFlow = () => {
                     <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('onboarding.frequency')}</label>
                     <span className="text-volt font-headline text-xs font-black italic">{formData.trainingFrequency} {t('onboarding.daysPerWeek')}</span>
                   </div>
-                  <input 
+                  <input
                     type="range"
                     min="3"
                     max="7"
@@ -665,10 +665,10 @@ export const OnboardingFlow = () => {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              className="glass-panel px-2 md:px-4 py-6 md:p-10 space-y-6 md:space-y-8"
+              className="glass-panel px-4 md:px-8 py-6 md:p-10 space-y-6 md:space-y-8"
             >
               <div className="flex items-center gap-6">
-                <button 
+                <button
                   onClick={() => setStep('goals')}
                   className="w-12 h-12 shrink-0 bg-surface-container-lowest border border-white/5 flex items-center justify-center text-zinc-400 hover:text-white hover:border-volt transition-all"
                 >
@@ -739,16 +739,16 @@ export const OnboardingFlow = () => {
               key="complete"
               initial={{ opacity: 0, scale: 0.9, y: 30 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              transition={{ 
-                type: "spring", 
-                stiffness: 260, 
+              transition={{
+                type: "spring",
+                stiffness: 260,
                 damping: 20,
                 duration: 0.6
               }}
               className="glass-panel px-6 py-10 md:p-12 text-center space-y-6 md:space-y-8 relative overflow-hidden"
             >
               <div className="flex items-center gap-6 text-left mb-4">
-                <button 
+                <button
                   onClick={() => setStep('objective')}
                   className="w-12 h-12 shrink-0 bg-surface-container-lowest border border-white/5 flex items-center justify-center text-zinc-400 hover:text-white hover:border-volt transition-all"
                 >
@@ -760,7 +760,7 @@ export const OnboardingFlow = () => {
                 </div>
               </div>
 
-              <motion.div 
+              <motion.div
                 initial={{ scale: 0, rotate: -180 }}
                 animate={{ scale: 1, rotate: 0 }}
                 transition={{ delay: 0.3, type: "spring", stiffness: 200 }}
@@ -770,7 +770,7 @@ export const OnboardingFlow = () => {
               </motion.div>
 
               <div className="space-y-6">
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.5 }}
@@ -781,7 +781,7 @@ export const OnboardingFlow = () => {
                   </h2>
                 </motion.div>
 
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.7 }}
@@ -791,8 +791,8 @@ export const OnboardingFlow = () => {
                     <Medal size={20} />
                     {t(`goal.${formData.trainingGoal}`)}
                   </div>
-                  
-                  <p className="text-zinc-400 text-[10px] md:text-xs font-black uppercase tracking-[0.2em] leading-relaxed max-w-sm mx-auto">
+
+                  <p className="text-zinc-400 text-xs md:text-xs font-medium leading-relaxed max-w-sm mx-auto">
                     {t('onboarding.syncComplete')}
                   </p>
                 </motion.div>

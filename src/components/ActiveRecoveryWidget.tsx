@@ -42,7 +42,7 @@ const SwipeCard = ({
       onDragEnd={handleDragEnd}
       className="absolute inset-0 cursor-grab active:cursor-grabbing"
     >
-      <div className="w-full h-full glass-panel p-6 md:p-8 flex flex-col border-volt/20 shadow-2xl relative overflow-hidden group/card bg-zinc-950 border">
+      <div className="w-full h-full glass-panel p-4 md:p-8 flex flex-col border-volt/20 shadow-2xl relative overflow-hidden group/card bg-zinc-950 border">
         <div className="absolute inset-0 opacity-[0.03] pointer-events-none group-hover/card:opacity-[0.05] transition-opacity duration-700"
           style={{ backgroundImage: 'radial-gradient(var(--primary-color) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
 
@@ -63,10 +63,11 @@ const SwipeCard = ({
           <p className="text-[12px] text-zinc-500 font-medium mb-6 max-w-[280px]">
             {activity.description}
           </p>
-          <div className="flex items-center gap-4 text-zinc-400 font-mono text-xs uppercase tracking-widest">
+          <div className="flex items-center gap-3 text-zinc-400 font-bold text-xs uppercase">
             <span className="flex items-center gap-1.5">
               <Clock size={14} className="text-volt" /> {activity.recommendedDuration}m
             </span>
+            <span>•</span>
             <span className="flex items-center gap-1.5">
               <Zap size={14} className="text-volt" /> RPE {activity.recommendedRpe}
             </span>
@@ -147,15 +148,16 @@ export const ActiveRecoveryWidget = () => {
 
   return (
     <div className="w-full mt-6 flex flex-col gap-6">
-      <div className="flex items-center justify-between px-2">
+      <div className="flex items-center justify-between px-4">
         <div className="flex flex-col">
           <h2 className="font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tight">
             Active Recovery
           </h2>
-          <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mt-1">
-            Regeneration Protocols • Swipe to Navigate
+          <span className="text-xs font-medium text-zinc-500 mt-1">
+            Regeneration protocols. Swipe cards to navigate exercises.
           </span>
         </div>
+        {/*}
         <button
           onClick={resetStack}
           className="p-2 text-zinc-500 hover:text-volt transition-colors"
@@ -163,6 +165,7 @@ export const ActiveRecoveryWidget = () => {
         >
           <RotateCcw size={18} />
         </button>
+        {*/}
       </div>
 
       <div className="relative w-full aspect-[4/5] sm:aspect-video max-h-[500px] perspective-1000 mb-8">

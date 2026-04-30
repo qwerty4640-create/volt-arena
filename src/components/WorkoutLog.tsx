@@ -60,13 +60,13 @@ const RoutineCard = ({
     )}>
       <div
         onClick={() => setIsExpanded(!isExpanded)}
-        className="flex items-center justify-between gap-x-8 mb-4 p-4 md:p-6 cursor-pointer hover:bg-white/5 transition-colors border-b border-white/5"
+        className="flex items-center justify-between gap-x-4 mb-4 p-4 md:p-6 cursor-pointer hover:bg-white/5 transition-colors border-b border-white/5"
       >
         <div>
           <h3 className="font-sans text-xl md:text-2xl font-black uppercase italic tracking-tight text-white">{routine.title}</h3>
-          <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest">{routine.description}</p>
+          <p className="text-xs text-zinc-400 font-medium leading-relaxed">{routine.description}</p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
           <span className="flex items-center gap-1.5 text-[10px] text-zinc-500 font-bold uppercase tracking-widest">
             <Clock size={12} className="text-volt" /> {routine.estimatedDuration}m
           </span>
