@@ -410,8 +410,8 @@ export const RecoveryAnalysisWidget = () => {
           {/* Fatigue */}
           <FactorColumn
             label={t('analysis.fatigue')}
-            displayVal={String(fatigueDisplay)}
-            barVal={fatigueDisplay}
+            displayVal={String(hasSubjectiveData ? fatigueDisplay : objectiveFatigueDisplay)}
+            barVal={hasSubjectiveData ? fatigueDisplay : objectiveFatigueDisplay}
             tooltip="CNS"
             noData={!hasSubjectiveData && !hasHistory}
           />

@@ -799,8 +799,6 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (scores === null) {
       localStorage.removeItem(READINESS_STORAGE_KEY);
       setSubjectiveReadiness(null);
-      // Optional: Clear active recovery history from the last 24h if "ignore" means clear
-      setRecoveryHistory(prev => prev.filter(r => (Date.now() - r.timestamp) / 3600000 >= 24));
       showToast('System Reset: Using Objective Metrics.', 2000, 'info');
       return;
     }
@@ -815,10 +813,18 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     // 1. Calculate Objective Fatigue (Cumulative Volume/RPE)
     let objectiveFatigueVal = 100;
-    const last24hTotalHistory = activeRecoveryHistory.filter(r => 
+    
+    const last24hRecovery = activeRecoveryHistory.filter(r => 
       (Date.now() - r.timestamp) / 3600000 < 24
     );
-    const cumulativeFatigueScore = last24hTotalHistory.reduce((sum, r) => sum + r.rpe, 0);
+    const recoveryFatigue = last24hRecovery.reduce((sum, r) => sum + (r.rpe || 0), 0);
+    
+    const last24hWorkouts = history.filter(w => 
+      w.completedAt && (Date.now() - w.completedAt) / 3600000 < 24
+    );
+    const workoutFatigue = last24hWorkouts.reduce((sum, w) => sum + (Number(w.rpe) || Number(w.actualRpe) || 0), 0);
+
+    const cumulativeFatigueScore = recoveryFatigue + workoutFatigue;
     objectiveFatigueVal = Math.max(0, 100 - (Math.min(cumulativeFatigueScore, 18) / 18) * 100);
 
     // 2. Resolve Subjective Factors
@@ -852,6 +858,9 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
     });
 
+    // Hard cap the total active recovery boost so it doesn't mask extreme fatigue
+    totalBoost = Math.min(totalBoost, 15);
+
     // 6. Readiness Score (Capped at 100, and also capped by the highest possible factor to avoid "fake 100")
     const currentReadiness = Math.round(Math.min(100, baseReadiness + totalBoost));
 
@@ -863,11 +872,77 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     // Redline Logic: Cumulative Fatigue Check
     const isRedline = cumulativeFatigueScore >= 18;
 
-    let recommendedRpe = 7;
+    // 7. Calculate Recommended RPE based on Block Progression and Readiness
+    const filteredHistory = profile?.programResetAt 
+      ? history.filter(s => (s.completedAt || 0) > profile.programResetAt!)
+      : history;
+
+    let nextWeek = 1;
+    if (filteredHistory.length > 0) {
+      const lastWorkout = filteredHistory[0];
+      const weekMatch = lastWorkout.title?.match(/W(\d+)/);
+      nextWeek = weekMatch ? parseInt(weekMatch[1]) : 1;
+      const dayMatch = lastWorkout.title?.match(/D(\d+)/);
+      let nextDay = dayMatch ? parseInt(dayMatch[1]) + 1 : 1;
+      const frequency = profile?.trainingFrequency || 3;
+      if (nextDay > frequency) {
+        nextWeek += 1;
+      }
+      const durationMonths = profile?.trainingDurationMonths || 3;
+      const totalDurationWeeks = durationMonths * 4;
+      if (nextWeek > totalDurationWeeks) {
+        nextWeek = 1;
+      }
+    }
+    const finalWeek = nextWeek + (profile?.trainingWeekOffset || 0);
+    const durationMonths = profile?.trainingDurationMonths || 3;
+    const { block, weekInBlock } = getBlockForWeek(finalWeek, durationMonths * 4, profile?.trainingGoal || 'powerbuilding');
+    
+    let baseRecommendedRpe = 7;
+    const isFinalWeek = weekInBlock === block.durationWeeks;
+    
+    switch (block.type) {
+      case BlockType.DELOAD:
+      case BlockType.REGENERATION:
+        baseRecommendedRpe = 6;
+        break;
+      case BlockType.PEAKING:
+      case BlockType.COMPETITION:
+      case BlockType.MAX_EFFORT:
+      case BlockType.OVERREACH:
+        baseRecommendedRpe = isFinalWeek ? 9 : 8;
+        break;
+      case BlockType.POWER:
+      case BlockType.STRENGTH:
+        baseRecommendedRpe = 7.5 + (weekInBlock - 1) * 0.5;
+        break;
+      case BlockType.HYPERTROPHY:
+      case BlockType.FOUNDATION:
+      default:
+        baseRecommendedRpe = 7 + (weekInBlock - 1) * 0.5;
+        break;
+    }
+    
+    // Cap base recommended RPE safely
+    baseRecommendedRpe = Math.min(Math.max(baseRecommendedRpe, 6), 9.5);
+
+    let recommendedRpe = Math.floor(baseRecommendedRpe);
+    
+    // Readiness Modifiers
+    if (currentReadiness < 40) {
+      recommendedRpe -= 3;
+    } else if (currentReadiness < 65) {
+      recommendedRpe -= 2;
+    } else if (currentReadiness < 85) {
+      recommendedRpe -= 1;
+    }
+
     if (isRedline) {
       readinessModifier = 0.75;
       recommendedRpe = Math.min(recommendedRpe, 5);
     }
+    
+    recommendedRpe = Math.max(recommendedRpe, 4);
 
     return {
       readiness: currentReadiness,
