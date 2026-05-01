@@ -64,7 +64,7 @@ export const SettingsView = ({ onExit }: { onExit?: () => void }) => {
       >
         <button
           onClick={() => setShowFieldManual(true)}
-          className="w-full px-4 py-6 md:p-8 flex items-center justify-between hover:bg-volt/[0.06] transition-all group active:scale-[0.995]"
+          className="w-full px-4 py-4 md:p-8 flex items-center justify-between hover:bg-volt/[0.06] transition-all group active:scale-[0.995]"
         >
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-volt/10 flex items-center justify-center text-volt border border-volt/20 group-hover:border-volt/50 transition-colors">
@@ -72,7 +72,7 @@ export const SettingsView = ({ onExit }: { onExit?: () => void }) => {
             </div>
             <div className="text-left">
               <h3 className="font-sans text-xl italic font-black uppercase tracking-tight text-white group-hover:text-volt transition-colors">{t('settings.fieldManual')}</h3>
-              <p className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest mt-1 opacity-80">{t('settings.fieldManualSubtitle')}</p>
+              <p className="text-xs text-zinc-500 font-medium mt-1 opacity-80">{t('settings.fieldManualSubtitle')}</p>
             </div>
           </div>
           <div className="flex items-center gap-2 text-zinc-500 group-hover:text-white transition-colors">

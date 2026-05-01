@@ -131,12 +131,14 @@ const RecalibrationModal: React.FC<RecalibrationModalProps> = ({ isOpen, initial
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Close Button */}
+                    {/*}
                     <button
                         onClick={onCancel}
                         className="absolute top-6 right-6 p-2 text-zinc-500 hover:text-white transition-colors"
                     >
                         <X size={20} />
                     </button>
+                    {*/}
 
                     <div className="mb-8">
                         <h3 className="font-headline text-2xl font-black uppercase italic tracking-tight text-white">
@@ -327,8 +329,8 @@ export const RecoveryAnalysisWidget = () => {
                     {label}
                     {tooltip && <InfoTooltip term={tooltip as any} />}
                 </span>
-                <div className="flex items-end gap-2 mb-2 justify-start w-full">
-                    <span className="text-4xl md:text-5xl font-black italic tracking-tighter leading-none text-white">
+                <div className="flex items-baseline gap-2 mb-2 justify-start items-baseline w-full">
+                    <span className="text-3xl md:text-4xl font-black italic tracking-tighter leading-none text-white">
                         {noData ? '–' : displayVal}
                     </span>
                     {!noData && <span className="text-lg font-black italic text-zinc-600 mb-0.5">%</span>}
@@ -384,9 +386,12 @@ export const RecoveryAnalysisWidget = () => {
                 {/* Header: title + readiness score + recalibrate button */}
                 <div className="flex items-start justify-between mb-6 md:mb-10 relative z-10 w-full gap-4">
                     <div className="flex flex-col">
-                        <h2 className="font-headline mb-4 text-3xl md:text-4xl font-black uppercase italic tracking-tight">
+                        <h2 className="font-headline text-3xl md:text-4xl font-black uppercase italic tracking-tight">
                             {t('analysis.recoveryAnalysis')}
                         </h2>
+                        <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed mb-6 md:mb-12">
+                            Track your daily recovery. Recalibrate readiness if necessary.
+                        </p>
                         <div className="flex flex-col mt-2">
                             <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2">
                                 {t('analysis.readiness')}
@@ -441,8 +446,8 @@ export const RecoveryAnalysisWidget = () => {
                             {t('Volume')}
                             <InfoTooltip term="Volume" />
                         </span>
-                        <div className="flex items-end gap-2 mb-2 justify-start w-full">
-                            <span className="text-4xl md:text-5xl font-black italic tracking-tighter leading-none text-white">
+                        <div className="flex items-baseline gap-2 mb-2 justify-start w-full">
+                            <span className="text-3xl md:text-4xl font-black italic tracking-tighter leading-none text-white">
                                 {hasHistory ? orderedVolumeData.reduce((a, d) => a + d.displayVal, 0).toLocaleString() : '–'}
                             </span>
                             {hasHistory && <span className="text-lg font-black italic text-zinc-600 mb-0.5">{unit === 'metric' ? 'kg' : 'lbs'}</span>}
@@ -484,7 +489,7 @@ export const RecoveryAnalysisWidget = () => {
                     </div>
                 </div>
 
-                <div className="mt-8 pt-6 border-t border-white/5 relative z-10">
+                <div className="mt-8 elative z-10">
                     <button
                         onClick={() => setIsModalOpen(true)}
                         className="w-full btn-secondary py-4 flex items-center justify-center gap-3"

@@ -153,9 +153,9 @@ export const ActiveRecoveryWidget = () => {
           <h2 className="font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tight">
             Active Recovery
           </h2>
-          <span className="text-xs font-medium text-zinc-500 mt-1">
-            Regeneration protocols. Swipe cards to navigate exercises.
-          </span>
+          <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed">
+            Regeneration protocols. Swipe cards to navigate recovery exercises.
+          </p>
         </div>
         {/*}
         <button

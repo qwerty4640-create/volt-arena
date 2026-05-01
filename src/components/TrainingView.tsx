@@ -466,7 +466,7 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
         transition={{ delay: 0.3 }}
         className="col-span-1 md:col-span-2 lg:col-span-3 shrink-0 glass-panel p-4 md:p-8 flex flex-col w-full"
       >
-        <div className="flex items-center gap-3 mb-6 md:mb-10">
+        <div className="flex items-center gap-3">
           <h2 className="font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tight mb-2">{t('personal records')}</h2>
 
         </div>
