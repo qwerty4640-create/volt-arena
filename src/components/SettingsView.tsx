@@ -1,12 +1,11 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Settings, Globe, Scale, CheckCircle2, Terminal, Mic, MicOff, Eye, Box, Zap, Trash2, Loader2, AlertTriangle, Power, Target, RotateCcw, Monitor, Sun, Moon, Paintbrush, Book, SunMoon, Lock } from 'lucide-react';
+import { Settings, Globe, Scale, CheckCircle2, Terminal, Mic, MicOff, Eye, Box, Zap, Trash2, Loader2, AlertTriangle, Power, Target, RotateCcw, Monitor, Sun, Moon, Paintbrush, Book, SunMoon } from 'lucide-react';
 import { cn } from '../lib/utils';
-import { useSettings, TrainingGoal, getLockedSchemes } from '../contexts/SettingsContext';
+import { useSettings, TrainingGoal } from '../contexts/SettingsContext';
 import { useWorkout } from '../contexts/WorkoutContext';
 import { ConfirmationModal } from './ConfirmationModal';
 import { FieldManual } from './FieldManual';
-import { InfoTooltip } from './InfoTooltip';
 
 const LANGUAGES = [
   { id: 'en', label: 'English' },
@@ -31,39 +30,15 @@ export const SettingsView = ({ onExit }: { onExit?: () => void }) => {
     profile, updateProfile,
     theme, setTheme,
     lightColorScheme, setLightColorScheme,
-    fantasyColorScheme, setFantasyColorScheme,
     t
   } = useSettings();
-  const { 
-    mockWorkoutCount, setMockWorkoutCount, history, resetProgress, resetProgram,
-    debugForceCritical, setDebugForceCritical 
-  } = useWorkout();
+  const { mockWorkoutCount, setMockWorkoutCount, history, resetProgress, resetProgram } = useWorkout();
   const [showFieldManual, setShowFieldManual] = React.useState(false);
   const [isResetting, setIsResetting] = React.useState(false);
   const [showResetConfirm, setShowResetConfirm] = React.useState(false);
   const [showResetProgramConfirm, setShowResetProgramConfirm] = React.useState(false);
-  const [lockedSchemeInfo, setLockedSchemeInfo] = React.useState<{ scheme: string; requiredTier: string } | null>(null);
 
   const currentCount = mockWorkoutCount !== null ? mockWorkoutCount : (history?.length || 0);
-
-  const lockedFantasySchemes = getLockedSchemes(profile?.level || 'untrained', profile?.role);
-
-  const getRequiredTier = (scheme: string): string => {
-    if (['sovereign'].includes(scheme)) return 'Elite';
-    if (['peerless'].includes(scheme)) return 'Advanced';
-    if (['blues', 'grays', 'stained'].includes(scheme)) return 'Intermediate';
-    return 'Novice';
-  };
-
-  const activeFantasySchemes = [
-    { id: 'hud', label: 'Tactical HUD', minTier: 'Untrained' },
-    { id: 'helios', label: 'Helios Prime', minTier: 'Untrained' },
-    { id: 'stained', label: 'Stained Glass', minTier: 'Intermediate' },
-    { id: 'blues', label: 'Colbalt Blues', minTier: 'Intermediate' },
-    { id: 'grays', label: 'The Grays', minTier: 'Intermediate' },
-    { id: 'peerless', label: 'Peerless', minTier: 'Advanced' },
-    { id: 'sovereign', label: 'Sovereign', minTier: 'Elite' },
-  ];
 
   const handleReset = async () => {
     setShowResetConfirm(false);
@@ -123,10 +98,11 @@ export const SettingsView = ({ onExit }: { onExit?: () => void }) => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-            <div className="space-y-4 sm:col-span-2">
+            {/* Theme Toggle */}
+            <div className="space-y-4">
               <span className="font-sans text-[10px] font-bold uppercase tracking-widest text-zinc-500">Interface Theme</span>
-              <div className="grid grid-cols-1 sm:grid-cols-3 bg-surface-lowest p-1 border border-white/5 gap-1">
-                {(['dark', 'light', 'fantasy'] as const).map(tOpt => (
+              <div className="flex bg-surface-lowest p-1 border border-white/5">
+                {(['dark', 'light'] as const).map(tOpt => (
                   <button
                     key={tOpt}
                     onClick={() => setTheme(tOpt)}
@@ -137,7 +113,7 @@ export const SettingsView = ({ onExit }: { onExit?: () => void }) => {
                         : "text-zinc-500 hover:text-zinc-300"
                     )}
                   >
-                    {tOpt === 'dark' ? <Moon size={16} /> : tOpt === 'light' ? <Sun size={16} /> : <Zap size={16} />}
+                    {tOpt === 'dark' ? <Moon size={16} /> : <Sun size={16} />}
                     <span className="font-headline text-xs font-black uppercase tracking-widest">{tOpt}</span>
                   </button>
                 ))}
@@ -146,7 +122,7 @@ export const SettingsView = ({ onExit }: { onExit?: () => void }) => {
 
             {/* Light Color Scheme */}
             {theme === 'light' && (
-              <div className="space-y-4 sm:col-span-2">
+              <div className="space-y-4">
                 <span className="font-sans text-[10px] font-bold uppercase tracking-widest text-zinc-500">Active Scheme (Light Mode)</span>
                 <div className="grid grid-cols-1 gap-2">
                   {(['default', 'ocean', 'neon', 'solar', 'monochrome'] as const).map(scheme => (
@@ -167,56 +143,6 @@ export const SettingsView = ({ onExit }: { onExit?: () => void }) => {
                       {lightColorScheme === scheme && <CheckCircle2 size={16} className="text-volt" />}
                     </button>
                   ))}
-                </div>
-              </div>
-            )}
-            
-            {/* Fantasy Color Scheme */}
-            {theme === 'fantasy' && (
-              <div className="space-y-4 sm:col-span-2">
-                <span className="font-sans text-[10px] font-bold uppercase tracking-widest text-zinc-500">Active Scheme (Fantasy Mode)</span>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {activeFantasySchemes.map(item => {
-                    const isLocked = lockedFantasySchemes.includes(item.id as any);
-                    return (
-                      <button
-                        key={item.id}
-                        disabled={isLocked && false} // We want them clickable to show the modal
-                        onClick={() => {
-                          if (isLocked) {
-                            setLockedSchemeInfo({ scheme: item.label, requiredTier: item.minTier });
-                          } else {
-                            setFantasyColorScheme(item.id as any);
-                          }
-                        }}
-                        className={cn(
-                          "flex items-center justify-between p-3 transition-all relative overflow-hidden",
-                          fantasyColorScheme === item.id
-                            ? "bg-volt/10 text-volt border-l-[3px] border-volt"
-                            : isLocked 
-                              ? "bg-zinc-900/40 text-zinc-600 border-l-[3px] border-zinc-800 grayscale cursor-not-allowed"
-                              : "bg-surface-variant text-zinc-400 hover:bg-white/5 hover:text-zinc-200 border-l-[3px] border-white/5"
-                        )}
-                      >
-                        <div className="flex items-center gap-3">
-                          {isLocked ? (
-                            <Lock size={14} className="text-zinc-700" />
-                          ) : (
-                            <Paintbrush size={16} className={fantasyColorScheme === item.id ? "text-volt" : "text-zinc-500"} />
-                          )}
-                          <div className="flex flex-col items-start">
-                            <span className="font-headline text-xs font-black uppercase tracking-widest">{item.label}</span>
-                            {isLocked && (
-                              <span className="text-[8px] font-bold text-zinc-600 uppercase tracking-[0.2em] mt-0.5">
-                                Locked: Tier {item.minTier}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        {fantasyColorScheme === item.id && <CheckCircle2 size={16} className="text-volt" />}
-                      </button>
-                    );
-                  })}
                 </div>
               </div>
             )}
@@ -479,29 +405,6 @@ export const SettingsView = ({ onExit }: { onExit?: () => void }) => {
             <div className="pt-4 border-t border-white/5">
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <p className="text-crimson text-xs font-black uppercase tracking-widest">SYSTEM OVERLOAD (DEBUG)</p>
-                  <p className="text-zinc-500 text-[8px] font-medium uppercase tracking-widest mt-1">
-                    Force critical readiness (&lt;20%) to test visual degradation and safety protocols.
-                  </p>
-                </div>
-                <button
-                  onClick={() => setDebugForceCritical(!debugForceCritical)}
-                  className={cn(
-                    "w-12 h-6 shrink-0 relative transition-colors duration-300",
-                    debugForceCritical ? "bg-crimson" : "bg-zinc-700"
-                  )}
-                >
-                  <div className={cn(
-                    "absolute top-1 w-4 h-4 bg-white transition-all duration-300",
-                    debugForceCritical ? "left-7" : "left-1"
-                  )} />
-                </button>
-              </div>
-            </div>
-
-            <div className="pt-4 border-t border-white/5">
-              <div className="flex items-center justify-between gap-4">
-                <div>
                   <p className="text-white text-xs font-black uppercase tracking-widest">{t('settings.experimentalFeatures')}</p>
                   <p className="text-zinc-500 text-[8px] font-medium uppercase tracking-widest mt-1">
                     {t('settings.experimentalFeaturesDesc')}
@@ -578,17 +481,6 @@ export const SettingsView = ({ onExit }: { onExit?: () => void }) => {
           </div>
         </motion.div>
       )}
-
-      <ConfirmationModal
-        isOpen={lockedSchemeInfo !== null}
-        title="RESTRICTED ARCHIVE"
-        message={`Access to the "${lockedSchemeInfo?.scheme}" visualization protocol requires ${lockedSchemeInfo?.requiredTier} status. Return to training to unlock higher cognitive filters.`}
-        confirmLabel="ACKNOWLEDGED"
-        cancelLabel=""
-        onConfirm={() => setLockedSchemeInfo(null)}
-        onCancel={() => setLockedSchemeInfo(null)}
-        variant="warning"
-      />
 
       <ConfirmationModal
         isOpen={showResetProgramConfirm}

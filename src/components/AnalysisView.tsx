@@ -21,8 +21,7 @@ import {
     BarChart3,
     Edit2,
     Trash2,
-    Waypoints,
-    AlertTriangle
+    Waypoints
 } from 'lucide-react';
 import {
     AreaChart,
@@ -84,7 +83,136 @@ const ALL_WIDGETS: Widget[] = [
 ];
 
 
-// ─── Widgets ────────────────────────────────────────────────────────────────
+// ─── Readiness Recalibration Modal ────────────────────────────────────────────
+interface RecalibrationModalProps {
+    isOpen: boolean;
+    initialScores: { sleep: number; stress: number; fatigue: number };
+    onConfirm: (scores: { sleep: number; stress: number; fatigue: number }) => void;
+    onCancel: () => void;
+}
+
+const RecalibrationModal: React.FC<RecalibrationModalProps> = ({ isOpen, initialScores, onConfirm, onCancel }) => {
+    const { t } = useSettings();
+    const [local, setLocal] = React.useState(initialScores);
+    const [mounted, setMounted] = React.useState(false);
+
+    React.useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    // Reset local state whenever modal opens
+    React.useEffect(() => {
+        if (isOpen) setLocal(initialScores);
+    }, [isOpen, initialScores.sleep, initialScores.stress, initialScores.fatigue]);
+
+    if (!isOpen || !mounted) return null;
+
+    const FACTORS = [
+        { key: 'fatigue' as const, label: t('analysis.fatigue') || 'Fatigue', low: 'Exhausted', high: 'Energized' },
+        { key: 'sleep' as const, label: t('analysis.sleep') || 'Sleep', low: 'Insomnia', high: 'Deep Sleep' },
+        { key: 'stress' as const, label: t('analysis.stress') || 'Stress', low: 'Overwhelmed', high: 'Very Low Stress' },
+    ];
+
+    return createPortal(
+        <AnimatePresence>
+            <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 overflow-hidden">
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    onClick={onCancel}
+                    className="absolute inset-0 bg-void/90 backdrop-blur-md"
+                />
+                <motion.div
+                    initial={{ scale: 0.95, opacity: 0, y: 20 }}
+                    animate={{ scale: 1, opacity: 1, y: 0 }}
+                    exit={{ scale: 0.95, opacity: 0, y: 20 }}
+                    className="relative w-full max-w-md glass-panel p-4 md:p-8 border border-white/10 shadow-2xl flex flex-col"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    {/* Close Button */}
+                    {/*}
+                    <button
+                        onClick={onCancel}
+                        className="absolute top-6 right-6 p-2 text-zinc-500 hover:text-white transition-colors"
+                    >
+                        <X size={20} />
+                    </button>
+                    {*/}
+
+                    <div className="mb-8">
+                        <h3 className="font-headline text-2xl font-black uppercase italic tracking-tight text-white">
+                            {t('analysis.recalibrateTitle')}
+                        </h3>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mt-2">
+                            {t('analysis.recalibrateSubtitle')}
+                        </p>
+                    </div>
+
+                    <div className="flex-1">
+                        {FACTORS.map((factor) => (
+                            <div key={factor.key} className="flex flex-col gap-4">
+                                <div className="flex justify-between items-end">
+                                    <span className="text-[11px] font-black uppercase tracking-widest text-zinc-400">{factor.label}</span>
+                                    <span className="text-xl font-black italic text-volt">{local[factor.key]}</span>
+                                </div>
+
+                                <div className="grid grid-cols-5 gap-2">
+                                    {[1, 2, 3, 4, 5].map((val) => (
+                                        <button
+                                            key={val}
+                                            onClick={() => setLocal(prev => ({ ...prev, [factor.key]: val }))}
+                                            className={cn(
+                                                "py-3 flex items-center justify-center text-sm font-black transition-all border",
+                                                local[factor.key] === val
+                                                    ? "bg-white text-black border-white"
+                                                    : "bg-white/5 text-zinc-500 border-white/5 hover:border-white/20 hover:text-white"
+                                            )}
+                                        >
+                                            {val}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                <div className="flex justify-between items-center text-[8px] font-bold uppercase tracking-widest text-zinc-600 px-1">
+                                    <span>{factor.low}</span>
+                                    <span>{factor.high}</span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="mt-12 flex flex-col gap-3 pt-8 border-t border-white/5">
+                        <div className="grid grid-cols-2 gap-3">
+                            <button
+                                onClick={onCancel}
+                                className="w-full h-14 btn-secondary"
+                            >
+                                {t('common.cancel')}
+                            </button>
+                            <button
+                                onClick={() => onConfirm(local)}
+                                className="w-full h-14 btn-primary"
+                            >
+                                {t('analysis.recalibrate')}
+                            </button>
+                        </div>
+                        <button
+                            onClick={() => {
+                                // To reset, we tell the system to use defaults by passing null-like or clearing scores
+                                onConfirm(null as any);
+                            }}
+                            className="w-full h-12 btn-destructive flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-[0.2em]"
+                        >
+                            Reset to Default
+                        </button>
+                    </div>
+                </motion.div>
+            </div>
+        </AnimatePresence>,
+        document.body
+    );
+};
 
 // ─── Recovery Analysis Widget ──────────────────────────────────────────────────
 const READINESS_STORAGE_KEY = 'volt_last_readiness';
@@ -114,7 +242,8 @@ function saveReadinessScores(scores: { sleep: number; stress: number; fatigue: n
 
 export const RecoveryAnalysisWidget = () => {
     const { t, unit } = useSettings();
-    const { history, getCalibrationStatus } = useWorkout();
+    const { history, getCalibrationStatus, recalibrateRecovery } = useWorkout();
+    const [isModalOpen, setIsModalOpen] = React.useState(false);
 
     const hasHistory = history && history.length > 0;
     const calibration = getCalibrationStatus();
@@ -129,16 +258,20 @@ export const RecoveryAnalysisWidget = () => {
     // ── Display values per factor (0-100% scale for bar) ──────────────────────
     const sleepDisplay = Math.round((sleepScore / 5) * 100);
     const stressDisplay = Math.round((5 - stressScore) * 20);
-    
-    // Fatigue: 0-18 scale. 0 is low fatigue, 18 is high fatigue.
-    const rawFatigue = calibration.cumulativeFatigueScore || 0;
-    const fatigueDisplay = hasHistory ? Math.round((rawFatigue / 18) * 100) : 0;
-    const objectiveFatigueDisplay = fatigueDisplay; 
-    
+    const fatigueDisplay = Math.round((fatigueScore / 5) * 100);
+
+    const rawFatigue = calibration.cumulativeFatigueScore;
+    const objectiveFatigueDisplay = hasHistory ? Math.round((1 - rawFatigue / 18) * 100) : 0;
+
     const getStatusColorText = (val: number) => {
-        if (val >= 75) return 'text-emerald-500'; // High readiness = green
-        if (val >= 40) return 'text-amber-500'; // Moderate readiness = amber
-        return 'text-crimson'; // Low readiness = red
+        if (val >= 85) return 'text-emerald-500';
+        if (val >= 60) return 'text-amber-500';
+        return 'text-crimson';
+    };
+    const getBarColor = (val: number) => {
+        if (val >= 75) return 'bg-volt shadow-[0_0_20px_var(--primary-glow)]';
+        if (val >= 50) return 'bg-amber-500';
+        return 'bg-crimson';
     };
 
     const statusColor = readinessScore !== null ? getStatusColorText(readinessScore) : 'text-zinc-500';
@@ -176,74 +309,20 @@ export const RecoveryAnalysisWidget = () => {
         return [...volumeData.slice(1), volumeData[0]];
     }, [volumeData]);
 
-    const acwrData = useMemo(() => {
-        if (!history || history.length === 0) return null;
-
-        const weeks: Record<string, number> = {};
-        const weekTimestamps: Record<string, number> = {};
-
-        history.forEach(session => {
-            const date = session.completedAt ? new Date(session.completedAt) : new Date(session.date);
-            const startOfWeek = new Date(date);
-            startOfWeek.setDate(date.getDate() - date.getDay());
-            startOfWeek.setHours(0, 0, 0, 0);
-            const weekKey = startOfWeek.getTime().toString();
-
-            let sessionVolume = 0;
-            session.exercises?.forEach(ex => {
-                ex.sets?.forEach(s => {
-                    if (s.isCompleted) {
-                        sessionVolume += (parseFloat(s.weight) || 0) * (parseInt(s.reps) || 0);
-                    }
-                });
-            });
-
-            if (!weeks[weekKey]) {
-                weeks[weekKey] = 0;
-                weekTimestamps[weekKey] = startOfWeek.getTime();
-            }
-            weeks[weekKey] += sessionVolume;
-        });
-
-        const sortedWeeks = Object.keys(weeks)
-            .map(k => ({ timestamp: weekTimestamps[k], volume: weeks[k] }))
-            .sort((a, b) => a.timestamp - b.timestamp);
-
-        if (sortedWeeks.length === 0) return null;
-
-        const acuteWorkload = sortedWeeks[sortedWeeks.length - 1].volume;
-
-        // Chronic workload: Average of the up to 4 weeks prior to the acute week
-        const chronicWeeks = sortedWeeks.slice(Math.max(0, sortedWeeks.length - 5), sortedWeeks.length - 1);
-
-        if (chronicWeeks.length === 0) {
-            return { ratio: 1.0, acute: acuteWorkload, chronic: acuteWorkload };
-        }
-
-        const chronicWorkload = chronicWeeks.reduce((acc, w) => acc + w.volume, 0) / chronicWeeks.length;
-        const ratio = chronicWorkload > 0 ? acuteWorkload / chronicWorkload : 1.0;
-
-        return { ratio: Number(ratio.toFixed(2)), acute: acuteWorkload, chronic: chronicWorkload };
-    }, [history]);
+    // ── Shared bar graph container ─────────────────────────────────────────────
+    const GraphContainer = ({ children }: { children: React.ReactNode }) => (
+        <div className="w-full relative h-24 md:h-28 bg-surface-container-lowest border border-white/5 flex items-end p-3 mt-auto">
+            {children}
+        </div>
+    );
 
     // ── Single factor column ───────────────────────────────────────────────────
     const FactorColumn = ({
-        label, displayVal, fillVal, goodness, tooltip, noData,
+        label, displayVal, barVal, tooltip, noData, inverted = false
     }: {
-        label: string; displayVal: string; fillVal: number; goodness: number; tooltip?: string; noData: boolean;
+        label: string; displayVal: string; barVal: number; tooltip?: string; noData: boolean; inverted?: boolean;
     }) => {
-        const getGoodnessColor = (val: number) => {
-            if (val >= 75) return 'bg-volt shadow-[0_0_20px_var(--primary-glow)]';
-            if (val >= 40) return 'bg-amber-500';
-            return 'bg-crimson';
-        };
-
-        const getStatusText = (val: number) => {
-            if (val >= 75) return 'Optimal';
-            if (val >= 40) return 'Moderate';
-            return 'High Fatigue';
-        };
-
+        const statusVal = inverted ? (100 - barVal) : barVal;
         return (
             <div className="flex flex-col h-full text-left justify-start items-start">
                 <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-4 block w-full">
@@ -257,104 +336,87 @@ export const RecoveryAnalysisWidget = () => {
                     {!noData && <span className="text-lg font-black italic text-zinc-600 mb-0.5">%</span>}
                 </div>
                 <span className="font-headline text-[10px] font-black uppercase tracking-widest border-l-2 pl-3 block mb-4 text-zinc-600 border-zinc-800">
-                    {noData ? t('analysis.awaitingData') : getStatusText(goodness)}
+                    {noData ? t('analysis.awaitingData') : (statusVal >= 75 ? 'Optimal' : statusVal >= 50 ? 'Moderate' : 'Low')}
                 </span>
+                <GraphContainer>
+                    {!noData && (
+                        <div className="w-full h-full flex flex-col justify-end pb-1 gap-2">
+                            <div className="w-full h-6 md:h-8 bg-zinc-800/50 relative overflow-hidden transform -skew-x-12">
+                                <motion.div
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${barVal}%` }}
+                                    transition={{ duration: 1, ease: 'easeOut' }}
+                                    className={cn('h-full', getBarColor(statusVal))}
+                                />
+                            </div>
+                            <div className="flex justify-between w-full text-[8px] font-black tracking-widest text-zinc-500 uppercase">
+                                <span>0%</span>
+                                <span>100%</span>
+                            </div>
+                        </div>
+                    )}
+                    {noData && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-600 italic">{t('analysis.awaitingData')}</span>
+                        </div>
+                    )}
+                </GraphContainer>
             </div>
         );
     };
 
+    const handleRecalibrateConfirm = (scores: { sleep: number; stress: number; fatigue: number } | null) => {
+        recalibrateRecovery(scores);
+        setIsModalOpen(false);
+    };
+
     return (
         <div className="flex flex-col gap-6">
-            <div className="w-full glass-panel px-4 py-4 md:p-6 flex flex-col relative group/module overflow-hidden">
+            <RecalibrationModal
+                isOpen={isModalOpen}
+                initialScores={{ sleep: sleepScore, stress: stressScore, fatigue: fatigueScore }}
+                onConfirm={handleRecalibrateConfirm}
+                onCancel={() => setIsModalOpen(false)}
+            />
+
+            <div className="w-full glass-panel px-4 py-6 md:p-8 flex flex-col relative group/module min-h-[400px]">
                 <div className="absolute inset-0 opacity-[0.03] pointer-events-none group-hover/module:opacity-[0.05] transition-opacity duration-700"
                     style={{ backgroundImage: 'radial-gradient(var(--primary-color) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
 
                 {/* Header: title + readiness score + recalibrate button */}
-                <div className="flex items-start justify-between mb-4 md:mb-6 relative z-10 w-full gap-4">
+                <div className="flex items-start justify-between mb-6 md:mb-10 relative z-10 w-full gap-4">
                     <div className="flex flex-col">
                         <h2 className="font-headline text-3xl md:text-4xl font-black uppercase italic tracking-tight">
                             {t('analysis.recoveryAnalysis')}
                         </h2>
                         <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed mb-6 md:mb-12">
-                            Bio-mechanical readiness is system-managed based on historical training volume.
+                            Track your daily recovery. Recalibrate readiness if necessary.
                         </p>
-                        <div className="grid grid-cols-2 gap-8 mt-2">
-                             <div className="flex flex-col">
-                                 <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2 block w-full">
-                                     {t('analysis.readiness')}
-                                     <InfoTooltip term="Readiness" />
-                                 </span>
-                                 <div className="flex items-end gap-2">
-                                     <span className={cn(
-                                         'text-7xl md:text-8xl font-black italic tracking-tighter leading-none',
-                                         readinessScore !== null ? statusColor : 'text-zinc-600'
-                                     )}>
-                                         {readinessScore !== null ? readinessScore : '–'}
-                                     </span>
-                                     {readinessScore !== null && <span className="text-2xl font-black italic text-zinc-600 mb-2">%</span>}
-                                 </div>
-                             </div>
-                             
-                             {/* ACWR Widget */}
-                             <div className="flex flex-col justify-end">
-                                 <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2 block w-full">
-                                     ACWR
-                                     <InfoTooltip term="ACWR" />
-                                 </span>
-                                 {acwrData ? (
-                                    <div className="flex flex-col">
-                                        <span className={cn(
-                                            "text-2xl font-black italic tracking-tighter leading-none",
-                                            acwrData.ratio > 1.5 ? "text-crimson" : acwrData.ratio >= 0.8 && acwrData.ratio <= 1.3 ? "text-volt" : "text-zinc-300"
-                                        )}>
-                                            {acwrData.ratio.toFixed(2)}
-                                        </span>
-                                        <span className={cn(
-                                            "text-[8px] font-black uppercase tracking-widest mt-1",
-                                            acwrData.ratio > 1.5 ? "text-crimson" : acwrData.ratio >= 0.8 && acwrData.ratio <= 1.3 ? "text-volt" : "text-zinc-400"
-                                        )}>
-                                            {acwrData.ratio > 1.5 ? "ELEVATED" : acwrData.ratio >= 0.8 && acwrData.ratio <= 1.3 ? "OPTIMAL" : "MONITOR"}
-                                        </span>
-                                    </div>
-                                 ) : (
-                                     <span className="text-[8px] text-zinc-500">N/A</span>
-                                 )}
-                             </div>
-                         </div>
+                        <div className="flex flex-col mt-2">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2">
+                                {t('analysis.readiness')}
+                            </span>
+                            <div className="flex items-end gap-2">
+                                <span className={cn(
+                                    'text-7xl md:text-8xl font-black italic tracking-tighter leading-none',
+                                    readinessScore !== null ? statusColor : 'text-zinc-600'
+                                )}>
+                                    {readinessScore !== null ? readinessScore : '–'}
+                                </span>
+                                {readinessScore !== null && <span className="text-2xl font-black italic text-zinc-600 mb-2">%</span>}
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                {calibration.overtrainingRisk !== 'none' && (
-                    <div className={cn(
-                        "mb-6 p-4 border flex items-start gap-4 animate-pulse-slow relative z-10 mx-4 md:mx-6",
-                        calibration.overtrainingRisk === 'critical' ? "bg-crimson/10 border-crimson/30" : "bg-amber-500/10 border-amber-500/30"
-                    )}>
-                        <AlertTriangle className={calibration.overtrainingRisk === 'critical' ? "text-crimson" : "text-amber-500"} size={20} />
-                        <div className="flex flex-col gap-1">
-                            <span className={cn(
-                                "font-headline text-xs font-black uppercase tracking-widest",
-                                calibration.overtrainingRisk === 'critical' ? "text-crimson" : "text-amber-500"
-                            )}>
-                                {calibration.overtrainingRisk === 'critical' ? "CRITICAL OVERTRAINING RISK" : "FATIGUE DECAY OUTPACED"}
-                            </span>
-                            <p className="text-[10px] font-medium text-zinc-400 leading-relaxed uppercase">
-                                {calibration.overtrainingRisk === 'critical' 
-                                    ? "TRAINING STRAIN IS EXCEEDING RECOVERY CAPACITY BY >60%. SYSTEM RECOMMENDS AN IMMEDIATE 48H DELOAD TO AVOID NEURAL BURNOUT."
-                                    : "YOUR RECOVERY CONSTANT IS SLOWING RELATIVE TO VOLUME. CONSIDER INCREASING SLEEP HYGIENE OR REDUCING AUXILIARY WORK."}
-                            </p>
-                        </div>
-                    </div>
-                )}
-
                 {/* 4-column grid: Fatigue | Sleep | Stress | Volume */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 relative z-10 w-full flex-1">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 relative z-10 w-full flex-1">
 
                     {/* Fatigue */}
                     <FactorColumn
                         label={t('analysis.fatigue')}
                         displayVal={String(fatigueDisplay)}
-                        fillVal={fatigueDisplay}
-                        goodness={100 - fatigueDisplay}
+                        barVal={fatigueDisplay}
                         tooltip="CNS"
                         noData={!hasSubjectiveData && !hasHistory}
                     />
@@ -363,8 +425,7 @@ export const RecoveryAnalysisWidget = () => {
                     <FactorColumn
                         label={t('analysis.sleep')}
                         displayVal={String(sleepDisplay)}
-                        fillVal={sleepDisplay}
-                        goodness={sleepDisplay}
+                        barVal={sleepDisplay}
                         tooltip="Sleep"
                         noData={!hasSubjectiveData}
                     />
@@ -373,10 +434,10 @@ export const RecoveryAnalysisWidget = () => {
                     <FactorColumn
                         label={t('analysis.stress')}
                         displayVal={String(stressDisplay)}
-                        fillVal={stressDisplay}
-                        goodness={100 - stressDisplay}
+                        barVal={stressDisplay}
                         tooltip="Stress"
                         noData={!hasSubjectiveData}
+                        inverted={true}
                     />
 
                     {/* Volume */}
@@ -394,10 +455,49 @@ export const RecoveryAnalysisWidget = () => {
                         <span className="font-headline text-[10px] font-black uppercase tracking-widest border-l-2 pl-3 block mb-4 text-zinc-600 border-zinc-800">
                             {hasHistory ? t('analysis.7dayLoad') : t('analysis.awaitingData')}
                         </span>
+                        <GraphContainer>
+                            {hasHistory ? (
+                                <div className="w-full h-full flex items-end justify-between gap-1 pb-1 relative z-10 overflow-hidden">
+                                    {orderedVolumeData.map((d, i) => (
+                                        <div key={i} className="flex-1 flex flex-col items-center h-full group/bar justify-end">
+                                            <div className="w-full relative flex items-end justify-center h-full mb-1 border-b border-white/5 pb-1">
+                                                <motion.div
+                                                    initial={{ height: 0 }}
+                                                    animate={{ height: `${Math.max(d.val, 5)}%` }}
+                                                    transition={{ duration: 0.8, ease: 'easeOut' }}
+                                                    className={cn(
+                                                        'w-full max-w-[20px] transition-all duration-500 transform -skew-x-6',
+                                                        d.active ? 'bg-volt shadow-[0_0_15px_var(--primary-glow)]' : 'bg-zinc-700 group-hover/bar:bg-zinc-600'
+                                                    )}
+                                                />
+                                                <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-void border border-white/10 px-1 py-0.5 opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none z-50">
+                                                    <span className="text-[8px] font-black text-white whitespace-nowrap">{d.displayVal.toLocaleString()}</span>
+                                                </div>
+                                            </div>
+                                            <span className={cn('text-[8px] font-black tracking-widest', d.active ? 'text-volt' : 'text-zinc-600')}>
+                                                {d.day.charAt(0)}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-600 italic">{t('analysis.awaitingData')}</span>
+                                </div>
+                            )}
+                        </GraphContainer>
                     </div>
                 </div>
 
-
+                <div className="mt-8 relative z-10">
+                    <button
+                        onClick={() => setIsModalOpen(true)}
+                        className="w-full btn-secondary py-4 flex items-center justify-center gap-3"
+                    >
+                        <Waypoints size={18} />
+                        {t('analysis.recalibrateReadiness')}
+                    </button>
+                </div>
             </div>
 
             <ActiveRecoveryWidget />
@@ -545,7 +645,7 @@ export const BlockWidget = () => {
     };
 
     return (
-        <div className="glass-panel px-4 py-6 md:p-8 border-none flex flex-col justify-between h-full relative overflow-hidden min-w-0">
+        <div className="glass-panel px-4 py-6 md:p-8 border-none flex flex-col justify-between h-full relative overflow-hidden">
             <div className="absolute top-0 right-0 w-24 h-24 bg-volt/5 blur-[40px] -z-10" />
 
             <div className="flex items-center justify-between mb-6 md:mb-8 relative z-10">
@@ -658,11 +758,11 @@ export const BlockWidget = () => {
                         <span className="text-[10px] font-black uppercase tracking-widest text-volt">{cycleLength}-Week Cycle</span>
                     </div>
 
-                    <div className="h-[180px] md:h-[200px] w-full">
+                    <div className="flex-1 min-h-[180px] md:min-h-[200px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <AreaChart
                                 data={graphData}
-                                margin={{ top: 10, right: 10, left: -20, bottom: 25 }}
+                                margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
                                 onMouseMove={(e: any) => {
                                     if (e && e.activePayload) {
                                         setHoveredWeekData(e.activePayload[0].payload);
@@ -1001,7 +1101,7 @@ export const ExternalActivityWidget = () => {
     }
 
     return (
-        <div className="glass-panel px-4 py-6 md:p-8 border-none h-full flex flex-col relative overflow-hidden group/module w-full min-w-0">
+        <div className="glass-panel px-4 py-6 md:p-8 border-none h-full flex flex-col relative overflow-hidden group/module w-full">
             {/* Tactical Grid Background overlay */}
             <div className="absolute inset-0 opacity-[0.03] pointer-events-none group-hover/module:opacity-[0.05] transition-opacity duration-700"
                 style={{ backgroundImage: 'radial-gradient(var(--primary-color) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
@@ -1014,21 +1114,21 @@ export const ExternalActivityWidget = () => {
                 <div className="flex flex-col">
                     <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">{t('analysis.weekly')}</span>
                     <div className="flex items-end gap-1">
-                        <span className="text-2xl sm:text-3xl lg:text-4xl font-black italic">{hoursWeek.toFixed(1)}</span>
+                        <span className="text-3xl lg:text-4xl font-black italic">{hoursWeek.toFixed(1)}</span>
                         <span className="text-xs font-bold text-zinc-600 mb-1">hrs</span>
                     </div>
                 </div>
-                <div className="flex flex-col border-l border-white/10 pl-2 sm:pl-4">
+                <div className="flex flex-col border-l border-white/10 pl-4">
                     <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">{t('analysis.monthly')}</span>
                     <div className="flex items-end gap-1">
-                        <span className="text-2xl sm:text-3xl lg:text-4xl font-black italic">{hoursMonth.toFixed(1)}</span>
+                        <span className="text-3xl lg:text-4xl font-black italic">{hoursMonth.toFixed(1)}</span>
                         <span className="text-xs font-bold text-zinc-600 mb-1">hrs</span>
                     </div>
                 </div>
-                <div className="flex flex-col border-l border-white/10 pl-2 sm:pl-4">
+                <div className="flex flex-col border-l border-white/10 pl-4">
                     <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">{t('analysis.yearly')}</span>
                     <div className="flex items-end gap-1">
-                        <span className="text-2xl sm:text-3xl lg:text-4xl font-black italic">{hoursYear.toFixed(1)}</span>
+                        <span className="text-3xl lg:text-4xl font-black italic">{hoursYear.toFixed(1)}</span>
                         <span className="text-xs font-bold text-zinc-600 mb-1">hrs</span>
                     </div>
                 </div>
@@ -1057,7 +1157,7 @@ export const ExternalActivityWidget = () => {
                 </div>
             </div>
 
-            <div className="h-[200px] w-full relative z-10 mb-6 min-w-0">
+            <div className="flex-1 min-h-[200px] w-full relative z-10 mb-6">
                 <TacticalChart data={chartData} />
             </div>
 

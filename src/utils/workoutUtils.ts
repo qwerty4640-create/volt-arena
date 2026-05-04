@@ -38,12 +38,3 @@ export function calculateE1RM(weight: number, reps: number): number {
   const effectiveReps = Math.min(reps, 12);
   return weight * (36 / (37 - effectiveReps));
 }
-
-export function isTimedExercise(exName: string): boolean {
-  if (!exName) return false;
-  const lowerName = exName.toLowerCase();
-  return lowerName.includes('plank') || 
-         lowerName.includes('hold') || 
-         lowerName.includes('l-sit') || 
-         lowerName.includes('lever');
-}

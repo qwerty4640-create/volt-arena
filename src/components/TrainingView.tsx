@@ -15,8 +15,6 @@ import {
   Plus,
   AlertTriangle,
   ChevronRight,
-  RefreshCw,
-  Search,
   X,
   ListOrdered,
   Book
@@ -24,12 +22,10 @@ import {
 import { cn } from '../lib/utils';
 import { useSettings } from '../contexts/SettingsContext';
 import { useWorkout, WorkoutSession, Exercise } from '../contexts/WorkoutContext';
-import { getExerciseName, isMainLiftMatch, isTimedExercise } from '../utils/workoutUtils';
+import { getExerciseName, isMainLiftMatch } from '../utils/workoutUtils';
 import { calculateTier } from '../lib/strength';
 import { FieldManual } from './FieldManual';
-import { getWarmupForLift, COOL_DOWN_ROUTINE } from '../data/warmupLibrary';
-import { getSwappableExercises } from '../constants/exercises';
-import { BlockWidget } from './AnalysisView';
+import { WelcomeModule } from './WelcomeModule';
 
 interface TrainingViewProps {
   onContinueSession?: () => void;
@@ -40,16 +36,7 @@ interface TrainingViewProps {
 
 export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAddActivity }: TrainingViewProps) => {
   const { t, unit, profile } = useSettings();
-  const { 
-    currentSession, 
-    startNewSession,
-    replaceExerciseInSession,
-    setNextWorkoutExercises,
-    getNextWorkoutTemplate, 
-    history, 
-    getCalibrationStatus, 
-    calculateProgramCalories 
-  } = useWorkout();
+  const { currentSession, getNextWorkoutTemplate, history, getCalibrationStatus, calculateProgramCalories } = useWorkout();
   const calibration = getCalibrationStatus();
 
   const nextWorkout = getNextWorkoutTemplate();
@@ -58,7 +45,6 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
   const isActiveSession = isLifting && !!currentSession;
   const [showRoutineModal, setShowRoutineModal] = useState(false);
   const [showFieldManual, setShowFieldManual] = useState(false);
-  const [swappingExerciseIdx, setSwappingExerciseIdx] = useState<number | null>(null);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -234,6 +220,12 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 auto-rows-min w-full">
+      {/* Welcome Module moved from Recovery page */}
+      <WelcomeModule
+        onStart={() => onContinueSession?.()}
+        onViewBriefing={() => setShowRoutineModal(true)}
+      />
+
       {/* Active/Next Mission Module */}
       <motion.div
         initial={{ y: 20, opacity: 0 }}
@@ -293,30 +285,6 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
                   <span className="text-[10px] font-black uppercase tracking-widest text-crimson">{t('analysis.redlineSafetyActive')}</span>
                   <p className="text-[9px] font-bold uppercase tracking-wider text-zinc-400 leading-[1.4]">
                     {t('analysis.redlineMechanicalFailureRisk')}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {calibration.overtrainingRisk !== 'none' && !calibration.isRedline && (
-              <div
-                className={cn(
-                  "mt-4 p-4 flex items-start gap-4 transition-all animate-in fade-in slide-in-from-top-2 duration-500 w-full border",
-                  calibration.overtrainingRisk === 'critical' ? "bg-crimson/10 border-crimson/30" : "bg-amber-500/10 border-amber-500/30"
-                )}
-              >
-                <AlertTriangle className={calibration.overtrainingRisk === 'critical' ? "text-crimson shrink-0" : "text-amber-500 shrink-0"} size={18} />
-                <div className="flex flex-col gap-1">
-                  <span className={cn(
-                    "text-[10px] font-black uppercase tracking-widest",
-                    calibration.overtrainingRisk === 'critical' ? "text-crimson" : "text-amber-500"
-                  )}>
-                    {calibration.overtrainingRisk === 'critical' ? "CRITICAL OVERTRAINING RISK" : "FATIGUE DECAY OUTPACED"}
-                  </span>
-                  <p className="text-[9px] font-bold uppercase tracking-wider text-zinc-400 leading-[1.4]">
-                    {calibration.overtrainingRisk === 'critical' 
-                      ? "YOUR CURRENT ACUTE LOAD IS >1.6X CHRONIC BASELINE. RECOVERY FAIL RISK IS HIGH."
-                      : "DAILY STRAIN IS TRENDING ABOVE RECOVERY CAPACITY. MONITOR PERFORMANCE CLOSELY."}
                   </p>
                 </div>
               </div>
@@ -424,17 +392,8 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
             <span aria-live="polite" className="text-zinc-400 text-[10px] md:text-xs font-medium uppercase tracking-widest block mt-1">
               {isActiveSession
                 ? <span aria-live="assertive">{t('analysis.setOfPattern', { current: currentSetIdx + 1, total: displayTotalSets, weight: displayTargetWeight, unit: weightUnit })}</span>
-                : (isTimedExercise(mainLift?.name || '') 
-                    ? `${displayTotalSets} sets x ${displayTargetReps} sec @ ${displayTargetWeight}${weightUnit}`
-                    : t('analysis.repsAtPattern', { sets: displayTotalSets, reps: displayTargetReps, weight: displayTargetWeight, unit: weightUnit }))}
+                : t('analysis.repsAtPattern', { sets: displayTotalSets, reps: displayTargetReps, weight: displayTargetWeight, unit: weightUnit })}
             </span>
-            <button
-              onClick={() => setShowRoutineModal(true)}
-              className="mt-3 text-[10px] font-black uppercase tracking-[0.2em] text-volt hover:text-white transition-colors flex items-center gap-1.5 btn-tertiary"
-            >
-              <ListOrdered size={12} />
-              Mission Briefing
-            </button>
             {/*}
             <button
               onClick={() => setShowFieldManual(true)}
@@ -498,16 +457,6 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
           <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">REF_ID: {activeOrNext.id}</span>
         </div>
       </motion.div>
-
-        {/* Block Progression Widget */}
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.15 }}
-          className="col-span-1 md:col-span-2 lg:col-span-3 glass-panel p-4 md:p-8"
-        >
-          <BlockWidget />
-        </motion.div>
 
       {/* My PRs Module */}
       <motion.div
@@ -654,10 +603,7 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                onClick={() => {
-                  setShowRoutineModal(false);
-                  setSwappingExerciseIdx(null);
-                }}
+                onClick={() => setShowRoutineModal(false)}
                 className="absolute inset-0 bg-void/90 backdrop-blur-md"
               />
 
@@ -677,159 +623,51 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
                       <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{activeOrNext.title}</p>
                     </div>
                   </div>
+                  {/*}
+                  <button
+                    onClick={() => setShowRoutineModal(false)}
+                    className="p-2 hover:bg-white/5 text-zinc-500 hover:text-white transition-all"
+                  >
+                    <X size={20} />
+                  </button>
+                  {*/}
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar">
-                  <div className="space-y-12">
-                    {/* Warm-up Section */}
-                    <div className="space-y-6">
-                      <div className="flex items-baseline gap-3 border-b border-white/10 pb-2">
-                        <h3 className="font-headline text-lg font-black uppercase italic tracking-tight text-volt">
-                          0. Warm-Up: {getWarmupForLift(activeOrNext.exercises[0].name).title}
-                        </h3>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {getWarmupForLift(activeOrNext.exercises[0].name).items.map((item) => (
-                          <div key={item.id} className="bg-void/40 border border-white/5 p-4 space-y-1">
-                            <div className="flex justify-between items-start">
-                              <span className="text-xs font-black uppercase text-white">{item.name}</span>
-                              <span className="text-[10px] text-zinc-500 font-bold uppercase">{item.durationMinutes}m</span>
-                            </div>
-                            <p className="text-[10px] text-zinc-400 leading-relaxed">{item.description}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Main Exercises Section */}
-                    <div className="space-y-8">
-                      {activeOrNext.exercises.map((ex, exIdx) => (
-                        <div key={ex.id || exIdx} className="space-y-4">
-                          <div className="flex items-center justify-between border-b border-white/5 pb-2">
-                            <div className="flex items-baseline gap-3">
-                              <span className="text-volt font-headline font-black italic text-lg">{exIdx + 1}.</span>
-                              <h3 className="font-headline text-xl font-black uppercase italic tracking-tight text-white">
-                                {ex.name}
-                              </h3>
-                            </div>
-                            <button
-                              onClick={() => setSwappingExerciseIdx(exIdx)}
-                              className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 text-[8px] font-black uppercase tracking-widest text-zinc-400 hover:text-volt hover:border-volt/30 transition-all"
-                            >
-                              <RefreshCw size={10} />
-                              Swap
-                            </button>
-                          </div>
-
-                          <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-                            {ex.sets?.map((set, sIdx) => {
-                              const w = parseFloat(set.weight) || 0;
-                              const displayWeight = !isActiveSession && calibration.isRedline
-                                ? Math.round((w * 0.75) / 5) * 5
-                                : w;
-
-                              return (
-                                <div key={sIdx} className="bg-void/40 border border-white/5 p-3 flex flex-col items-center justify-center">
-                                  <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest mb-1">Set {sIdx + 1}</span>
-                                  <span className="text-[10px] sm:text-xs font-black text-white">{set.reps} Reps</span>
-                                  <span className="text-[8px] sm:text-[10px] font-black text-volt">{displayWeight}{weightUnit}</span>
-                                </div>
-                              );
-                            })}
-                          </div>
+                  <div className="space-y-8">
+                    {activeOrNext.exercises.map((ex, exIdx) => (
+                      <div key={ex.id || exIdx} className="space-y-4">
+                        <div className="flex items-baseline gap-3 border-b border-white/5 pb-2">
+                          <span className="text-volt font-headline font-black italic text-lg">{exIdx + 1}.</span>
+                          <h3 className="font-headline text-xl font-black uppercase italic tracking-tight text-white">
+                            {ex.name}
+                          </h3>
                         </div>
-                      ))}
-                    </div>
 
-                    {/* Cool-down Section */}
-                    <div className="space-y-6">
-                      <div className="flex items-baseline gap-3 border-b border-white/10 pb-2">
-                        <h3 className="font-headline text-lg font-black uppercase italic tracking-tight text-zinc-500">
-                          {activeOrNext.exercises.length + 1}. Cool-Down Protocol
-                        </h3>
+                        <div className="grid grid-cols-3 gap-2">
+                          {ex.sets?.map((set, sIdx) => {
+                            const w = parseFloat(set.weight) || 0;
+                            const displayWeight = !isActiveSession && calibration.isRedline
+                              ? Math.round((w * 0.75) / 5) * 5
+                              : w;
+
+                            return (
+                              <div key={sIdx} className="bg-void/40 border border-white/5 p-3 flex flex-col items-center justify-center">
+                                <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest mb-1">Set {sIdx + 1}</span>
+                                <span className="text-sm font-black text-white">{set.reps} Reps</span>
+                                <span className="text-[10px] font-black text-volt">{displayWeight}{weightUnit}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 opacity-70">
-                        {COOL_DOWN_ROUTINE.items.map((item) => (
-                          <div key={item.id} className="bg-void/40 border border-white/5 p-4 space-y-1">
-                            <div className="flex justify-between items-start">
-                              <span className="text-xs font-black uppercase text-white">{item.name}</span>
-                              <span className="text-[10px] text-zinc-500 font-bold uppercase">{item.durationMinutes}m</span>
-                            </div>
-                            <p className="text-[10px] text-zinc-400 leading-relaxed">{item.description}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                    ))}
                   </div>
                 </div>
 
-                {/* Swapping Overlay */}
-                <AnimatePresence>
-                  {swappingExerciseIdx !== null && (
-                    <motion.div
-                      initial={{ opacity: 0, x: 50 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: 50 }}
-                      className="absolute inset-0 bg-black/95 z-[10000] flex flex-col"
-                    >
-                      <div className="p-4 md:p-8 border-b border-white/10 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <RefreshCw className="text-volt" size={24} />
-                          <h2 className="font-headline text-xl font-black uppercase italic tracking-tight text-white">Swap Exercise</h2>
-                        </div>
-                        <button
-                          onClick={() => setSwappingExerciseIdx(null)}
-                          className="p-2 hover:bg-white/5 text-zinc-500 hover:text-white transition-all"
-                        >
-                          <X size={20} />
-                        </button>
-                      </div>
-                      <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar space-y-3">
-                        <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest mb-4">
-                          Alternative movements for {activeOrNext.exercises[swappingExerciseIdx].name}:
-                        </p>
-                        {getSwappableExercises(activeOrNext.exercises[swappingExerciseIdx].name).map((alt) => (
-                          <button
-                            key={alt.name}
-                            onClick={() => {
-                              const exerciseId = activeOrNext.exercises[swappingExerciseIdx].id;
-                              const newExercise = {
-                                ...activeOrNext.exercises[swappingExerciseIdx],
-                                name: alt.name
-                              };
-
-                              if (!currentSession) {
-                                // Update template before starting
-                                const newExercises = nextWorkout.exercises.map((ex, i) =>
-                                  i === swappingExerciseIdx ? newExercise : ex
-                                );
-                                setNextWorkoutExercises(newExercises);
-                              } else {
-                                replaceExerciseInSession(exerciseId, newExercise);
-                              }
-                              setSwappingExerciseIdx(null);
-                            }}
-                            className="w-full p-4 bg-zinc-900 border border-white/5 hover:border-volt/30 text-left transition-all group"
-                          >
-                            <div className="font-headline text-lg font-black uppercase italic tracking-tight text-white group-hover:text-volt">
-                              {alt.name}
-                            </div>
-                            <div className="text-[8px] font-black uppercase tracking-widest text-zinc-500">
-                              {alt.category}
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
                 <div className="p-6 bg-zinc-900 border-t border-zinc-800">
                   <button
-                    onClick={() => {
-                      setShowRoutineModal(false);
-                      setSwappingExerciseIdx(null);
-                    }}
+                    onClick={() => setShowRoutineModal(false)}
                     className="w-full btn-secondary py-4"
                   >
                     Close Briefing

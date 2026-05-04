@@ -101,20 +101,6 @@
         "updatedAt": { "type": "integer", "description": "Timestamp of update." }
       },
       "required": ["id", "uid", "type", "rpe", "timestamp", "activityId"]
-    },
-    "RecoveryData": {
-      "title": "RecoveryData",
-      "description": "Subjective recovery metrics (HMS Scale) for AI context.",
-      "type": "object",
-      "properties": {
-        "sleep": { "type": "number" },
-        "stress": { "type": "number" },
-        "fatigue": { "type": "number" },
-        "soreness": { "type": "number" },
-        "mood": { "type": "number" },
-        "timestamp": { "type": "integer" }
-      },
-      "required": ["sleep", "stress", "fatigue", "soreness", "mood", "timestamp"]
     }
   },
   "firestore": {
@@ -129,10 +115,6 @@
     "/users/{userId}/active_recovery/{recoveryId}": {
       "schema": "ActiveRecovery",
       "description": "External cardio/recovery sessions."
-    },
-    "/users/{userId}/recovery_data/{docId}": {
-      "schema": "RecoveryData",
-      "description": "Daily health check HMS metrics."
     }
   }
 }
