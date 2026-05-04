@@ -42,7 +42,7 @@ const SwipeCard = ({
       onDragEnd={handleDragEnd}
       className="absolute inset-0 cursor-grab active:cursor-grabbing"
     >
-      <div className="w-full h-full glass-panel p-4 md:p-8 flex flex-col border-volt/20 shadow-2xl relative overflow-hidden group/card bg-zinc-950 border">
+      <div className="w-full h-full glass-panel p-4 md:p-8 flex flex-col border-volt/20 shadow-2xl relative overflow-hidden group/card bg-zinc-950 !bg-zinc-950 border">
         <div className="absolute inset-0 opacity-[0.03] pointer-events-none group-hover/card:opacity-[0.05] transition-opacity duration-700"
           style={{ backgroundImage: 'radial-gradient(var(--primary-color) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
 
@@ -168,7 +168,7 @@ export const ActiveRecoveryWidget = () => {
         {*/}
       </div>
 
-      <div className="relative w-full aspect-[4/5] sm:aspect-video max-h-[500px] perspective-1000 mb-8">
+      <div className="relative w-full h-[320px] sm:h-[360px] perspective-1000 mb-8">
         <AnimatePresence mode="popLayout">
           {activities.map((activity, index) => {
             if (index < currentIndex || index > currentIndex + 2) return null;

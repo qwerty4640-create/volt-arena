@@ -20,13 +20,14 @@ import {
   Clock,
   Flame,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Timer
 } from 'lucide-react';
 import { InfoTooltip } from './InfoTooltip';
 import { useSettings } from '../contexts/SettingsContext';
 import { cn, isDumbbell } from '../lib/utils';
-import { useWorkout, Exercise, Set as WorkoutSet } from '../contexts/WorkoutContext';
-import { getExerciseName } from '../utils/workoutUtils';
+import { useWorkout, Exercise, Set as WorkoutSet, WorkoutSession } from '../contexts/WorkoutContext';
+import { getExerciseName, isTimedExercise } from '../utils/workoutUtils';
 import { useToast } from '../contexts/ToastContext';
 import { ConfirmationModal } from './ConfirmationModal';
 import { getSwappableExercises } from '../constants/exercises';
@@ -227,7 +228,7 @@ const ExerciseSetsCarousel = ({
                   />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <span className="text-[8px] md:text-[10px] text-zinc-500 font-bold uppercase tracking-widest text-center">{t('workout.reps')}</span>
+                  <span className="text-[8px] md:text-[10px] text-zinc-500 font-bold uppercase tracking-widest text-center">{isTimedExercise(exercise.name) ? 'SECONDS' : t('workout.reps')}</span>
                   <input
                     type="text"
                     value={set.reps}
@@ -302,7 +303,26 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
   const [isCooldownSkipped, setIsCooldownSkipped] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [elapsedMs, setElapsedMs] = useState(0);
+  const [restRemaining, setRestRemaining] = useState<number | null>(null);
   const lastAutoRegToastRef = useRef<{ [key: string]: number }>({});
+
+  useEffect(() => {
+    if (restRemaining === null) return;
+    if (restRemaining <= 0) {
+      setRestRemaining(null);
+      return;
+    }
+    const interval = setInterval(() => {
+      setRestRemaining(prev => (prev !== null && prev > 0 ? prev - 1 : null));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [restRemaining]);
+
+  const formatRestTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -395,10 +415,10 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
       return currentVol > bestVol ? current : best;
     }, lastEx.sets[0]);
 
-    return `${bestSet.weight}${weightUnit} x ${bestSet.reps}`;
+    return `${bestSet.weight}${weightUnit} x ${bestSet.reps}${isTimedExercise(exerciseName) ? ' sec' : ''}`;
   };
 
-  const setExercises = (updater: (prev: Exercise[]) => Exercise[]) => {
+  const setExercises = (updater: (prev: Exercise[]) => Exercise[], extraSessionUpdates?: Partial<WorkoutSession>) => {
     const newExercises = updater(exercises);
 
     // Derived tracking for HUD and TrainingView
@@ -412,6 +432,7 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
 
     updateCurrentSession({
       ...currentSession,
+      ...extraSessionUpdates,
       exercises: newExercises,
       currentExerciseIndex: currentExIdx,
       currentSetIndex: currentSetIdx
@@ -517,6 +538,9 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
         // Use tactical green success toast
         showToast(t('toast.setCompleted', { remaining: remainingSets }), 3000, 'success');
 
+        // Start rest timer (120s default)
+        setRestRemaining(120);
+
         // Set-Level Overrides: Check if first completed set of session is high RPE
         const allCompletedSets = newExercises.flatMap(ex => ex.sets).filter(s => s.isCompleted);
         if (allCompletedSets.length === 1 && !showIntensityWarning) {
@@ -534,6 +558,7 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
   const updateSet = (exerciseId: string, setId: string, field: keyof WorkoutSet, value: string) => {
     let willAutoRegulate = false;
     let autoRegDirection = '';
+    let autoRegMessage = '';
 
     // Predictive check prior to state update for toast logic
     const ex = exercises.find(e => e.id === exerciseId);
@@ -544,13 +569,20 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
       const actualRpe = field === 'rpe' ? parseFloat(value) : parseFloat(currentSet.rpe);
       const targetRpe = currentSession.targetRpe || 7;
 
-      if (!isNaN(actualRpe) && setIndex < ex.sets.length - 1) {
-        const actualWeight = field === 'weight' ? parseFloat(value) : parseFloat(currentSet.weight);
-        const prescribedWeight = parseFloat(currentSet.baseWeight || currentSet.weight) || 0;
+      const actualReps = field === 'reps' ? parseInt(value) : parseInt(currentSet.reps);
+      const prescribedReps = parseInt(currentSet.baseReps || currentSet.reps) || 0;
 
-        const actualReps = field === 'reps' ? parseInt(value) : parseInt(currentSet.reps);
-        const prescribedReps = parseInt(currentSet.baseReps || currentSet.reps) || 0;
+      const actualWeight = field === 'weight' ? parseFloat(value) : parseFloat(currentSet.weight);
+      const prescribedWeight = parseFloat(currentSet.baseWeight || currentSet.weight) || 0;
 
+      // 1. FAIL DETECTION: Stopped early
+      const isRepFailure = actualReps < prescribedReps && actualReps > 0;
+      
+      // 2. OVERSHOOT DETECTION: Hit reps but too hard
+      const rpeDiff = actualRpe - targetRpe;
+      const isSevereOvershoot = rpeDiff >= 2;
+
+      if (!isNaN(actualRpe)) {
         let weightRatio = 1;
         if (prescribedWeight > 0 && actualWeight > 0) {
           weightRatio = actualWeight / prescribedWeight;
@@ -561,14 +593,26 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
           repFactor = 1 + (actualReps - prescribedReps) * 0.03;
         }
 
-        const rpeDiff = actualRpe - targetRpe;
         const adjustmentFactor = 1 - (rpeDiff * 0.04);
-        const totalFactor = weightRatio * repFactor * adjustmentFactor;
+        let totalFactor = weightRatio * repFactor * adjustmentFactor;
+
+        // TACTICAL AUDIBLE: Volume Truncation on Failure
+        if (isRepFailure && rpeDiff >= 0) {
+          totalFactor *= 0.95; // Extra 5% drop for stalling
+          autoRegMessage = "RECOVERY CEILING HIT. TRUNCATING REMAINING VOLUME.";
+        }
+
+        // TACTICAL AUDIBLE: CNS Tax on Severe Overshoot
+        if (isSevereOvershoot) {
+          totalFactor *= 0.90; // Aggressive drop
+          autoRegMessage = "CRITICAL CNS STRAIN. SCALING INTENSITY TO PREVENT INJURY.";
+        }
 
         // Apply changes if intensity is off or parameters modified
-        if (Math.abs(rpeDiff) >= 0.5 || Math.abs(weightRatio - 1) > 0.01 || Math.abs(repFactor - 1) > 0.01) {
+        if (Math.abs(rpeDiff) >= 0.5 || Math.abs(weightRatio - 1) > 0.01 || Math.abs(repFactor - 1) > 0.01 || isRepFailure) {
           // Check if at least ONE future set weight will actually change after rounding
           let anyWeightChanges = false;
+          
           for (let i = setIndex + 1; i < ex.sets.length; i++) {
             const s = ex.sets[i];
             if (!s.isCompleted) {
@@ -590,22 +634,43 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
             }
           }
 
-          if (anyWeightChanges) {
-            if (totalFactor < 0.98) {
-              willAutoRegulate = true;
-              autoRegDirection = 'decreased';
-            } else if (totalFactor > 1.02) {
-              willAutoRegulate = true;
-              autoRegDirection = 'increased';
-            }
+          if (anyWeightChanges || (isRepFailure && rpeDiff >= 0)) {
+            willAutoRegulate = true;
+            autoRegDirection = totalFactor < 1 ? 'decreased' : 'increased';
           }
         }
       }
     }
 
+    const isSevereOvershootMaster = (() => {
+      const ex = exercises.find(e => e.id === exerciseId);
+      if (!ex || field !== 'rpe') return false;
+      const actualRpe = parseFloat(value);
+      const targetRpe = currentSession.targetRpe || 7;
+      return !isNaN(actualRpe) && (actualRpe - targetRpe >= 2);
+    })();
+
     setExercises(prev => prev.map(ex => {
       if (ex.id === exerciseId) {
         let updatedSets = ex.sets.map(s => s.id === setId ? { ...s, [field]: value } : s);
+        
+        // Carry over weight and reps to future uncompleted sets
+        const setIndex = updatedSets.findIndex(s => s.id === setId);
+        if (setIndex !== -1 && (field === 'weight' || field === 'reps')) {
+          const newValue = value;
+          updatedSets = updatedSets.map((s, idx) => {
+            if (idx >= setIndex && !s.isCompleted) {
+              return { 
+                ...s, 
+                [field]: newValue,
+                // Update base values to match manual input so future autoreg stays proportional to new baseline
+                ...(field === 'weight' ? { baseWeight: newValue } : {}),
+                ...(field === 'reps' ? { baseReps: newValue } : {})
+              };
+            }
+            return s;
+          });
+        }
 
         // Autoregulation implementation
         const currentSet = updatedSets.find(s => s.id === setId);
@@ -634,10 +699,21 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
 
             const rpeDiff = actualRpe - targetRpe;
             const adjustmentFactor = 1 - (rpeDiff * 0.04);
-            const totalFactor = weightRatio * repFactor * adjustmentFactor;
+            let totalFactor = weightRatio * repFactor * adjustmentFactor;
 
-            if (Math.abs(rpeDiff) >= 0.5 || Math.abs(weightRatio - 1) > 0.01 || Math.abs(repFactor - 1) > 0.01) {
-              updatedSets = updatedSets.map((s, idx) => {
+            const isRepFailure = actualReps < prescribedReps && actualReps > 0;
+            if (isRepFailure && rpeDiff >= 0) totalFactor *= 0.95;
+            if (rpeDiff >= 2) totalFactor *= 0.90;
+
+            if (Math.abs(rpeDiff) >= 0.5 || Math.abs(weightRatio - 1) > 0.01 || Math.abs(repFactor - 1) > 0.01 || isRepFailure) {
+              // Volume Truncation check
+              let setsToKeep = updatedSets.length;
+              if (isRepFailure && rpeDiff >= 0) {
+                // If failed a set at target intensity, drop LAST set
+                setsToKeep = Math.max(setIndex + 1, updatedSets.length - 1);
+              }
+
+              updatedSets = updatedSets.slice(0, setsToKeep).map((s, idx) => {
                 // Adjust only remaining, uncompleted sets
                 if (idx > setIndex && !s.isCompleted) {
                   const referenceWeightLocal = parseFloat(s.baseWeight || s.weight);
@@ -670,8 +746,37 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
           sets: updatedSets
         };
       }
+      
+      // Apply systemic reduction to other exercises if severe overshoot detected
+      if (isSevereOvershootMaster) {
+        const currentIndex = prev.findIndex(e => e.id === exerciseId);
+        const thisIndex = prev.findIndex(e => e.id === ex.id);
+        
+        // Only apply to subsequent exercises that aren't fully completed
+        if (thisIndex > currentIndex) {
+          return {
+            ...ex,
+            sets: ex.sets.map(s => {
+              if (s.isCompleted) return s;
+              const refWeight = parseFloat(s.baseWeight || s.weight);
+              if (isNaN(refWeight) || refWeight <= 0) return s;
+              
+              let newWeight = refWeight * 0.92; // 8% systemic tax
+              if (unit === 'metric') newWeight = Math.round(newWeight / 2.5) * 2.5;
+              else newWeight = Math.round(newWeight / 5) * 5;
+              
+              return {
+                ...s,
+                baseWeight: s.baseWeight || s.weight,
+                weight: Math.max(0, newWeight).toString()
+              };
+            })
+          };
+        }
+      }
+      
       return ex;
-    }));
+    }), isSevereOvershootMaster ? { systemicFatigueModifier: 0.92 } : undefined);
 
     if (willAutoRegulate) {
       const toastKey = `${exerciseId}-${setId}`;
@@ -683,7 +788,8 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
         lastAutoRegToastRef.current[toastKey] = now;
         const targetRpe = currentSession.targetRpe || 7;
         const toastType = autoRegDirection === 'decreased' ? 'warning' : 'success';
-        showToast(t('toast.autoReg', { direction: t(`workout.${autoRegDirection}` as any), rpe: targetRpe }), 5000, toastType);
+        const message = autoRegMessage || t('toast.autoReg', { direction: t(`workout.${autoRegDirection}` as any), rpe: targetRpe });
+        showToast(message, 5000, toastType);
       }
     }
   };
@@ -1049,6 +1155,56 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
           <AICoach isOpen={isAICoachOpen} onClose={() => setIsAICoachOpen(false)} />
         </>
       )}
+
+      {/* Floating Rest Timer */}
+      <AnimatePresence>
+        {restRemaining !== null && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            className="fixed bottom-24 right-6 md:right-10 z-[100]"
+          >
+            <div className="bg-void/95 backdrop-blur-xl border border-volt/30 p-3 shadow-[0_0_40px_rgba(0,182,255,0.2)] flex items-center gap-4">
+              <div className="flex flex-col">
+                <div className="flex items-center gap-1.5 text-volt mb-0.5">
+                  <Timer size={10} className="animate-pulse" />
+                  <span className="text-[7px] font-black uppercase tracking-[0.2em]">{t('workout.restTime')}</span>
+                </div>
+                <div className="text-2xl font-black italic text-white font-mono leading-none">
+                  {formatRestTime(restRemaining)}
+                </div>
+              </div>
+
+              <div className="h-8 w-px bg-white/10" />
+
+              <div className="flex gap-1">
+                <button 
+                  onClick={() => setRestRemaining(prev => Math.max(0, (prev || 0) - 30))}
+                  className="px-2 py-1.5 bg-white/5 hover:bg-white/10 text-[9px] font-black border border-white/10 transition-colors"
+                >
+                  -30S
+                </button>
+                <button 
+                  onClick={() => setRestRemaining(prev => (prev || 0) + 30)}
+                  className="px-2 py-1.5 bg-volt/10 hover:bg-volt/20 text-volt text-[9px] font-black border border-volt/20 transition-colors font-mono"
+                >
+                  +30S
+                </button>
+              </div>
+
+              <div className="h-8 w-px bg-white/10" />
+
+              <button 
+                onClick={() => setRestRemaining(null)}
+                className="text-[8px] font-black uppercase tracking-[0.2em] text-zinc-500 hover:text-white transition-colors px-1"
+              >
+                SKIP
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Swap Exercise Modal */}
       {mounted && createPortal(

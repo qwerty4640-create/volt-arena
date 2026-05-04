@@ -1,7 +1,7 @@
 import { getTranslation, SupportedLanguage } from '../i18n';
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, setDoc, onSnapshot, writeBatch, collection, getDocs } from 'firebase/firestore';
+import { doc, getDoc, setDoc, onSnapshot, writeBatch, collection, getDocs, updateDoc } from 'firebase/firestore';
 import { auth, db, handleFirestoreError, OperationType } from '../firebase';
 import { ImmersionMode } from '../types';
 import { calculateTier } from '../lib/strength';
@@ -47,8 +47,31 @@ export interface UserProfile {
   role?: 'user' | 'admin' | 'engineer';
 }
 
-export type Theme = 'light' | 'dark';
+export type Theme = 'light' | 'dark' | 'fantasy';
 export type LightColorScheme = 'default' | 'ocean' | 'neon' | 'solar' | 'monochrome';
+export type FantasyColorScheme = 'hud' | 'sovereign' | 'stained' | 'helios' | 'blues' | 'grays' | 'peerless';
+
+export const THEME_LOCKS: Record<string, string[]> = {
+  untrained: ['sovereign', 'peerless', 'blues', 'grays', 'stained'],
+  novice: ['sovereign', 'peerless', 'blues', 'grays', 'stained'],
+  intermediate: ['sovereign', 'peerless'],
+  advanced: ['sovereign'],
+  elite: []
+};
+
+// Precise scheme mapping based on request
+export const getLockedSchemes = (level: UserProfile['level'], role?: string) => {
+  if (role === 'admin' || role === 'engineer') return [];
+  
+  switch (level) {
+    case 'elite': return [];
+    case 'advanced': return ['sovereign'];
+    case 'intermediate': return ['sovereign', 'peerless'];
+    case 'novice': return ['sovereign', 'peerless', 'blues', 'grays', 'stained'];
+    case 'untrained': return ['sovereign', 'peerless', 'blues', 'grays', 'stained'];
+    default: return [];
+  }
+};
 
 interface SettingsContextType {
   language: Language;
@@ -59,6 +82,8 @@ interface SettingsContextType {
   setTheme: (theme: Theme) => void;
   lightColorScheme: LightColorScheme;
   setLightColorScheme: (scheme: LightColorScheme) => void;
+  fantasyColorScheme: FantasyColorScheme;
+  setFantasyColorScheme: (scheme: FantasyColorScheme) => void;
   isVoiceActive: boolean;
   setIsVoiceActive: (active: boolean) => void;
   immersionMode: ImmersionMode;
@@ -88,6 +113,9 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [lightColorScheme, setLightColorSchemeState] = useState<LightColorScheme>(
     (localStorage.getItem('volt_light_scheme') as LightColorScheme) || 'default'
   );
+  const [fantasyColorScheme, setFantasyColorSchemeState] = useState<FantasyColorScheme>(
+    (localStorage.getItem('volt_fantasy_scheme') as FantasyColorScheme) || 'hud'
+  );
   const [isVoiceActive, setIsVoiceActiveState] = useState(false);
   const [immersionMode, setImmersionModeState] = useState<ImmersionMode>('immersive');
   const [showExperimentalMenus, setShowExperimentalMenusState] = useState(false);
@@ -115,6 +143,12 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
         unsubscribeFirestore = onSnapshot(doc(db, userDocPath), (snapshot) => {
           if (snapshot.exists()) {
             const data = snapshot.data() as UserProfile;
+            
+            // Auto-elevate admin for current user if not already set
+            if ((user.email === 'qwerty4640@gmail.com' || user.email === 'admin@volt.com') && data.role !== 'admin') {
+              updateDoc(doc(db, userDocPath), { role: 'admin' });
+            }
+
             setProfile(data);
             if (data.language) setLanguageState(data.language as Language);
             if (data.unit) setUnitState(data.unit as Unit);
@@ -140,7 +174,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
               onboardingCompleted: false,
               level: 'untrained',
               createdAt: Date.now(),
-              role: 'user'
+              role: (user.email === 'qwerty4640@gmail.com' || user.email === 'admin@volt.com') ? 'admin' : 'user'
             };
             setDoc(doc(db, userDocPath), newProfile).then(() => {
               setIsProfileLoading(false);
@@ -381,9 +415,16 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
     document.documentElement.setAttribute('data-light-scheme', sc);
   };
 
+  const setFantasyColorScheme = (sc: FantasyColorScheme) => {
+    setFantasyColorSchemeState(sc);
+    localStorage.setItem('volt_fantasy_scheme', sc);
+    document.documentElement.setAttribute('data-fantasy-scheme', sc);
+  };
+
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
     document.documentElement.setAttribute('data-light-scheme', lightColorScheme);
+    document.documentElement.setAttribute('data-fantasy-scheme', fantasyColorScheme);
   }, []);
 
   const t = (key: string, params?: Record<string, string | number>): string => getTranslation(language as SupportedLanguage, key, params);
@@ -394,6 +435,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
       unit, setUnit, 
       theme, setTheme,
       lightColorScheme, setLightColorScheme,
+      fantasyColorScheme, setFantasyColorScheme,
       isVoiceActive, setIsVoiceActive,
       immersionMode, setImmersionMode,
       showExperimentalMenus, setShowExperimentalMenus,

@@ -51,7 +51,7 @@ const QUESTIONS = [
 
 export const ReadinessCheck = ({ onComplete, onCancel }: ReadinessCheckProps) => {
   const { t } = useSettings();
-  const { getCalibrationStatus } = useWorkout();
+  const { getCalibrationStatus, logDailyHealthCheck } = useWorkout();
 
   const QUESTIONS = useMemo(() => [
     {
@@ -164,17 +164,21 @@ export const ReadinessCheck = ({ onComplete, onCancel }: ReadinessCheckProps) =>
 
   const scenario = getScenario();
 
-  const handleComplete = () => {
-    // Persist the scores so the Recovery page can display them
+  const handleComplete = async () => {
+    // Log the HMS data for AI context and persistence
     try {
-      localStorage.setItem('volt_last_readiness', JSON.stringify({
-        ...scores,
-        timestamp: Date.now(),
-      }));
+      await logDailyHealthCheck({
+        sleep: scores.sleep,
+        stress: scores.stress,
+        fatigue: scores.fatigue,
+        soreness: scores.soreness,
+        mood: scores.mood
+      });
     } catch (e) {
-      // localStorage unavailable, silently skip
+      console.error("Failed to log daily health check:", e);
     }
-    onComplete(readinessPercentage, scenario.modifier, targetRpe);
+
+    onComplete(calibration.readiness, calibration.readinessModifier, baselineRecommendedRpe);
   };
 
   // Scroll to top when view changes
@@ -202,14 +206,6 @@ export const ReadinessCheck = ({ onComplete, onCancel }: ReadinessCheckProps) =>
       >
         <div className="p-3 md:p-8 border-b border-white/5 shrink-0 relative">
           <div className="flex items-center gap-6">
-            {/*...}
-            <button 
-              onClick={onCancel}
-              className="w-12 h-12 btn-secondary"
-            >
-              <ArrowLeft size={24} />
-            </button>
-            {...*/}
             <div className="space-y-1">
               <h2 className="font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tight text-white">{t('readiness.title')}</h2>
               <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('readiness.scale')}</p>
@@ -283,75 +279,38 @@ export const ReadinessCheck = ({ onComplete, onCancel }: ReadinessCheckProps) =>
                       </div>
                       <div className="flex-1 min-w-0">
                         <h3 className={cn("font-headline text-base md:text-lg font-black uppercase italic tracking-tight leading-tight", isRedline ? "text-crimson" : scenario.color)}>
-                          {readinessPercentage}% {t(`readiness.scenario.${scenario.type}.title`)}
+                          Your Readiness is {calibration.readiness}%.
                         </h3>
-                        <p className="text-xs text-zinc-400 mt-1">{t(`readiness.scenario.${scenario.type}.message`)}</p>
+                        <p className="text-xs text-zinc-400 mt-2">
+                          Based on your HMS variables ({scenario.title.toLowerCase()}), take it easy on the warm-ups and focus closely on technique, but your programmed intensity remains bound to the system recovery curve.
+                        </p>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Mission Target RPE Selector */}
-                <div className="space-y-4 p-3 bg-surface-container-lowest border border-white/5">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                      <h3 className="font-headline text-sm font-black uppercase tracking-widest text-white">{t('readiness.rpe.title')}</h3>
-                      <p className="text-[10px] text-zinc-500 uppercase font-bold">{t('readiness.rpe.subtitle')}</p>
+                <div className="space-y-4 p-4 bg-surface-container-lowest border border-white/5">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Info size={14} className="text-zinc-500" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-white">
+                      Prescribed Training Load
+                    </span>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-3 bg-white/5 flex flex-col gap-1">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">System Modifier</span>
+                      <span className="text-xl font-black italic text-volt">{Math.round(calibration.readinessModifier * 100)}%</span>
                     </div>
-                    <div className="font-headline text-3xl font-black italic text-volt">
-                      {targetRpe}
+                    <div className="p-3 bg-white/5 flex flex-col gap-1">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Target RPE</span>
+                      <span className="text-xl font-black italic text-volt">{baselineRecommendedRpe}</span>
                     </div>
                   </div>
 
-                  <div className="flex gap-1">
-                    {[5, 6, 7, 8, 9, 10].map((val) => (
-                      <button
-                        key={val}
-                        onClick={() => setTargetRpe(val)}
-                        className={cn(
-                          "flex-1 py-3 border font-headline text-sm font-black transition-all relative",
-                          targetRpe === val
-                            ? "bg-volt/20 border-volt text-volt shadow-[0_0_15px_var(--primary-glow)]"
-                            : "bg-surface border-white/5 text-zinc-500 hover:border-white/20 hover:text-white"
-                        )}
-                      >
-                        {val}
-                        {val === adjustedRecommendedRpe && (
-                          <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-volt text-void text-[6px] font-black px-1 py-0.5 uppercase tracking-tighter whitespace-nowrap">
-                            {t('readiness.rpe.recommended')}
-                          </div>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="flex justify-between text-[8px] font-black uppercase tracking-widest text-zinc-600">
-                    <span>{t('readiness.rpe.label1')}</span>
-                    <span>{t('readiness.rpe.label2')}</span>
-                  </div>
-
-                  {/* The Audible Rule Warning */}
-                  {readinessPercentage < 70 && targetRpe >= 8 && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="p-4 bg-crimson/10 border border-crimson/30 flex gap-3"
-                    >
-                      <AlertTriangle className="text-crimson shrink-0" size={16} />
-                      <div className="space-y-1">
-                        <p className="text-[10px] text-crimson font-black uppercase tracking-widest">{t('readiness.audible.title')}</p>
-                        <p className="text-[10px] text-zinc-300 font-bold leading-relaxed">
-                          {t('readiness.audible.message', { percentage: readinessPercentage, from: targetRpe, to: 6 })}
-                        </p>
-                      </div>
-                    </motion.div>
-                  )}
-
-                  <div className="p-3 bg-white/5 flex gap-2">
-                    <Info className="text-zinc-500 shrink-0" size={12} />
-                    <p className="text-xs text-zinc-400">
-                      <span className="text-zinc-300"></span> {t('readiness.note')}
-                    </p>
-                  </div>
+                  <p className="text-[10px] text-zinc-500 uppercase font-bold mt-2 leading-relaxed">
+                    The system automatically calculates decay factors based on your last logged session ({calibration.readiness}% objective readiness). Manual override has been disabled to ensure autonomous progressive overload.
+                  </p>
                 </div>
               </motion.div>
             )}

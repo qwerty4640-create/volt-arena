@@ -115,27 +115,6 @@ service cloud.firestore {
                         
         allow delete: if isOwner(userId) || isAdmin();
       }
-
-      // ===============================================================
-      // RECOVERY DATA
-      // ===============================================================
-
-      function isValidRecoveryData(data) {
-        return data.sleep is number && data.sleep >= 1 && data.sleep <= 5 &&
-               data.stress is number && data.stress >= 1 && data.stress <= 5 &&
-               data.fatigue is number && data.fatigue >= 1 && data.fatigue <= 5 &&
-               data.soreness is number && data.soreness >= 1 && data.soreness <= 5 &&
-               data.mood is number && data.mood >= 1 && data.mood <= 5 &&
-               data.timestamp is int;
-      }
-
-      match /recovery_data/{docId} {
-        allow read: if isOwner(userId) || isAdmin();
-        
-        allow create, update: if isOwner(userId) && isValidId(docId) && isValidRecoveryData(incoming());
-        
-        allow delete: if isOwner(userId) || isAdmin();
-      }
     }
   }
 }
