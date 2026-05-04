@@ -24,6 +24,7 @@ export const ProfileView = () => {
   const [ageError, setAgeError] = React.useState<string | null>(null);
   const [adjustingDuration, setAdjustingDuration] = React.useState(profile?.trainingDurationMonths || 3);
   const [adjustingFrequency, setAdjustingFrequency] = React.useState(profile?.trainingFrequency || 3);
+  const [adjustingGoal, setAdjustingGoal] = React.useState<TrainingGoal>(profile?.trainingGoal || 'powerbuilding');
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -80,6 +81,7 @@ export const ProfileView = () => {
       await updateProfile({
         trainingDurationMonths: adjustingDuration,
         trainingFrequency: adjustingFrequency,
+        trainingGoal: adjustingGoal,
         competitionDate: newCompetitionDate,
         trainingWeekOffset: 0
       });
@@ -112,6 +114,9 @@ export const ProfileView = () => {
         trainingGoal: profile.trainingGoal || 'powerbuilding',
         trainingDurationMonths: profile.trainingDurationMonths || 3,
       });
+      setAdjustingGoal(profile.trainingGoal || 'powerbuilding');
+      setAdjustingDuration(profile.trainingDurationMonths || 3);
+      setAdjustingFrequency(profile.trainingFrequency || 3);
     }
   }, [profile]);
 
@@ -287,7 +292,7 @@ export const ProfileView = () => {
                     <div className={cn("p-2 bg-white/5 transition-all group-hover/item:bg-volt/10", stat.color)}>
                       <stat.icon size={14} strokeWidth={3} className={cn(stat.glow)} />
                     </div>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 group-hover/item:text-zinc-300">{stat.label}</span>
+                    <span className="text-xs font-bold text-white uppercase tracking-widest group-hover:text-volt transition-colors">{stat.label}</span>
                   </div>
                   <div className="flex items-baseline gap-2">
                     <span className="text-lg font-sans font-black text-white italic">{stat.value}</span>
@@ -320,40 +325,28 @@ export const ProfileView = () => {
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2 flex items-center gap-4 p-4 bg-void/40 border border-white/5">
-              <Target size={18} className="text-zinc-500" />
-              <div className="flex-1">
-                <p className="text-[8px] font-black uppercase tracking-widest text-zinc-500">{t('settings.objective')}</p>
-                <p className="text-xs font-bold text-white uppercase tracking-widest">{t(`goal.${profile.trainingGoal}`)}</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4 p-4 bg-void/40 border border-white/5">
-              <User size={18} className="text-zinc-500" />
+            <div className="p-4 bg-void/40 border border-white/5">
               <div>
                 <p className="text-[8px] font-black uppercase tracking-widest text-zinc-500">{t('settings.gender')}</p>
                 <p className="text-xs font-bold text-white uppercase">{t(`gender.${profile.gender}` || 'gender.other')}</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-4 p-4 bg-void/40 border border-white/5">
-              <User size={18} className="text-zinc-500" />
+            <div className="p-4 bg-void/40 border border-white/5">
               <div>
                 <p className="text-[8px] font-black uppercase tracking-widest text-zinc-500">{t('settings.age')}</p>
                 <p className="text-xs font-bold text-white uppercase">{profile.age || 'N/A'}</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-4 p-4 bg-void/40 border border-white/5">
-              <Ruler size={18} className="text-zinc-500" />
+            <div className="p-4 bg-void/40 border border-white/5">
               <div>
                 <p className="text-[8px] font-black uppercase tracking-widest text-zinc-500">{t('settings.height')}</p>
                 <p className="text-xs font-bold text-white uppercase">{formatHeight(profile.height || 0)}</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-4 p-4 bg-void/40 border border-white/5">
-              <Scale size={18} className="text-zinc-500" />
+            <div className="p-4 bg-void/40 border border-white/5">
               <div>
                 <p className="text-[8px] font-black uppercase tracking-widest text-zinc-500">{t('settings.weight')}</p>
                 <p className="text-xs font-bold text-white uppercase">{profile.weight || 0} {unit === 'metric' ? 'kg' : 'LBS'}</p>
@@ -386,7 +379,7 @@ export const ProfileView = () => {
           <MovementExclusionModal isOpen={showExclusionModal} onClose={() => setShowExclusionModal(false)} />
         </motion.div>
 
-        {/* Timeline & Frequency */}
+        {/* Deployment Settings */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -398,7 +391,7 @@ export const ProfileView = () => {
           <div className="flex items-center justify-between mb-6 relative z-10">
             <div className="flex items-center gap-3">
               <Zap className="text-volt" size={20} />
-              <h3 className="font-sans text-sm font-bold uppercase tracking-widest text-white">{t('settings.timelineFrequency')}</h3>
+              <h3 className="font-sans text-sm font-bold uppercase tracking-widest text-white">{t('settings.deploymentSettings')}</h3>
             </div>
             <button
               onClick={() => setShowProtocolModal(true)}
@@ -409,45 +402,34 @@ export const ProfileView = () => {
           </div>
 
           <div className="space-y-4 relative z-10">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="p-4 bg-void/40 border border-white/5">
-                <p className="text-[7px] font-bold uppercase tracking-widest text-zinc-500 mb-1">{t('settings.currentBlock')}</p>
-                <p className="text-xl font-sans font-black text-white italic uppercase leading-tight">{block.label || block.type}</p>
-                <div className="flex justify-between items-center mt-2">
-                  <span className="text-[8px] font-bold italic text-zinc-400">{t('workout.week')} {weekInBlock} / {block.durationWeeks}</span>
-                  <span className="text-[10px] font-bold uppercase text-volt">{t('workout.week')} {currentWeek}</span>
-                </div>
-              </div>
-
-              <div className="p-4 bg-void/40 border border-white/5">
-                <p className="text-[7px] font-bold uppercase tracking-widest text-zinc-500 mb-1">{t('settings.trainingLoad')}</p>
-                <p className="text-xl font-sans font-black text-white italic uppercase">{profile.trainingFrequency || 3} Missions / Wk</p>
-                <div className="mt-4 space-y-1.5">
-                  <div className="flex justify-between text-[6px] font-black uppercase tracking-widest text-zinc-500">
-                    <span>{t('settings.weeklyDistribution')}</span>
-                    <span>{Math.round(((profile.trainingFrequency || 3) / 7) * 100)}%</span>
-                  </div>
-                  <div className="h-0.5 bg-white/5 overflow-hidden">
-                    <motion.div
-                      animate={{ width: `${((profile.trainingFrequency || 3) / 7) * 100}%` }}
-                      className="h-full bg-volt shadow-[0_0_5px_var(--primary-glow)]"
-                    />
-                  </div>
-                </div>
+            <div className="p-4 bg-void/40 border border-white/5 mb-4">
+              <div className="flex-1">
+                <p className="text-[8px] font-black uppercase text-zinc-500 mb-1">{t('settings.objective')}</p>
+                <p className="text-xs font-bold text-white uppercase tracking-widest">{t(`goal.${profile.trainingGoal}`)}</p>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-3 bg-void/40 border border-white/5 text-left">
-                <p className="text-[7px] font-bold uppercase tracking-widest text-zinc-500 mb-1">{t('settings.toCompetition')}</p>
-                <p className="text-base font-sans font-black text-volt italic uppercase">
-                  {profile.competitionDate ? Math.max(0, Math.ceil((profile.competitionDate - Date.now()) / (7 * 24 * 60 * 60 * 1000))) : (profile.trainingDurationMonths || 3) * 4} WKS
-                </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="p-4 bg-void/40 border border-white/5">
+                <p className="text-[8px] font-black uppercase text-zinc-500 mb-1">{t('settings.currentBlock')}</p>
+                <p className="text-xs font-bold text-white uppercase tracking-widest leading-tight">{block.label || block.type}</p>
+                <div className="flex justify-between items-center mt-2">
+                  <span className="text-xs font-bold italic text-zinc-400">{t('workout.week')} {weekInBlock} / {block.durationWeeks}</span>
+                </div>
               </div>
-              <div className="p-3 bg-void/40 border border-white/5 text-left">
-                <p className="text-[7px] font-bold uppercase tracking-widest text-zinc-500 mb-1">{t('settings.totalDuration')}</p>
-                <p className="text-base font-sans font-black text-white italic uppercase">
-                  {profile.trainingDurationMonths || 3} {t('onboarding.months').toUpperCase()}
+
+              <div className="p-4 bg-void/40 border border-white/5">
+                <p className="text-[8px] font-black uppercase text-zinc-500 mb-1">{t('onboarding.frequency')}</p>
+                <p className="text-xs font-bold text-white uppercase tracking-widest">{profile.trainingFrequency || 3} Missions / Wk</p>
+
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4">
+              <div className="p-4 bg-void/40 border border-white/5">
+                <p className="text-[8px] font-black uppercase text-zinc-500 mb-1">{t('settings.totalDuration')}</p>
+                <p className="text-xs font-bold text-white uppercase tracking-widest">
+                  {(profile.trainingDurationMonths || 3) * 4} {t('onboarding.weeks').toUpperCase()}
                 </p>
               </div>
             </div>
@@ -488,120 +470,99 @@ export const ProfileView = () => {
 
                 <div className="space-y-6">
                   <div className="space-y-4">
-                    {/* Gender */}
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('settings.gender')}</label>
-                      <select
-                        value={editData.gender}
-                        onChange={(e) => setEditData({ ...editData, gender: e.target.value as any })}
-                        className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black italic focus:border-volt outline-none transition-all"
-                      >
-                        <option value="male">{t('gender.male')}</option>
-                        <option value="female">{t('gender.female')}</option>
-                        <option value="other">{t('gender.other')}</option>
-                      </select>
-                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      {/* Gender */}
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('settings.gender')}</label>
+                        <select
+                          value={editData.gender}
+                          onChange={(e) => setEditData({ ...editData, gender: e.target.value as any })}
+                          className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black italic focus:border-volt outline-none transition-all"
+                        >
+                          <option value="male">{t('gender.male')}</option>
+                          <option value="female">{t('gender.female')}</option>
+                          <option value="other">{t('gender.other')}</option>
+                        </select>
+                      </div>
 
-                    {/* Age */}
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('settings.age')}</label>
-                      <input
-                        type="number"
-                        step="1"
-                        value={editData.age}
-                        onChange={(e) => {
-                          const val = parseFloat(e.target.value);
-                          setEditData({ ...editData, age: isNaN(val) ? 0 : val });
-                          if (val % 1 !== 0) {
-                            setAgeError(t('auth.invalidAgeWholeNumber') || 'Age must be a whole number');
-                          } else {
-                            setAgeError(null);
-                          }
-                        }}
-                        className={cn(
-                          "w-full bg-surface-container-lowest border-b-2 p-4 text-white font-sans text-xl font-black italic outline-none transition-all text-center",
-                          ageError ? "border-crimson text-crimson" : "border-white/5 focus:border-volt"
+                      {/* Age */}
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('settings.age')}</label>
+                        <input
+                          type="number"
+                          step="1"
+                          value={editData.age}
+                          onChange={(e) => {
+                            const val = parseFloat(e.target.value);
+                            setEditData({ ...editData, age: isNaN(val) ? 0 : val });
+                            if (val % 1 !== 0) {
+                              setAgeError(t('auth.invalidAgeWholeNumber') || 'Age must be a whole number');
+                            } else {
+                              setAgeError(null);
+                            }
+                          }}
+                          className={cn(
+                            "w-full bg-surface-container-lowest border-b-2 p-4 text-white font-sans text-xl font-black italic outline-none transition-all text-center",
+                            ageError ? "border-crimson text-crimson" : "border-white/5 focus:border-volt"
+                          )}
+                        />
+                        {ageError && (
+                          <p className="text-[8px] font-bold uppercase tracking-widest text-crimson mt-1 text-center">{ageError}</p>
                         )}
-                      />
-                      {ageError && (
-                        <p className="text-[8px] font-bold uppercase tracking-widest text-crimson mt-1 text-center">{ageError}</p>
-                      )}
+                      </div>
                     </div>
 
-                    {/* Height */}
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('settings.height')}</label>
-                      {unit === 'metric' ? (
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="number"
-                            value={editData.height}
-                            onChange={(e) => setEditData({ ...editData, height: parseFloat(e.target.value) || 0 })}
-                            className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black italic focus:border-volt outline-none transition-all text-center"
-                          />
-                          <span className="text-xs font-bold text-zinc-500">CM</span>
-                        </div>
-                      ) : (
-                        <div className="flex gap-4">
-                          <div className="flex-1 space-y-1">
+                    <div className="grid grid-cols-2 gap-4">
+                      {/* Height */}
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('settings.height')}</label>
+                        {unit === 'metric' ? (
+                          <div className="flex items-center gap-2">
                             <input
                               type="number"
-                              value={editData.heightFeet}
-                              onChange={(e) => setEditData({ ...editData, heightFeet: parseInt(e.target.value) || 0 })}
+                              value={editData.height}
+                              onChange={(e) => setEditData({ ...editData, height: parseFloat(e.target.value) || 0 })}
                               className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black italic focus:border-volt outline-none transition-all text-center"
                             />
-                            <p className="text-[8px] font-bold text-zinc-500 text-center uppercase">{t('settings.feet')}</p>
+                            <span className="text-xs font-bold text-zinc-500">CM</span>
                           </div>
-                          <div className="flex-1 space-y-1">
-                            <input
-                              type="number"
-                              value={editData.heightInches}
-                              onChange={(e) => setEditData({ ...editData, heightInches: parseInt(e.target.value) || 0 })}
-                              className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black italic focus:border-volt outline-none transition-all text-center"
-                            />
-                            <p className="text-[8px] font-bold text-zinc-500 text-center uppercase">{t('settings.inches')}</p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Weight */}
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('settings.weight')} ({unit === 'metric' ? 'kg' : 'LBS'})</label>
-                      <input
-                        type="number"
-                        value={editData.weight}
-                        onChange={(e) => setEditData({ ...editData, weight: parseFloat(e.target.value) || 0 })}
-                        className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black italic focus:border-volt outline-none transition-all text-center"
-                      />
-                    </div>
-
-                    {/* Training Goal */}
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('settings.trainingObjective')}</label>
-                      <div className="grid grid-cols-1 gap-2">
-                        {(['pure_strength', 'powerbuilding', 'hypertrophy', 'peaking', 'longevity'] as TrainingGoal[]).map(goal => (
-                          <button
-                            key={goal}
-                            onClick={() => setEditData({ ...editData, trainingGoal: goal })}
-                            className={cn(
-                              "flex flex-col gap-1 p-3 border-none transition-all text-left relative group",
-                              editData.trainingGoal === goal
-                                ? "bg-volt/10 text-white ring-1 ring-volt/30"
-                                : "bg-surface-variant text-zinc-400 hover:bg-white/5 hover:text-zinc-200"
-                            )}
-                          >
-                            <div className="flex items-center justify-between">
-                              <span className="font-sans text-[10px] font-bold uppercase tracking-widest">{t(`goal.${goal}`)}</span>
-                              {editData.trainingGoal === goal && (
-                                <CheckCircle2 size={12} className="text-volt" />
-                              )}
+                        ) : (
+                          <div className="flex gap-2">
+                            <div className="flex-1 space-y-1">
+                              <input
+                                type="number"
+                                value={editData.heightFeet}
+                                onChange={(e) => setEditData({ ...editData, heightFeet: parseInt(e.target.value) || 0 })}
+                                className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black italic focus:border-volt outline-none transition-all text-center"
+                              />
                             </div>
-                            <p className="text-[8px] text-zinc-500 font-medium uppercase tracking-widest leading-tight">
-                              {t(`goal.${goal}.desc`)}
-                            </p>
-                          </button>
-                        ))}
+                            <div className="flex-1 space-y-1">
+                              <input
+                                type="number"
+                                value={editData.heightInches}
+                                onChange={(e) => setEditData({ ...editData, heightInches: parseInt(e.target.value) || 0 })}
+                                className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black italic focus:border-volt outline-none transition-all text-center"
+                              />
+                            </div>
+                          </div>
+                        )}
+                        {!(unit === 'metric') && (
+                          <div className="flex gap-2">
+                            <p className="flex-1 text-[8px] font-bold text-zinc-500 text-center uppercase">{t('settings.feet')}</p>
+                            <p className="flex-1 text-[8px] font-bold text-zinc-500 text-center uppercase">{t('settings.inches')}</p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Weight */}
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('settings.weight')} ({unit === 'metric' ? 'kg' : 'LBS'})</label>
+                        <input
+                          type="number"
+                          value={editData.weight}
+                          onChange={(e) => setEditData({ ...editData, weight: parseFloat(e.target.value) || 0 })}
+                          className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black italic focus:border-volt outline-none transition-all text-center"
+                        />
                       </div>
                     </div>
                   </div>
@@ -614,7 +575,7 @@ export const ProfileView = () => {
                       }}
                       className="flex-1 py-4 bg-white/5 text-zinc-500 font-sans text-xs font-bold uppercase tracking-widest hover:text-white transition-all"
                     >
-                      {t('common.cancel')}
+                      {t('common.close')}
                     </button>
                     <button
                       onClick={handleSave}
@@ -655,14 +616,49 @@ export const ProfileView = () => {
                     <Zap size={32} />
                   </div>
                   <div>
-                    <h3 className="font-sans text-2xl font-black uppercase italic tracking-tight text-white">{t('settings.timelineFrequency')}</h3>
+                    <h3 className="font-sans text-2xl font-black uppercase italic tracking-tight text-white">{t('settings.deploymentSettings')}</h3>
                     <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">{t('settings.protocolRecalibrate')}</p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                  {/* Timeline Column */}
+                  {/* Left Column: Objective & Timeline */}
                   <div className="space-y-6">
+                    {/* Mission Objective */}
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2 block">{t('settings.trainingObjective')}</label>
+                        <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
+                          {(['pure_strength', 'powerbuilding', 'hypertrophy', 'peaking', 'longevity'] as TrainingGoal[]).map(goal => (
+                            <button
+                              key={goal}
+                              onClick={() => setAdjustingGoal(goal)}
+                              className={cn(
+                                "p-3 border-none transition-all text-center relative group min-h-[44px] flex items-center justify-center",
+                                adjustingGoal === goal
+                                  ? "bg-volt/10 text-white ring-1 ring-volt/30"
+                                  : "bg-surface-variant text-zinc-400 hover:bg-white/5 hover:text-zinc-200"
+                              )}
+                            >
+                              <span className="font-sans text-[9px] font-bold uppercase tracking-widest">{t(`goal.${goal}`)}</span>
+                              {adjustingGoal === goal && (
+                                <div className="absolute top-1 right-1">
+                                  <CheckCircle2 size={8} className="text-volt" />
+                                </div>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="p-4 bg-void/40 border border-white/5">
+                        <p className="text-[8px] font-bold uppercase tracking-widest text-zinc-500 mb-2">{t('settings.objective')} SPECS</p>
+                        <p className="text-[10px] text-white font-bold uppercase tracking-widest leading-relaxed">
+                          {t(`goal.${adjustingGoal}.desc`)}
+                        </p>
+                      </div>
+                    </div>
+
                     <div className="space-y-2">
                       <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('settings.monthsToComp')}</label>
                       <div className="grid grid-cols-4 gap-2">
@@ -680,11 +676,14 @@ export const ProfileView = () => {
                         ))}
                       </div>
                     </div>
+                  </div>
 
+                  {/* Right Column: Blocks & Frequency */}
+                  <div className="space-y-6">
                     <div className="p-4 bg-void/40 border border-white/5">
                       <p className="text-[8px] font-bold uppercase tracking-widest text-zinc-500 mb-2">{t('settings.blockRedistribution')} ({adjustingDuration * 4} {t('onboarding.weeks')})</p>
                       <div className="space-y-2">
-                        {getPlanForDuration(adjustingDuration * 4, profile?.trainingGoal || 'powerbuilding').map((b, i) => (
+                        {getPlanForDuration(adjustingDuration * 4, adjustingGoal).map((b, i) => (
                           <div key={i} className="flex justify-between items-center text-[10px]">
                             <span className="font-bold uppercase text-zinc-400">{b.label || b.type}</span>
                             <span className="font-bold text-volt">{b.durationWeeks} {t('onboarding.weeks')}</span>
@@ -692,10 +691,7 @@ export const ProfileView = () => {
                         ))}
                       </div>
                     </div>
-                  </div>
 
-                  {/* Frequency Column */}
-                  <div className="space-y-6">
                     <div className="space-y-2">
                       <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('onboarding.frequency')}</label>
                       <div className="grid grid-cols-5 gap-2">
@@ -726,27 +722,31 @@ export const ProfileView = () => {
                   </div>
                 </div>
 
-                <div className="p-4 bg-volt/10 border border-volt/30 mb-8">
-                  <div className="flex items-start gap-3 text-left">
-                    <Info size={16} className="text-volt shrink-0 mt-0.5" />
-                    <p className="text-[10px] text-volt font-bold uppercase tracking-widest leading-relaxed">
-                      {t('settings.protocolWarning')}
-                      {adjustingDuration !== profile.trainingDurationMonths && ` ${t('settings.durationRestartWarning')}`}
-                    </p>
-                  </div>
-                </div>
+                {(adjustingDuration !== (profile.trainingDurationMonths || 3) ||
+                  adjustingFrequency !== (profile.trainingFrequency || 3) ||
+                  adjustingGoal !== (profile.trainingGoal || 'powerbuilding')) && (
+                    <div className="p-4 bg-volt/10 border border-volt/30 mb-8">
+                      <div className="flex items-start gap-3 text-left">
+                        <Info size={16} className="text-volt shrink-0 mt-0.5" />
+                        <p className="text-xs sm:text-sm text-volt font-medium leading-relaxed">
+                          {t('settings.protocolWarning')}
+                          {adjustingDuration !== profile.trainingDurationMonths && ` ${t('settings.durationRestartWarning')}`}
+                        </p>
+                      </div>
+                    </div>
+                  )}
 
-                <div className="flex gap-4">
+                <div className="grid grid-cols-2 gap-4">
                   <button
                     onClick={() => setShowProtocolModal(false)}
-                    className="flex-1 btn-secondary py-4"
+                    className="w-full btn-secondary py-4"
                   >
                     {t('common.close')}
                   </button>
                   <button
                     onClick={handleAdjustProtocol}
                     disabled={loading}
-                    className="flex-1 btn-primary py-4 disabled:opacity-50"
+                    className="w-full btn-primary py-4 disabled:opacity-50"
                   >
                     {loading ? t('settings.recalculate') : t('settings.confirmProtocol')}
                   </button>
@@ -789,7 +789,7 @@ export const ProfileView = () => {
                 <div className="space-y-6">
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Squat ({unit === 'metric' ? 'kg' : 'LBS'})</label>
+                      <label className="text-xs font-bold uppercase tracking-widest text-white">Squat ({unit === 'metric' ? 'kg' : 'LBS'})</label>
                       <input
                         type="number"
                         value={edit1RMData.squatPR || ''}
@@ -798,7 +798,7 @@ export const ProfileView = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Bench ({unit === 'metric' ? 'kg' : 'LBS'})</label>
+                      <label className="text-xs font-bold uppercase tracking-widest text-white">Bench ({unit === 'metric' ? 'kg' : 'LBS'})</label>
                       <input
                         type="number"
                         value={edit1RMData.benchPR || ''}
@@ -807,7 +807,7 @@ export const ProfileView = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Deadlift ({unit === 'metric' ? 'kg' : 'LBS'})</label>
+                      <label className="text-xs font-bold uppercase tracking-widest text-white">Deadlift ({unit === 'metric' ? 'kg' : 'LBS'})</label>
                       <input
                         type="number"
                         value={edit1RMData.deadliftPR || ''}

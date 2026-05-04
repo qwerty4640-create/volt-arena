@@ -27,11 +27,13 @@ import {
 import {
     AreaChart,
     Area,
+    Line,
     XAxis,
     YAxis,
     CartesianGrid,
     Tooltip,
     ResponsiveContainer,
+    ComposedChart,
     ReferenceLine
 } from 'recharts';
 import { ActiveRecoveryWidget } from './ActiveRecoveryWidget';
@@ -86,7 +88,7 @@ const ALL_WIDGETS: Widget[] = [
 
 // ─── Widgets ────────────────────────────────────────────────────────────────
 
-// ─── Recovery Analysis Widget ──────────────────────────────────────────────────
+// ─── Readiness Analysis Widget ──────────────────────────────────────────────────
 const READINESS_STORAGE_KEY = 'volt_last_readiness';
 
 function loadReadinessScores(): { sleep: number; stress: number; fatigue: number; timestamp: number } | null {
@@ -112,7 +114,200 @@ function saveReadinessScores(scores: { sleep: number; stress: number; fatigue: n
     } catch { /* noop */ }
 }
 
-export const RecoveryAnalysisWidget = () => {
+const ReadinessTrendWidget = () => {
+    const { t, unit } = useSettings();
+    const { history } = useWorkout();
+    const [selectedMetrics, setSelectedMetrics] = useState<string[]>(['Readiness', 'Fatigue', 'Sleep', 'Stress', 'sRPE', 'Volume']);
+    const [timeFrame, setTimeFrame] = useState<'1M' | '3M' | '6M' | 'ALL'>('6M');
+
+    const weightUnit = unit === 'metric' ? 'kg' : 'lbs';
+
+    const metricOptions = [
+        { id: 'Readiness', label: 'Readiness', color: 'var(--primary-color)' },
+        { id: 'Fatigue', label: t('analysis.fatigue'), color: 'var(--primary-color)' },
+        { id: 'Sleep', label: t('analysis.sleep'), color: 'var(--primary-color)' },
+        { id: 'Stress', label: t('analysis.stress'), color: 'var(--primary-color)' },
+        { id: 'Volume', label: 'Volume', color: 'var(--primary-color)' },
+        { id: 'sRPE', label: 'sRPE', color: 'var(--primary-color)' }
+    ];
+
+    const toggleMetric = (metricId: string) => {
+        setSelectedMetrics(prev =>
+            prev.includes(metricId)
+                ? prev.filter(id => id !== metricId)
+                : [...prev, metricId]
+        );
+    };
+
+    const readinessTrendData = useMemo(() => {
+        if (!history || history.length === 0) return [];
+
+        const now = new Date();
+        let startDate = new Date(0);
+        if (timeFrame === '1M') startDate = new Date(now.setMonth(now.getMonth() - 1));
+        else if (timeFrame === '3M') startDate = new Date(now.setMonth(now.getMonth() - 3));
+        else if (timeFrame === '6M') startDate = new Date(now.setMonth(now.getMonth() - 6));
+
+        const timeFilteredHistory = history.filter(session => {
+            const sessionDate = session.completedAt ? new Date(session.completedAt) : new Date(session.date);
+            return sessionDate >= startDate;
+        }).sort((a, b) => (a.completedAt || 0) - (b.completedAt || 0));
+
+        return timeFilteredHistory.map(session => {
+            let sessionVolume = 0;
+            session.exercises?.forEach(ex => {
+                ex.sets?.forEach(s => {
+                    if (s.isCompleted) {
+                        sessionVolume += (parseFloat(s.weight) || 0) * (parseInt(s.reps) || 0);
+                    }
+                });
+            });
+
+            return {
+                date: session.date,
+                title: session.title,
+                timestamp: session.completedAt || new Date(session.date).getTime(),
+                displayDate: new Date(session.completedAt || session.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                fullDate: new Date(session.completedAt || session.date).toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' }),
+                Readiness: session.readiness || null,
+                Fatigue: session.fatigue ? session.fatigue * 20 : null,
+                Sleep: session.sleep ? session.sleep * 20 : null,
+                Stress: session.stress ? session.stress * 20 : null,
+                Volume: sessionVolume > 0 ? sessionVolume : null,
+                sRPE: session.actualRpe !== undefined ? session.actualRpe : (session.rpe !== undefined ? session.rpe : null)
+            };
+        });
+    }, [history, timeFrame]);
+
+    const ReadinessTooltip = ({ active, payload }: any) => {
+        if (active && payload && payload.length) {
+            const data = payload[0].payload;
+            return (
+                <div className="bg-void/95 backdrop-blur-2xl border border-white/10 p-5 shadow-[0_0_50px_rgba(0,0,0,0.5)] min-w-[200px] relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-1 h-full bg-volt" />
+                    <div className="space-y-4">
+                        <div>
+                            <p className="text-[8px] font-black uppercase tracking-[0.3em] text-zinc-500 mb-1">{t('analysis.telemetryLog')}</p>
+                            <p className="text-xs font-black italic uppercase text-white">{data.fullDate}</p>
+                            <p className="text-[10px] font-black uppercase tracking-tight text-volt mt-1">{data.title}</p>
+                        </div>
+                        <div className="space-y-2 pt-3 border-t border-white/5">
+                            {payload.filter((entry: any) => entry.value !== null && entry.value !== undefined).map((entry: any, index: number) => (
+                                <div key={index} className="flex items-center justify-between gap-4">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-1.5 h-1.5" style={{ backgroundColor: entry.color }} />
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">{entry.name}</span>
+                                    </div>
+                                    <span className="text-sm font-black italic text-white">
+                                        {entry.value}{['READINESS', 'SLEEP', 'FATIGUE', 'STRESS'].includes(entry.name?.toUpperCase()) ? '%' : ''} {entry.name === 'Volume' && <span className="text-[8px] uppercase not-italic text-zinc-500">{weightUnit}</span>}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+        return null;
+    };
+
+    return (
+        <div className="glass-panel px-4 py-6 md:p-8 flex flex-col min-w-0 overflow-hidden border-none bg-void/20">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6">
+                <div>
+                    <h2 className="font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tight mb-2">{t('analysis.readinessTrend')}</h2>
+                    <p className="text-zinc-400 text-xs font-medium max-w-md mb-8 leading-relaxed">
+                        {t('analysis.readinessTrendDesc')}
+                    </p>
+                    <div className="flex flex-wrap gap-4">
+                        {metricOptions.map(metric => (
+                            <button
+                                key={metric.id}
+                                onClick={() => toggleMetric(metric.id)}
+                                className={cn(
+                                    "flex items-center gap-3 px-4 py-2 border transition-all duration-300",
+                                    selectedMetrics.includes(metric.id)
+                                        ? "bg-white/5 border-white/20"
+                                        : "bg-transparent border-transparent opacity-40 grayscale"
+                                )}
+                            >
+                                <div className="w-3 h-3" style={{ backgroundColor: metric.color }} />
+                                <span className="font-headline text-[10px] font-black uppercase tracking-widest text-white">{metric.label}</span>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+                <div className="flex gap-1 bg-void p-1 border border-white/5 flex-wrap md:flex-nowrap shrink-0">
+                    {(['1M', '3M', '6M', 'ALL'] as const).map((tf) => (
+                        <button
+                            key={tf}
+                            onClick={() => setTimeFrame(tf)}
+                            className={cn(
+                                "px-4 py-2 font-headline text-[10px] font-black uppercase tracking-widest transition-all",
+                                timeFrame === tf ? "bg-volt text-void" : "text-zinc-500 hover:text-white"
+                            )}
+                        >
+                            {tf}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            <div className="h-[250px] w-full mt-4 min-w-0">
+                {readinessTrendData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                        <ComposedChart data={readinessTrendData} margin={{ top: 5, right: 5, left: -20, bottom: 25 }}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
+                            <XAxis
+                                dataKey="displayDate"
+                                axisLine={false}
+                                tickLine={false}
+                                tick={{ fill: '#52525b', fontSize: 10, fontWeight: 900, textTransform: 'uppercase', fontFamily: 'Inter' }}
+                                dy={10}
+                            />
+                            <YAxis
+                                yAxisId="right"
+                                orientation="right"
+                                axisLine={false}
+                                tickLine={false}
+                                tick={{ fill: '#52525b', fontSize: 10, fontWeight: 900, fontFamily: 'Inter' }}
+                                hide
+                            />
+                            <YAxis
+                                yAxisId="left"
+                                axisLine={false}
+                                tickLine={false}
+                                tick={{ fill: '#52525b', fontSize: 10, fontWeight: 900, fontFamily: 'Inter' }}
+                            />
+                            <Tooltip content={<ReadinessTooltip />} cursor={{ stroke: 'var(--primary-color)', strokeWidth: 1, strokeDasharray: '4 4' }} />
+                            {metricOptions.map(metric => selectedMetrics.includes(metric.id) && (
+                                <Line
+                                    key={metric.id}
+                                    yAxisId={metric.id === 'Volume' ? 'right' : 'left'}
+                                    type="linear"
+                                    dataKey={metric.id}
+                                    stroke={metric.color}
+                                    strokeWidth={3}
+                                    dot={{ r: 4, fill: metric.color, strokeWidth: 0 }}
+                                    activeDot={{ r: 6, stroke: metric.color, strokeWidth: 2, fill: '#131313' }}
+                                    animationDuration={1500}
+                                    connectNulls
+                                />
+                            ))}
+                        </ComposedChart>
+                    </ResponsiveContainer>
+                ) : (
+                    <div className="h-full flex flex-col items-center justify-center text-zinc-600 space-y-4">
+                        <BarChart3 size={48} strokeWidth={1} />
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em]">{t('analysis.insufficientData')}</p>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+export const ReadinessAnalysisWidget = () => {
     const { t, unit } = useSettings();
     const { history, getCalibrationStatus } = useWorkout();
 
@@ -129,12 +324,12 @@ export const RecoveryAnalysisWidget = () => {
     // ── Display values per factor (0-100% scale for bar) ──────────────────────
     const sleepDisplay = Math.round((sleepScore / 5) * 100);
     const stressDisplay = Math.round((5 - stressScore) * 20);
-    
+
     // Fatigue: 0-18 scale. 0 is low fatigue, 18 is high fatigue.
     const rawFatigue = calibration.cumulativeFatigueScore || 0;
     const fatigueDisplay = hasHistory ? Math.round((rawFatigue / 18) * 100) : 0;
-    const objectiveFatigueDisplay = fatigueDisplay; 
-    
+    const objectiveFatigueDisplay = fatigueDisplay;
+
     const getStatusColorText = (val: number) => {
         if (val >= 75) return 'text-emerald-500'; // High readiness = green
         if (val >= 40) return 'text-amber-500'; // Moderate readiness = amber
@@ -278,49 +473,50 @@ export const RecoveryAnalysisWidget = () => {
                         <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed mb-6 md:mb-12">
                             Bio-mechanical readiness is system-managed based on historical training volume.
                         </p>
-                        <div className="grid grid-cols-2 gap-8 mt-2">
-                             <div className="flex flex-col">
-                                 <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2 block w-full">
-                                     {t('analysis.readiness')}
-                                     <InfoTooltip term="Readiness" />
-                                 </span>
-                                 <div className="flex items-end gap-2">
-                                     <span className={cn(
-                                         'text-7xl md:text-8xl font-black italic tracking-tighter leading-none',
-                                         readinessScore !== null ? statusColor : 'text-zinc-600'
-                                     )}>
-                                         {readinessScore !== null ? readinessScore : '–'}
-                                     </span>
-                                     {readinessScore !== null && <span className="text-2xl font-black italic text-zinc-600 mb-2">%</span>}
-                                 </div>
-                             </div>
-                             
-                             {/* ACWR Widget */}
-                             <div className="flex flex-col justify-end">
-                                 <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2 block w-full">
-                                     ACWR
-                                     <InfoTooltip term="ACWR" />
-                                 </span>
-                                 {acwrData ? (
-                                    <div className="flex flex-col">
+                        <div className="grid grid-cols-2 gap-8 mt-2 items-start">
+                            <div className="flex flex-col items-start">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-4 block w-full">
+                                    {t('analysis.readiness')}
+                                    <InfoTooltip term="Readiness" />
+                                </span>
+                                <div className="flex items-baseline gap-2">
+                                    <span className={cn(
+                                        'text-5xl md:text-7xl lg:text-8xl font-black italic tracking-tighter leading-none',
+                                        readinessScore !== null ? statusColor : 'text-zinc-600'
+                                    )}>
+                                        {readinessScore !== null ? readinessScore : '–'}
+                                    </span>
+                                    {readinessScore !== null && <span className="text-xl md:text-2xl font-black italic text-zinc-600"> %</span>}
+                                </div>
+                            </div>
+
+                            {/* ACWR Widget */}
+                            <div className="flex flex-col items-start">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-4 block w-full">
+                                    ACWR
+                                    <InfoTooltip term="ACWR" />
+                                </span>
+                                {acwrData ? (
+                                    <div className="flex flex-col h-full items-start">
+                                        <div className="flex items-baseline gap-2 mb-2">
+                                            <span className="text-3xl md:text-4xl font-black italic tracking-tighter leading-none text-white">
+                                                {acwrData.ratio.toFixed(2)}
+                                            </span>
+                                        </div>
                                         <span className={cn(
-                                            "text-2xl font-black italic tracking-tighter leading-none",
-                                            acwrData.ratio > 1.5 ? "text-crimson" : acwrData.ratio >= 0.8 && acwrData.ratio <= 1.3 ? "text-volt" : "text-zinc-300"
-                                        )}>
-                                            {acwrData.ratio.toFixed(2)}
-                                        </span>
-                                        <span className={cn(
-                                            "text-[8px] font-black uppercase tracking-widest mt-1",
+                                            "font-headline text-[10px] font-black uppercase tracking-widest border-l-2 pl-3 block mb-4 border-zinc-800",
                                             acwrData.ratio > 1.5 ? "text-crimson" : acwrData.ratio >= 0.8 && acwrData.ratio <= 1.3 ? "text-volt" : "text-zinc-400"
                                         )}>
-                                            {acwrData.ratio > 1.5 ? "ELEVATED" : acwrData.ratio >= 0.8 && acwrData.ratio <= 1.3 ? "OPTIMAL" : "MONITOR"}
+                                            {acwrData.ratio > 1.5 ? "Elevated" : acwrData.ratio >= 0.8 && acwrData.ratio <= 1.3 ? "Optimal" : "Monitor"}
                                         </span>
                                     </div>
-                                 ) : (
-                                     <span className="text-[8px] text-zinc-500">N/A</span>
-                                 )}
-                             </div>
-                         </div>
+                                ) : (
+                                    <div className="flex items-baseline gap-2 mb-2">
+                                        <span className="text-3xl md:text-4xl font-black italic tracking-tighter leading-none text-zinc-600">–</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -338,7 +534,7 @@ export const RecoveryAnalysisWidget = () => {
                                 {calibration.overtrainingRisk === 'critical' ? "CRITICAL OVERTRAINING RISK" : "FATIGUE DECAY OUTPACED"}
                             </span>
                             <p className="text-[10px] font-medium text-zinc-400 leading-relaxed uppercase">
-                                {calibration.overtrainingRisk === 'critical' 
+                                {calibration.overtrainingRisk === 'critical'
                                     ? "TRAINING STRAIN IS EXCEEDING RECOVERY CAPACITY BY >60%. SYSTEM RECOMMENDS AN IMMEDIATE 48H DELOAD TO AVOID NEURAL BURNOUT."
                                     : "YOUR RECOVERY CONSTANT IS SLOWING RELATIVE TO VOLUME. CONSIDER INCREASING SLEEP HYGIENE OR REDUCING AUXILIARY WORK."}
                             </p>
@@ -401,6 +597,7 @@ export const RecoveryAnalysisWidget = () => {
             </div>
 
             <ActiveRecoveryWidget />
+            <ReadinessTrendWidget />
         </div>
     );
 };
@@ -693,7 +890,7 @@ export const BlockWidget = () => {
                                 />
                                 <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'var(--primary-color)', strokeWidth: 1, strokeDasharray: '4 4' }} />
                                 <Area
-                                    type="monotone"
+                                    type="linear"
                                     dataKey="intensity"
                                     stroke="var(--primary-color)"
                                     strokeWidth={3}
@@ -1079,7 +1276,7 @@ export const ExternalActivityWidget = () => {
 };
 
 const WIDGET_COMPONENTS: Record<WidgetId, React.FC<any>> = {
-    'recovery-analysis': RecoveryAnalysisWidget,
+    'recovery-analysis': ReadinessAnalysisWidget,
     pr: PRWidget,
     macros: MacrosWidget,
 };
