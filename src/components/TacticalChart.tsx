@@ -64,10 +64,10 @@ export const TacticalChart: React.FC<TacticalChartProps> = ({ data }) => {
         ))}
       </div>
 
-      <ResponsiveContainer width="100%" height={250}>
+      <ResponsiveContainer width="100%" height="100%">
         <ComposedChart
           data={data}
-          margin={{ top: 10, right: 10, bottom: 0, left: -20 }}
+          margin={{ top: 10, right: 10, bottom: 25, left: -20 }}
           style={{ userSelect: 'none' }}
         >
           <defs>

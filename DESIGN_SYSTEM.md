@@ -1,4 +1,4 @@
-# Design System Documentation: Berserker Protocol
+# Design System Documentation: Volt Arena
 
 ## 1. Visual Identity & Mood
 - **Core Aesthetic**: Cyberpunk, Tactical, Brutalist, Rigorous Sports Science.

@@ -5,6 +5,8 @@ import { useSettings } from '../contexts/SettingsContext';
 import { useWorkout } from '../contexts/WorkoutContext';
 import { ExternalActivityWidget, BlockWidget } from './AnalysisView';
 import { isMainLiftMatch, calculateE1RM } from '../utils/workoutUtils';
+import { calculateExrxPercentile } from '../lib/strength';
+import { InfoTooltip } from './InfoTooltip';
 import {
   LineChart,
   Line,
@@ -21,7 +23,7 @@ import { cn } from '../lib/utils';
 type TimeFrame = '1M' | '3M' | '6M' | 'ALL';
 
 export const AnalyticsView = () => {
-  const { t, unit } = useSettings();
+  const { t, unit, profile } = useSettings();
   const { history } = useWorkout();
   const weightUnit = unit === 'metric' ? t('workout.kg') : t('workout.lbs');
 
@@ -128,56 +130,6 @@ export const AnalyticsView = () => {
       .sort((a, b) => a.timestamp - b.timestamp);
   }, [history, timeFrame]);
 
-  const acwrData = useMemo(() => {
-    if (!history || history.length === 0) return null;
-
-    const weeks: Record<string, number> = {};
-    const weekTimestamps: Record<string, number> = {};
-
-    history.forEach(session => {
-      const date = session.completedAt ? new Date(session.completedAt) : new Date(session.date);
-      const startOfWeek = new Date(date);
-      startOfWeek.setDate(date.getDate() - date.getDay());
-      startOfWeek.setHours(0, 0, 0, 0);
-      const weekKey = startOfWeek.getTime().toString();
-
-      let sessionVolume = 0;
-      session.exercises?.forEach(ex => {
-        ex.sets?.forEach(s => {
-          if (s.isCompleted) {
-            sessionVolume += (parseFloat(s.weight) || 0) * (parseInt(s.reps) || 0);
-          }
-        });
-      });
-
-      if (!weeks[weekKey]) {
-        weeks[weekKey] = 0;
-        weekTimestamps[weekKey] = startOfWeek.getTime();
-      }
-      weeks[weekKey] += sessionVolume;
-    });
-
-    const sortedWeeks = Object.keys(weeks)
-      .map(k => ({ timestamp: weekTimestamps[k], volume: weeks[k] }))
-      .sort((a, b) => a.timestamp - b.timestamp);
-
-    if (sortedWeeks.length === 0) return null;
-
-    const acuteWorkload = sortedWeeks[sortedWeeks.length - 1].volume;
-
-    // Chronic workload: Average of the up to 4 weeks prior to the acute week
-    const chronicWeeks = sortedWeeks.slice(Math.max(0, sortedWeeks.length - 5), sortedWeeks.length - 1);
-
-    if (chronicWeeks.length === 0) {
-      return { ratio: 1.0, acute: acuteWorkload, chronic: acuteWorkload };
-    }
-
-    const chronicWorkload = chronicWeeks.reduce((acc, w) => acc + w.volume, 0) / chronicWeeks.length;
-    const ratio = chronicWorkload > 0 ? acuteWorkload / chronicWorkload : 1.0;
-
-    return { ratio: Number(ratio.toFixed(2)), acute: acuteWorkload, chronic: chronicWorkload };
-  }, [history]);
-
   const toggleLift = (liftId: string) => {
     setSelectedLifts(prev =>
       prev.includes(liftId)
@@ -261,13 +213,13 @@ export const AnalyticsView = () => {
 
   return (
     <div className="w-full space-y-12">
-      <div className="grid grid-cols-12 gap-8">
+      <div className="flex flex-col gap-8 w-full">
         {/* Strength Trend Chart */}
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.1 }}
-          className="col-span-12 glass-panel px-4 py-6 md:p-8 flex flex-col"
+          className="glass-panel px-4 py-6 md:p-8 flex flex-col relative overflow-hidden min-w-0"
         >
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6">
             <div>
@@ -300,7 +252,7 @@ export const AnalyticsView = () => {
               </div>
             </div>
 
-            <div className="flex gap-1 bg-void p-1 border border-white/5">
+            <div className="flex gap-1 bg-void p-1 border border-white/5 flex-wrap md:flex-nowrap shrink-0">
               {(['1M', '3M', '6M', 'ALL'] as TimeFrame[]).map((tf) => (
                 <button
                   key={tf}
@@ -316,10 +268,10 @@ export const AnalyticsView = () => {
             </div>
           </div>
 
-          <div className="flex-1 min-h-[400px] w-full mt-4">
+          <div className="h-[250px] w-full mt-4 min-w-0">
             {filteredData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={filteredData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
+                <LineChart data={filteredData} margin={{ top: 5, right: 5, left: -20, bottom: 25 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
                   <XAxis
                     dataKey="displayDate"
@@ -358,22 +310,12 @@ export const AnalyticsView = () => {
           </div>
         </motion.div>
 
-        {/* Block Progression Module moved from Recovery page */}
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.15 }}
-          className="col-span-12"
-        >
-          <BlockWidget />
-        </motion.div>
-
         {/* Weekly Volume Trend */}
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.25 }}
-          className="col-span-12 glass-panel px-4 py-6 md:p-8 flex flex-col"
+          className="glass-panel px-4 py-6 md:p-8 flex flex-col min-w-0 overflow-hidden"
         >
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6">
             <div>
@@ -390,10 +332,10 @@ export const AnalyticsView = () => {
             </div>
           </div>
 
-          <div className="flex-1 min-h-[300px] w-full mt-4">
+          <div className="h-[250px] w-full mt-4 min-w-0">
             {volumeTrendData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={volumeTrendData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
+                <ComposedChart data={volumeTrendData} margin={{ top: 5, right: 5, left: -20, bottom: 25 }}>
                   <defs>
                     <linearGradient id="colorVolume" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#00B6FF" stopOpacity={0.3} />
@@ -454,54 +396,12 @@ export const AnalyticsView = () => {
           </div>
         </motion.div>
 
-        {/* ACWR Widget */}
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.28 }}
-          className="col-span-12 glass-panel px-4 py-6 md:p-8 flex flex-col relative overflow-hidden"
-        >
-          <div className="absolute inset-0 opacity-[0.03] pointer-events-none transition-opacity duration-700"
-            style={{ backgroundImage: 'radial-gradient(var(--primary-color) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
-
-          <h2 className="font-headline text-2xl font-black uppercase italic tracking-tight mb-6">ACUTE:CHRONIC WORKLOAD (ACWR)</h2>
-
-          {acwrData ? (
-            <div className="bg-void/40 border border-white/5 p-4 flex flex-col sm:flex-row items-start sm:items-center relative z-10 w-full md:w-auto self-start">
-              <div className="flex flex-col justify-center min-w-[70px]">
-                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">RATIO</span>
-                <span className={cn(
-                  "text-2xl md:text-3xl font-black italic",
-                  acwrData.ratio > 1.5 ? "text-crimson" : acwrData.ratio >= 0.8 && acwrData.ratio <= 1.3 ? "text-volt" : "text-zinc-300"
-                )}>
-                  {acwrData.ratio.toFixed(2)}
-                </span>
-              </div>
-              <div className="sm:border-l sm:border-white/5 pt-2 sm:pt-0 sm:pl-4 flex-1 w-full border-t border-white/5 sm:border-t-0 mt-2 sm:mt-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 block">
-                    System Status
-                  </span>
-                </div>
-                <span className={cn(
-                  "text-xs font-black uppercase tracking-widest",
-                  acwrData.ratio > 1.5 ? "text-crimson" : acwrData.ratio >= 0.8 && acwrData.ratio <= 1.3 ? "text-volt" : "text-zinc-400"
-                )}>
-                  {acwrData.ratio > 1.5 ? "ELEVATED FATIGUE" : acwrData.ratio >= 0.8 && acwrData.ratio <= 1.3 ? "OPTIMAL" : "MONITOR LOAD"}
-                </span>
-              </div>
-            </div>
-          ) : (
-            <p className="text-zinc-500 text-xs font-black uppercase">Insufficient data for ACWR calculation.</p>
-          )}
-        </motion.div>
-
         {/* 1RM Growth Bento */}
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.3 }}
-          className="col-span-12 glass-panel px-4 py-6 md:p-8 relative overflow-hidden"
+          className="glass-panel px-4 py-6 md:p-8 relative overflow-hidden min-w-0"
         >
 
           <div className="absolute top-0 right-0 p-8 opacity-5">
@@ -515,9 +415,29 @@ export const AnalyticsView = () => {
             <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('analysis.growthAnalysis')}</span>
           </div>
           */}
-          <h3 className="font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tight mb-12">
+          <h3 className="font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tight mb-2">
             {t('analysis.est1rmGrowth')}
           </h3>
+
+          {(() => {
+            const latestE1RMs = liftOptions.map(lift => {
+              const liftHistory = history.filter(s => s.exercises.some(ex => isMainLiftMatch(ex.name, lift.id)));
+              const e1rms = liftHistory.flatMap(s => s.exercises.find(ex => isMainLiftMatch(ex.name, lift.id))?.sets.map(set => calculateE1RM(parseFloat(set.weight) || 0, parseInt(set.reps) || 0)) || []);
+              return e1rms.length > 0 ? Math.round(Math.max(...e1rms)) : 0;
+            });
+            const totalSBD = latestE1RMs.reduce((a, b) => a + b, 0);
+            
+            const p = calculateExrxPercentile(totalSBD, profile?.weight || 0, profile?.gender || 'male', profile?.age);
+            
+            return (
+              <div className="mb-12">
+              <div className="text-zinc-400 text-sm italic font-medium mt-2">
+                  You are top <span className="text-volt font-black">{p < 1 ? '<1' : p.toFixed(1)}%</span> of entire population based on this 1RM data. <InfoTooltip term="Percentile" className="inline-block z-10 relative" />
+              </div>
+              </div>
+            );
+          })()}
+
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
             {liftOptions.map((lift, i) => {
               const liftHistory = history.filter(s => s.exercises.some(ex => isMainLiftMatch(ex.name, lift.id)));
@@ -580,7 +500,7 @@ export const AnalyticsView = () => {
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.4 }}
-          className="col-span-12 glass-panel p-0 overflow-hidden border-none"
+          className="glass-panel p-0 overflow-hidden border-none min-w-0"
         >
           <ExternalActivityWidget />
         </motion.div>
@@ -588,3 +508,4 @@ export const AnalyticsView = () => {
     </div>
   );
 };
+

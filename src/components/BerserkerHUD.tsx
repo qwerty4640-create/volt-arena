@@ -148,7 +148,11 @@ export const BerserkerHUD = ({ onComplete, onAddActivity, viewType = 'training' 
               {[
                 { label: 'berserker.neuralLink', val: 'berserker.stable', color: 'text-volt' },
                 { label: 'berserker.gravityDef', val: 'berserker.active', color: 'text-volt' },
-                { label: 'berserker.tempDist', val: '4.2MS', color: 'text-crimson' }
+                { 
+                  label: currentSession?.systemicFatigueModifier ? 'SYSTEMIC SCALE' : 'berserker.tempDist', 
+                  val: currentSession?.systemicFatigueModifier ? `${Math.round((1 - currentSession.systemicFatigueModifier) * 100)}% REDUCTION` : '4.2MS', 
+                  color: 'text-crimson' 
+                }
               ].map((item, i) => (
                 <div key={i} className="flex justify-between items-center text-[10px] font-bold font-sans uppercase tracking-widest">
                   <span className="text-zinc-500">{t(item.label)}</span>

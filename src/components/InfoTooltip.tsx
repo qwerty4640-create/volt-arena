@@ -48,7 +48,7 @@ export const InfoTooltip = ({ term, className }: InfoTooltipProps) => {
       {mounted && createPortal(
         <AnimatePresence>
           {isOpen && (
-            <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6">
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center p-6">
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}

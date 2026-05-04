@@ -38,6 +38,7 @@ export const ACTIVITY_LIBRARY: ActivityType[] = [
   { id: 'strength_crossfit', label: 'CrossFit', baseMET: 11.0, category: 'Strength', icon: 'Flame' },
   { id: 'strength_powerlifting', label: 'Powerlifting', baseMET: 6.0, category: 'Strength', icon: 'Dumbbell' },
   { id: 'strength_weightlifting', label: 'Olympic Weightlifting', baseMET: 8.0, category: 'Strength', icon: 'Dumbbell' },
+  { id: 'strength_weight_training', label: 'Weight Training', baseMET: 6.0, category: 'Strength', icon: 'Dumbbell' },
   
   // Sport
   { id: 'sport_basketball', label: 'Basketball', baseMET: 8.0, category: 'Sport', icon: 'Activity' },

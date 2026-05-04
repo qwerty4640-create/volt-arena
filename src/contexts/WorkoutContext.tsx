@@ -20,6 +20,7 @@ import { calculateTier } from '../lib/strength';
 import { ACTIVITY_LIBRARY } from '../data/activityLibrary';
 import { isMainLiftMatch } from '../utils/workoutUtils';
 import { RECOVERY_ACTIVITIES } from '../data/recoveryLibrary';
+import { RECOVERY_MAP } from '../data/recoveryActivities';
 
 const READINESS_STORAGE_KEY = 'volt_readiness_scores';
 
@@ -70,6 +71,7 @@ export interface WorkoutSession {
   penaltyApplied?: boolean;
   isRedline?: boolean;
   penaltyType?: 'REDLINE' | 'AEROBIC' | null;
+  systemicFatigueModifier?: number;
   currentExerciseIndex: number;
   currentSetIndex: number;
 }
@@ -102,6 +104,7 @@ interface WorkoutContextType {
   updateCurrentSession: (session: WorkoutSession) => void;
   addExerciseToSession: (exercises: Exercise[]) => void;
   replaceExerciseInSession: (oldExerciseId: string, newExercise: Exercise) => void;
+  setNextWorkoutExercises: (exercises: Exercise[]) => void;
   discardSession: () => void;
   getNextWorkoutTemplate: () => WorkoutSession;
   getCalibrationStatus: () => {
@@ -112,6 +115,7 @@ interface WorkoutContextType {
     isDeload: boolean;
     isPeak: boolean;
     isRedline: boolean;
+    overtrainingRisk: 'none' | 'warning' | 'critical';
     cumulativeFatigueScore: number;
     recommendedRpe: number;
     subjectiveScores: {
@@ -130,8 +134,11 @@ interface WorkoutContextType {
   pendingReflection: WorkoutSession | null;
   setPendingReflection: (workout: WorkoutSession | null) => void;
   recalibrateRecovery: (scores: { sleep: number; stress: number; fatigue: number }) => void;
+  logDailyHealthCheck: (data: { sleep: number; stress: number; fatigue: number; soreness: number; mood: number }) => Promise<void>;
   isLoading: boolean;
   calculateProgramCalories: (weightKg: number, durationMins: number, sessionRpe: number, totalTonnage: number) => number;
+  debugForceCritical: boolean;
+  setDebugForceCritical: (val: boolean) => void;
 }
 
 const cleanObject = (obj: any): any => {
@@ -795,6 +802,21 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return null;
   });
 
+  const logDailyHealthCheck = async (data: { sleep: number; stress: number; fatigue: number; soreness: number; mood: number }) => {
+    const newData = { ...data, timestamp: Date.now() };
+    setSubjectiveReadiness(newData);
+    localStorage.setItem(READINESS_STORAGE_KEY, JSON.stringify(newData));
+
+    if (auth.currentUser) {
+      const recoveryDocPath = `users/${auth.currentUser.uid}/recovery_data/current`;
+      try {
+        await setDoc(doc(db, recoveryDocPath), newData);
+      } catch (error) {
+        handleFirestoreError(error, OperationType.WRITE, recoveryDocPath);
+      }
+    }
+  };
+
   const recalibrateRecovery = (scores: { sleep: number; stress: number; fatigue: number } | null) => {
     if (scores === null) {
       localStorage.removeItem(READINESS_STORAGE_KEY);
@@ -810,63 +832,155 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     showToast('Recovery Profile Updated.', 2000, 'success');
   };
 
-  const getCalibrationStatus = (recoveryOverride?: ActiveRecovery[]) => {
-    const activeRecoveryHistory = recoveryOverride || recoveryHistory;
+  const [debugForceCritical, setDebugForceCritical] = useState(false);
 
-    // 1. Calculate Objective Fatigue (Cumulative Volume/RPE)
-    let objectiveFatigueVal = 100;
-    const last24hTotalHistory = activeRecoveryHistory.filter(r =>
+  const getCalibrationStatus = (recoveryOverride?: ActiveRecovery[]) => {
+    if (debugForceCritical) {
+      return {
+        readiness: 5,
+        readinessModifier: 0.70,
+        recoveryModifier: 1.0,
+        hasAerobicInterference: false,
+        isDeload: true,
+        isPeak: false,
+        isRedline: true,
+        overtrainingRisk: 'critical' as const,
+        cumulativeFatigueScore: 25,
+        recommendedRpe: 5,
+        subjectiveScores: {
+          sleepScore: 1,
+          stressScore: 1,
+          fatigueScore: 1
+        }
+      };
+    }
+    // 1. "Sum of Drains" Readiness Engine
+    // Readiness = 100 - Sleep_Deficit - Fatigue - Stress
+    let systemReadiness = 100;
+    
+    // We base systemReadiness strictly on the last session + time elapsed.
+    const filteredHistory = profile?.programResetAt 
+      ? history.filter(s => (s.completedAt || 0) > profile.programResetAt!)
+      : history;
+    const lastSession = filteredHistory.length > 0 ? filteredHistory[0] : null;
+
+    let cumulativeFatigueScore = 0; // Keeping for redline check
+    const activeRecoveryHistory = recoveryOverride || recoveryHistory;
+    const last24hTotalHistory = activeRecoveryHistory.filter(r => 
       (Date.now() - r.timestamp) / 3600000 < 24
     );
-    const cumulativeFatigueScore = last24hTotalHistory.reduce((sum, r) => sum + r.rpe, 0);
-    objectiveFatigueVal = Math.max(0, 100 - (Math.min(cumulativeFatigueScore, 18) / 18) * 100);
+    cumulativeFatigueScore = last24hTotalHistory.reduce((sum, r) => sum + r.rpe, 0);
 
-    // 2. Resolve Subjective Factors
-    const hasSubjectiveData = subjectiveReadiness !== null;
-    let sleepVal = hasSubjectiveData ? (subjectiveReadiness?.sleep || 5) * 20 : 70;
-    let stressPeaceVal = hasSubjectiveData ? (subjectiveReadiness?.stress || 5) * 20 : 70;
-    let subjectiveFatigueVal = hasSubjectiveData ? (subjectiveReadiness?.fatigue || 5) * 20 : 100;
+    // Baseline decay rates (exponential decay toward a baseline over physical time)
+    let k_fatigue = 0.04;
+    let k_stress = 0.04;
 
-    // 3. Final Fatigue (Conservative model: take the minimum of objective and subjective)
-    const finalFatigueVal = hasSubjectiveData
-      ? Math.min(objectiveFatigueVal, subjectiveFatigueVal)
-      : objectiveFatigueVal;
-
-    // 4. Calculate Base Readiness (Mean of Sleep, Stress, and Fatigue)
-    const baseReadiness = (sleepVal + stressPeaceVal + finalFatigueVal) / 3;
-
-    // 5. Active Recovery Boost
-    const recentRecoveries = activeRecoveryHistory.filter(r =>
-      (Date.now() - r.timestamp) / 3600000 < 24 && r.activityId?.startsWith('recovery_')
+    // Recovery Acceleration: Active recovery dynamically modifies decay rate
+    const last72hRecovery = activeRecoveryHistory.filter(r => 
+      (Date.now() - r.timestamp) / 3600000 < 72
     );
 
-    let totalBoost = 0;
-    const currentFatigueDeficit = 100 - finalFatigueVal;
-
-    recentRecoveries.forEach(r => {
-      const activity = RECOVERY_ACTIVITIES.find(a => a.id === r.activityId);
-      if (activity) {
-        const durationRatio = Math.min(1.2, r.durationMinutes / activity.recommendedDuration);
-        const fatigueMultiplier = 1 + (currentFatigueDeficit / 100);
-        totalBoost += activity.boostPercentage * durationRatio * fatigueMultiplier;
+    last72hRecovery.forEach(recovery => {
+      const activityDef = RECOVERY_MAP.find(a => a.id === recovery.activityId);
+      if (activityDef) {
+         // Convert boostRange into a multiplier for the decay rate
+         const avgBoost = (activityDef.boostRange[0] + activityDef.boostRange[1]) / 2;
+         const multiplier = 1 + (avgBoost / 10); 
+         if (activityDef.targets.includes('fatigue')) k_fatigue *= multiplier;
+         if (activityDef.targets.includes('stress')) k_stress *= multiplier;
       }
     });
 
-    // 6. Readiness Score (Capped at 100, and also capped by the highest possible factor to avoid "fake 100")
-    const currentReadiness = Math.round(Math.min(100, baseReadiness + totalBoost));
+    let currentFatigue = 0;
+    if (lastSession && lastSession.completedAt) {
+      const t = Math.max(0, (Date.now() - lastSession.completedAt) / 3600000); // Time in hours
+      
+      let volumeVal = 0;
+      let rpeSum = 0;
+      let rpeCount = 0;
+      if (lastSession.exercises) {
+         lastSession.exercises.forEach(ex => {
+            ex.sets?.forEach(s => {
+               if (s.isCompleted) {
+                  const weight = parseFloat(s.weight) || 0;
+                  const reps = parseInt(s.reps) || 0;
+                  volumeVal += weight * reps;
+                  const sRpe = parseFloat(s.rpe) || 0;
+                  if (sRpe > 0) {
+                     rpeSum += sRpe;
+                     rpeCount += 1;
+                  }
+               }
+            });
+         });
+      }
+      const avgRpe = rpeCount > 0 ? rpeSum / rpeCount : (lastSession.actualRpe || lastSession.rpe || 7);
+      
+      // Normalizing based on a hypothetical baseline strength/volume
+      const rawIntensity = volumeVal * avgRpe;
+      const intensityScale = unit === 'imperial' ? 400 : 180; // 400 LBS or 180 KG to normalize
+      const lastSessionIntensity = Math.min(60, rawIntensity / intensityScale);
+
+      // Decays toward baseline (0 added fatigue means base fatigue of 1.0)
+      currentFatigue = lastSessionIntensity * Math.exp(-k_fatigue * t);
+    }
+
+    // Baseline is 1.0, so the total fatigue penalty at rest is 1.0
+    const fatiguePenalty = 1.0 + currentFatigue;
+
+    let stressPenalty = 1.0;
+    let sleepDeficit = 0;
+
+    if (subjectiveReadiness) {
+      const t_stress = Math.max(0, (Date.now() - subjectiveReadiness.timestamp) / 3600000);
+      
+      const subjectiveStressDeficit = (5 - (subjectiveReadiness.stress || 5)) * 4; // up to 16
+      stressPenalty = 1.0 + subjectiveStressDeficit * Math.exp(-k_stress * t_stress);
+
+      sleepDeficit = (5 - (subjectiveReadiness.sleep || 5)) * 5; // up to 20
+    }
+
+    // "Sum of Drains" Readiness Engine
+    systemReadiness = 100 - sleepDeficit - fatiguePenalty - stressPenalty;
+    const currentReadiness = Math.round(Math.max(0, Math.min(100, systemReadiness)));
+
+    const hasSubjectiveData = subjectiveReadiness !== null;
 
     let readinessModifier = 1.0;
     if (currentReadiness >= 90) readinessModifier = 1.05;
     else if (currentReadiness < 70 && currentReadiness >= 50) readinessModifier = 0.90;
     else if (currentReadiness < 50) readinessModifier = 0.80;
 
-    // Redline Logic: Cumulative Fatigue Check
     const isRedline = cumulativeFatigueScore >= 18;
-
     let recommendedRpe = 7;
     if (isRedline) {
       readinessModifier = 0.75;
       recommendedRpe = Math.min(recommendedRpe, 5);
+    }
+
+    // 5. Trend Identification: Strain vs Decay
+    let overtrainingRisk: 'none' | 'warning' | 'critical' = 'none';
+    const last14Days = history.filter(s => (Date.now() - (s.completedAt || 0)) / 86400000 < 14);
+    
+    if (last14Days.length >= 4) {
+      const acuteSessions = last14Days.filter(s => (Date.now() - (s.completedAt || 0)) / 86400000 < 7);
+      const chronicSessions = last14Days;
+
+      const getLoad = (sessions: WorkoutSession[]) => {
+        return sessions.reduce((acc, s) => {
+          let vol = 0;
+          s.exercises?.forEach(e => e.sets.forEach(st => vol += (parseFloat(st.weight) || 0) * (parseInt(st.reps) || 0)));
+          const intensity = unit === 'imperial' ? 400 : 180;
+          return acc + (vol * (s.rpe || 7)) / intensity;
+        }, 0) / (sessions.length || 1);
+      };
+
+      const acuteLoad = getLoad(acuteSessions);
+      const chronicLoad = getLoad(chronicSessions);
+      const acRatio = chronicLoad > 0 ? acuteLoad / chronicLoad : 0;
+
+      if (acRatio > 1.6 || currentReadiness < 20) overtrainingRisk = 'critical';
+      else if (acRatio > 1.3 || currentReadiness < 40) overtrainingRisk = 'warning';
     }
 
     return {
@@ -877,6 +991,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
       isDeload: currentReadiness < 50,
       isPeak: currentReadiness >= 90,
       isRedline,
+      overtrainingRisk,
       cumulativeFatigueScore,
       recommendedRpe,
       subjectiveScores: hasSubjectiveData ? {
@@ -923,7 +1038,13 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
 
     const finalWeek = nextWeek + (profile?.trainingWeekOffset || 0);
-    return createSessionFromTemplate(finalWeek, nextDay, profile, unit, lastSession, currentReadiness, hasAerobicInterference);
+    const session = createSessionFromTemplate(finalWeek, nextDay, profile, unit, lastSession, currentReadiness, hasAerobicInterference);
+
+    if (nextWorkoutOverrides) {
+      session.exercises = nextWorkoutOverrides;
+    }
+
+    return session;
   };
 
   const startNewSession = (template?: WorkoutSession, readinessScore?: number, readinessModifier?: number, targetRpe?: number) => {
@@ -938,6 +1059,10 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
         currentExerciseIndex: 0,
         currentSetIndex: 0
       };
+      // Clear overrides when session starts
+      setNextWorkoutOverrides(null);
+      localStorage.removeItem('berserker_template_overrides');
+
       // Normalization check: Ensure baseWeight exists
       session.exercises = (session.exercises || []).map(ex => ({
         ...ex,
@@ -948,6 +1073,10 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }));
     } else {
       session = getNextWorkoutTemplate();
+      // Clear overrides when session starts
+      setNextWorkoutOverrides(null);
+      localStorage.removeItem('berserker_template_overrides');
+
       session.penaltyApplied = false;
       session.currentExerciseIndex = 0;
       session.currentSetIndex = 0;
@@ -1010,6 +1139,16 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
         ex.id === oldExerciseId ? newExercise : ex
       )
     });
+  };
+
+  const [nextWorkoutOverrides, setNextWorkoutOverrides] = useState<Exercise[] | null>(() => {
+    const saved = localStorage.getItem('berserker_template_overrides');
+    return saved ? JSON.parse(saved) : null;
+  });
+
+  const setNextWorkoutExercises = (exercises: Exercise[]) => {
+    setNextWorkoutOverrides(exercises);
+    localStorage.setItem('berserker_template_overrides', JSON.stringify(exercises));
   };
 
   const discardSession = async () => {
@@ -1297,6 +1436,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
       updateCurrentSession,
       addExerciseToSession,
       replaceExerciseInSession,
+      setNextWorkoutExercises,
       discardSession,
       getNextWorkoutTemplate,
       getCalibrationStatus,
@@ -1310,8 +1450,11 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
       pendingReflection,
       setPendingReflection,
       recalibrateRecovery,
+      logDailyHealthCheck,
       isLoading,
-      calculateProgramCalories
+      calculateProgramCalories,
+      debugForceCritical,
+      setDebugForceCritical
     }}>
       {children}
     </WorkoutContext.Provider>

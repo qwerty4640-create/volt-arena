@@ -26,6 +26,7 @@ import { useWorkout, WorkoutSession, ActiveRecovery, Exercise } from '../context
 import { BlockType } from '../constants/periodization';
 import { ConfirmationModal } from './ConfirmationModal';
 import { ExerciseSelectorModal } from './ExerciseSelectorModal';
+import { isTimedExercise } from '../utils/workoutUtils';
 
 type HistoryLog = 
   | (WorkoutSession & { logType: 'workout' }) 
@@ -521,7 +522,7 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
                                 {ex.sets?.map((set, sIdx) => (
                                   <div key={sIdx} className="flex justify-between items-center text-[10px] font-sans">
                                     <span className="text-zinc-500">{t('workout.set')} {sIdx + 1}</span>
-                                    <span className="font-bold text-zinc-300">{set.weight}{unit === 'metric' ? 'kg' : 'LBS'} x {set.reps} @ RPE {set.rpe}</span>
+                                    <span className="font-bold text-zinc-300">{set.weight}{unit === 'metric' ? 'kg' : 'LBS'} x {set.reps}{isTimedExercise(ex.name) ? ' sec' : ''} @ RPE {set.rpe}</span>
                                   </div>
                                 ))}
                               </div>
@@ -676,7 +677,7 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
                           <div className="grid grid-cols-5 gap-4 text-[8px] font-black uppercase tracking-widest text-zinc-600">
                             <div className="col-span-1">{t('workout.set')}</div>
                             <div className="col-span-1">{t('workout.weight')} ({unit === 'metric' ? 'kg' : 'LBS'})</div>
-                            <div className="col-span-1">{t('workout.reps')}</div>
+                            <div className="col-span-1">{isTimedExercise(ex.name) ? 'SECONDS' : t('workout.reps')}</div>
                             <div className="col-span-1">{t('workout.rpe')}</div>
                             <div className="col-span-1 text-right">{t('analysis.action')}</div>
                           </div>

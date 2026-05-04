@@ -1,5 +1,44 @@
 export type StrengthTier = 'untrained' | 'novice' | 'intermediate' | 'advanced' | 'elite';
 
+export const calculateExrxPercentile = (
+  total: number,
+  bw: number,
+  gender: string,
+  age?: number
+): number => {
+  if (!bw || bw <= 0 || !total || total <= 0) return 100;
+  
+  let thresholds = gender === 'female' 
+    ? [0, 1.5, 2.3, 2.9, 3.8] 
+    : [0, 2.4, 3.6, 4.5, 5.8];
+
+  if (age && age > 40) {
+    const ageFactor = 1 - ((age - 40) * 0.015);
+    thresholds = thresholds.map(t => t * Math.max(0.7, ageFactor));
+  }
+
+  const percentiles = [100, 50, 20, 5, 1]; 
+  const ratio = total / bw;
+
+  if (ratio <= thresholds[0]) return 100;
+  if (ratio >= thresholds[4]) {
+    const extra = ratio - thresholds[4];
+    return Math.max(0.1, 1 - (extra * 0.5)); 
+  }
+
+  for (let i = 0; i < 4; i++) {
+    if (ratio >= thresholds[i] && ratio <= thresholds[i+1]) {
+      const range = thresholds[i+1] - thresholds[i];
+      const pRange = percentiles[i] - percentiles[i+1];
+      const progress = (ratio - thresholds[i]) / range;
+      const result = percentiles[i] - (progress * pRange);
+      return Math.max(0.1, result);
+    }
+  }
+
+  return 100;
+};
+
 export const calculateTier = (
   squat: number, 
   bench: number, 

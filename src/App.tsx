@@ -151,6 +151,7 @@ function AppContent() {
     setLastVoiceCommand, lastVoiceCommand 
   } = useSettings();
   const { 
+    getCalibrationStatus,
     currentSession, 
     startNewSession, 
     completeSession, 
@@ -162,9 +163,31 @@ function AppContent() {
     setPendingReflection,
     saveReflection
   } = useWorkout();
+  
+  const calibration = getCalibrationStatus();
+  const readinessValue = calibration.readiness;
+  const isCriticalReadiness = readinessValue < 20;
+
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [isGuestMode, setIsGuestMode] = useState(() => localStorage.getItem('volt_guest_mode') === 'true');
   const [isAuthChecking, setIsAuthChecking] = useState(true);
+  const [isSafetyActive, setIsSafetyActive] = useState(false);
+  
+  const [hasAcknowledgedCritical, setHasAcknowledgedCritical] = useState(false);
+  
+  useEffect(() => {
+    if (isCriticalReadiness) {
+      if (!isSafetyActive && !hasAcknowledgedCritical) {
+        setIsSafetyActive(true);
+      }
+    } else {
+      // Reset acknowledgement when state is no longer critical
+      if (hasAcknowledgedCritical) {
+        setHasAcknowledgedCritical(false);
+      }
+    }
+  }, [isCriticalReadiness, isSafetyActive, hasAcknowledgedCritical]);
+  
   const [activeView, setActiveView] = useState<ViewType>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('volt_active_view');
@@ -186,7 +209,6 @@ function AppContent() {
   }, [activeView]);
   const [selectedHistoryWorkoutId, setSelectedHistoryWorkoutId] = useState<string | null>(null);
   const [lastView, setLastView] = useState<ViewType>('analysis');
-  const [isSafetyActive, setIsSafetyActive] = useState(false);
   const [isLifting, setIsLifting] = useState(false);
   const [isRecoveryModalOpen, setIsRecoveryModalOpen] = useState(false);
   const [voiceFeedback, setVoiceFeedback] = useState<string | null>(null);
@@ -736,7 +758,8 @@ function AppContent() {
   return (
     <div className={cn(
       "relative h-screen w-screen bg-void text-white font-sans overflow-hidden flex transition-colors duration-1000",
-      `tier-${lifterLevel.tier}`
+      `tier-${lifterLevel.tier}`,
+      isCriticalReadiness && "glitch-active"
     )}>
       {/* Surroundings / Pass-through Simulation Layer */}
       <AnimatePresence>
@@ -1110,7 +1133,7 @@ function AppContent() {
       {/* Main Content Area */}
       <main 
         ref={mainRef}
-        className="flex-1 w-full max-w-[var(--app-max-width)] mx-auto px-[var(--app-gutter)] relative h-full flex flex-col items-center pt-24 md:pt-32 pb-24 md:pb-12 overflow-y-auto custom-scrollbar"
+        className="flex-1 w-full max-w-[var(--app-max-width)] mx-auto px-[var(--app-gutter)] relative h-full flex flex-col items-center pt-24 md:pt-32 pb-24 md:pb-12 overflow-y-auto custom-scrollbar hud-widget-grid"
       >
         <AnimatePresence mode="wait">
           <motion.div
@@ -1119,7 +1142,7 @@ function AppContent() {
             animate={{ opacity: 1, scale: 1, clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 100%)' }}
             exit={{ opacity: 0, scale: 1.05, filter: 'blur(5px)' }}
             transition={{ duration: 0.2, ease: [0.33, 1, 0.68, 1] }}
-            className="w-full flex flex-col items-center justify-start"
+            className="w-full flex flex-col items-center justify-start min-w-0"
           >
             {renderView()}
           </motion.div>
@@ -1135,7 +1158,10 @@ function AppContent() {
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[999] bg-void/90 backdrop-blur-xl"
           >
-            <SafetyHUD onDismiss={() => setIsSafetyActive(false)} />
+            <SafetyHUD onDismiss={() => {
+              setIsSafetyActive(false);
+              setHasAcknowledgedCritical(true);
+            }} />
           </motion.div>
         )}
       </AnimatePresence>
