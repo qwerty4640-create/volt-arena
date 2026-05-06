@@ -3,6 +3,9 @@ import { LucideIcon } from "lucide-react";
 export type ViewType = 'analysis' | 'safety' | 'analytics' | 'berserker' | 'training' | 'settings' | 'workout-log' | 'post-workout' | 'workout-history' | 'profile';
 export type ImmersionMode = 'immersive' | 'ar';
 
+export type WidgetId = 'recovery-analysis' | 'pr' | 'macros' | 'joint-stress';
+export type PerformanceWidgetId = 'progression' | 'volume-trend' | 'joint-stress' | 'growth' | 'tactical';
+
 export interface NavItem {
   id: ViewType;
   label: string;

@@ -20,7 +20,8 @@ export const AICoach = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
   
   // Tactical Alert Logic
   useEffect(() => {
-    if (!profile || profile.trainingGoal !== 'pure_strength') return;
+    const hasStrength = profile?.trainingObjectives?.includes('pure_strength') || profile?.trainingGoal === 'pure_strength';
+    if (!profile || !hasStrength) return;
 
     const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
     const highIntensitySessions = recoveryHistory.filter(r => 

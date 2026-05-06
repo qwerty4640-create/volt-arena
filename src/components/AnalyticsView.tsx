@@ -1,12 +1,15 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Trophy, Target, TrendingUp, BarChart3, Calendar, Filter, ChevronDown } from 'lucide-react';
+import { Trophy, Target, TrendingUp, BarChart3, Calendar, Filter, ChevronDown, Plus, Settings2 } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
 import { useWorkout } from '../contexts/WorkoutContext';
 import { ExternalActivityWidget, BlockWidget } from './AnalysisView';
 import { isMainLiftMatch, calculateE1RM } from '../utils/workoutUtils';
 import { calculateExrxPercentile } from '../lib/strength';
 import { InfoTooltip } from './InfoTooltip';
+import { JointStressWidget } from './JointStressWidget';
+import { CustomizeDashboardModal } from './CustomizeDashboardModal';
+import { PerformanceWidgetId } from '../types';
 import {
   LineChart,
   Line,
@@ -23,12 +26,13 @@ import { cn } from '../lib/utils';
 type TimeFrame = '1M' | '3M' | '6M' | 'ALL';
 
 export const AnalyticsView = () => {
-  const { t, unit, profile } = useSettings();
+  const { t, unit, profile, performanceWidgets, setPerformanceWidgets } = useSettings();
   const { history } = useWorkout();
   const weightUnit = unit === 'metric' ? t('workout.kg') : t('workout.lbs');
 
   const [timeFrame, setTimeFrame] = useState<TimeFrame>('6M');
   const [selectedLifts, setSelectedLifts] = useState<string[]>(['Squat', 'Bench Press', 'Deadlift']);
+  const [isCustomizeModalOpen, setIsCustomizeModalOpen] = useState(false);
 
   const liftOptions = [
     { id: 'Squat', label: t('analytics.squat'), color: 'var(--primary-color)' },
@@ -213,307 +217,335 @@ export const AnalyticsView = () => {
 
   return (
     <div className="w-full space-y-12">
-      <div className="flex flex-col gap-8 w-full">
-        {/* Strength Trend Chart */}
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.1 }}
-          className="glass-panel px-4 py-6 md:p-8 flex flex-col relative overflow-hidden min-w-0"
+      <div className="w-full mb-4">
+        <button
+          onClick={() => setIsCustomizeModalOpen(true)}
+          className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-void border border-white/10 text-white font-headline text-[10px] font-black uppercase tracking-widest hover:bg-white/10 hover:border-volt/50 transition-all group"
         >
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6">
-            <div>
-              {/* 
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-1.5 h-1.5 bg-volt" />
-                <span className="text-[10px] font-black uppercase tracking-widest text-volt">{t('analysis.performanceTelemetry')}</span>
-              </div>
-              */}
-              <h2 className="font-headline text-3xl md:text-5xl font-black uppercase italic tracking-tight mb-2">{t('analysis.strengthTrend')}</h2>
-              <p className="text-zinc-400 text-xs font-medium max-w-md mb-8 leading-relaxed">
-                {t('analysis.strengthTrendDesc')}
-              </p>
-              <div className="flex flex-wrap gap-4">
-                {liftOptions.map(lift => (
-                  <button
-                    key={lift.id}
-                    onClick={() => toggleLift(lift.id)}
-                    className={cn(
-                      "flex items-center gap-3 px-4 py-2 border transition-all duration-300",
-                      selectedLifts.includes(lift.id)
-                        ? "bg-white/5 border-white/20"
-                        : "bg-transparent border-transparent opacity-40 grayscale"
-                    )}
-                  >
-                    <div className="w-3 h-3" style={{ backgroundColor: lift.color }} />
-                    <span className="font-headline text-[10px] font-black uppercase tracking-widest text-white">{lift.label}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex gap-1 bg-void p-1 border border-white/5 flex-wrap md:flex-nowrap shrink-0">
-              {(['1M', '3M', '6M', 'ALL'] as TimeFrame[]).map((tf) => (
-                <button
-                  key={tf}
-                  onClick={() => setTimeFrame(tf)}
-                  className={cn(
-                    "px-4 py-2 font-headline text-[10px] font-black uppercase tracking-widest transition-all",
-                    timeFrame === tf ? "bg-volt text-void" : "text-zinc-500 hover:text-white"
-                  )}
-                >
-                  {tf}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="h-[250px] w-full mt-4 min-w-0">
-            {filteredData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={filteredData} margin={{ top: 5, right: 5, left: -20, bottom: 25 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
-                  <XAxis
-                    dataKey="displayDate"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: '#52525b', fontSize: 10, fontWeight: 900, textTransform: 'uppercase', fontFamily: 'Inter' }}
-                    dy={10}
-                  />
-                  <YAxis
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: '#52525b', fontSize: 10, fontWeight: 900, fontFamily: 'Inter' }}
-                  />
-                  <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'var(--primary-color)', strokeWidth: 1, strokeDasharray: '4 4' }} />
-                  {liftOptions.map(lift => selectedLifts.includes(lift.id) && (
-                    <Line
-                      key={lift.id}
-                      type="linear"
-                      dataKey={lift.id}
-                      stroke={lift.color}
-                      strokeWidth={3}
-                      dot={{ r: 4, fill: lift.color, strokeWidth: 0 }}
-                      activeDot={{ r: 6, stroke: lift.color, strokeWidth: 2, fill: '#131313' }}
-                      animationDuration={1500}
-                      connectNulls
-                    />
-                  ))}
-                </LineChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="h-full flex flex-col items-center justify-center text-zinc-600 space-y-4">
-                <BarChart3 size={48} strokeWidth={1} />
-                <p className="text-[10px] font-black uppercase tracking-[0.2em]">{t('analysis.insufficientData')}</p>
-              </div>
-            )}
-          </div>
-        </motion.div>
-
-        {/* Weekly Volume Trend */}
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.25 }}
-          className="glass-panel px-4 py-6 md:p-8 flex flex-col min-w-0 overflow-hidden"
-        >
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6">
-            <div>
-              {/* 
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-1.5 h-1.5 bg-volt" />
-                <span className="text-[10px] font-black uppercase tracking-widest text-volt">{t('analysis.volumeAccumulation')}</span>
-              </div>
-              */}
-              <h2 className="font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tight mb-2">{t('analysis.weeklyVolumeTrend')}</h2>
-              <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed">
-                {t('analysis.weeklyVolumeTrendDesc')}
-              </p>
-            </div>
-          </div>
-
-          <div className="h-[250px] w-full mt-4 min-w-0">
-            {volumeTrendData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={volumeTrendData} margin={{ top: 5, right: 5, left: -20, bottom: 25 }}>
-                  <defs>
-                    <linearGradient id="colorVolume" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="var(--primary-color)" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="var(--primary-color)" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
-                  <XAxis
-                    dataKey="week"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: '#52525b', fontSize: 10, fontWeight: 900, textTransform: 'uppercase', fontFamily: 'Inter' }}
-                    dy={10}
-                  />
-                  <YAxis
-                    yAxisId="left"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: '#52525b', fontSize: 10, fontWeight: 900, fontFamily: 'Inter' }}
-                  />
-                  <YAxis
-                    yAxisId="right"
-                    orientation="right"
-                    domain={[0, 10]}
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: '#FF7162', fontSize: 10, fontWeight: 900, fontFamily: 'Inter' }}
-                  />
-                  <Tooltip content={<VolumeTooltip />} cursor={{ stroke: 'var(--primary-color)', strokeWidth: 1, strokeDasharray: '4 4' }} />
-                  <Area
-                    yAxisId="left"
-                    type="linear"
-                    dataKey="volume"
-                    stroke="var(--primary-color)"
-                    fillOpacity={1}
-                    fill="url(#colorVolume)"
-                    strokeWidth={3}
-                  />
-                  <Line
-                    yAxisId="right"
-                    type="linear"
-                    dataKey="avgRpe"
-                    stroke="var(--primary-color)"
-                    strokeWidth={3}
-                    dot={{ r: 4, fill: 'var(--primary-color)', strokeWidth: 0 }}
-                    activeDot={{ r: 6, stroke: 'var(--primary-color)', strokeWidth: 2, fill: '#131313' }}
-                    animationDuration={1500}
-                    connectNulls
-                  />
-                </ComposedChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="h-full flex flex-col items-center justify-center text-zinc-600 space-y-4">
-                <TrendingUp size={48} strokeWidth={1} />
-                <p className="text-[10px] font-black uppercase tracking-[0.2em]">{t('analysis.insufficientVolumeData')}</p>
-              </div>
-            )}
-          </div>
-        </motion.div>
-
-        {/* 1RM Growth Bento */}
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.3 }}
-          className="glass-panel px-4 py-6 md:p-8 relative overflow-hidden min-w-0"
-        >
-          {/*
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-1.5 h-1.5 bg-crimson" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('analysis.growthAnalysis')}</span>
-          </div>
-          */}
-          <h3 className="font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tight mb-2">
-            {t('analysis.est1rmGrowth')}
-          </h3>
-
-          {(() => {
-            const latestE1RMs = liftOptions.map(lift => {
-              const liftHistory = history.filter(s => s.exercises.some(ex => isMainLiftMatch(ex.name, lift.id)));
-              const e1rms = liftHistory.flatMap(s => s.exercises.find(ex => isMainLiftMatch(ex.name, lift.id))?.sets.map(set => calculateE1RM(parseFloat(set.weight) || 0, parseInt(set.reps) || 0)) || []);
-              return e1rms.length > 0 ? Math.round(Math.max(...e1rms)) : 0;
-            });
-            const totalSBD = latestE1RMs.reduce((a, b) => a + b, 0);
-
-            const p = calculateExrxPercentile(totalSBD, profile?.weight || 0, profile?.gender || 'male', profile?.age);
-
-            return (
-              <div className="mb-12">
-                <div className="text-zinc-400 text-sm italic font-medium mt-2">
-                  {t('analysis.percentile_rank', { percent: p < 1 ? '<1' : p.toFixed(1) })} <InfoTooltip term="Percentile" className="inline-block z-10 relative" />
-                </div>
-              </div>
-            );
-          })()}
-
-          <div className="grid grid-cols-2 gap-8 md:gap-12">
-            {liftOptions.map((lift, i) => {
-              const liftHistory = [...history]
-                .filter(s => s.exercises.some(ex => isMainLiftMatch(ex.name, lift.id)))
-                .sort((a, b) => (a.completedAt || 0) - (b.completedAt || 0));
-
-              const e1rms = liftHistory.flatMap(s => s.exercises.find(ex => isMainLiftMatch(ex.name, lift.id))?.sets.map(set => calculateE1RM(parseFloat(set.weight) || 0, parseInt(set.reps) || 0)) || []);
-              const maxE1RM = e1rms.length > 0 ? Math.round(Math.max(...e1rms)) : 0;
-              const firstE1RM = e1rms.length > 0 ? Math.round(e1rms[0]) : 0;
-              const growth = firstE1RM > 0 ? ((maxE1RM - firstE1RM) / firstE1RM * 100).toFixed(1) : '0.0';
-              const diff = maxE1RM - firstE1RM;
-
-              return (
-                <div key={i} className="flex flex-col">
-                  <span className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-2">{lift.label}</span>
-                  <div className="flex items-baseline gap-2">
-                    <span className="font-headline text-3xl md:text-4xl font-black italic text-white">{maxE1RM > 0 ? maxE1RM : '–'}</span>
-                    <span className="font-headline text-xs font-black text-zinc-500">{weightUnit}</span>
-                  </div>
-                  <span className="text-[10px] font-black text-volt tracking-widest mt-1 uppercase">
-                    {liftHistory.length > 1 ? (
-                      <>+{diff.toFixed(1)}{weightUnit} ({growth}%)</>
-                    ) : (
-                      <span className="text-zinc-600">{t('analysis.baseline')}</span>
-                    )}
-                  </span>
-                </div>
-              );
-            })}
-
-            {(() => {
-              const liftStats = liftOptions.map(lift => {
-                const liftHistory = [...history]
-                  .filter(s => s.exercises.some(ex => isMainLiftMatch(ex.name, lift.id)))
-                  .sort((a, b) => (a.completedAt || 0) - (b.completedAt || 0));
-
-                const e1rms = liftHistory.flatMap(s => s.exercises.find(ex => isMainLiftMatch(ex.name, lift.id))?.sets.map(set => calculateE1RM(parseFloat(set.weight) || 0, parseInt(set.reps) || 0)) || []);
-
-                return {
-                  max: e1rms.length > 0 ? Math.round(Math.max(...e1rms)) : 0,
-                  first: e1rms.length > 0 ? Math.round(e1rms[0]) : 0,
-                  hasHistory: liftHistory.length > 1
-                };
-              });
-
-              const total = liftStats.reduce((a, b) => a + b.max, 0);
-              const firstTotal = liftStats.reduce((a, b) => a + b.first, 0);
-              const hasMultiSession = liftStats.some(s => s.hasHistory);
-
-              const growth = firstTotal > 0 ? ((total - firstTotal) / firstTotal * 100).toFixed(1) : '0.0';
-              const diff = total - firstTotal;
-
-              return (
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-2">{t('analysis.sbd_total')}</span>
-                  <div className="flex items-baseline gap-2">
-                    <span className="font-headline text-3xl md:text-4xl font-black italic text-white">{total > 0 ? total : '–'}</span>
-                    <span className="font-headline text-xs font-black text-zinc-500">{weightUnit}</span>
-                  </div>
-                  <span className="text-[10px] font-black text-volt tracking-widest mt-1 uppercase">
-                    {hasMultiSession ? (
-                      <>+{diff.toFixed(1)}{weightUnit} ({growth}%)</>
-                    ) : (
-                      <span className="text-zinc-600">{t('analysis.baseline')}</span>
-                    )}
-                  </span>
-                </div>
-              );
-            })()}
-          </div>
-        </motion.div>
-
-        {/* Tactical Integration Analytics */}
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className="glass-panel p-0 overflow-hidden border-none min-w-0"
-        >
-          <ExternalActivityWidget />
-        </motion.div>
+          <Settings2 size={14} className="text-zinc-400 group-hover:text-volt" />
+          {t('analysis.customizeDashboard')}
+        </button>
       </div>
+
+      <div className="flex flex-col gap-12">
+        {performanceWidgets.map((widgetId) => {
+          switch (widgetId) {
+            case 'progression':
+              return (
+                <motion.div
+                  key="progression"
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.1 }}
+                  className="glass-panel px-4 py-6 md:p-8 flex flex-col relative overflow-hidden min-w-0"
+                >
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6">
+                    <div>
+                      <h2 className="font-headline text-3xl md:text-5xl font-black uppercase italic tracking-tight mb-2">{t('analysis.strengthTrend')}</h2>
+                      <p className="text-zinc-400 text-xs font-medium max-w-md mb-8 leading-relaxed">
+                        {t('analysis.strengthTrendDesc')}
+                      </p>
+                      <div className="flex flex-wrap gap-4">
+                        {liftOptions.map(lift => (
+                          <button
+                            key={lift.id}
+                            onClick={() => {
+                              if (selectedLifts.includes(lift.id)) {
+                                if (selectedLifts.length > 1) setSelectedLifts(selectedLifts.filter(id => id !== lift.id));
+                              } else {
+                                setSelectedLifts([...selectedLifts, lift.id]);
+                              }
+                            }}
+                            className={cn(
+                              "flex items-center gap-3 px-4 py-2 border transition-all duration-300",
+                              selectedLifts.includes(lift.id)
+                                ? "bg-white/5 border-white/20"
+                                : "bg-transparent border-transparent opacity-40 grayscale"
+                            )}
+                          >
+                            <div className="w-3 h-3" style={{ backgroundColor: lift.color }} />
+                            <span className="font-headline text-[10px] font-black uppercase tracking-widest text-white">{lift.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="flex gap-1 bg-void p-1 border border-white/5 flex-wrap md:flex-nowrap shrink-0">
+                      {(['1M', '3M', '6M', 'ALL'] as TimeFrame[]).map((tf) => (
+                        <button
+                          key={tf}
+                          onClick={() => setTimeFrame(tf)}
+                          className={cn(
+                            "px-4 py-2 font-headline text-[10px] font-black uppercase tracking-widest transition-all",
+                            timeFrame === tf ? "bg-volt text-void" : "text-zinc-500 hover:text-white"
+                          )}
+                        >
+                          {tf}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="h-[300px] w-full mt-4 min-w-0">
+                    {filteredData.length > 0 ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={filteredData} margin={{ top: 5, right: 5, left: -20, bottom: 25 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
+                          <XAxis
+                            dataKey="displayDate"
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fill: '#52525b', fontSize: 10, fontWeight: 900, textTransform: 'uppercase', fontFamily: 'Inter' }}
+                            dy={10}
+                          />
+                          <YAxis
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fill: '#52525b', fontSize: 10, fontWeight: 900, fontFamily: 'Inter' }}
+                          />
+                          <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'var(--primary-color)', strokeWidth: 1, strokeDasharray: '4 4' }} />
+                          {liftOptions.map(lift => selectedLifts.includes(lift.id) && (
+                            <Line
+                              key={lift.id}
+                              type="linear"
+                              dataKey={lift.id}
+                              stroke={lift.color}
+                              strokeWidth={3}
+                              dot={{ r: 4, fill: lift.color, strokeWidth: 0 }}
+                              activeDot={{ r: 6, stroke: lift.color, strokeWidth: 2, fill: '#131313' }}
+                              animationDuration={1500}
+                              connectNulls
+                            />
+                          ))}
+                        </LineChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="h-full flex flex-col items-center justify-center text-zinc-600 space-y-4">
+                        <BarChart3 size={48} strokeWidth={1} />
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em]">{t('analysis.insufficientData')}</p>
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              );
+
+            case 'volume-trend':
+              return (
+                <motion.div
+                  key="volume-trend"
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.25 }}
+                  className="glass-panel px-4 py-6 md:p-8 flex flex-col min-w-0 overflow-hidden"
+                >
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6">
+                    <div>
+                      <h2 className="font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tight mb-2">{t('analysis.weeklyVolumeTrend')}</h2>
+                      <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed">
+                        {t('analysis.weeklyVolumeTrendDesc')}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="h-[250px] w-full mt-4 min-w-0">
+                    {volumeTrendData.length > 0 ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <ComposedChart data={volumeTrendData} margin={{ top: 5, right: 5, left: -20, bottom: 25 }}>
+                          <defs>
+                            <linearGradient id="colorVolume" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="var(--primary-color)" stopOpacity={0.3} />
+                              <stop offset="95%" stopColor="var(--primary-color)" stopOpacity={0} />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
+                          <XAxis
+                            dataKey="week"
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fill: '#52525b', fontSize: 10, fontWeight: 900, textTransform: 'uppercase', fontFamily: 'Inter' }}
+                            dy={10}
+                          />
+                          <YAxis
+                            yAxisId="left"
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fill: '#52525b', fontSize: 10, fontWeight: 900, fontFamily: 'Inter' }}
+                          />
+                          <YAxis
+                            yAxisId="right"
+                            orientation="right"
+                            domain={[0, 10]}
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fill: '#FF7162', fontSize: 10, fontWeight: 900, fontFamily: 'Inter' }}
+                          />
+                          <Tooltip content={<VolumeTooltip />} cursor={{ stroke: 'var(--primary-color)', strokeWidth: 1, strokeDasharray: '4 4' }} />
+                          <Area
+                            yAxisId="left"
+                            type="linear"
+                            dataKey="volume"
+                            stroke="var(--primary-color)"
+                            fillOpacity={1}
+                            fill="url(#colorVolume)"
+                            strokeWidth={3}
+                          />
+                          <Line
+                            yAxisId="right"
+                            type="linear"
+                            dataKey="avgRpe"
+                            stroke="var(--primary-color)"
+                            strokeWidth={3}
+                            dot={{ r: 4, fill: 'var(--primary-color)', strokeWidth: 0 }}
+                            activeDot={{ r: 6, stroke: 'var(--primary-color)', strokeWidth: 2, fill: '#131313' }}
+                            animationDuration={1500}
+                            connectNulls
+                          />
+                        </ComposedChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="h-full flex flex-col items-center justify-center text-zinc-600 space-y-4">
+                        <TrendingUp size={48} strokeWidth={1} />
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em]">{t('analysis.insufficientVolumeData')}</p>
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              );
+
+            case 'joint-stress':
+              return <JointStressWidget key="joint-stress" />;
+
+            case 'growth':
+              return (
+                <motion.div
+                  key="growth"
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                  className="glass-panel px-4 py-6 md:p-8 relative overflow-hidden min-w-0"
+                >
+                  <h3 className="font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tight mb-2">
+                    {t('analysis.est1rmGrowth')}
+                  </h3>
+
+                  {(() => {
+                    const latestE1RMs = liftOptions.map(lift => {
+                      const liftHistory = history.filter(s => s.exercises.some(ex => isMainLiftMatch(ex.name, lift.id)));
+                      const e1rms = liftHistory.flatMap(s => s.exercises.find(ex => isMainLiftMatch(ex.name, lift.id))?.sets.map(set => calculateE1RM(parseFloat(set.weight) || 0, parseInt(set.reps) || 0)) || []);
+                      return e1rms.length > 0 ? Math.round(Math.max(...e1rms)) : 0;
+                    });
+                    const totalSBD = latestE1RMs.reduce((a, b) => a + b, 0);
+                    
+                    const p = calculateExrxPercentile(totalSBD, profile?.weight || 0, profile?.gender || 'male', profile?.age);
+                    
+                    return (
+                      <div className="mb-12">
+                        <div className="text-zinc-400 text-sm italic font-medium mt-2">
+                          {t('analysis.youAreTop')} <span className="text-volt">{p < 1 ? '<1' : p.toFixed(1)}%</span> {t('analysis.ofPopulation')} <InfoTooltip term="Percentile" className="inline-block z-10 relative" />
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  <div className="grid grid-cols-2 gap-8 md:gap-12">
+                    {liftOptions.map((lift, i) => {
+                      const liftHistory = [...history]
+                        .filter(s => s.exercises.some(ex => isMainLiftMatch(ex.name, lift.id)))
+                        .sort((a, b) => (a.completedAt || 0) - (b.completedAt || 0));
+                      
+                      const e1rms = liftHistory.flatMap(s => s.exercises.find(ex => isMainLiftMatch(ex.name, lift.id))?.sets.map(set => calculateE1RM(parseFloat(set.weight) || 0, parseInt(set.reps) || 0)) || []);
+                      const maxE1RM = e1rms.length > 0 ? Math.round(Math.max(...e1rms)) : 0;
+                      const firstE1RM = e1rms.length > 0 ? Math.round(e1rms[0]) : 0;
+                      const growth = firstE1RM > 0 ? ((maxE1RM - firstE1RM) / firstE1RM * 100).toFixed(1) : '0.0';
+                      const diff = maxE1RM - firstE1RM;
+
+                      return (
+                        <div key={i} className="flex flex-col">
+                          <span className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-2">{lift.label}</span>
+                          <div className="flex items-baseline gap-2">
+                            <span className="font-headline text-3xl md:text-4xl font-black italic text-white">{maxE1RM > 0 ? maxE1RM : '–'}</span>
+                            <span className="font-headline text-xs font-black text-zinc-500">{weightUnit}</span>
+                          </div>
+                          <span className="text-[10px] font-black text-volt tracking-widest mt-1 uppercase">
+                            {liftHistory.length > 1 ? (
+                              <>+{diff.toFixed(1)}{weightUnit} ({growth}%)</>
+                            ) : (
+                              <span className="text-zinc-600">{t('analysis.baseline')}</span>
+                            )}
+                          </span>
+                        </div>
+                      );
+                    })}
+
+                    {(() => {
+                      const liftStats = liftOptions.map(lift => {
+                        const liftHistory = [...history]
+                          .filter(s => s.exercises.some(ex => isMainLiftMatch(ex.name, lift.id)))
+                          .sort((a, b) => (a.completedAt || 0) - (b.completedAt || 0));
+                        
+                        const e1rms = liftHistory.flatMap(s => s.exercises.find(ex => isMainLiftMatch(ex.name, lift.id))?.sets.map(set => calculateE1RM(parseFloat(set.weight) || 0, parseInt(set.reps) || 0)) || []);
+                        
+                        return {
+                          max: e1rms.length > 0 ? Math.round(Math.max(...e1rms)) : 0,
+                          first: e1rms.length > 0 ? Math.round(e1rms[0]) : 0,
+                          hasHistory: liftHistory.length > 1
+                        };
+                      });
+
+                      const total = liftStats.reduce((a, b) => a + b.max, 0);
+                      const firstTotal = liftStats.reduce((a, b) => a + b.first, 0);
+                      const hasMultiSession = liftStats.some(s => s.hasHistory);
+
+                      const growth = firstTotal > 0 ? ((total - firstTotal) / firstTotal * 100).toFixed(1) : '0.0';
+                      const diff = total - firstTotal;
+
+                      return (
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-2">{t('analysis.sbd_total')}</span>
+                          <div className="flex items-baseline gap-2">
+                            <span className="font-headline text-3xl md:text-4xl font-black italic text-white">{total > 0 ? total : '–'}</span>
+                            <span className="font-headline text-xs font-black text-zinc-500">{weightUnit}</span>
+                          </div>
+                          <span className="text-[10px] font-black text-volt tracking-widest mt-1 uppercase">
+                            {hasMultiSession ? (
+                              <>+{diff.toFixed(1)}{weightUnit} ({growth}%)</>
+                            ) : (
+                              <span className="text-zinc-600">{t('analysis.baseline')}</span>
+                            )}
+                          </span>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </motion.div>
+              );
+
+            case 'tactical':
+              return (
+                <motion.div
+                  key="tactical"
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.4 }}
+                  className="glass-panel p-0 overflow-hidden border-none min-w-0"
+                >
+                  <ExternalActivityWidget />
+                </motion.div>
+              );
+
+            default:
+              return null;
+          }
+        })}
+      </div>
+
+      <CustomizeDashboardModal
+        isOpen={isCustomizeModalOpen}
+        onClose={() => setIsCustomizeModalOpen(false)}
+        currentWidgets={performanceWidgets}
+        onSave={setPerformanceWidgets}
+        type="performance"
+      />
     </div>
   );
 };

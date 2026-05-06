@@ -12,7 +12,6 @@ import {
   Power,
   Dumbbell,
   History,
-  Eye,
   Box,
   Mic,
   MicOff,
@@ -105,9 +104,12 @@ const NAV_ITEMS: NavItem[] = [
 
 const SHOW_EXPERIMENTAL_FEATURES = false;
 
+import { DataRedundancyManager } from './components/DataRedundancyManager';
+
 export default function App() {
   return (
     <WorkoutProvider>
+      <DataRedundancyManager />
       <PwaUpdater />
       <AppContent />
     </WorkoutProvider>
@@ -172,6 +174,22 @@ function AppContent() {
   const [isGuestMode, setIsGuestMode] = useState(() => localStorage.getItem('volt_guest_mode') === 'true');
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [isSafetyActive, setIsSafetyActive] = useState(false);
+  
+  // Lock orientation to portrait
+  useEffect(() => {
+    const orientation = screen.orientation as any;
+    if (orientation && typeof orientation.lock === 'function') {
+      orientation.lock('portrait').catch((err: any) => {
+        console.warn('Orientation lock failed:', err);
+      });
+    }
+    
+    return () => {
+      if (orientation && typeof orientation.unlock === 'function') {
+        orientation.unlock();
+      }
+    };
+  }, []);
   
   const [hasAcknowledgedCritical, setHasAcknowledgedCritical] = useState(false);
   
@@ -708,8 +726,8 @@ function AppContent() {
         }} 
       />;
       case 'analytics': return <AnalyticsView />;
-      case 'settings': return <SettingsView onExit={() => setIsExitModalOpen(true)} />;
-      case 'profile': return <ProfileView />;
+      case 'settings': return <SettingsView onExit={() => setIsExitModalOpen(true)} onNavigateToProfile={() => setActiveView('profile')} />;
+      case 'profile': return <ProfileView onBack={() => setActiveView('settings')} />;
       case 'workout-log': return <WorkoutLog 
         onBack={() => setActiveView('training')}
         onComplete={(avgRpe) => {
@@ -810,7 +828,7 @@ function AppContent() {
             </div>
           </div>
           <div className="font-sans font-bold text-[8px] md:text-[10px] uppercase tracking-[0.2em] text-zinc-500 mt-1">
-            {profile?.trainingGoal ? t(`goal.${profile.trainingGoal}`) : t('auth.trainingSystem')}
+            {profile?.trainingObjectives?.length ? profile.trainingObjectives.map(g => t(`goal.${g}`)).join(' + ') : (profile?.trainingGoal ? t(`goal.${profile.trainingGoal}`) : t('auth.trainingSystem'))}
           </div>
         </div>
 
@@ -834,20 +852,6 @@ function AppContent() {
             <button className="text-zinc-500 hover:text-volt transition-colors p-1"><Bell size={18} className="md:w-5 md:h-5" /></button>
             <button onClick={() => setActiveView('settings')} className={cn("transition-colors p-1", activeView === 'settings' ? "text-volt" : "text-zinc-500 hover:text-volt")}><Settings size={18} className="md:w-5 md:h-5" /></button>
           </div>
-          <button 
-            onClick={() => setActiveView('profile')}
-            className={cn(
-              "hidden md:block w-8 h-8 md:w-10 md:h-10 border-2 overflow-hidden bg-surface-high transition-all",
-              activeView === 'profile' ? "border-volt scale-110 shadow-[0_0_15px_var(--primary-glow)]" : "border-volt/30 hover:border-volt/60"
-            )}
-          >
-            <img 
-              src={user?.photoURL || "https://picsum.photos/seed/athlete/100/100"} 
-              alt={user?.displayName || "Athlete"} 
-              className="w-full h-full object-cover"
-              referrerPolicy="no-referrer"
-            />
-          </button>
         </div>
       </header>
 
@@ -1107,26 +1111,6 @@ function AppContent() {
             <Settings size={20} strokeWidth={activeView === 'settings' ? 3 : 2} />
             <span className="text-[8px] font-black uppercase tracking-widest">SETTINGS</span>
           </button>
-          <button
-            onClick={() => setActiveView('profile')}
-            className={cn(
-              "flex flex-col items-center gap-1 transition-all",
-              activeView === 'profile' ? "text-volt" : "text-zinc-500"
-            )}
-          >
-            <div className={cn(
-              "w-5 h-5 rounded-full overflow-hidden border transition-all",
-              activeView === 'profile' ? "border-volt" : "border-zinc-500"
-            )}>
-              <img 
-                src={user?.photoURL || "https://picsum.photos/seed/athlete/100/100"} 
-                alt={user?.displayName || "Athlete"} 
-                className="w-full h-full object-cover"
-                referrerPolicy="no-referrer"
-              />
-            </div>
-            <span className="text-[8px] font-black uppercase tracking-widest">PROFILE</span>
-          </button>
         </div>
       </nav>
 
@@ -1182,8 +1166,8 @@ function AppContent() {
         {showReadinessCheck && (
           <ReadinessCheck
             key="readiness-check"
-            onComplete={(score, modifier, targetRpe) => {
-              startNewSession(undefined, score, modifier, targetRpe);
+            onComplete={(score, modifier, targetRpe, biometrics) => {
+              startNewSession(undefined, score, modifier, targetRpe, biometrics);
               setShowReadinessCheck(false);
               setIsLifting(true);
               setActiveView('workout-log');

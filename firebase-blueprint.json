@@ -133,6 +133,10 @@
     "/users/{userId}/recovery_data/{docId}": {
       "schema": "RecoveryData",
       "description": "Daily health check HMS metrics."
+    },
+    "/users/{userId}/biometric_history/{docId}": {
+      "schema": "RecoveryData",
+      "description": "History of daily health check HMS metrics."
     }
   }
 }

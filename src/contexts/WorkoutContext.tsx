@@ -16,6 +16,16 @@ import { db, auth, handleFirestoreError, OperationType } from '../firebase';
 import { useSettings, UserProfile } from './SettingsContext';
 import { useToast } from './ToastContext';
 import { BlockType, getBlockForWeek } from '../constants/periodization';
+import { 
+  getExercisesByPattern, 
+  ExerciseDefinition, 
+  getSwappableExercises 
+} from '../constants/exercises';
+import { 
+  TRAINING_CONSTRAINTS, 
+  getInterferenceAdjustment, 
+  getSecondaryInjection 
+} from '../constants/constraints';
 import { calculateTier } from '../lib/strength';
 import { ACTIVITY_LIBRARY } from '../data/activityLibrary';
 import { isMainLiftMatch } from '../utils/workoutUtils';
@@ -32,12 +42,14 @@ export interface Set {
   baseReps?: string;
   rpe: string;
   isCompleted: boolean;
+  isWarmup?: boolean;
 }
 
 export interface Exercise {
   id: string;
   name: string;
   sets: Set[];
+  restPeriod?: number;
   isAdditional?: boolean;
   groupId?: string;
   groupTitle?: string;
@@ -60,6 +72,9 @@ export interface WorkoutSession {
   actualRpe?: number; // Post-session reflection
   reflectionSaved?: boolean;
   readiness?: number;
+  sleep?: number;
+  stress?: number;
+  fatigue?: number;
   note?: string;
   duration?: string;
   volume?: string;
@@ -96,7 +111,7 @@ interface WorkoutContextType {
   history: WorkoutSession[];
   recoveryHistory: ActiveRecovery[];
   currentSession: WorkoutSession | null;
-  startNewSession: (template?: WorkoutSession, readinessScore?: number, readinessModifier?: number, targetRpe?: number) => void;
+  startNewSession: (template?: WorkoutSession, readinessScore?: number, readinessModifier?: number, targetRpe?: number, biometrics?: { sleep: number; stress: number; fatigue: number }) => void;
   completeSession: (data: { rpe: number; note: string }) => void;
   logNonProgramActivity: (data: Omit<ActiveRecovery, 'id' | 'uid' | 'timestamp' | 'date' | 'caloriesBurned' | 'type'> & { activityId: string }) => Promise<void>;
   updateActiveRecovery: (id: string, data: Partial<ActiveRecovery>) => Promise<void>;
@@ -164,27 +179,27 @@ const WorkoutContext = createContext<WorkoutContextType | undefined>(undefined);
 
 const WORKOUT_TEMPLATES = [
   {
-    title: 'Foundation Alpha',
-    exercises: [
-      { name: 'Barbell Squat', weight: 60, reps: '8', sets: 3 },
-      { name: 'Bench Press', weight: 40, reps: '10', sets: 3 },
-      { name: 'Bent Over Rows', weight: 30, reps: '12', sets: 3 },
+    title: 'Mission: Foundation',
+    slots: [
+      { pattern: 'squat', weight: 60, reps: '8', sets: 3 },
+      { pattern: 'push_horizontal', weight: 40, reps: '10', sets: 3 },
+      { pattern: 'pull_horizontal', weight: 30, reps: '12', sets: 3 },
     ]
   },
   {
-    title: 'Power Development',
-    exercises: [
-      { name: 'Deadlift', weight: 80, reps: '5', sets: 3 },
-      { name: 'Overhead Press', weight: 30, reps: '8', sets: 3 },
-      { name: 'Pull Ups', weight: 0, reps: '10', sets: 3 },
+    title: 'Mission: Power',
+    slots: [
+      { pattern: 'hinge', weight: 80, reps: '5', sets: 3 },
+      { pattern: 'push_vertical', weight: 30, reps: '8', sets: 3 },
+      { pattern: 'pull_vertical', weight: 0, reps: '10', sets: 3 },
     ]
   },
   {
-    title: 'Hypertrophy Focus',
-    exercises: [
-      { name: 'Leg Press', weight: 120, reps: '12', sets: 3 },
-      { name: 'Incline DB Press', weight: 20, reps: '10', sets: 3 },
-      { name: 'Lat Pulldowns', weight: 45, reps: '12', sets: 3 },
+    title: 'Mission: Hybrid',
+    slots: [
+      { pattern: 'squat', weight: 40, reps: '12', sets: 3 },
+      { pattern: 'push_vertical', weight: 25, reps: '10', sets: 3 },
+      { pattern: 'pull_horizontal', weight: 30, reps: '12', sets: 3 },
     ]
   }
 ];
@@ -267,12 +282,38 @@ const createSessionFromTemplate = (
   currentReadiness: number,
   hasAerobicInterference?: boolean
 ): WorkoutSession => {
-  const goal = profile?.trainingGoal || 'powerbuilding';
+  const goals = profile?.trainingObjectives || (profile?.trainingGoal ? [profile.trainingGoal] : ['powerbuilding']);
+  const primaryGoal = goals[0] || 'powerbuilding';
   const durationMonths = profile?.trainingDurationMonths || 3;
   const totalDurationWeeks = durationMonths * 4;
-  const { block, weekInBlock } = getBlockForWeek(week, totalDurationWeeks, goal);
+  const { block, weekInBlock } = getBlockForWeek(week, totalDurationWeeks, goals);
   const templateIndex = (day - 1) % WORKOUT_TEMPLATES.length;
-  const template = WORKOUT_TEMPLATES[templateIndex];
+  const initialTemplate = WORKOUT_TEMPLATES[templateIndex];
+
+  // --- PHASE 2: BLENDING ENGINE ---
+  const interferenceModifier = getInterferenceAdjustment(goals);
+  const secondaryInjections = getSecondaryInjection(goals);
+  
+  // Clone slots to avoid mutating constants
+  let dynamicSlots = [...initialTemplate.slots];
+
+  // Inject secondary goal work
+  secondaryInjections.forEach(injection => {
+    switch (injection) {
+      case 'POWER_PRIMER':
+        dynamicSlots.unshift({ pattern: 'plyometric', weight: 0, reps: '3-5', sets: 2 } as any);
+        break;
+      case 'MOBILITY_FLOW':
+        dynamicSlots.unshift({ pattern: 'mobility', weight: 0, reps: 'hold', sets: 1 } as any);
+        break;
+      case 'ACCESSORY_PUMP':
+        dynamicSlots.push({ pattern: 'accessory', weight: 15, reps: '15', sets: 3 } as any);
+        break;
+      case 'STRENGTH_ACCESORY':
+        dynamicSlots.push({ pattern: 'pull_horizontal', weight: 30, reps: '8', sets: 3 } as any);
+        break;
+    }
+  });
 
   // 1. Base Intensity from Block + Weekly Progression
   let blockIntensity = block.baseIntensity + (weekInBlock - 1) * block.intensityIncrementPerWeek;
@@ -290,20 +331,20 @@ const createSessionFromTemplate = (
       recoveryModifier *= 0.95;
     }
     const hoursSinceLast = (Date.now() - (lastSession.completedAt || 0)) / 3600000;
-    if (hoursSinceLast < 24 && lastSession.title.includes(template.title.split(':')[0])) {
+    if (hoursSinceLast < 24 && lastSession.title.includes(initialTemplate.title.split(':')[0])) {
       recoveryModifier *= 0.90;
     }
   }
 
   // 4. Volume and Goal-Specific Logic
-  let volumeModifier = 1.0;
+  let volumeModifier = 1.0 * interferenceModifier;
   const isFinalWeek = weekInBlock === block.durationWeeks;
 
-  if (goal === 'pure_strength' && block.type === BlockType.PEAKING && isFinalWeek) {
+  if (goals.includes('pure_strength') && block.type === BlockType.PEAKING && isFinalWeek) {
     volumeModifier *= 0.6; // 40% drop in volume for fatigue dissipation
-  } else if (goal === 'peaking' && block.type === BlockType.COMPETITION) {
+  } else if (goals.includes('peaking') && block.type === BlockType.COMPETITION) {
     volumeModifier *= 0.5; // Drastic set reduction for realization
-  } else if (goal === 'longevity' && block.type === BlockType.REGENERATION) {
+  } else if (goals.includes('longevity') && block.type === BlockType.REGENERATION) {
     blockIntensity = Math.min(blockIntensity, 0.75); // Hard cap intensity
   }
 
@@ -320,18 +361,49 @@ const createSessionFromTemplate = (
     id: `w${week}d${day}`,
     date: new Date().toLocaleDateString(),
     time: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
-    title: `W${week}D${day}: ${template.title}`,
+    title: `W${week}D${day}: ${initialTemplate.title}`,
     startTime: Date.now(),
     blockType: block.type,
     blockLabel: block.label,
     weekInBlock,
     totalWeek: week,
-    exercises: template.exercises.map((ex, i) => {
-      let weight = 0;
+    exercises: dynamicSlots.map((slot, i) => {
+      const preferredImpact = goals.includes('longevity') ? 'low' : 'high';
+      const availableExercises = getExercisesByPattern(slot.pattern as any, preferredImpact);
+      
+      // Select best fit exercise for the goal
+      let selectedExercise = availableExercises[0]; 
+      
+      // Secondary selection logic: if longevity, prefer non-barbell if available for certain patterns
+      if (goals.includes('longevity') && selectedExercise.name.includes('Barbell')) {
+        const safer = availableExercises.find(e => !e.name.includes('Barbell'));
+        if (safer) selectedExercise = safer;
+      }
 
-      const isSquat = isMainLiftMatch(ex.name, 'Squat');
-      const isBench = isMainLiftMatch(ex.name, 'Bench Press');
-      const isDeadlift = isMainLiftMatch(ex.name, 'Deadlift');
+      // --- PHASE 2: Apply Constraints ---
+      interface ConstraintExercise extends Partial<ExerciseDefinition> {
+        intensityCap?: number;
+        intensityBoost?: number;
+        targetRPE?: number;
+        restPeriod?: number;
+        pattern?: any;
+        weight?: any;
+        reps?: any;
+        sets?: any;
+        name: string;
+      }
+
+      const constraintExercise = { ...slot, ...selectedExercise } as ConstraintExercise;
+      TRAINING_CONSTRAINTS.forEach(constraint => {
+        if (constraint.condition(goals)) {
+          constraint.apply(constraintExercise, goals);
+        }
+      });
+
+      let weight = 0;
+      const isSquat = slot.pattern === 'squat';
+      const isBench = slot.pattern === 'push_horizontal';
+      const isDeadlift = slot.pattern === 'hinge';
       const isMainLift = isSquat || isBench || isDeadlift;
 
       const currentTier = profile ? calculateTier(
@@ -341,6 +413,11 @@ const createSessionFromTemplate = (
         profile.weight || 0,
         profile.gender || 'male'
       ) : 'untrained';
+
+      // Apply Intensity Adjustments from constraints
+      let adjustedIntensity = finalIntensity;
+      if (constraintExercise.intensityCap) adjustedIntensity = Math.min(adjustedIntensity, constraintExercise.intensityCap);
+      if (constraintExercise.intensityBoost) adjustedIntensity += constraintExercise.intensityBoost;
 
       if (profile && isMainLift) {
         let pr = 0;
@@ -353,16 +430,16 @@ const createSessionFromTemplate = (
           if (profile.unit !== currentUnit) {
             normalizedPR = currentUnit === 'metric' ? pr / 2.20462 : pr * 2.20462;
           }
-          weight = Math.round((normalizedPR * finalIntensity) / 5) * 5;
+          weight = Math.round((normalizedPR * adjustedIntensity) / 5) * 5;
         } else {
-          const baseWeight = typeof ex.weight === 'string' ? parseFloat(ex.weight) : ex.weight;
-          const estimated1RM = calculateFallback1RM(ex.name, profile.weight, currentTier, currentUnit, baseWeight, profile.age, profile.gender, profile.unit);
-          weight = Math.round((estimated1RM * finalIntensity) / 5) * 5;
+          const baseWeight = typeof slot.weight === 'string' ? parseFloat(slot.weight) : slot.weight;
+          const estimated1RM = calculateFallback1RM(selectedExercise.name, profile.weight, currentTier, currentUnit, baseWeight, profile.age, profile.gender, profile.unit);
+          weight = Math.round((estimated1RM * adjustedIntensity) / 5) * 5;
         }
       } else {
-        const baseWeight = typeof ex.weight === 'string' ? parseFloat(ex.weight) : ex.weight;
-        const estimated1RM = calculateFallback1RM(ex.name, profile?.weight, currentTier, currentUnit, baseWeight, profile?.age, profile?.gender, profile?.unit);
-        weight = Math.round((estimated1RM * finalIntensity) / 5) * 5;
+        const baseWeight = typeof slot.weight === 'string' ? parseFloat(slot.weight) : slot.weight;
+        const estimated1RM = calculateFallback1RM(selectedExercise.name, profile?.weight, currentTier, currentUnit, baseWeight, profile?.age, profile?.gender, profile?.unit);
+        weight = Math.round((estimated1RM * adjustedIntensity) / 5) * 5;
       }
 
       // Apply penalty for high-intensity aerobic activity before lower body days
@@ -371,17 +448,17 @@ const createSessionFromTemplate = (
       }
 
       // Adjust reps and sets
-      let reps = isMainLift ? block.baseReps : ex.reps;
-      let sets = isMainLift ? block.baseSets : ex.sets;
-      let exerciseName = ex.name;
+      let reps = isMainLift ? block.baseReps : slot.reps;
+      let sets = isMainLift ? block.baseSets : slot.sets;
+      let exerciseName = selectedExercise.name;
 
       if (volumeModifier < 1.0) {
         sets = Math.max(1, Math.floor(sets * volumeModifier));
       }
 
       // Longevity: Tempo/Pause work instead of weight increase
-      if (goal === 'longevity' && block.type === BlockType.REGENERATION && isMainLift) {
-        exerciseName = `${ex.name} (3s Tempo)`;
+      if (goals.includes('longevity') && block.type === BlockType.REGENERATION && isMainLift) {
+        exerciseName = `${selectedExercise.name} (3s Tempo)`;
       }
 
       return {
@@ -390,36 +467,39 @@ const createSessionFromTemplate = (
         isSquat,
         isBench,
         isDeadlift,
+        restPeriod: constraintExercise.restPeriod || (isMainLift ? 180 : 90),
         sets: Array.from({ length: sets }).map((_, j) => {
-          let targetSetRpe = '';
+          let targetSetRpe = constraintExercise.targetRPE ? constraintExercise.targetRPE.toString() : '';
 
-          // Apply RPE Logic based on Goal
-          if (isMainLift) {
-            if (block.type === BlockType.PEAKING || block.type === BlockType.MAX_EFFORT || block.type === BlockType.OVERREACH || block.type === BlockType.COMPETITION) {
-              if (goal === 'pure_strength') {
-                targetSetRpe = isFinalWeek ? '10' : '9';
-              } else if (goal === 'hypertrophy') {
-                targetSetRpe = isFinalWeek ? '10' : '9.5';
-              } else if (goal === 'powerbuilding') {
-                targetSetRpe = j === 0 ? '9' : '8'; // Top set vs Back-off sets
-              } else if (goal === 'peaking') {
-                targetSetRpe = isFinalWeek ? '10' : '7'; // Low RPE during taper for recovery realization
-              } else if (goal === 'longevity') {
+          // Overwrite RPE Logic based on Goal if no constraint RPE
+          if (!targetSetRpe) {
+            if (isMainLift) {
+              if (block.type === BlockType.PEAKING || block.type === BlockType.MAX_EFFORT || block.type === BlockType.OVERREACH || block.type === BlockType.COMPETITION) {
+                if (goals.includes('pure_strength')) {
+                  targetSetRpe = isFinalWeek ? '10' : '9';
+                } else if (goals.includes('hypertrophy')) {
+                  targetSetRpe = isFinalWeek ? '10' : '9.5';
+                } else if (goals.includes('peaking')) {
+                  targetSetRpe = isFinalWeek ? '10' : '7';
+                } else if (goals.includes('longevity')) {
+                  targetSetRpe = '7.5';
+                } else {
+                  targetSetRpe = j === 0 ? '9' : '8'; // Top set vs Back-off sets (Powerbuilding fallback)
+                }
+              } else if (goals.includes('longevity')) {
                 targetSetRpe = '7.5';
               }
-            } else if (goal === 'longevity') {
-              targetSetRpe = '7.5';
-            }
-          } else {
-            // Accessories
-            if (block.type === BlockType.OVERREACH || block.type === BlockType.MAX_EFFORT) {
-              if (goal === 'hypertrophy') {
-                targetSetRpe = '9';
-              } else if (goal === 'powerbuilding') {
-                targetSetRpe = '7.5';
+            } else {
+              // Accessories
+              if (block.type === BlockType.OVERREACH || block.type === BlockType.MAX_EFFORT) {
+                if (goals.includes('hypertrophy')) {
+                  targetSetRpe = '9';
+                } else if (goals.includes('powerbuilding') || goals.includes('pure_strength')) {
+                  targetSetRpe = '7.5';
+                }
+              } else if (goals.includes('longevity')) {
+                targetSetRpe = '7.0';
               }
-            } else if (goal === 'longevity') {
-              targetSetRpe = '7.0';
             }
           }
 
@@ -809,8 +889,12 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     if (auth.currentUser) {
       const recoveryDocPath = `users/${auth.currentUser.uid}/recovery_data/current`;
+      const historyDocPath = `users/${auth.currentUser.uid}/biometric_history/${newData.timestamp}`;
       try {
-        await setDoc(doc(db, recoveryDocPath), newData);
+        await Promise.all([
+          setDoc(doc(db, recoveryDocPath), newData),
+          setDoc(doc(db, historyDocPath), newData)
+        ]);
       } catch (error) {
         handleFirestoreError(error, OperationType.WRITE, recoveryDocPath);
       }
@@ -1047,7 +1131,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return session;
   };
 
-  const startNewSession = (template?: WorkoutSession, readinessScore?: number, readinessModifier?: number, targetRpe?: number) => {
+  const startNewSession = (template?: WorkoutSession, readinessScore?: number, readinessModifier?: number, targetRpe?: number, biometrics?: { sleep: number; stress: number; fatigue: number }) => {
     const calibration = getCalibrationStatus();
     let session: WorkoutSession;
 
@@ -1059,6 +1143,18 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
         currentExerciseIndex: 0,
         currentSetIndex: 0
       };
+
+      if (readinessScore !== undefined) session.readiness = readinessScore;
+      if (biometrics) {
+        session.sleep = biometrics.sleep;
+        session.stress = biometrics.stress;
+        session.fatigue = biometrics.fatigue;
+      } else if (subjectiveReadiness) {
+        session.sleep = subjectiveReadiness.sleep;
+        session.stress = subjectiveReadiness.stress;
+        session.fatigue = subjectiveReadiness.fatigue;
+      }
+
       // Clear overrides when session starts
       setNextWorkoutOverrides(null);
       localStorage.removeItem('berserker_template_overrides');
@@ -1081,6 +1177,14 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
       session.currentExerciseIndex = 0;
       session.currentSetIndex = 0;
 
+      // Ensure biometrics are attached regardless of readiness check outcome
+      const finalBiometrics = biometrics || subjectiveReadiness;
+      if (finalBiometrics) {
+        session.sleep = finalBiometrics.sleep;
+        session.stress = finalBiometrics.stress;
+        session.fatigue = finalBiometrics.fatigue;
+      }
+      
       if (!calibration.isRedline && readinessScore !== undefined && readinessModifier !== undefined) {
         session.readiness = readinessScore;
         session.targetRpe = targetRpe;
@@ -1222,6 +1326,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
       showToast('Action Successful.', 3000, 'success');
     } catch (error) {
       if (auth.currentUser) {
+        backupData(currentUid, `workout_${completedSession.id}.json`, completedSession);
         handleFirestoreError(error, OperationType.CREATE, `users/${currentUid}/workouts`);
       } else {
         console.error("Guest mode save failed", error);
@@ -1245,6 +1350,18 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
       });
     });
     return `${total.toLocaleString()} ${unit === 'imperial' ? 'LBS' : 'kg'}`;
+  };
+
+  const backupData = async (uid: string, filename: string, data: any) => {
+    try {
+        await fetch('/api/backup-data', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ uid, filename, data })
+        });
+    } catch (e) {
+        console.error('Backup failed', e);
+    }
   };
 
   // Calculation for Program Workouts
@@ -1346,6 +1463,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
         await setDoc(doc(db, `users/${auth.currentUser.uid}/workouts`, workout.id), updatePayload, { merge: true });
         showToast('Action Successful.', 3000, 'success');
       } catch (error) {
+        backupData(auth.currentUser.uid, `workout_update_${workout.id}.json`, updatePayload);
         handleFirestoreError(error, OperationType.UPDATE, workoutPath);
         // Rethrow to allow UI to handle it if needed, but the handler logs it
         throw error;
@@ -1406,6 +1524,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setPendingReflection(null);
       showToast('Action Successful.', 3000, 'success');
     } catch (error) {
+      backupData(auth.currentUser!.uid, `reflection_${workoutId}.json`, { actualRpe: Number(actualRpe), reflectionSaved: true });
       // If it still fails, we MUST close the modal locally 
       // so you can actually use the app.
       setPendingReflection(null);

@@ -6,6 +6,27 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
+  app.use(express.json());
+
+  app.post("/api/backup-data", async (req, res) => {
+    const { uid, filename, data } = req.body;
+    if (!uid || !filename || !data) {
+        return res.status(400).json({ error: "Missing required fields" });
+    }
+    const fs = await import('fs');
+    const dataDir = path.join(process.cwd(), 'data', uid);
+    if (!fs.existsSync(dataDir)) {
+        fs.mkdirSync(dataDir, { recursive: true });
+    }
+    
+    // Use timestamp in filename for history
+    const timestamp = new Date().toISOString().replace(/:/g, '-');
+    const finalFilename = `${filename.replace('.json', '')}_${timestamp}.json`;
+    
+    fs.writeFileSync(path.join(dataDir, finalFilename), JSON.stringify(data, null, 2));
+    res.json({ status: "ok", filename: finalFilename });
+  });
+
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok" });
   });

@@ -18,6 +18,7 @@ import {
   Zap,
   AlertTriangle,
   Clock,
+  HelpCircle,
   Flame,
   ChevronDown,
   ChevronRight,
@@ -30,10 +31,13 @@ import { useWorkout, Exercise, Set as WorkoutSet, WorkoutSession } from '../cont
 import { getExerciseName, isTimedExercise } from '../utils/workoutUtils';
 import { useToast } from '../contexts/ToastContext';
 import { ConfirmationModal } from './ConfirmationModal';
-import { getSwappableExercises } from '../constants/exercises';
+import { getSwappableExercises, EXERCISE_DATABASE } from '../constants/exercises';
 import { AICoach } from './AICoach';
 import { ExerciseSelectorModal } from './ExerciseSelectorModal';
+import { ExerciseInfoModal } from './ExerciseInfoModal';
 import { getWarmupForLift, COOL_DOWN_ROUTINE, RoutineProtocol } from '../data/warmupLibrary';
+import { useWakeLock } from '../hooks/useWakeLock';
+import { haptics } from '../lib/haptics';
 
 const RoutineCard = ({
   routine,
@@ -60,7 +64,7 @@ const RoutineCard = ({
       isCompleted ? "border-emerald-500/50 bg-zinc-950" : "border-volt/20 bg-zinc-950"
     )}>
       <div
-        onClick={() => setIsExpanded(!isExpanded)}
+        onClick={() => { haptics.button(); setIsExpanded(!isExpanded); }}
         className="flex items-center justify-between gap-x-4 mb-4 p-4 md:p-6 cursor-pointer hover:bg-white/5 transition-colors border-b border-white/5"
       >
         <div>
@@ -99,7 +103,7 @@ const RoutineCard = ({
 
         <div className="flex gap-3">
           <button
-            onClick={onDone}
+            onClick={() => { haptics.button(); onDone(); }}
             className={cn(
               "flex-1 py-3 font-headline text-[10px] font-black uppercase tracking-widest transition-all rounded flex items-center justify-center gap-2",
               isCompleted
@@ -121,7 +125,7 @@ const RoutineCard = ({
           </button>
           {!isCompleted && (
             <button
-              onClick={onSkip}
+              onClick={() => { haptics.button(); onSkip(); }}
               className="px-6 py-3 bg-white/5 text-zinc-500 hover:text-white hover:bg-white/10 font-headline text-[10px] font-black uppercase tracking-widest transition-all rounded"
             >
               {t('workout.skip')}
@@ -133,146 +137,204 @@ const RoutineCard = ({
   );
 };
 
-const ExerciseSetsCarousel = ({
-  exercise, updateSet, toggleSetCompletion, removeSet, addSet, weightUnit, t, isDumbbell
+const ExerciseAccordion = ({
+  exercise,
+  updateSet,
+  toggleSetCompletion,
+  removeSet,
+  addSet,
+  addWarmupSet,
+  setSwappingExerciseId,
+  setExerciseToRemove,
+  getExerciseName,
+  getExerciseHistory,
+  weightUnit,
+  t,
+  isDumbbell
 }: any) => {
-  const [activeIndex, setActiveIndex] = useState(0);
+  const [isExpanded, setIsExpanded] = useState(true);
+  const [showInfo, setShowInfo] = useState(false);
+  const exerciseDefinition = EXERCISE_DATABASE.find(e => e.name === exercise.name);
 
   useEffect(() => {
-    if (activeIndex >= exercise.sets.length && exercise.sets.length > 0) {
-      setActiveIndex(exercise.sets.length - 1);
+    if (exercise.sets.every(set => set.isCompleted)) {
+      setIsExpanded(false);
     }
-  }, [exercise.sets.length, activeIndex]);
+  }, [exercise.sets]);
 
-  if (exercise.sets.length === 0) return null;
-
-  const handleNext = () => {
-    if (activeIndex < exercise.sets.length - 1) {
-      setActiveIndex(prev => prev + 1);
-    }
-  };
-  const handlePrev = () => {
-    if (activeIndex > 0) setActiveIndex(prev => prev - 1);
-  };
-
-  const handleSkip = (setId: string) => {
-    removeSet(exercise.id, setId);
-  };
-
-  const handleDone = (setId: string, isCompleted: boolean) => {
-    toggleSetCompletion(exercise.id, setId);
-    if (!isCompleted && activeIndex < exercise.sets.length - 1) {
-      setTimeout(() => handleNext(), 300);
-    }
-  };
+  const sortedSets = [...exercise.sets].sort((a, b) => {
+    if (a.isWarmup === b.isWarmup) return 0;
+    return a.isWarmup ? -1 : 1;
+  });
 
   return (
-    <div className="relative w-full h-[300px] md:h-[340px] perspective-1000">
-      <AnimatePresence initial={false}>
-        {exercise.sets.slice(activeIndex, activeIndex + 3).map((set, index) => {
-          const isTop = index === 0;
-          const displayIndex = exercise.sets.findIndex((s: any) => s.id === set.id);
+    <div id={`exercise-${exercise.id}`} className="glass-panel overflow-hidden bg-zinc-950 border border-white/5 shadow-lg">
+      <div
+        onClick={() => { haptics.button(); setIsExpanded(!isExpanded); }}
+        className="flex items-center justify-between p-4 cursor-pointer hover:bg-white/5 transition-colors border-b border-white/5"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 md:w-10 md:h-10 bg-volt/10 flex items-center justify-center text-volt shrink-0">
+            <Dumbbell size={16} className="md:w-5 md:h-5" />
+          </div>
+          <h3 className="font-sans text-xl md:text-2xl font-black uppercase italic tracking-tight">{getExerciseName(exercise, t)}</h3>
+        </div>
+        <div className="text-zinc-500">
+          <ChevronDown size={20} className={cn("transition-transform duration-300", isExpanded && "rotate-180")} />
+        </div>
+      </div>
 
-          return (
-            <motion.div
-              key={set.id}
-              drag={isTop ? "x" : false}
-              dragConstraints={{ left: 0, right: 0 }}
-              onDragEnd={(_: any, info: any) => {
-                if (info.offset.x > 100) handlePrev();
-                else if (info.offset.x < -100) handleNext();
-              }}
-              style={{
-                position: 'absolute',
-                top: index * 8,
-                left: index * 4,
-                right: index * 4,
-                zIndex: 10 - index,
-              }}
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{
-                opacity: 1 - index * 0.25,
-                scale: 1 - index * 0.04,
-                y: 0
-              }}
-              exit={{ opacity: 0, x: -200, transition: { duration: 0.3 } }}
-              className={cn(
-                "glass-panel overflow-hidden bg-zinc-950 border border-volt/20 p-4 md:p-6 shadow-lg h-full flex flex-col",
-                !isTop && "pointer-events-none"
-              )}
-            >
-              <div className="flex items-center justify-between mb-6">
-                <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">
-                  Set {displayIndex + 1} of {exercise.sets.length}
-                </span>
-                <div className="flex items-center gap-2">
-                  <button onClick={handlePrev} disabled={activeIndex === 0} className="p-2 text-zinc-400 hover:text-white disabled:opacity-10 transition-colors">
-                    <ChevronLeft size={16} />
-                  </button>
-                  <button onClick={handleNext} disabled={activeIndex === exercise.sets.length - 1} className="p-2 text-zinc-400 hover:text-white disabled:opacity-10 transition-colors">
-                    <ChevronRight size={16} />
-                  </button>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-3 md:gap-6 flex-1">
-                <div className="flex flex-col gap-2">
-                  <span className="text-[8px] md:text-[10px] text-zinc-500 font-bold uppercase tracking-widest text-center">
-                    {t('workout.weight')} {isDumbbell(exercise.name) ? `(${t('workout.perSide')})` : `(${weightUnit})`}
+      <AnimatePresence>
+        {isExpanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="p-4 space-y-4">
+              <div className="flex gap-2 items-center">
+                <button
+                  onClick={() => { haptics.button(); setSwappingExerciseId(exercise.id); }}
+                  className="flex-1 p-2 bg-surface-container-low hover:bg-volt/10 text-volt transition-all flex items-center justify-center gap-2 group"
+                >
+                  <RefreshCw size={12} className="group-hover:rotate-180 transition-transform duration-500" />
+                  <span className="text-[10px] font-bold uppercase tracking-widest">{t('workout.swap')}</span>
+                </button>
+                <button
+                  onClick={() => { haptics.button(); setExerciseToRemove(exercise.id); }}
+                  className="flex-1 p-2 bg-surface-container-low hover:bg-crimson/10 text-crimson transition-all flex items-center justify-center gap-2 group"
+                >
+                  <Trash2 size={12} />
+                  <span className="text-[10px] font-bold uppercase tracking-widest">{t('workout.remove')}</span>
+                </button>
+                <div className="flex-[2] flex items-center justify-start text-zinc-500 pl-2">
+                  <span className="text-[10px] font-bold uppercase tracking-widest truncate">
+                    {t('workout.history')}: {getExerciseHistory(exercise.name) || '–'}
                   </span>
-                  <input
-                    type="text"
-                    value={set.weight}
-                    onChange={(e) => updateSet(exercise.id, set.id, 'weight', e.target.value)}
-                    className="bg-surface-container-lowest border border-white/5 px-2 py-4 font-sans text-xl md:text-3xl font-black text-white focus:outline-none focus:border-volt/50 transition-colors w-full text-center"
-                  />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <span className="text-[8px] md:text-[10px] text-zinc-500 font-bold uppercase tracking-widest text-center">{isTimedExercise(exercise.name) ? 'SECONDS' : t('workout.reps')}</span>
-                  <input
-                    type="text"
-                    value={set.reps}
-                    onChange={(e) => updateSet(exercise.id, set.id, 'reps', e.target.value)}
-                    className="bg-surface-container-lowest border border-white/5 px-2 py-4 font-sans text-xl md:text-3xl font-black text-white focus:outline-none focus:border-volt/50 transition-colors w-full text-center"
-                  />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <span className="text-[8px] md:text-[10px] text-zinc-500 font-bold uppercase tracking-widest text-center">{t('workout.rpe')}</span>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    value={set.rpe}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      if (val === '' || /^\d+$/.test(val)) {
-                        updateSet(exercise.id, set.id, 'rpe', val);
-                      }
-                    }}
-                    className="bg-surface-container-lowest border border-white/5 px-2 py-4 font-sans text-xl md:text-3xl font-black text-white focus:outline-none focus:border-volt/50 transition-colors w-full text-center"
-                  />
                 </div>
               </div>
 
-              <div className="flex gap-3 relative z-10 mt-auto">
+              <div className="flex gap-2">
                 <button
-                  onClick={() => handleDone(set.id, set.isCompleted)}
-                  className={cn(
-                    "flex-1 py-4 font-headline text-[10px] md:text-xs font-black uppercase tracking-widest transition-all rounded flex items-center justify-center gap-2",
-                    set.isCompleted ? "bg-emerald-500/20 text-emerald-500 border border-emerald-500/50" : "bg-volt/10 text-white hover:bg-volt/20 border border-volt/20"
-                  )}
+                  onClick={() => { haptics.button(); addSet(exercise.id); }}
+                  className="flex-1 py-3 bg-white/5 hover:bg-volt/10 border border-white/10 hover:border-volt/30 text-zinc-500 hover:text-volt transition-all flex items-center justify-center gap-2 group"
                 >
-                  <Check size={16} strokeWidth={3} /> {set.isCompleted ? 'COMPLETED' : 'DONE'}
+                  <Plus size={16} className="group-hover:scale-110 transition-transform" />
+                  <span className="text-[10px] font-black uppercase tracking-widest">{t('workout.addSet')}</span>
                 </button>
                 <button
-                  onClick={() => handleSkip(set.id)}
-                  className="px-6 py-4 bg-white/5 text-zinc-500 hover:text-white hover:bg-white/10 font-headline text-[10px] md:text-xs font-black uppercase tracking-widest transition-all rounded"
+                  onClick={() => { haptics.button(); addWarmupSet(exercise.id); }}
+                  className="flex-1 py-3 bg-white/5 hover:bg-volt/10 border border-white/10 hover:border-volt/30 text-zinc-500 hover:text-volt transition-all flex items-center justify-center gap-2 group"
                 >
-                  SKIP
+                  <Plus size={16} className="group-hover:scale-110 transition-transform" />
+                  <span className="text-[10px] font-black uppercase tracking-widest">ADD WARM UP SET</span>
                 </button>
               </div>
-            </motion.div>
-          );
-        })}
+
+              <div className="space-y-2 mt-4">
+                {/* Headers */}
+                <div className="flex items-center gap-1 sm:gap-2 px-1 sm:px-2 text-[9px] sm:text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">
+                  <div className="w-8 sm:w-10 text-center">SET</div>
+                  <div className="flex-1 min-w-0 text-center">LBS</div>
+                  <div className="flex-1 min-w-0 text-center">REPS</div>
+                  <div className="w-10 sm:w-12 text-center">RPE</div>
+                  <div className="w-20 sm:w-28 shrink-0 text-center">ACTIONS</div>
+                </div>
+                
+                {sortedSets.map((set: any) => {
+                  const isWarmup = set.isWarmup;
+                  let setLabel = '';
+                  if (isWarmup) {
+                    const warmupIdx = sortedSets.filter((s:any) => s.isWarmup).findIndex((s:any) => s.id === set.id);
+                    setLabel = `${warmupIdx + 1}`;
+                  } else {
+                    const workIdx = sortedSets.filter((s:any) => !s.isWarmup).findIndex((s:any) => s.id === set.id);
+                    setLabel = `${workIdx + 1}`;
+                  }
+
+                  return (
+                    <div key={set.id} className={cn(
+                      "flex items-center gap-1 sm:gap-2 p-1 sm:p-2 relative rounded",
+                      set.isCompleted ? "bg-emerald-500/10" : "bg-white/5"
+                    )}>
+                      {isWarmup && (
+                         <></>
+                      )}
+                      <div className={cn(
+                        "w-8 sm:w-10 shrink-0 text-[10px] font-black uppercase flex items-center justify-center gap-0.5 sm:gap-1 break-keep whitespace-nowrap",
+                        isWarmup ? "text-zinc-500" : "text-zinc-500"
+                      )}>
+                        {isWarmup && <Flame size={10} className="shrink-0" />}
+                        <span>{setLabel}</span>
+                      </div>
+
+                      <input
+                        type="number"
+                        inputMode="decimal"
+                        value={set.weight}
+                        onChange={(e) => updateSet(exercise.id, set.id, 'weight', e.target.value)}
+                        className="flex-1 w-0 min-w-0 bg-transparent border-b border-white/10 text-center text-sm md:text-lg font-black text-white focus:outline-none focus:border-volt/50 [-moz-appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
+                      <input
+                        type="number"
+                        inputMode="decimal"
+                        value={set.reps}
+                        onChange={(e) => updateSet(exercise.id, set.id, 'reps', e.target.value)}
+                        className="flex-1 w-0 min-w-0 bg-transparent border-b border-white/10 text-center text-sm md:text-lg font-black text-white focus:outline-none focus:border-volt/50 [-moz-appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
+                      <input
+                        type="number"
+                        inputMode="decimal"
+                        value={set.rpe}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === '' || /^\d+$/.test(val)) {
+                            updateSet(exercise.id, set.id, 'rpe', val);
+                          }
+                        }}
+                        className="w-10 sm:w-12 min-w-0 bg-transparent border-b border-white/10 text-center text-sm md:text-lg font-black text-white focus:outline-none focus:border-volt/50 shrink-0 [-moz-appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
+                      <div className="w-20 sm:w-28 shrink-0 flex items-center justify-center gap-1 sm:gap-2">
+                        <button
+                          onClick={() => { haptics.button(); toggleSetCompletion(exercise.id, set.id); }}
+                          className={cn(
+                            "w-8 sm:w-10 h-8 sm:h-10 shrink-0 flex items-center justify-center rounded transition-colors border border-white/20",
+                            set.isCompleted
+                              ? "bg-emerald-500 text-void border-emerald-500"
+                              : "bg-surface-container text-zinc-400 hover:text-white"
+                          )}
+                        >
+                          <Check size={14} className="sm:w-4 sm:h-4" />
+                        </button>
+                        <button
+                          onClick={() => { haptics.button(); removeSet(exercise.id, set.id); }}
+                          className="w-8 sm:w-10 h-8 sm:h-10 shrink-0 flex items-center justify-center text-zinc-500 hover:text-crimson bg-surface-container rounded border border-white/20 transition-colors"
+                          title={t('workout.remove')}
+                        >
+                          <Trash2 size={14} className="sm:w-4 sm:h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {exerciseDefinition && (
+                <div className="mt-4 flex justify-center">
+                    <button 
+                        onClick={() => { haptics.button(); setShowInfo(true); }}
+                        className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-zinc-500 hover:text-volt transition-colors"
+                    >
+                        <HelpCircle size={14} />
+                        How to do
+                    </button>
+                    {exerciseDefinition && <ExerciseInfoModal exercise={exerciseDefinition} isOpen={showInfo} onClose={() => setShowInfo(false)} />}
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
       </AnimatePresence>
     </div>
   );
@@ -305,6 +367,25 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
   const [elapsedMs, setElapsedMs] = useState(0);
   const [restRemaining, setRestRemaining] = useState<number | null>(null);
   const lastAutoRegToastRef = useRef<{ [key: string]: number }>({});
+  const { requestWakeLock, releaseWakeLock, isLocked } = useWakeLock();
+
+  useEffect(() => {
+    if (restRemaining !== null && restRemaining > 0) {
+      if (!isLocked) {
+        requestWakeLock();
+      }
+    } else {
+      if (isLocked) {
+        releaseWakeLock();
+      }
+    }
+  }, [restRemaining, isLocked, requestWakeLock, releaseWakeLock]);
+
+  useEffect(() => {
+    return () => {
+      releaseWakeLock();
+    };
+  }, [releaseWakeLock]);
 
   useEffect(() => {
     if (restRemaining === null) return;
@@ -384,8 +465,9 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
 
   const exercises = currentSession.exercises || [];
   const completedSets = exercises.flatMap(ex => ex.sets || []).filter(s => s.isCompleted);
-  const currentAvgRpe = completedSets.length > 0
-    ? completedSets.reduce((acc, s) => acc + parseFloat(s.rpe || '0'), 0) / completedSets.length
+  const completedWorkingSets = completedSets.filter(s => !s.isWarmup);
+  const currentAvgRpe = completedWorkingSets.length > 0
+    ? completedWorkingSets.reduce((acc, s) => acc + parseFloat(s.rpe || '0'), 0) / completedWorkingSets.length
     : 0;
 
   const handleSwap = (exerciseId: string, newName: string) => {
@@ -503,6 +585,41 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
     }));
   };
 
+  const addWarmupSet = (exerciseId: string) => {
+    setExercises(prev => prev.map(ex => {
+      if (ex.id === exerciseId) {
+        // If there are existing sets, find the last warmup set to copy from, otherwise default 0
+        const lastWarmup = ex.sets?.slice().reverse().find(s => s.isWarmup);
+        const newWarmupSet = {
+          id: Math.random().toString(36).substr(2, 9),
+          weight: lastWarmup?.weight || '0',
+          reps: lastWarmup?.reps || '0',
+          rpe: lastWarmup?.rpe || '0',
+          isCompleted: false,
+          isWarmup: true
+        };
+        // Add warmup set before the first working set, or at the end if none
+        const workingSetIndex = ex.sets?.findIndex(s => !s.isWarmup) ?? -1;
+        
+        let newSets = [...(ex.sets || [])];
+        if (workingSetIndex !== -1) {
+          // Find the index of the first working set and insert before it
+          // Actually, inserting right before the first working set works well if it's the last warmup
+          const insertIndex = workingSetIndex;
+          newSets.splice(insertIndex, 0, newWarmupSet);
+        } else {
+          newSets.push(newWarmupSet);
+        }
+
+        return {
+          ...ex,
+          sets: newSets
+        };
+      }
+      return ex;
+    }));
+  };
+
   const removeSet = (exerciseId: string, setId: string) => {
     setExercises(prev => prev.map(ex => {
       if (ex.id === exerciseId) {
@@ -531,6 +648,22 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
       // Unified Toast Logic & Overrides
       const newlyCompletedSet = newExercises.find(ex => ex.id === exerciseId)?.sets.find(s => s.id === setId);
       if (newlyCompletedSet?.isCompleted) {
+        haptics.success();
+        
+        // Auto-scroll logic: 
+        // We need to check AFTER state update if all sets for this exercise are done
+        const ex = newExercises.find(e => e.id === exerciseId);
+        if (ex && ex.sets.every(s => s.isCompleted)) {
+            const idx = newExercises.findIndex(e => e.id === exerciseId);
+            const nextEx = newExercises[idx + 1];
+            if (nextEx) {
+                setTimeout(() => {
+                    const nextExEl = document.getElementById(`exercise-${nextEx.id}`);
+                    nextExEl?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 500); // Wait for accordion collapse animation
+            }
+        }
+
         const totalSets = newExercises.reduce((acc, ex) => acc + (ex.sets?.length || 0), 0);
         const completedSets = newExercises.flatMap(ex => ex.sets || []).filter(s => s.isCompleted).length;
         const remainingSets = totalSets - completedSets;
@@ -804,9 +937,10 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
 
     // Calculate average RPE of completed sets
     const completedSets = exercises.flatMap(ex => ex.sets || []).filter(s => s.isCompleted);
-    const avgRpe = completedSets.length > 0
-      ? completedSets.reduce((acc, s) => acc + parseFloat(s.rpe || '0'), 0) / completedSets.length
-      : 8.0; // Default if none completed
+    const completedWorkingSets = completedSets.filter(s => !s.isWarmup);
+    const avgRpe = completedWorkingSets.length > 0
+      ? completedWorkingSets.reduce((acc, s) => acc + parseFloat(s.rpe || '0'), 0) / completedWorkingSets.length
+      : (completedSets.length > 0 ? completedSets.reduce((acc, s) => acc + parseFloat(s.rpe || '0'), 0) / completedSets.length : 8.0); // Fallback to all sets or 8.0
 
     setTimeout(() => {
       onComplete(avgRpe);
@@ -945,63 +1079,22 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
 
                   <div className="space-y-12">
                     {groupExercises.map((ex) => (
-                      <div key={ex.id} className="space-y-4 md:space-y-6">
-                        <div className="flex flex-col gap-4 border-b border-white/5 pb-4">
-                          <div className="flex items-center gap-3 md:gap-4">
-                            <div className="w-8 h-8 md:w-10 md:h-10 bg-volt/10 flex items-center justify-center text-volt shrink-0">
-                              <Dumbbell size={16} className="md:w-5 md:h-5" />
-                            </div>
-                            <h3 className="font-sans text-xl md:text-2xl font-black uppercase italic tracking-tight">{getExerciseName(ex, t)}</h3>
-                          </div>
-
-                          <div className="flex gap-2 items-center">
-                            <button
-                              onClick={() => setSwappingExerciseId(ex.id)}
-                              className="flex-1 p-2 bg-surface-container-low hover:bg-volt/10 text-volt hover:text-volt transition-all flex items-center justify-center gap-2 group"
-                              title={t('workout.swapExercise')}
-                            >
-                              <RefreshCw size={12} className="md:w-3.5 md:h-3.5 group-hover:rotate-180 transition-transform duration-500" />
-                              <span className="text-[8px] md:text-[10px] font-bold uppercase tracking-widest">{t('workout.swap')}</span>
-                            </button>
-
-                            <button
-                              onClick={() => setExerciseToRemove(ex.id)}
-                              className="flex-1 p-2 bg-surface-container-low hover:bg-crimson/10 text-crimson hover:text-crimson transition-all flex items-center justify-center gap-2 group"
-                              title={t('workout.removeExerciseTitle')}
-                            >
-                              <Trash2 size={12} className="md:w-3.5 md:h-3.5" />
-                              <span className="text-[8px] md:text-[10px] font-bold uppercase tracking-widest">{t('workout.remove')}</span>
-                            </button>
-
-                            <div className="flex-[2] flex items-center justify-start text-zinc-500 h-full pl-2 min-w-0">
-                              <span className="text-[8px] md:text-[10px] font-bold uppercase tracking-widest truncate">
-                                {t('workout.history')}: {getExerciseHistory(ex.name) || '–'}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Add Set Button - Full Width */}
-                        <button
-                          onClick={() => addSet(ex.id)}
-                          className="w-full py-3 mb-4 bg-white/5 hover:bg-volt/10 border border-white/10 hover:border-volt/30 text-zinc-500 hover:text-volt transition-all flex items-center justify-center gap-2 group"
-                        >
-                          <Plus size={16} className="group-hover:scale-110 transition-transform" />
-                          <span className="text-[10px] font-black uppercase tracking-widest">{t('workout.addSet')}</span>
-                        </button>
-
-                        {/* Set Carousel UI */}
-                        <ExerciseSetsCarousel
-                          exercise={ex}
-                          updateSet={updateSet}
-                          toggleSetCompletion={toggleSetCompletion}
-                          removeSet={removeSet}
-                          addSet={addSet}
-                          weightUnit={weightUnit}
-                          t={t}
-                          isDumbbell={isDumbbell}
-                        />
-                      </div>
+                      <ExerciseAccordion
+                        key={ex.id}
+                        exercise={ex}
+                        updateSet={updateSet}
+                        toggleSetCompletion={toggleSetCompletion}
+                        removeSet={removeSet}
+                        addSet={addSet}
+                        addWarmupSet={addWarmupSet}
+                        setSwappingExerciseId={setSwappingExerciseId}
+                        setExerciseToRemove={setExerciseToRemove}
+                        getExerciseName={getExerciseName}
+                        getExerciseHistory={getExerciseHistory}
+                        weightUnit={weightUnit}
+                        t={t}
+                        isDumbbell={isDumbbell}
+                      />
                     ))}
                   </div>
                 </div>

@@ -1,16 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { User, Mail, Scale, Ruler, Trophy, Dumbbell, Calendar, BadgeCheck, Edit3, Info, X, Crown, Zap, Medal, Skull, CheckCircle2, BarChart3, AlertTriangle, Activity, ChevronDown, ChevronUp, MoveDown, Target, ListOrdered } from 'lucide-react';
+import { User, Mail, Scale, Ruler, Trophy, Dumbbell, Calendar, BadgeCheck, Edit3, Info, X, Crown, Zap, Medal, Skull, CheckCircle2, BarChart3, AlertTriangle, Activity, ChevronDown, ChevronUp, ChevronLeft, MoveDown, Target, ListOrdered, Camera, Loader2 } from 'lucide-react';
 import { useSettings, TrainingGoal } from '../contexts/SettingsContext';
 import { useWorkout } from '../contexts/WorkoutContext';
 import { useToast } from '../contexts/ToastContext';
 import { cn } from '../lib/utils';
 import { getBlockForWeek, getPlanForDuration } from '../constants/periodization';
 import { calculateTier, getTierStyle } from '../lib/strength';
-import { MovementExclusionModal } from './MovementExclusionModal';
 
-export const ProfileView = () => {
+export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
   const { profile, updateProfile, t, unit } = useSettings();
   const { history, resetProgram } = useWorkout();
   const { showToast } = useToast();
@@ -18,13 +17,56 @@ export const ProfileView = () => {
   const [showProtocolModal, setShowProtocolModal] = React.useState(false);
   const [show1RMModal, setShow1RMModal] = React.useState(false);
   const [showBiometricsModal, setShowBiometricsModal] = React.useState(false);
-  const [showExclusionModal, setShowExclusionModal] = React.useState(false);
   const [isEditing, setIsEditing] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
   const [ageError, setAgeError] = React.useState<string | null>(null);
+  const [uploadLoading, setUploadLoading] = React.useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleImageClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Standard restrictions
+    // 1. File Type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      showToast(t('settings.invalidFileType') || 'Only JPG, PNG and WebP are allowed', 3000, 'error');
+      return;
+    }
+
+    // 2. File Size (200KB limit for Firestore storage)
+    const MAX_SIZE = 200 * 1024; // 200KB
+    if (file.size > MAX_SIZE) {
+      showToast(t('settings.fileTooLarge') || 'Image must be less than 200KB', 3000, 'error');
+      return;
+    }
+
+    setUploadLoading(true);
+    try {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64String = reader.result as string;
+        await updateProfile({ photoURL: base64String });
+        showToast(t('toast.actionSuccessful'), 3000, 'success');
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error("Image upload failed:", error);
+      showToast(t('settings.uploadFailed') || 'Failed to upload image', 3000, 'error');
+    } finally {
+      setUploadLoading(false);
+      // Reset input
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
   const [adjustingDuration, setAdjustingDuration] = React.useState(profile?.trainingDurationMonths || 3);
   const [adjustingFrequency, setAdjustingFrequency] = React.useState(profile?.trainingFrequency || 3);
-  const [adjustingGoal, setAdjustingGoal] = React.useState<TrainingGoal>(profile?.trainingGoal || 'powerbuilding');
+  const [adjustingObjectives, setAdjustingObjectives] = React.useState<TrainingGoal[]>(profile?.trainingObjectives || (profile?.trainingGoal ? [profile.trainingGoal] : ['powerbuilding']));
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -41,7 +83,11 @@ export const ProfileView = () => {
   const lastWeekMatch = lastWorkout?.title.match(/W(\d+)/);
   const lastWeek = lastWeekMatch ? parseInt(lastWeekMatch[1]) : 1;
   const currentWeek = lastWeek + (profile?.trainingWeekOffset || 0);
-  const { block, weekInBlock, plan } = getBlockForWeek(currentWeek, (profile?.trainingDurationMonths || 3) * 4, profile?.trainingGoal || 'powerbuilding');
+  const { block, weekInBlock, plan } = getBlockForWeek(
+    currentWeek, 
+    (profile?.trainingDurationMonths || 3) * 4, 
+    profile?.trainingObjectives || (profile?.trainingGoal ? [profile.trainingGoal] : ['powerbuilding'])
+  );
 
   const handleUpdate1RM = async () => {
     setLoading(true);
@@ -73,15 +119,17 @@ export const ProfileView = () => {
       // Calculate new competition date based on duration from now
       const newCompetitionDate = Date.now() + (adjustingDuration * 30 * 24 * 60 * 60 * 1000);
 
-      // If duration changed, we reset the program cycle
-      if (adjustingDuration !== profile?.trainingDurationMonths) {
+      // If duration or goals changed, we reset the program cycle
+      const objectivesChanged = JSON.stringify(adjustingObjectives) !== JSON.stringify(profile?.trainingObjectives || (profile?.trainingGoal ? [profile.trainingGoal] : ['powerbuilding']));
+      if (adjustingDuration !== profile?.trainingDurationMonths || objectivesChanged) {
         await resetProgram();
       }
 
       await updateProfile({
         trainingDurationMonths: adjustingDuration,
         trainingFrequency: adjustingFrequency,
-        trainingGoal: adjustingGoal,
+        trainingGoal: adjustingObjectives[0] || 'powerbuilding',
+        trainingObjectives: adjustingObjectives,
         competitionDate: newCompetitionDate,
         trainingWeekOffset: 0
       });
@@ -92,6 +140,8 @@ export const ProfileView = () => {
     }
   };
   const [editData, setEditData] = React.useState({
+    firstName: profile?.firstName || '',
+    lastName: profile?.lastName || '',
     gender: profile?.gender || 'male',
     age: profile?.age || 30,
     height: profile?.height || 0,
@@ -99,12 +149,15 @@ export const ProfileView = () => {
     heightFeet: Math.floor((profile?.height || 0) / 12),
     heightInches: Math.round((profile?.height || 0) % 12),
     trainingGoal: profile?.trainingGoal || 'powerbuilding' as TrainingGoal,
+    trainingObjectives: profile?.trainingObjectives || (profile?.trainingGoal ? [profile.trainingGoal] : ['powerbuilding']),
     trainingDurationMonths: profile?.trainingDurationMonths || 3,
   });
 
   React.useEffect(() => {
     if (profile) {
       setEditData({
+        firstName: profile.firstName || '',
+        lastName: profile.lastName || '',
         gender: profile.gender || 'male',
         age: profile.age || 30,
         height: profile.height || 0,
@@ -112,9 +165,10 @@ export const ProfileView = () => {
         heightFeet: Math.floor((profile.height || 0) / 12),
         heightInches: Math.round((profile.height || 0) % 12),
         trainingGoal: profile.trainingGoal || 'powerbuilding',
+        trainingObjectives: profile.trainingObjectives || (profile.trainingGoal ? [profile.trainingGoal] : ['powerbuilding']),
         trainingDurationMonths: profile.trainingDurationMonths || 3,
       });
-      setAdjustingGoal(profile.trainingGoal || 'powerbuilding');
+      setAdjustingObjectives(profile.trainingObjectives || (profile.trainingGoal ? [profile.trainingGoal] : ['powerbuilding']));
       setAdjustingDuration(profile.trainingDurationMonths || 3);
       setAdjustingFrequency(profile.trainingFrequency || 3);
     }
@@ -157,11 +211,14 @@ export const ProfileView = () => {
       }
 
       await updateProfile({
+        firstName: editData.firstName,
+        lastName: editData.lastName,
         gender: editData.gender as any,
         age: editData.age,
         height: heightVal,
         weight: editData.weight,
-        trainingGoal: editData.trainingGoal,
+        trainingGoal: editData.trainingObjectives[0] || 'powerbuilding',
+        trainingObjectives: editData.trainingObjectives,
         trainingDurationMonths: editData.trainingDurationMonths,
         level: newTier as any,
       });
@@ -192,55 +249,129 @@ export const ProfileView = () => {
   ];
 
   return (
-    <div className="w-full max-w-7xl space-y-6 md:space-y-8 md:px-0">
+    <div className="w-full max-w-7xl space-y-6 md:space-y-8 md:px-0 relative">
+      {/* Hidden File Input */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleImageChange}
+        accept="image/jpeg,image/png,image/webp"
+        className="hidden"
+      />
+
+      {onBack && (
+        <div className="flex items-center mb-6 md:mb-8">
+          <button 
+            onClick={onBack}
+            className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors group"
+          >
+            <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+            <span className="text-xs font-black uppercase tracking-widest">Back</span>
+          </button>
+        </div>
+      )}
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8 mb-8 md:mb-12">
-        <div className="relative group">
-          <div className="w-24 h-24 md:w-32 md:h-32 border-none overflow-hidden bg-surface-high shadow-2xl">
-            <img
-              src={profile.photoURL || "https://picsum.photos/seed/athlete/200/200"}
-              alt={profile.displayName || "Athlete"}
-              className="w-full h-full object-cover"
-              referrerPolicy="no-referrer"
-            />
+      <div className="relative border border-white/5 bg-surface-high p-6 md:p-8 mb-8 md:mb-12 shadow-2xl overflow-hidden group">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-volt/5 blur-3xl -z-10 rounded-full group-hover:bg-volt/10 transition-colors duration-1000" />
+        <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-volt/20 to-transparent" />
+        
+        <div className="flex items-center justify-between mb-8 relative z-10">
+          <div className="flex items-center gap-3">
+            <User className="text-volt" size={20} />
+            <h3 className="font-sans text-sm font-bold uppercase tracking-widest text-white">Profile</h3>
           </div>
-          <div className="absolute -bottom-1 -right-1 md:-bottom-2 md:-right-2 w-8 h-8 md:w-10 md:h-10 bg-volt flex items-center justify-center text-void shadow-lg">
-            <BadgeCheck size={16} md:size={20} />
-          </div>
+          <button
+            onClick={() => setShowBiometricsModal(true)}
+            className="p-2 bg-volt/10 border border-volt/30 text-volt hover:bg-volt/20 hover:border-volt transition-all shadow-[0_0_10px_rgba(0,182,255,0.1)]"
+          >
+            <Edit3 size={14} />
+          </button>
         </div>
 
-        <div className="text-left space-y-2">
-          <div className="flex flex-col md:flex-row items-center justify-start gap-2 md:gap-3">
-            <h2 className="font-sans text-3xl md:text-5xl font-black uppercase italic tracking-tight text-white">
-              {profile.firstName} {profile.lastName}
-            </h2>
-            <div className={cn(
-              "flex items-center gap-2 px-3 py-1 border text-[10px] font-black uppercase tracking-widest transition-all",
-              profile.level === 'elite' ? "bg-[#9333EA]/20 border-[#9333EA] text-[#9333EA] shadow-[0_0_15px_rgba(147,51,234,0.3)]" :
-                profile.level === 'advanced' ? "bg-[#FFD700]/20 border-[#FFD700] text-[#FFD700]" :
-                  profile.level === 'intermediate' ? "bg-white/20 border-white text-white shadow-[0_0_15px_rgba(255,255,255,0.3)]" :
-                    "bg-volt/20 border-volt text-volt"
-            )}>
-              <div className={cn("flex items-center justify-center", tierStyle.animation)}>
-                <tierStyle.icon size={10} className={cn(tierStyle.glow)} />
+        <div className="flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-8 relative z-10">
+          
+          <div className="flex flex-col items-center gap-4">
+            <div className="relative">
+              <div className="w-20 h-20 md:w-24 md:h-24 border border-white/10 p-1 bg-void shadow-xl relative">
+                <div className="w-full h-full overflow-hidden bg-zinc-900 border border-white/5 aspect-square">
+                  <img
+                    src={profile.photoURL || "https://picsum.photos/seed/athlete/200/200"}
+                    alt={profile.displayName || "Athlete"}
+                    className={cn(
+                      "w-full h-full object-cover",
+                      uploadLoading && "opacity-30 grayscale"
+                    )}
+                    referrerPolicy="no-referrer"
+                  />
+                </div>
+                {/* Upload indicator */}
+                {uploadLoading && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Loader2 className="text-volt animate-spin" size={24} />
+                  </div>
+                )}
               </div>
-              {profile.level}
-              <button
-                onClick={() => setShowTierInfo(true)}
-                className="ml-1 p-0.5 hover:bg-white/10 transition-colors"
-              >
-                <Info size={10} />
-              </button>
             </div>
           </div>
-          <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 md:gap-6 text-zinc-500">
-            <div className="flex items-center gap-2">
-              <Mail size={14} md:size={16} />
-              <span className="text-[10px] md:text-xs font-medium uppercase tracking-widest">{profile.email}</span>
+
+          <div className="flex-1 text-center md:text-left space-y-4 pt-1">
+            <div className="space-y-1">
+              <div className="flex flex-col md:flex-row items-center justify-start gap-3">
+                <h2 className="font-sans text-3xl md:text-4xl font-black uppercase italic tracking-tighter text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.1)]">
+                  {profile.firstName} {profile.lastName}
+                </h2>
+                <div className={cn(
+                  "flex items-center gap-1.5 px-2.5 py-0.5 border text-[9px] font-black uppercase tracking-widest",
+                  profile.level === 'elite' ? "bg-[#9333EA]/10 border-[#9333EA]/50 text-[#9333EA] shadow-[0_0_10px_rgba(147,51,234,0.2)]" :
+                    profile.level === 'advanced' ? "bg-[#FFD700]/10 border-[#FFD700]/50 text-[#FFD700]" :
+                      profile.level === 'intermediate' ? "bg-white/10 border-white/50 text-white" :
+                        "bg-volt/10 border-volt/50 text-volt shadow-[0_0_10px_rgba(204,255,0,0.1)]"
+                )}>
+                  <tierStyle.icon size={10} className={cn(tierStyle.glow, "mb-px")} />
+                  {profile.level}
+                  <button
+                    onClick={() => setShowTierInfo(true)}
+                    className="ml-1 p-0.5 hover:bg-white/10 transition-colors opacity-80 hover:opacity-100"
+                  >
+                    <Info size={10} />
+                  </button>
+                </div>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Calendar size={14} md:size={16} />
-              <span className="text-[10px] md:text-xs font-medium uppercase tracking-widest">{t('analysis.joined')} {new Date(profile.createdAt).toLocaleDateString()}</span>
+
+            <div className="h-px w-full bg-gradient-to-r from-white/10 to-transparent my-4 hidden md:block" />
+
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-6 md:gap-8 md:pt-2">
+              <div className="flex flex-col gap-1 items-center md:items-start text-zinc-500">
+                <span className="text-[8px] font-black uppercase tracking-widest mb-0.5 opacity-60">Age</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-white">{profile.age || 'N/A'}</span>
+              </div>
+              
+              <div className="hidden md:block w-px h-6 bg-white/10" />
+
+              <div className="flex flex-col gap-1 items-center md:items-start text-zinc-500">
+                <span className="text-[8px] font-black uppercase tracking-widest mb-0.5 opacity-60">Gender</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-white">{t(`gender.${profile.gender}` || 'gender.other')}</span>
+              </div>
+
+              <div className="hidden md:block w-px h-6 bg-white/10" />
+
+              <div className="flex flex-col gap-1 items-center md:items-start text-zinc-500">
+                <span className="text-[8px] font-black uppercase tracking-widest mb-0.5 opacity-60">Height / Wt</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-white">
+                  {formatHeight(profile.height || 0)} / {profile.weight || 0} {unit === 'metric' ? 'kg' : 'LBS'}
+                </span>
+              </div>
+
+              <div className="hidden md:block w-px h-6 bg-white/10" />
+
+              <div className="flex flex-col gap-1 items-center md:items-start text-zinc-500">
+                <span className="text-[8px] font-black uppercase tracking-widest mb-0.5 opacity-60">Active Since</span>
+                <div className="flex items-center gap-2">
+                  <Calendar size={12} className="text-volt" />
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-white">{new Date(profile.createdAt).toLocaleDateString()}</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -304,80 +435,7 @@ export const ProfileView = () => {
           </div>
         </motion.div>
 
-        {/* Biometrics */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="glass-panel px-4 py-8 md:p-6 space-y-6"
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Activity className="text-volt" size={20} />
-              <h3 className="font-sans text-sm font-bold uppercase tracking-widest text-white">{t('settings.biometrics')}</h3>
-            </div>
-            <button
-              onClick={() => setShowBiometricsModal(true)}
-              className="p-2 bg-volt/10 border border-volt/30 text-volt hover:bg-volt/20 hover:border-volt transition-all shadow-[0_0_10px_rgba(0,182,255,0.1)]"
-            >
-              <Edit3 size={14} />
-            </button>
-          </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="p-4 bg-void/40 border border-white/5">
-              <div>
-                <p className="text-[8px] font-black uppercase tracking-widest text-zinc-500">{t('settings.gender')}</p>
-                <p className="text-xs font-bold text-white uppercase">{t(`gender.${profile.gender}` || 'gender.other')}</p>
-              </div>
-            </div>
-
-            <div className="p-4 bg-void/40 border border-white/5">
-              <div>
-                <p className="text-[8px] font-black uppercase tracking-widest text-zinc-500">{t('settings.age')}</p>
-                <p className="text-xs font-bold text-white uppercase">{profile.age || 'N/A'}</p>
-              </div>
-            </div>
-
-            <div className="p-4 bg-void/40 border border-white/5">
-              <div>
-                <p className="text-[8px] font-black uppercase tracking-widest text-zinc-500">{t('settings.height')}</p>
-                <p className="text-xs font-bold text-white uppercase">{formatHeight(profile.height || 0)}</p>
-              </div>
-            </div>
-
-            <div className="p-4 bg-void/40 border border-white/5">
-              <div>
-                <p className="text-[8px] font-black uppercase tracking-widest text-zinc-500">{t('settings.weight')}</p>
-                <p className="text-xs font-bold text-white uppercase">{profile.weight || 0} {unit === 'metric' ? 'kg' : 'LBS'}</p>
-              </div>
-            </div>
-          </div>
-          <motion.div
-            initial={{ y: -20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            className="col-span-2 relative overflow-hidden border border-volt/20 bg-surface-container-low shadow-[0_0_20px_rgba(204,255,0,0.03)] hover:border-volt/50 transition-colors"
-          >
-            <button
-              onClick={() => setShowExclusionModal(true)}
-              className="w-full px-4 py-5 flex items-center justify-between hover:bg-volt/[0.04] transition-all group active:scale-[0.995]"
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-volt/10 flex items-center justify-center text-volt border border-volt/20 group-hover:border-volt/40 transition-colors">
-                  <Activity size={20} />
-                </div>
-                <div className="text-left">
-                  <h3 className="font-sans text-[11px] font-black uppercase tracking-[0.1em] text-white group-hover:text-volt transition-colors">{t('settings.movementRestrictions')}</h3>
-                  <p className="text-[8px] text-zinc-500 uppercase font-black tracking-widest mt-1 opacity-80">
-                    {profile.excludedMovements?.length || 0} {t('active')} {profile.excludedMovements?.length === 1 ? 'Restriction' : 'Restrictions'}
-                  </p>
-                </div>
-              </div>
-              <ChevronDown size={14} className="text-zinc-700 group-hover:text-volt -rotate-90 transition-all" />
-            </button>
-          </motion.div>
-          <MovementExclusionModal isOpen={showExclusionModal} onClose={() => setShowExclusionModal(false)} />
-        </motion.div>
 
         {/* Deployment Settings */}
         <motion.div
@@ -405,7 +463,11 @@ export const ProfileView = () => {
             <div className="p-4 bg-void/40 border border-white/5 mb-4">
               <div className="flex-1">
                 <p className="text-[8px] font-black uppercase text-zinc-500 mb-1">{t('settings.objective')}</p>
-                <p className="text-xs font-bold text-white uppercase tracking-widest">{t(`goal.${profile.trainingGoal}`)}</p>
+                <p className="text-xs font-bold text-white uppercase tracking-widest">
+                  {(profile.trainingObjectives && profile.trainingObjectives.length > 0) 
+                    ? profile.trainingObjectives.map(g => t(`goal.${g}`)).join(' + ') 
+                    : t(`goal.${profile.trainingGoal}`)}
+                </p>
               </div>
             </div>
 
@@ -463,13 +525,74 @@ export const ProfileView = () => {
                     <User size={32} />
                   </div>
                   <div>
-                    <h3 className="font-sans text-2xl font-black uppercase italic tracking-tight text-white">{t('settings.biometrics')}</h3>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">{t('settings.physicalData')}</p>
+                    <h3 className="font-sans text-2xl font-black uppercase italic tracking-tight text-white">Update Profile</h3>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Edit your Operator Dossier</p>
                   </div>
                 </div>
 
-                <div className="space-y-6">
+                <div className="space-y-6 max-h-[60vh] overflow-y-auto custom-scrollbar pr-2 pb-4">
                   <div className="space-y-4">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="relative group cursor-pointer" onClick={handleImageClick}>
+                        <div className="w-20 h-20 border border-white/10 p-1 bg-void shadow-xl relative">
+                          <div className="w-full h-full overflow-hidden bg-zinc-900 border border-white/5">
+                            <img
+                              src={profile.photoURL || "https://picsum.photos/seed/athlete/200/200"}
+                              alt={profile.displayName || "Athlete"}
+                              className={cn(
+                                "w-full h-full object-cover transition-all group-hover:scale-110",
+                                uploadLoading && "opacity-30 grayscale"
+                              )}
+                              referrerPolicy="no-referrer"
+                            />
+                          </div>
+                          {/* Hover overlay */}
+                          <div className="absolute inset-0 bg-void/40 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Camera className="text-volt" size={20} />
+                          </div>
+                          {/* Upload indicator */}
+                          {uploadLoading && (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <Loader2 className="text-volt animate-spin" size={20} />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <button 
+                        onClick={handleImageClick}
+                        disabled={uploadLoading}
+                        className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-400 hover:text-volt transition-colors flex items-center gap-1.5 py-1.5 px-3 bg-zinc-900 border border-white/5 hover:border-volt/30"
+                      >
+                        <Camera size={10} />
+                        Change Picture
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      {/* First Name */}
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('onboarding.firstName')}</label>
+                        <input
+                          type="text"
+                          value={editData.firstName}
+                          onChange={(e) => setEditData({ ...editData, firstName: e.target.value })}
+                          placeholder="John"
+                          className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black italic focus:border-volt outline-none transition-all"
+                        />
+                      </div>
+                      {/* Last Name */}
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('onboarding.lastName')}</label>
+                        <input
+                          type="text"
+                          value={editData.lastName}
+                          onChange={(e) => setEditData({ ...editData, lastName: e.target.value })}
+                          placeholder="Doe"
+                          className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black italic focus:border-volt outline-none transition-all"
+                        />
+                      </div>
+                    </div>
+
                     <div className="grid grid-cols-2 gap-4">
                       {/* Gender */}
                       <div className="space-y-2">
@@ -546,7 +669,7 @@ export const ProfileView = () => {
                             </div>
                           </div>
                         )}
-                        {!(unit === 'metric') && (
+                        {! (unit === 'metric') && (
                           <div className="flex gap-2">
                             <p className="flex-1 text-[8px] font-bold text-zinc-500 text-center uppercase">{t('settings.feet')}</p>
                             <p className="flex-1 text-[8px] font-bold text-zinc-500 text-center uppercase">{t('settings.inches')}</p>
@@ -566,25 +689,25 @@ export const ProfileView = () => {
                       </div>
                     </div>
                   </div>
+                </div>
 
-                  <div className="flex gap-4">
-                    <button
-                      onClick={() => {
-                        setShowBiometricsModal(false);
-                        setAgeError(null);
-                      }}
-                      className="flex-1 py-4 bg-white/5 text-zinc-500 font-sans text-xs font-bold uppercase tracking-widest hover:text-white transition-all"
-                    >
-                      {t('common.close')}
-                    </button>
-                    <button
-                      onClick={handleSave}
-                      disabled={loading || !!ageError}
-                      className="flex-1 py-4 bg-volt text-void font-sans text-xs font-bold uppercase tracking-widest hover:bg-white hover:shadow-[0_0_20px_var(--primary-glow)] transition-all disabled:opacity-50"
-                    >
-                      {loading ? t('settings.recalculate') : t('coach.confirm')}
-                    </button>
-                  </div>
+                <div className="flex gap-4 mt-6 pt-4 border-t border-white/5">
+                  <button
+                    onClick={() => {
+                      setShowBiometricsModal(false);
+                      setAgeError(null);
+                    }}
+                    className="flex-1 py-4 bg-white/5 text-zinc-500 font-sans text-xs font-bold uppercase tracking-widest hover:text-white transition-all"
+                  >
+                    Close
+                  </button>
+                  <button
+                    onClick={handleSave}
+                    disabled={loading || !!ageError}
+                    className="flex-1 py-4 bg-volt text-void font-sans text-xs font-bold uppercase tracking-widest hover:bg-white hover:shadow-[0_0_20px_var(--primary-glow)] transition-all disabled:opacity-50"
+                  >
+                    {loading ? 'Saving...' : 'Save'}
+                  </button>
                 </div>
               </motion.div>
             </div>
@@ -627,34 +750,68 @@ export const ProfileView = () => {
                     {/* Mission Objective */}
                     <div className="space-y-4">
                       <div>
-                        <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2 block">{t('settings.trainingObjective')}</label>
+                        <div className="flex justify-between items-end mb-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 block">{t('settings.trainingObjective')}</label>
+                          <span className="text-[8px] font-black uppercase tracking-widest text-zinc-600">
+                            {adjustingObjectives.length} / 3 SELECTED
+                          </span>
+                        </div>
                         <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
-                          {(['pure_strength', 'powerbuilding', 'hypertrophy', 'peaking', 'longevity'] as TrainingGoal[]).map(goal => (
-                            <button
-                              key={goal}
-                              onClick={() => setAdjustingGoal(goal)}
-                              className={cn(
-                                "p-3 border-none transition-all text-center relative group min-h-[44px] flex items-center justify-center",
-                                adjustingGoal === goal
-                                  ? "bg-volt/10 text-white ring-1 ring-volt/30"
-                                  : "bg-surface-variant text-zinc-400 hover:bg-white/5 hover:text-zinc-200"
-                              )}
-                            >
-                              <span className="font-sans text-[9px] font-bold uppercase tracking-widest">{t(`goal.${goal}`)}</span>
-                              {adjustingGoal === goal && (
-                                <div className="absolute top-1 right-1">
-                                  <CheckCircle2 size={8} className="text-volt" />
-                                </div>
-                              )}
-                            </button>
-                          ))}
+                          {(['pure_strength', 'powerbuilding', 'hypertrophy', 'peaking', 'longevity'] as TrainingGoal[]).map(goal => {
+                            const goalIndex = adjustingObjectives.indexOf(goal);
+                            const isSelected = goalIndex !== -1;
+                            const priorityLabel = goalIndex === 0 ? 'P' : goalIndex === 1 ? 'S' : goalIndex === 2 ? 'T' : '';
+                            return (
+                              <button
+                                key={goal}
+                                onClick={() => {
+                                  let newObjectives = [...adjustingObjectives];
+                                  if (isSelected) {
+                                    if (newObjectives.length > 1) {
+                                      newObjectives = newObjectives.filter(g => g !== goal);
+                                    }
+                                  } else {
+                                    if (newObjectives.length < 3) {
+                                      newObjectives.push(goal);
+                                    }
+                                  }
+                                  setAdjustingObjectives(newObjectives);
+                                }}
+                                className={cn(
+                                  "p-3 border-none transition-all text-center relative group min-h-[44px] flex flex-col items-center justify-center gap-0.5",
+                                  isSelected
+                                    ? "bg-volt/10 text-white ring-1 ring-volt/30"
+                                    : "bg-surface-variant text-zinc-400 hover:bg-white/5 hover:text-zinc-200"
+                                )}
+                              >
+                                <span className={cn(
+                                  "font-sans text-[9px] font-bold uppercase tracking-widest transition-colors",
+                                  isSelected ? "text-white" : "text-zinc-400"
+                                )}>
+                                  {t(`goal.${goal}`)}
+                                </span>
+                                {isSelected && (
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-[7px] font-black text-volt italic opacity-80">
+                                      {priorityLabel === 'P' ? 'PRIMARY' : priorityLabel === 'S' ? 'SECONDARY' : 'TERTIARY'}
+                                    </span>
+                                  </div>
+                                )}
+                                {isSelected && (
+                                  <div className="absolute top-1 right-1">
+                                    <CheckCircle2 size={8} className="text-volt" />
+                                  </div>
+                                )}
+                              </button>
+                            );
+                          })}
                         </div>
                       </div>
 
                       <div className="p-4 bg-void/40 border border-white/5">
                         <p className="text-[8px] font-bold uppercase tracking-widest text-zinc-500 mb-2">{t('settings.objective')} SPECS</p>
                         <p className="text-[10px] text-white font-bold uppercase tracking-widest leading-relaxed">
-                          {t(`goal.${adjustingGoal}.desc`)}
+                          {adjustingObjectives.map(g => t(`goal.${g}`)).join(' + ')}: {t(`goal.${adjustingObjectives[0]}.desc`)}
                         </p>
                       </div>
                     </div>
@@ -683,7 +840,7 @@ export const ProfileView = () => {
                     <div className="p-4 bg-void/40 border border-white/5">
                       <p className="text-[8px] font-bold uppercase tracking-widest text-zinc-500 mb-2">{t('settings.blockRedistribution')} ({adjustingDuration * 4} {t('onboarding.weeks')})</p>
                       <div className="space-y-2">
-                        {getPlanForDuration(adjustingDuration * 4, adjustingGoal).map((b, i) => (
+                        {getPlanForDuration(adjustingDuration * 4, adjustingObjectives).map((b, i) => (
                           <div key={i} className="flex justify-between items-center text-[10px]">
                             <span className="font-bold uppercase text-zinc-400">{b.label || b.type}</span>
                             <span className="font-bold text-volt">{b.durationWeeks} {t('onboarding.weeks')}</span>
@@ -722,19 +879,19 @@ export const ProfileView = () => {
                   </div>
                 </div>
 
-                {(adjustingDuration !== (profile.trainingDurationMonths || 3) ||
-                  adjustingFrequency !== (profile.trainingFrequency || 3) ||
-                  adjustingGoal !== (profile.trainingGoal || 'powerbuilding')) && (
-                    <div className="p-4 bg-volt/10 border border-volt/30 mb-8">
-                      <div className="flex items-start gap-3 text-left">
-                        <Info size={16} className="text-volt shrink-0 mt-0.5" />
-                        <p className="text-xs sm:text-sm text-volt font-medium leading-relaxed">
-                          {t('settings.protocolWarning')}
-                          {adjustingDuration !== profile.trainingDurationMonths && ` ${t('settings.durationRestartWarning')}`}
-                        </p>
-                      </div>
+                { (adjustingDuration !== (profile.trainingDurationMonths || 3) || 
+                   adjustingFrequency !== (profile.trainingFrequency || 3) || 
+                   JSON.stringify(adjustingObjectives) !== JSON.stringify(profile.trainingObjectives || (profile.trainingGoal ? [profile.trainingGoal] : ['powerbuilding']))) && (
+                  <div className="p-4 bg-volt/10 border border-volt/30 mb-8">
+                    <div className="flex items-start gap-3 text-left">
+                      <Info size={16} className="text-volt shrink-0 mt-0.5" />
+                      <p className="text-xs sm:text-sm text-volt font-medium leading-relaxed">
+                        {t('settings.protocolWarning')}
+                        {adjustingDuration !== profile.trainingDurationMonths && ` ${t('settings.durationRestartWarning')}`}
+                      </p>
                     </div>
-                  )}
+                  </div>
+                )}
 
                 <div className="grid grid-cols-2 gap-4">
                   <button
@@ -745,7 +902,11 @@ export const ProfileView = () => {
                   </button>
                   <button
                     onClick={handleAdjustProtocol}
-                    disabled={loading}
+                    disabled={loading || (
+                      adjustingDuration === (profile.trainingDurationMonths || 3) &&
+                      adjustingFrequency === (profile.trainingFrequency || 3) &&
+                      JSON.stringify(adjustingObjectives) === JSON.stringify(profile.trainingObjectives || (profile.trainingGoal ? [profile.trainingGoal] : ['powerbuilding']))
+                    )}
                     className="w-full btn-primary py-4 disabled:opacity-50"
                   >
                     {loading ? t('settings.recalculate') : t('settings.confirmProtocol')}

@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, ReactNode, useEffect } from
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, setDoc, onSnapshot, writeBatch, collection, getDocs, updateDoc } from 'firebase/firestore';
 import { auth, db, handleFirestoreError, OperationType } from '../firebase';
-import { ImmersionMode } from '../types';
+import { ImmersionMode, WidgetId, PerformanceWidgetId } from '../types';
 import { calculateTier } from '../lib/strength';
 
 export type Language = SupportedLanguage;
@@ -27,6 +27,7 @@ export interface UserProfile {
   benchPR?: number;
   deadliftPR?: number;
   trainingGoal?: TrainingGoal;
+  trainingObjectives?: TrainingGoal[];
   trainingFrequency?: number;
   onboardingCompleted?: boolean;
   level: 'untrained' | 'novice' | 'intermediate' | 'advanced' | 'elite';
@@ -42,6 +43,8 @@ export interface UserProfile {
   immersionMode: ImmersionMode;
   showExperimentalMenus: boolean;
   experimentalFeatures: boolean;
+  dashboardWidgets?: WidgetId[];
+  performanceWidgets?: PerformanceWidgetId[];
   programResetAt?: number;
   createdAt: number;
   role?: 'user' | 'admin' | 'engineer';
@@ -92,6 +95,10 @@ interface SettingsContextType {
   setShowExperimentalMenus: (show: boolean) => void;
   experimentalFeatures: boolean;
   setExperimentalFeatures: (show: boolean) => void;
+  dashboardWidgets: WidgetId[];
+  setDashboardWidgets: (widgets: WidgetId[]) => Promise<void>;
+  performanceWidgets: PerformanceWidgetId[];
+  setPerformanceWidgets: (widgets: PerformanceWidgetId[]) => Promise<void>;
   lastVoiceCommand: { text: string; timestamp: number } | null;
   setLastVoiceCommand: (command: { text: string; timestamp: number } | null) => void;
   profile: UserProfile | null;
@@ -120,6 +127,8 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [immersionMode, setImmersionModeState] = useState<ImmersionMode>('immersive');
   const [showExperimentalMenus, setShowExperimentalMenusState] = useState(false);
   const [experimentalFeatures, setExperimentalFeaturesState] = useState(false);
+  const [dashboardWidgets, setDashboardWidgetsState] = useState<WidgetId[]>(['recovery-analysis', 'pr', 'macros', 'joint-stress']);
+  const [performanceWidgets, setPerformanceWidgetsState] = useState<PerformanceWidgetId[]>(['progression', 'volume-trend', 'joint-stress', 'growth', 'tactical']);
   const [lastVoiceCommand, setLastVoiceCommand] = useState<{ text: string; timestamp: number } | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isProfileLoading, setIsProfileLoading] = useState(true);
@@ -156,6 +165,8 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
             if (data.immersionMode) setImmersionModeState(data.immersionMode as ImmersionMode);
             if (data.showExperimentalMenus !== undefined) setShowExperimentalMenusState(data.showExperimentalMenus);
             if (data.experimentalFeatures !== undefined) setExperimentalFeaturesState(data.experimentalFeatures);
+            if (data.dashboardWidgets) setDashboardWidgetsState(data.dashboardWidgets);
+            if (data.performanceWidgets) setPerformanceWidgetsState(data.performanceWidgets);
             setIsProfileLoading(false);
           } else {
             // Initialize user profile
@@ -171,6 +182,8 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
               immersionMode: 'immersive',
               showExperimentalMenus: false,
               experimentalFeatures: false,
+              dashboardWidgets: ['recovery-analysis', 'pr', 'macros', 'joint-stress'],
+              performanceWidgets: ['progression', 'volume-trend', 'joint-stress', 'growth', 'tactical'],
               onboardingCompleted: false,
               level: 'untrained',
               createdAt: Date.now(),
@@ -209,6 +222,8 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
             immersionMode: 'immersive',
             showExperimentalMenus: false,
             experimentalFeatures: false,
+            dashboardWidgets: ['recovery-analysis', 'pr', 'macros', 'joint-stress'],
+            performanceWidgets: ['progression', 'volume-trend', 'joint-stress', 'growth', 'tactical'],
             onboardingCompleted: false,
             level: initialLevel,
             trainingGoal: 'powerbuilding',
@@ -386,6 +401,42 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
     }
   };
 
+  const setDashboardWidgets = async (widgets: WidgetId[]) => {
+    setDashboardWidgetsState(widgets);
+    if (auth.currentUser) {
+      const userDocPath = `users/${auth.currentUser.uid}`;
+      try {
+        await setDoc(doc(db, userDocPath), { dashboardWidgets: widgets }, { merge: true });
+      } catch (error) {
+        handleFirestoreError(error, OperationType.UPDATE, userDocPath);
+      }
+    } else {
+      if (profile) {
+        const updated = { ...profile, dashboardWidgets: widgets };
+        setProfile(updated);
+        localStorage.setItem('volt_ghost_profile', JSON.stringify(updated));
+      }
+    }
+  };
+
+  const setPerformanceWidgets = async (widgets: PerformanceWidgetId[]) => {
+    setPerformanceWidgetsState(widgets);
+    if (auth.currentUser) {
+      const userDocPath = `users/${auth.currentUser.uid}`;
+      try {
+        await setDoc(doc(db, userDocPath), { performanceWidgets: widgets }, { merge: true });
+      } catch (error) {
+        handleFirestoreError(error, OperationType.UPDATE, userDocPath);
+      }
+    } else {
+      if (profile) {
+        const updated = { ...profile, performanceWidgets: widgets };
+        setProfile(updated);
+        localStorage.setItem('volt_ghost_profile', JSON.stringify(updated));
+      }
+    }
+  };
+
   const updateProfile = async (data: Partial<UserProfile>) => {
     if (auth.currentUser) {
       const userDocPath = `users/${auth.currentUser.uid}`;
@@ -440,6 +491,8 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
       immersionMode, setImmersionMode,
       showExperimentalMenus, setShowExperimentalMenus,
       experimentalFeatures, setExperimentalFeatures,
+      dashboardWidgets, setDashboardWidgets,
+      performanceWidgets, setPerformanceWidgets,
       lastVoiceCommand, setLastVoiceCommand,
       profile, updateProfile,
       isProfileLoading,

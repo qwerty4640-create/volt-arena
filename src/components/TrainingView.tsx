@@ -435,6 +435,13 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
               <ListOrdered size={12} />
               Mission Briefing
             </button>
+            <button
+              onClick={() => setShowFieldManual(true)}
+              className="mt-5 text-[10px] font-black uppercase tracking-[0.2em] text-volt hover:text-white transition-colors flex items-center gap-1.5 btn-tertiary"
+            >
+              <Book size={12} />
+              Tactical Field Manual
+            </button>
             {/*}
             <button
               onClick={() => setShowFieldManual(true)}
@@ -665,16 +672,16 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                className="relative w-full max-w-2xl bg-black border border-zinc-800 rounded-none overflow-hidden max-h-[80vh] flex flex-col shadow-[0_0_100px_rgba(0,0,0,0.8)] z-[9999]"
+                className="relative w-full max-w-2xl h-[85vh] glass-panel border-volt/30 flex flex-col shadow-[0_0_100px_rgba(0,0,0,0.5)] z-[9999]"
               >
-                <div className="p-4 md:p-8 bg-zinc-900 border-b border-zinc-800 flex items-center justify-between shrink-0">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-volt/10 border border-volt/20 flex items-center justify-center">
-                      <ListOrdered className="text-volt" size={20} />
+                <div className="flex items-center justify-between p-3 md:p-6 border-b border-white/5 shrink-0">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-volt/10 border border-volt/20 flex items-center justify-center text-volt">
+                      <ListOrdered size={24} />
                     </div>
                     <div>
-                      <h2 className="font-headline text-xl font-black uppercase italic tracking-tight text-white">Mission Details</h2>
-                      <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{activeOrNext.title}</p>
+                      <h2 className="text-xl md:text-2xl font-black uppercase italic tracking-tight text-white">Mission Details</h2>
+                      <p className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest mt-0.5">{activeOrNext.title}</p>
                     </div>
                   </div>
                 </div>
@@ -688,54 +695,79 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
                           0. Warm-Up: {getWarmupForLift(activeOrNext.exercises[0].name).title}
                         </h3>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 gap-4">
                         {getWarmupForLift(activeOrNext.exercises[0].name).items.map((item) => (
-                          <div key={item.id} className="bg-void/40 border border-white/5 p-4 space-y-1">
-                            <div className="flex justify-between items-start">
-                              <span className="text-xs font-black uppercase text-white">{item.name}</span>
-                              <span className="text-[10px] text-zinc-500 font-bold uppercase">{item.durationMinutes}m</span>
+                          <div key={item.id} className="relative p-3 md:p-6 glass-panel border-white/5 hover:border-volt/30 transition-all duration-300 bg-void/50 group">
+                            <div className="absolute inset-0 bg-volt/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 -skew-x-2" />
+                            <div className="relative">
+                              <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-1 h-6 bg-volt" />
+                                  <h4 className="text-lg font-black uppercase italic tracking-tighter text-white">
+                                    {item.name}
+                                  </h4>
+                                </div>
+                                <div className="px-2 py-0.5 bg-zinc-900 border border-white/10 text-[8px] font-black uppercase tracking-widest text-zinc-500">
+                                  {item.durationMinutes}m
+                                </div>
+                              </div>
+                              <div className="space-y-4">
+                                <div className="space-y-1.5">
+                                  <p className="text-[10px] font-black text-volt uppercase tracking-[0.2em]">Summary</p>
+                                  <p className="text-zinc-200 text-sm leading-relaxed font-medium pl-4 border-l border-volt/20">
+                                    {item.description}
+                                  </p>
+                                </div>
+                              </div>
                             </div>
-                            <p className="text-[10px] text-zinc-400 leading-relaxed">{item.description}</p>
                           </div>
                         ))}
                       </div>
                     </div>
 
                     {/* Main Exercises Section */}
-                    <div className="space-y-8">
+                    <div className="grid grid-cols-1 gap-6">
                       {activeOrNext.exercises.map((ex, exIdx) => (
-                        <div key={ex.id || exIdx} className="space-y-4">
-                          <div className="flex items-center justify-between border-b border-white/5 pb-2">
-                            <div className="flex items-baseline gap-3">
-                              <span className="text-volt font-headline font-black italic text-lg">{exIdx + 1}.</span>
-                              <h3 className="font-headline text-xl font-black uppercase italic tracking-tight text-white">
-                                {ex.name}
-                              </h3>
+                        <div key={ex.id || exIdx} className="relative p-3 md:p-6 glass-panel border-white/5 hover:border-volt/30 transition-all duration-300 bg-void/50 group">
+                          <div className="absolute inset-0 bg-volt/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 -skew-x-2" />
+                          <div className="relative">
+                            <div className="flex items-center justify-between mb-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-1 h-6 bg-volt" />
+                                <h4 className="text-lg font-black uppercase italic tracking-tighter text-white">
+                                  {ex.name}
+                                </h4>
+                              </div>
+                              <button
+                                onClick={() => setSwappingExerciseIdx(exIdx)}
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 text-[8px] font-black uppercase tracking-widest text-zinc-400 hover:text-volt hover:border-volt/30 transition-all"
+                              >
+                                <RefreshCw size={10} />
+                                Swap
+                              </button>
                             </div>
-                            <button
-                              onClick={() => setSwappingExerciseIdx(exIdx)}
-                              className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 text-[8px] font-black uppercase tracking-widest text-zinc-400 hover:text-volt hover:border-volt/30 transition-all"
-                            >
-                              <RefreshCw size={10} />
-                              Swap
-                            </button>
-                          </div>
 
-                          <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-                            {ex.sets?.map((set, sIdx) => {
-                              const w = parseFloat(set.weight) || 0;
-                              const displayWeight = !isActiveSession && calibration.isRedline
-                                ? Math.round((w * 0.75) / 5) * 5
-                                : w;
+                            <div className="space-y-4">
+                              <div className="space-y-1.5">
+                                <p className="text-[10px] font-black text-volt uppercase tracking-[0.2em]">Mission Protocol</p>
+                                <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 pl-4 border-l border-volt/20">
+                                  {ex.sets?.map((set, sIdx) => {
+                                    const w = parseFloat(set.weight) || 0;
+                                    const displayWeight = !isActiveSession && calibration.isRedline
+                                      ? Math.round((w * 0.75) / 5) * 5
+                                      : w;
 
-                              return (
-                                <div key={sIdx} className="bg-void/40 border border-white/5 p-3 flex flex-col items-center justify-center">
-                                  <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest mb-1">Set {sIdx + 1}</span>
-                                  <span className="text-[10px] sm:text-xs font-black text-white">{set.reps} Reps</span>
-                                  <span className="text-[8px] sm:text-[10px] font-black text-volt">{displayWeight}{weightUnit}</span>
+                                    return (
+                                      <div key={sIdx} className="bg-void/40 border border-white/5 p-3 flex flex-col items-center justify-center">
+                                        <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest mb-1">Set {sIdx + 1}</span>
+                                        <span className="text-[10px] sm:text-xs font-black text-white">{set.reps} Reps</span>
+                                        <span className="text-[8px] sm:text-[10px] font-black text-volt">{displayWeight}{weightUnit}</span>
+                                      </div>
+                                    );
+                                  })}
                                 </div>
-                              );
-                            })}
+                              </div>
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -748,14 +780,31 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
                           {activeOrNext.exercises.length + 1}. Cool-Down Protocol
                         </h3>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 opacity-70">
+                      <div className="grid grid-cols-1 gap-4 opacity-70">
                         {COOL_DOWN_ROUTINE.items.map((item) => (
-                          <div key={item.id} className="bg-void/40 border border-white/5 p-4 space-y-1">
-                            <div className="flex justify-between items-start">
-                              <span className="text-xs font-black uppercase text-white">{item.name}</span>
-                              <span className="text-[10px] text-zinc-500 font-bold uppercase">{item.durationMinutes}m</span>
+                          <div key={item.id} className="relative p-3 md:p-6 glass-panel border-white/5 hover:border-volt/30 transition-all duration-300 bg-void/50 group">
+                            <div className="absolute inset-0 bg-volt/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 -skew-x-2" />
+                            <div className="relative">
+                              <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-1 h-6 bg-zinc-500" />
+                                  <h4 className="text-lg font-black uppercase italic tracking-tighter text-white">
+                                    {item.name}
+                                  </h4>
+                                </div>
+                                <div className="px-2 py-0.5 bg-zinc-900 border border-white/10 text-[8px] font-black uppercase tracking-widest text-zinc-500">
+                                  {item.durationMinutes}m
+                                </div>
+                              </div>
+                              <div className="space-y-4">
+                                <div className="space-y-1.5">
+                                  <p className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">Summary</p>
+                                  <p className="text-zinc-400 text-sm leading-relaxed font-medium pl-4 border-l border-zinc-800">
+                                    {item.description}
+                                  </p>
+                                </div>
+                              </div>
                             </div>
-                            <p className="text-[10px] text-zinc-400 leading-relaxed">{item.description}</p>
                           </div>
                         ))}
                       </div>
@@ -824,15 +873,15 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
                   )}
                 </AnimatePresence>
 
-                <div className="p-6 bg-zinc-900 border-t border-zinc-800">
+                <div className="p-4 bg-zinc-950 border-t border-white/5">
                   <button
                     onClick={() => {
                       setShowRoutineModal(false);
                       setSwappingExerciseIdx(null);
                     }}
-                    className="w-full btn-secondary py-4"
+                    className="w-full btn-secondary py-4 flex items-center justify-center gap-2"
                   >
-                    Close Briefing
+                    <X size={16} /> Close Briefing
                   </button>
                 </div>
               </motion.div>

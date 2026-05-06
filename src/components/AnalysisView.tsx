@@ -15,6 +15,7 @@ import {
     Weight,
     Activity,
     Zap,
+    ShieldCheck,
     History,
     Dumbbell,
     Info,
@@ -63,6 +64,11 @@ import { NonProgramActivityModal } from './NonProgramActivityModal';
 import { TacticalChart } from './TacticalChart';
 import { getTacticalImpact } from '../utils/analyticsEngine';
 import { getExerciseName } from '../utils/workoutUtils';
+import { JointStressWidget } from './JointStressWidget';
+
+import { ViewType, ImmersionMode, WidgetId } from '../types';
+import { ALL_WIDGETS, Widget } from '../constants/widgets';
+import { CustomizeDashboardModal } from './CustomizeDashboardModal';
 
 import { useWorkout, WorkoutSession, ActiveRecovery } from '../contexts/WorkoutContext';
 import { auth } from '../firebase';
@@ -70,21 +76,7 @@ import { BlockType, getPlanForDuration } from '../constants/periodization';
 
 
 
-type WidgetId = 'recovery-analysis' | 'pr' | 'macros';
-
-interface Widget {
-    id: WidgetId;
-    label: string;
-    icon: any;
-    span: string;
-}
-
-const ALL_WIDGETS: Widget[] = [
-    { id: 'recovery-analysis', label: 'analysis.recoveryAnalysis', icon: Activity, span: 'col-span-1 md:col-span-2 xl:col-span-3' },
-    { id: 'pr', label: 'analysis.personalRecord', icon: Star, span: 'col-span-1 md:col-span-2 xl:col-span-1' },
-    { id: 'macros', label: 'analysis.macroDistribution', icon: Utensils, span: 'col-span-1 md:col-span-2 xl:col-span-2' },
-];
-
+// Removed local WidgetId, Widget, ALL_WIDGETS since they are in constants/types
 
 // ─── Widgets ────────────────────────────────────────────────────────────────
 
@@ -117,18 +109,16 @@ function saveReadinessScores(scores: { sleep: number; stress: number; fatigue: n
 const ReadinessTrendWidget = () => {
     const { t, unit } = useSettings();
     const { history } = useWorkout();
-    const [selectedMetrics, setSelectedMetrics] = useState<string[]>(['Readiness', 'Fatigue', 'Sleep', 'Stress', 'sRPE', 'Volume']);
+    const [selectedMetrics, setSelectedMetrics] = useState<string[]>(['Readiness', 'Fatigue', 'Sleep', 'Stress']);
     const [timeFrame, setTimeFrame] = useState<'1M' | '3M' | '6M' | 'ALL'>('6M');
 
     const weightUnit = unit === 'metric' ? 'kg' : 'lbs';
 
     const metricOptions = [
         { id: 'Readiness', label: 'Readiness', color: 'var(--primary-color)' },
-        { id: 'Fatigue', label: t('analysis.fatigue'), color: 'var(--primary-color)' },
-        { id: 'Sleep', label: t('analysis.sleep'), color: 'var(--primary-color)' },
-        { id: 'Stress', label: t('analysis.stress'), color: 'var(--primary-color)' },
-        { id: 'Volume', label: 'Volume', color: 'var(--primary-color)' },
-        { id: 'sRPE', label: 'sRPE', color: 'var(--primary-color)' }
+        { id: 'Fatigue', label: t('analysis.fatigue'), color: '#ef4444' },
+        { id: 'Sleep', label: t('analysis.sleep'), color: '#00b6ff' },
+        { id: 'Stress', label: t('analysis.stress'), color: '#eab308' }
     ];
 
     const toggleMetric = (metricId: string) => {
@@ -154,27 +144,16 @@ const ReadinessTrendWidget = () => {
         }).sort((a, b) => (a.completedAt || 0) - (b.completedAt || 0));
 
         return timeFilteredHistory.map(session => {
-            let sessionVolume = 0;
-            session.exercises?.forEach(ex => {
-                ex.sets?.forEach(s => {
-                    if (s.isCompleted) {
-                        sessionVolume += (parseFloat(s.weight) || 0) * (parseInt(s.reps) || 0);
-                    }
-                });
-            });
-
             return {
                 date: session.date,
                 title: session.title,
                 timestamp: session.completedAt || new Date(session.date).getTime(),
                 displayDate: new Date(session.completedAt || session.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
                 fullDate: new Date(session.completedAt || session.date).toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' }),
-                Readiness: session.readiness || null,
-                Fatigue: session.fatigue ? session.fatigue * 20 : null,
-                Sleep: session.sleep ? session.sleep * 20 : null,
-                Stress: session.stress ? session.stress * 20 : null,
-                Volume: sessionVolume > 0 ? sessionVolume : null,
-                sRPE: session.actualRpe !== undefined ? session.actualRpe : (session.rpe !== undefined ? session.rpe : null)
+                Readiness: session.readiness != null ? session.readiness : 0,
+                Fatigue: session.fatigue != null ? session.fatigue * 20 : 0,
+                Sleep: session.sleep != null ? session.sleep * 20 : 0,
+                Stress: session.stress != null ? session.stress * 20 : 0
             };
         });
     }, [history, timeFrame]);
@@ -199,7 +178,7 @@ const ReadinessTrendWidget = () => {
                                         <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">{entry.name}</span>
                                     </div>
                                     <span className="text-sm font-black italic text-white">
-                                        {entry.value}{['READINESS', 'SLEEP', 'FATIGUE', 'STRESS'].includes(entry.name?.toUpperCase()) ? '%' : ''} {entry.name === 'Volume' && <span className="text-[8px] uppercase not-italic text-zinc-500">{weightUnit}</span>}
+                                        {entry.value}{['READINESS', 'SLEEP', 'FATIGUE', 'STRESS'].includes(entry.name?.toUpperCase()) ? '%' : ''}
                                     </span>
                                 </div>
                             ))}
@@ -266,14 +245,6 @@ const ReadinessTrendWidget = () => {
                                 dy={10}
                             />
                             <YAxis
-                                yAxisId="right"
-                                orientation="right"
-                                axisLine={false}
-                                tickLine={false}
-                                tick={{ fill: '#52525b', fontSize: 10, fontWeight: 900, fontFamily: 'Inter' }}
-                                hide
-                            />
-                            <YAxis
                                 yAxisId="left"
                                 axisLine={false}
                                 tickLine={false}
@@ -283,7 +254,7 @@ const ReadinessTrendWidget = () => {
                             {metricOptions.map(metric => selectedMetrics.includes(metric.id) && (
                                 <Line
                                     key={metric.id}
-                                    yAxisId={metric.id === 'Volume' ? 'right' : 'left'}
+                                    yAxisId="left"
                                     type="linear"
                                     dataKey={metric.id}
                                     stroke={metric.color}
@@ -324,12 +295,12 @@ export const ReadinessAnalysisWidget = () => {
     // ── Display values per factor (0-100% scale for bar) ──────────────────────
     const sleepDisplay = Math.round((sleepScore / 5) * 100);
     const stressDisplay = Math.round((5 - stressScore) * 20);
-
+    
     // Fatigue: 0-18 scale. 0 is low fatigue, 18 is high fatigue.
     const rawFatigue = calibration.cumulativeFatigueScore || 0;
     const fatigueDisplay = hasHistory ? Math.round((rawFatigue / 18) * 100) : 0;
-    const objectiveFatigueDisplay = fatigueDisplay;
-
+    const objectiveFatigueDisplay = fatigueDisplay; 
+    
     const getStatusColorText = (val: number) => {
         if (val >= 75) return 'text-emerald-500'; // High readiness = green
         if (val >= 40) return 'text-amber-500'; // Moderate readiness = amber
@@ -474,29 +445,29 @@ export const ReadinessAnalysisWidget = () => {
                             Bio-mechanical readiness is system-managed based on historical training volume.
                         </p>
                         <div className="grid grid-cols-2 gap-8 mt-2 items-start">
-                            <div className="flex flex-col items-start">
-                                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-4 block w-full">
-                                    {t('analysis.readiness')}
-                                    <InfoTooltip term="Readiness" />
-                                </span>
-                                <div className="flex items-baseline gap-2">
-                                    <span className={cn(
-                                        'text-5xl md:text-7xl lg:text-8xl font-black italic tracking-tighter leading-none',
-                                        readinessScore !== null ? statusColor : 'text-zinc-600'
-                                    )}>
-                                        {readinessScore !== null ? readinessScore : '–'}
-                                    </span>
-                                    {readinessScore !== null && <span className="text-xl md:text-2xl font-black italic text-zinc-600"> %</span>}
-                                </div>
-                            </div>
-
-                            {/* ACWR Widget */}
-                            <div className="flex flex-col items-start">
-                                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-4 block w-full">
-                                    ACWR
-                                    <InfoTooltip term="ACWR" />
-                                </span>
-                                {acwrData ? (
+                             <div className="flex flex-col items-start">
+                                 <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-4 block w-full">
+                                     {t('analysis.readiness')}
+                                     <InfoTooltip term="Readiness" />
+                                 </span>
+                                 <div className="flex items-baseline gap-2">
+                                     <span className={cn(
+                                         'text-5xl md:text-7xl lg:text-8xl font-black italic tracking-tighter leading-none',
+                                         readinessScore !== null ? statusColor : 'text-zinc-600'
+                                     )}>
+                                         {readinessScore !== null ? readinessScore : '–'}
+                                     </span>
+                                     {readinessScore !== null && <span className="text-xl md:text-2xl font-black italic text-zinc-600"> %</span>}
+                                 </div>
+                             </div>
+                             
+                             {/* ACWR Widget */}
+                             <div className="flex flex-col items-start">
+                                 <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-4 block w-full">
+                                     ACWR
+                                     <InfoTooltip term="ACWR" />
+                                 </span>
+                                 {acwrData ? (
                                     <div className="flex flex-col h-full items-start">
                                         <div className="flex items-baseline gap-2 mb-2">
                                             <span className="text-3xl md:text-4xl font-black italic tracking-tighter leading-none text-white">
@@ -510,33 +481,33 @@ export const ReadinessAnalysisWidget = () => {
                                             {acwrData.ratio > 1.5 ? "Elevated" : acwrData.ratio >= 0.8 && acwrData.ratio <= 1.3 ? "Optimal" : "Monitor"}
                                         </span>
                                     </div>
-                                ) : (
-                                    <div className="flex items-baseline gap-2 mb-2">
-                                        <span className="text-3xl md:text-4xl font-black italic tracking-tighter leading-none text-zinc-600">–</span>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
+                                 ) : (
+                                     <div className="flex items-baseline gap-2 mb-2">
+                                         <span className="text-3xl md:text-4xl font-black italic tracking-tighter leading-none text-zinc-600">–</span>
+                                     </div>
+                                 )}
+                             </div>
+                         </div>
                     </div>
                 </div>
 
                 {calibration.overtrainingRisk !== 'none' && (
                     <div className={cn(
-                        "mb-6 p-4 border flex items-start gap-4 animate-pulse-slow relative z-10 mx-4 md:mx-6",
+                        "mb-6 p-4 border flex items-start gap-4 animate-pulse-slow relative z-10",
                         calibration.overtrainingRisk === 'critical' ? "bg-crimson/10 border-crimson/30" : "bg-amber-500/10 border-amber-500/30"
                     )}>
-                        <AlertTriangle className={calibration.overtrainingRisk === 'critical' ? "text-crimson" : "text-amber-500"} size={20} />
+                        <AlertTriangle className={calibration.overtrainingRisk === 'critical' ? "text-crimson shrink-0" : "text-amber-500 shrink-0"} size={18} />
                         <div className="flex flex-col gap-1">
                             <span className={cn(
-                                "font-headline text-xs font-black uppercase tracking-widest",
+                                "text-[10px] font-black uppercase tracking-widest",
                                 calibration.overtrainingRisk === 'critical' ? "text-crimson" : "text-amber-500"
                             )}>
                                 {calibration.overtrainingRisk === 'critical' ? "CRITICAL OVERTRAINING RISK" : "FATIGUE DECAY OUTPACED"}
                             </span>
-                            <p className="text-[10px] font-medium text-zinc-400 leading-relaxed uppercase">
-                                {calibration.overtrainingRisk === 'critical'
-                                    ? "TRAINING STRAIN IS EXCEEDING RECOVERY CAPACITY BY >60%. SYSTEM RECOMMENDS AN IMMEDIATE 48H DELOAD TO AVOID NEURAL BURNOUT."
-                                    : "YOUR RECOVERY CONSTANT IS SLOWING RELATIVE TO VOLUME. CONSIDER INCREASING SLEEP HYGIENE OR REDUCING AUXILIARY WORK."}
+                            <p className="text-[9px] font-bold uppercase tracking-wider text-zinc-400 leading-[1.4]">
+                                {calibration.overtrainingRisk === 'critical' 
+                                    ? "YOUR CURRENT ACUTE LOAD IS >1.6X CHRONIC BASELINE. RECOVERY FAIL RISK IS HIGH."
+                                    : "DAILY STRAIN IS TRENDING ABOVE RECOVERY CAPACITY. MONITOR PERFORMANCE CLOSELY."}
                             </p>
                         </div>
                     </div>
@@ -680,7 +651,7 @@ export const BlockWidget = () => {
     const weekInBlock = nextWorkout.weekInBlock || 1;
     const totalWeek = nextWorkout.totalWeek || 1;
 
-    const plan = getPlanForDuration((profile?.trainingDurationMonths || 3) * 4, profile?.trainingGoal || 'powerbuilding');
+    const plan = getPlanForDuration((profile?.trainingDurationMonths || 3) * 4, profile?.trainingObjectives || (profile?.trainingGoal ? [profile.trainingGoal] : ['powerbuilding']));
     const blockDef = plan.find(b => b.type === currentBlock);
     const totalWeeks = blockDef?.durationWeeks || 4;
     const cycleLength = plan.reduce((acc, b) => acc + b.durationWeeks, 0);
@@ -764,6 +735,9 @@ export const BlockWidget = () => {
                         <div className="grid grid-cols-1 gap-2">
                             {plan.map((block, idx) => {
                                 const isCurrent = currentBlock === block.type;
+                                const blockKey = `block.${block.type.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+                                const translatedLabel = t(blockKey);
+                                const finalLabel = translatedLabel !== blockKey ? translatedLabel : (block.label || block.type);
 
                                 let accumulated = 0;
                                 for (let i = 0; i < idx; i++) accumulated += plan[i].durationWeeks;
@@ -785,7 +759,7 @@ export const BlockWidget = () => {
                                                 "text-[10px] font-black uppercase tracking-widest",
                                                 isCurrent ? "text-volt" : "text-zinc-400"
                                             )}>
-                                                Block {idx + 1}: {block.label || block.type}
+                                                Block {idx + 1}: {finalLabel}
                                             </span>
                                             {isCurrent && <Zap size={10} className="text-volt animate-pulse" />}
                                         </div>
@@ -1169,23 +1143,24 @@ export const ExternalActivityWidget = () => {
     const { t } = useSettings();
     const { recoveryHistory, getCalibrationStatus } = useWorkout();
     const calibration = getCalibrationStatus();
+    const [timeFrame, setTimeFrame] = useState<'1M' | '3M' | '6M' | 'ALL'>('1M');
 
-    const now = Date.now();
-    const oneWeek = 7 * 24 * 60 * 60 * 1000;
-    const oneMonth = 30 * 24 * 60 * 60 * 1000;
-    const oneYear = 365 * 24 * 60 * 60 * 1000;
+    const filteredData = useMemo(() => {
+        if (!recoveryHistory || recoveryHistory.length === 0) return [];
+        
+        const now = new Date();
+        let startDate = new Date(0);
+        if (timeFrame === '1M') startDate = new Date(now.setMonth(now.getMonth() - 1));
+        else if (timeFrame === '3M') startDate = new Date(now.setMonth(now.getMonth() - 3));
+        else if (timeFrame === '6M') startDate = new Date(now.setMonth(now.getMonth() - 6));
+        
+        return recoveryHistory.filter(r => r.timestamp > startDate.getTime());
+    }, [recoveryHistory, timeFrame]);
 
-    const thisWeek = recoveryHistory.filter(r => r.timestamp > now - oneWeek);
-    const thisMonth = recoveryHistory.filter(r => r.timestamp > now - oneMonth);
-    const thisYear = recoveryHistory.filter(r => r.timestamp > now - oneYear);
+    const totalHours = filteredData.reduce((acc, curr) => acc + (curr.durationMinutes || 0), 0) / 60;
+    const avgRpe = filteredData.length > 0 ? (filteredData.reduce((acc, curr) => acc + curr.rpe, 0) / filteredData.length) : 0;
 
-    const hoursWeek = thisWeek.reduce((acc, curr) => acc + (curr.durationMinutes || 0), 0) / 60;
-    const hoursMonth = thisMonth.reduce((acc, curr) => acc + (curr.durationMinutes || 0), 0) / 60;
-    const hoursYear = thisYear.reduce((acc, curr) => acc + (curr.durationMinutes || 0), 0) / 60;
-
-    const avgRpeWeek = thisWeek.length > 0 ? (thisWeek.reduce((acc, curr) => acc + curr.rpe, 0) / thisWeek.length) : 0;
-
-    const { weeklyCumulativeScore, chartData } = getTacticalImpact(recoveryHistory);
+    const { weeklyCumulativeScore, chartData } = getTacticalImpact(filteredData);
 
     let impactColor = "text-volt";
     let impactLabel = "Optimal";
@@ -1203,53 +1178,54 @@ export const ExternalActivityWidget = () => {
             <div className="absolute inset-0 opacity-[0.03] pointer-events-none group-hover/module:opacity-[0.05] transition-opacity duration-700"
                 style={{ backgroundImage: 'radial-gradient(var(--primary-color) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
 
-            <div className="flex items-center gap-3 mb-6 md:mb-8 relative z-10">
-                <h2 className="font-headline text-2xl font-black uppercase italic tracking-tight">{t('analysis.tacticalIntegration')}</h2>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4 relative z-10 w-full">
+                <div>
+                    <h2 className="font-headline text-2xl font-black uppercase italic tracking-tight">{t('analysis.tacticalIntegration')}</h2>
+                </div>
+                
+                <div className="flex gap-1 bg-void p-1 border border-white/5 flex-wrap md:flex-nowrap shrink-0">
+                    {(['1M', '3M', '6M', 'ALL'] as const).map((tf) => (
+                        <button
+                            key={tf}
+                            onClick={() => setTimeFrame(tf)}
+                            className={cn(
+                                "px-3 py-1.5 md:px-4 md:py-2 font-headline text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all",
+                                timeFrame === tf ? "bg-volt text-void" : "text-zinc-500 hover:text-white"
+                            )}
+                        >
+                            {tf}
+                        </button>
+                    ))}
+                </div>
             </div>
 
-            <div className="grid grid-cols-3 mb-6 relative z-10 w-full max-w-sm">
+            <div className="grid grid-cols-2 mb-6 relative z-10 w-full gap-4">
                 <div className="flex flex-col">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">{t('analysis.weekly')}</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2">
+                        {timeFrame === '1M' ? t('analysis.monthly') : 
+                         timeFrame === '3M' ? '3 MONTHS' :
+                         timeFrame === '6M' ? '6 MONTHS' : 'TOTAL'} HOURS
+                    </span>
                     <div className="flex items-end gap-1">
-                        <span className="text-2xl sm:text-3xl lg:text-4xl font-black italic">{hoursWeek.toFixed(1)}</span>
+                        <span className="text-2xl sm:text-3xl lg:text-4xl font-black italic">{totalHours.toFixed(1)}</span>
                         <span className="text-xs font-bold text-zinc-600 mb-1">hrs</span>
                     </div>
                 </div>
-                <div className="flex flex-col border-l border-white/10 pl-2 sm:pl-4">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">{t('analysis.monthly')}</span>
+                <div className="flex flex-col">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2">AVG RPE</span>
                     <div className="flex items-end gap-1">
-                        <span className="text-2xl sm:text-3xl lg:text-4xl font-black italic">{hoursMonth.toFixed(1)}</span>
-                        <span className="text-xs font-bold text-zinc-600 mb-1">hrs</span>
+                        <span className="text-2xl sm:text-3xl lg:text-4xl font-black italic text-volt">{avgRpe > 0 ? avgRpe.toFixed(1) : '–'}</span>
                     </div>
                 </div>
-                <div className="flex flex-col border-l border-white/10 pl-2 sm:pl-4">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">{t('analysis.yearly')}</span>
-                    <div className="flex items-end gap-1">
-                        <span className="text-2xl sm:text-3xl lg:text-4xl font-black italic">{hoursYear.toFixed(1)}</span>
-                        <span className="text-xs font-bold text-zinc-600 mb-1">hrs</span>
-                    </div>
-                </div>
-            </div>
-
-            <div className="bg-void/40 border border-white/5 p-4 flex flex-col sm:flex-row items-start sm:items-center mb-6 relative z-10">
-                <div className="flex flex-col justify-center min-w-[70px]">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">AVG RPE</span>
-                    <span className="text-2xl md:text-3xl font-black italic text-volt">{avgRpeWeek > 0 ? avgRpeWeek.toFixed(1) : '–'}</span>
-                </div>
-                <div className="sm:border-l sm:border-white/5 pt-2 sm:pt-0 sm:pl-4 flex-1 w-full border-t border-white/5 sm:border-t-0 mt-2 sm:mt-0">
-                    <div className="flex items-center gap-2 mb-1 cursor-help group/tooltip">
-                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 block relative">
+                <div className="flex flex-col col-span-2 pt-4 border-t border-white/5">
+                    <div className="flex items-center gap-1 mb-2">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 block relative">
                             Program Impact
-                            {/* Custom Tooltip */}
-                            <div className="absolute left-0 bottom-full mb-2 hidden group-hover/tooltip:block w-64 p-3 bg-white text-void text-[10px] uppercase font-bold tracking-wider z-50 shadow-2xl">
-                                mTOR Interference: High-intensity aerobic work competes with hypertrophy pathways, potentially blunting maximum strength gains if programmed too closely together.
-                                <div className="absolute top-full left-4 -mt-1 w-2 h-2 bg-white rotate-45" />
-                            </div>
                         </span>
-                        <Info size={12} className="text-zinc-500" />
+                        <InfoTooltip term="ProgramImpact" />
                     </div>
-                    <span className={`text-xs font-black uppercase tracking-widest ${impactColor}`}>
-                        {impactLabel} ({weeklyCumulativeScore.toFixed(1)})
+                    <span className={`text-2xl sm:text-3xl lg:text-4xl font-black uppercase tracking-widest ${impactColor}`}>
+                        {impactLabel} <span className="text-white italic text-lg sm:text-xl lg:text-2xl ml-1">({weeklyCumulativeScore.toFixed(1)})</span>
                     </span>
                 </div>
             </div>
@@ -1279,6 +1255,7 @@ const WIDGET_COMPONENTS: Record<WidgetId, React.FC<any>> = {
     'recovery-analysis': ReadinessAnalysisWidget,
     pr: PRWidget,
     macros: MacrosWidget,
+    'joint-stress': JointStressWidget,
 };
 
 interface SortableWidgetProps {
@@ -1354,11 +1331,20 @@ interface AnalysisViewProps {
 }
 
 export const AnalysisView = ({ onContinueSession, onViewBriefing, onViewHistory, isLifting }: AnalysisViewProps) => {
-    const { t, experimentalFeatures } = useSettings();
-    const [widgets, setWidgets] = useState<WidgetId[]>(['recovery-analysis', 'pr', 'macros']);
+    const { t, experimentalFeatures, dashboardWidgets, setDashboardWidgets } = useSettings();
     const [activeId, setActiveId] = useState<WidgetId | null>(null);
     const [isLibraryOpen, setIsLibraryOpen] = useState(false);
+    const [isCustomizeModalOpen, setIsCustomizeModalOpen] = useState(false);
     const [widgetToRemove, setWidgetToRemove] = useState<WidgetId | null>(null);
+
+    const widgets = dashboardWidgets;
+    const setWidgets = (newWidgets: WidgetId[] | ((prev: WidgetId[]) => WidgetId[])) => {
+        if (typeof newWidgets === 'function') {
+            setDashboardWidgets(newWidgets(widgets));
+        } else {
+            setDashboardWidgets(newWidgets);
+        }
+    };
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -1424,6 +1410,7 @@ export const AnalysisView = ({ onContinueSession, onViewBriefing, onViewHistory,
 
     return (
         <>
+
             <DndContext
                 sensors={sensors}
                 collisionDetection={closestCenter}
@@ -1476,61 +1463,13 @@ export const AnalysisView = ({ onContinueSession, onViewBriefing, onViewHistory,
                 </DragOverlay>
             </DndContext>
 
-            {/* Spatial Widget Library Menu - Moved to end of flow */}
-            {experimentalFeatures && (
-                <div className="mt-12 mb-8 flex flex-col items-center gap-4 shrink-0 px-2 lg:px-0">
-                    <AnimatePresence>
-                        {isLibraryOpen && (
-                            <motion.div
-                                initial={{ opacity: 0, y: 40, scale: 0.8 }}
-                                animate={{ opacity: 1, y: 0, scale: 1 }}
-                                exit={{ opacity: 0, y: 40, scale: 0.8 }}
-                                transition={{ type: "spring", damping: 20, stiffness: 300 }}
-                                className="glass-panel p-2 border-volt/20 flex flex-wrap justify-center gap-2 shadow-[0_0_60px_var(--primary-glow)] max-w-full"
-                            >
-                                {availableWidgets.length > 0 ? (
-                                    availableWidgets.map((w, i) => {
-                                        const Icon = w.icon;
-                                        return (
-                                            <motion.button
-                                                key={w.id}
-                                                initial={{ opacity: 0, x: -20 }}
-                                                animate={{ opacity: 1, x: 0 }}
-                                                transition={{ delay: i * 0.05 }}
-                                                onClick={() => addWidget(w.id)}
-                                                className="flex flex-col items-center gap-2 p-3 md:p-4 hover:bg-volt text-zinc-400 hover:text-void transition-all group relative min-w-[70px] md:min-w-[80px]"
-                                            >
-                                                <div className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center transition-transform group-hover:scale-110">
-                                                    <Icon size={24} className="md:w-6 md:h-6 w-5 h-5" />
-                                                </div>
-                                                <span className="text-[7px] md:text-[8px] font-black uppercase tracking-widest opacity-60 group-hover:opacity-100 text-center">
-                                                    {t(w.label as any).split(' ')[0]}
-                                                </span>
-                                            </motion.button>
-                                        );
-                                    })
-                                ) : (
-                                    <div className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-zinc-500 italic text-center">
-                                        {t('analysis.allModulesDeployed')}
-                                    </div>
-                                )}
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-
-                    <button
-                        onClick={() => setIsLibraryOpen(!isLibraryOpen)}
-                        className={cn(
-                            "w-16 h-16 flex items-center justify-center transition-all duration-500 shadow-2xl",
-                            isLibraryOpen
-                                ? "bg-white text-void rotate-45 scale-90"
-                                : "bg-volt text-void hover:scale-110 hover:shadow-[0_0_30px_var(--primary-glow)]"
-                        )}
-                    >
-                        <Plus size={32} strokeWidth={3} />
-                    </button>
-                </div>
-            )}
+            <CustomizeDashboardModal
+                isOpen={isCustomizeModalOpen}
+                onClose={() => setIsCustomizeModalOpen(false)}
+                currentWidgets={widgets}
+                onSave={(newWidgets) => setWidgets(newWidgets)}
+                type="dashboard"
+            />
 
             <ConfirmationModal
                 isOpen={!!widgetToRemove}

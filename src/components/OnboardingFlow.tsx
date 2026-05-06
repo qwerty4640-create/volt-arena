@@ -34,6 +34,7 @@ export const OnboardingFlow = () => {
     weight: '',
     age: '',
     trainingGoal: 'powerbuilding' as TrainingGoal,
+    trainingObjectives: ['powerbuilding'] as TrainingGoal[],
     trainingDurationMonths: 3,
     trainingFrequency: 4,
     trainingStyle: '' as string,
@@ -163,6 +164,7 @@ export const OnboardingFlow = () => {
           height: heightVal,
           weight: parseFloat(formData.weight) || 0,
           trainingGoal: formData.trainingGoal,
+          trainingObjectives: formData.trainingObjectives,
           trainingDurationMonths: formData.trainingDurationMonths,
           trainingFrequency: formData.trainingFrequency,
           level: formData.trainingAge,
@@ -242,7 +244,11 @@ export const OnboardingFlow = () => {
 
   // Auto-select recommended goal when relevant data changes
   useEffect(() => {
-    setFormData(prev => ({ ...prev, trainingGoal: recommendedGoal }));
+    setFormData(prev => ({ 
+      ...prev, 
+      trainingGoal: recommendedGoal,
+      trainingObjectives: [recommendedGoal]
+    }));
   }, [formData.trainingAge, formData.trainingFrequency, formData.age, formData.weight, formData.height, formData.heightFeet, formData.heightInches]);
 
   // Scroll to top when step changes
@@ -681,46 +687,79 @@ export const OnboardingFlow = () => {
               </div>
 
               <div className="space-y-4">
-                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('onboarding.objective')}</label>
+                <div className="flex justify-between items-end">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('onboarding.objective')}</label>
+                  <span className="text-[8px] font-black uppercase tracking-widest text-zinc-600">
+                    {formData.trainingObjectives.length} / 3 SELECTED
+                  </span>
+                </div>
                 <div className="grid grid-cols-1 gap-3">
-                  {(['pure_strength', 'powerbuilding', 'hypertrophy', 'peaking', 'longevity'] as TrainingGoal[]).map((goal) => (
-                    <button
-                      key={goal}
-                      onClick={() => setFormData({ ...formData, trainingGoal: goal })}
-                      className={cn(
-                        "p-4 border transition-all text-left flex flex-col gap-1 relative overflow-hidden",
-                        formData.trainingGoal === goal ? "bg-volt/10 border-volt" : "bg-surface-variant border-white/5"
-                      )}
-                    >
-                      {recommendedGoal === goal && (
-                        <div className="absolute top-0 right-0 flex items-center">
-                          <div className="bg-volt text-void text-[7px] font-black uppercase px-2 py-0.5 italic tracking-tighter">
-                            {t('onboarding.recommended')}
+                  {(['pure_strength', 'powerbuilding', 'hypertrophy', 'peaking', 'longevity'] as TrainingGoal[]).map((goal) => {
+                    const goalIndex = formData.trainingObjectives.indexOf(goal);
+                    const isSelected = goalIndex !== -1;
+                    const priorityLabel = goalIndex === 0 ? 'PRIMARY' : goalIndex === 1 ? 'SECONDARY' : goalIndex === 2 ? 'TERTIARY' : '';
+                    
+                    return (
+                      <button
+                        key={goal}
+                        onClick={() => {
+                          let newObjectives = [...formData.trainingObjectives];
+                          if (isSelected) {
+                            if (newObjectives.length > 1) {
+                              newObjectives = newObjectives.filter(g => g !== goal);
+                            }
+                          } else {
+                            if (newObjectives.length < 3) {
+                              newObjectives.push(goal);
+                            }
+                          }
+                          setFormData({ 
+                            ...formData, 
+                            trainingObjectives: newObjectives,
+                            trainingGoal: newObjectives[0] 
+                          });
+                        }}
+                        className={cn(
+                          "p-4 border transition-all text-left flex flex-col gap-1 relative overflow-hidden",
+                          isSelected ? "bg-volt/10 border-volt" : "bg-surface-variant border-white/5"
+                        )}
+                      >
+                        {recommendedGoal === goal && (
+                          <div className="absolute top-0 right-0 flex items-center">
+                            <div className="bg-volt text-void text-[7px] font-black uppercase px-2 py-0.5 italic tracking-tighter">
+                              {t('onboarding.recommended')}
+                            </div>
+                            <div className="bg-white/10 p-0.5 text-volt">
+                              <Info size={8} />
+                            </div>
                           </div>
-                          <div className="bg-white/10 p-0.5 text-volt">
-                            <Info size={8} />
+                        )}
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <span className={cn(
+                              "font-headline text-xs font-black uppercase tracking-widest",
+                              isSelected ? "text-white" : "text-zinc-400"
+                            )}>
+                              {t(`goal.${goal}`)}
+                            </span>
+                            {isSelected && (
+                              <div className="w-4 h-4 bg-volt text-void flex items-center justify-center">
+                                <CheckCircle2 size={10} strokeWidth={4} />
+                              </div>
+                            )}
                           </div>
+                          {isSelected && (
+                            <span className="text-[7px] font-black text-volt italic border border-volt/30 px-1.5 py-0.5">
+                              {priorityLabel}
+                            </span>
+                          )}
                         </div>
-                      )}
-                      <span className={cn(
-                        "font-headline text-xs font-black uppercase tracking-widest",
-                        formData.trainingGoal === goal ? "text-white" : "text-zinc-400"
-                      )}>
-                        {t(`goal.${goal}`)}
-                      </span>
-                      <span className="text-[9px] text-zinc-500 font-medium uppercase tracking-wider">
-                        {t(`goal.${goal}.desc`)}
-                      </span>
-                      {recommendedGoal === goal && (
-                        <div className="mt-2 pt-2 border-t border-volt/20 flex gap-2 items-center">
-                          <Info size={10} className="text-volt shrink-0" />
-                          <p className="text-[8px] text-volt font-black uppercase tracking-tighter italic leading-tight opacity-80">
-                            {t('onboarding.recommendationDesc')}
-                          </p>
-                        </div>
-                      )}
-                    </button>
-                  ))}
+                        <span className="text-[9px] text-zinc-500 font-medium uppercase tracking-wider">
+                          {t(`goal.${goal}.desc`)}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -787,9 +826,9 @@ export const OnboardingFlow = () => {
                   transition={{ delay: 0.7 }}
                   className="flex flex-col gap-4 items-center"
                 >
-                  <div className="flex items-center justify-center gap-3 font-headline text-sm font-black uppercase tracking-[0.2em] px-6 py-3 border border-volt/30 text-volt bg-volt/5 shadow-[0_0_20px_rgba(0,182,255,0.1)]">
-                    <Medal size={20} />
-                    {t(`goal.${formData.trainingGoal}`)}
+                  <div className="flex flex-wrap items-center justify-center gap-2 font-headline text-[10px] font-black uppercase tracking-[0.1em] px-4 py-2 border border-volt/30 text-volt bg-volt/5 shadow-[0_0_20px_rgba(0,182,255,0.1)]">
+                    <Medal size={16} />
+                    {formData.trainingObjectives.map(g => t(`goal.${g}`)).join(' + ')}
                   </div>
 
                   <p className="text-zinc-400 text-xs md:text-xs font-medium leading-relaxed max-w-sm mx-auto">

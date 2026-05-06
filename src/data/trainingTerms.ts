@@ -48,7 +48,17 @@ export const TRAINING_TERMS = {
   Percentile: {
     title: "Population Percentile",
     short: "Your relative strength compared to the general population.",
-    long: "Calculated using ExRx.net's strength standards, which consider your gender, age, body weight, and total payload for the main lifts (Squat, Bench, Deadlift)."
+    long: "Calculated using ExRx.net's strength standards, which consider your gender, age, body weight, and total payload for the main lifts (Squat, Bench, Deadlift).",
+  },
+  ProgramImpact: {
+    title: "Program Impact",
+    short: "Interference effects from non-program activity.",
+    long: "mTOR Interference: High-intensity aerobic work competes with hypertrophy pathways, potentially blunting maximum strength gains if programmed too closely together.",
+  },
+  jointStress: {
+    title: "Joint Stress Balance",
+    short: "Ratio of high-impact work to low-impact recovery.",
+    long: "Tracks the structural cost of your training. Maintaining a balance between high-intensity loading and low-impact restoration is critical for long-term joint health and longevity.",
   }
 } as const;
 

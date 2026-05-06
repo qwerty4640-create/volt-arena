@@ -6,7 +6,7 @@ import { useSettings } from '../contexts/SettingsContext';
 import { useWorkout } from '../contexts/WorkoutContext';
 
 interface ReadinessCheckProps {
-  onComplete: (score: number, modifier: number, targetRpe: number) => void;
+  onComplete: (score: number, modifier: number, targetRpe: number, biometrics: { sleep: number; stress: number; fatigue: number }) => void;
   onCancel: () => void;
   key?: React.Key;
 }
@@ -129,8 +129,8 @@ export const ReadinessCheck = ({ onComplete, onCancel }: ReadinessCheckProps) =>
     if (totalScore >= 21) {
       return {
         type: 'green',
-        title: 'High Performance',
-        message: 'You’re recovered and ready. Today is a great day to push for the higher end of your RPE range.',
+        title: 'readiness.scenario.green.title',
+        message: 'readiness.scenario.green.message',
         color: 'text-volt',
         bg: 'bg-volt/10',
         border: 'border-volt',
@@ -140,8 +140,8 @@ export const ReadinessCheck = ({ onComplete, onCancel }: ReadinessCheckProps) =>
     } else if (totalScore >= 15) {
       return {
         type: 'yellow',
-        title: 'Stay the Course',
-        message: 'You\'re doing okay. Stick to the programmed weights and focus on technique.',
+        title: 'readiness.scenario.yellow.title',
+        message: 'readiness.scenario.yellow.message',
         color: 'text-[#FFD700]',
         bg: 'bg-[#FFD700]/10',
         border: 'border-[#FFD700]',
@@ -151,8 +151,8 @@ export const ReadinessCheck = ({ onComplete, onCancel }: ReadinessCheckProps) =>
     } else {
       return {
         type: 'red',
-        title: 'Low Energy Mode',
-        message: 'Looks like recovery is low today. We’ve dialed back the intensity so you can stay in the game without burning out.',
+        title: 'readiness.scenario.red.title',
+        message: 'readiness.scenario.red.message',
         color: 'text-crimson',
         bg: 'bg-crimson/10',
         border: 'border-crimson',
@@ -166,19 +166,25 @@ export const ReadinessCheck = ({ onComplete, onCancel }: ReadinessCheckProps) =>
 
   const handleComplete = async () => {
     // Log the HMS data for AI context and persistence
+    const biometrics = {
+      sleep: scores.sleep,
+      stress: scores.stress,
+      fatigue: scores.fatigue,
+      soreness: scores.soreness,
+      mood: scores.mood
+    };
+
     try {
-      await logDailyHealthCheck({
-        sleep: scores.sleep,
-        stress: scores.stress,
-        fatigue: scores.fatigue,
-        soreness: scores.soreness,
-        mood: scores.mood
-      });
+      await logDailyHealthCheck(biometrics);
     } catch (e) {
       console.error("Failed to log daily health check:", e);
     }
 
-    onComplete(calibration.readiness, calibration.readinessModifier, baselineRecommendedRpe);
+    onComplete(calibration.readiness, calibration.readinessModifier, baselineRecommendedRpe, {
+      sleep: scores.sleep,
+      stress: scores.stress,
+      fatigue: scores.fatigue
+    });
   };
 
   // Scroll to top when view changes
@@ -279,10 +285,10 @@ export const ReadinessCheck = ({ onComplete, onCancel }: ReadinessCheckProps) =>
                       </div>
                       <div className="flex-1 min-w-0">
                         <h3 className={cn("font-headline text-base md:text-lg font-black uppercase italic tracking-tight leading-tight", isRedline ? "text-crimson" : scenario.color)}>
-                          Your Readiness is {calibration.readiness}%.
+                          {t('readiness.score_result', { score: calibration.readiness })}
                         </h3>
                         <p className="text-xs text-zinc-400 mt-2">
-                          Based on your HMS variables ({scenario.title.toLowerCase()}), take it easy on the warm-ups and focus closely on technique, but your programmed intensity remains bound to the system recovery curve.
+                          {t('readiness.recommendation_msg', { scenario: t(scenario.title).toLowerCase() })}
                         </p>
                       </div>
                     </div>
