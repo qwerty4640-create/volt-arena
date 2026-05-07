@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { User, Mail, Scale, Ruler, Trophy, Dumbbell, Calendar, BadgeCheck, Edit3, Info, X, Crown, Zap, Medal, Skull, CheckCircle2, BarChart3, AlertTriangle, Activity, ChevronDown, ChevronUp, ChevronLeft, MoveDown, Target, ListOrdered, Camera, Loader2 } from 'lucide-react';
+import { User, Mail, Scale, Ruler, Trophy, Dumbbell, Calendar, BadgeCheck, Edit3, Info, X, Crown, Zap, Medal, Skull, CheckCircle2, BarChart3, AlertTriangle, Activity, ChevronDown, ChevronUp, ChevronLeft, MoveDown, Target, ListOrdered, Camera, Loader2, ArrowRight } from 'lucide-react';
 import { useSettings, TrainingGoal } from '../contexts/SettingsContext';
 import { useWorkout } from '../contexts/WorkoutContext';
 import { useToast } from '../contexts/ToastContext';
 import { cn } from '../lib/utils';
-import { getBlockForWeek, getPlanForDuration } from '../constants/periodization';
+import { ProgramDetailModal } from './ProgramDetailModal';
 import { calculateTier, getTierStyle } from '../lib/strength';
 
 export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
@@ -14,7 +14,7 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
   const { history, resetProgram } = useWorkout();
   const { showToast } = useToast();
   const [showTierInfo, setShowTierInfo] = React.useState(false);
-  const [showProtocolModal, setShowProtocolModal] = React.useState(false);
+  const [showProgramDetail, setShowProgramDetail] = React.useState(false);
   const [show1RMModal, setShow1RMModal] = React.useState(false);
   const [showBiometricsModal, setShowBiometricsModal] = React.useState(false);
   const [isEditing, setIsEditing] = React.useState(false);
@@ -64,14 +64,13 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
-  const [adjustingDuration, setAdjustingDuration] = React.useState(profile?.trainingDurationMonths || 3);
-  const [adjustingFrequency, setAdjustingFrequency] = React.useState(profile?.trainingFrequency || 3);
-  const [adjustingObjectives, setAdjustingObjectives] = React.useState<TrainingGoal[]>(profile?.trainingObjectives || (profile?.trainingGoal ? [profile.trainingGoal] : ['powerbuilding']));
+
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
   const [edit1RMData, setEdit1RMData] = React.useState({
     squatPR: profile?.squatPR || 0,
     benchPR: profile?.benchPR || 0,
@@ -80,14 +79,6 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
 
   // Calculate current training week
   const lastWorkout = (history?.length || 0) > 0 ? history[0] : null;
-  const lastWeekMatch = lastWorkout?.title.match(/W(\d+)/);
-  const lastWeek = lastWeekMatch ? parseInt(lastWeekMatch[1]) : 1;
-  const currentWeek = lastWeek + (profile?.trainingWeekOffset || 0);
-  const { block, weekInBlock, plan } = getBlockForWeek(
-    currentWeek, 
-    (profile?.trainingDurationMonths || 3) * 4, 
-    profile?.trainingObjectives || (profile?.trainingGoal ? [profile.trainingGoal] : ['powerbuilding'])
-  );
 
   const handleUpdate1RM = async () => {
     setLoading(true);
@@ -113,32 +104,6 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
     }
   };
 
-  const handleAdjustProtocol = async () => {
-    setLoading(true);
-    try {
-      // Calculate new competition date based on duration from now
-      const newCompetitionDate = Date.now() + (adjustingDuration * 30 * 24 * 60 * 60 * 1000);
-
-      // If duration or goals changed, we reset the program cycle
-      const objectivesChanged = JSON.stringify(adjustingObjectives) !== JSON.stringify(profile?.trainingObjectives || (profile?.trainingGoal ? [profile.trainingGoal] : ['powerbuilding']));
-      if (adjustingDuration !== profile?.trainingDurationMonths || objectivesChanged) {
-        await resetProgram();
-      }
-
-      await updateProfile({
-        trainingDurationMonths: adjustingDuration,
-        trainingFrequency: adjustingFrequency,
-        trainingGoal: adjustingObjectives[0] || 'powerbuilding',
-        trainingObjectives: adjustingObjectives,
-        competitionDate: newCompetitionDate,
-        trainingWeekOffset: 0
-      });
-      showToast(t('toast.actionSuccessful'), 3000, 'success');
-      setShowProtocolModal(false);
-    } finally {
-      setLoading(false);
-    }
-  };
   const [editData, setEditData] = React.useState({
     firstName: profile?.firstName || '',
     lastName: profile?.lastName || '',
@@ -168,9 +133,6 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
         trainingObjectives: profile.trainingObjectives || (profile.trainingGoal ? [profile.trainingGoal] : ['powerbuilding']),
         trainingDurationMonths: profile.trainingDurationMonths || 3,
       });
-      setAdjustingObjectives(profile.trainingObjectives || (profile.trainingGoal ? [profile.trainingGoal] : ['powerbuilding']));
-      setAdjustingDuration(profile.trainingDurationMonths || 3);
-      setAdjustingFrequency(profile.trainingFrequency || 3);
     }
   }, [profile]);
 
@@ -434,70 +396,15 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
             </div>
           </div>
         </motion.div>
-
-
-
-        {/* Deployment Settings */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="glass-panel px-4 py-8 md:p-6 border-white/5 relative overflow-hidden"
-        >
-          <div className="absolute top-0 right-0 w-32 h-32 bg-volt/5 rounded-full blur-3xl pointer-events-none" />
-
-          <div className="flex items-center justify-between mb-6 relative z-10">
-            <div className="flex items-center gap-3">
-              <Zap className="text-volt" size={20} />
-              <h3 className="font-sans text-sm font-bold uppercase tracking-widest text-white">{t('settings.deploymentSettings')}</h3>
-            </div>
-            <button
-              onClick={() => setShowProtocolModal(true)}
-              className="p-2 bg-volt/10 border border-volt/30 text-volt hover:bg-volt/20 hover:border-volt transition-all shadow-[0_0_10px_rgba(0,182,255,0.1)]"
-            >
-              <Edit3 size={14} />
-            </button>
-          </div>
-
-          <div className="space-y-4 relative z-10">
-            <div className="p-4 bg-void/40 border border-white/5 mb-4">
-              <div className="flex-1">
-                <p className="text-[8px] font-black uppercase text-zinc-500 mb-1">{t('settings.objective')}</p>
-                <p className="text-xs font-bold text-white uppercase tracking-widest">
-                  {(profile.trainingObjectives && profile.trainingObjectives.length > 0) 
-                    ? profile.trainingObjectives.map(g => t(`goal.${g}`)).join(' + ') 
-                    : t(`goal.${profile.trainingGoal}`)}
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="p-4 bg-void/40 border border-white/5">
-                <p className="text-[8px] font-black uppercase text-zinc-500 mb-1">{t('settings.currentBlock')}</p>
-                <p className="text-xs font-bold text-white uppercase tracking-widest leading-tight">{block.label || block.type}</p>
-                <div className="flex justify-between items-center mt-2">
-                  <span className="text-xs font-bold italic text-zinc-400">{t('workout.week')} {weekInBlock} / {block.durationWeeks}</span>
-                </div>
-              </div>
-
-              <div className="p-4 bg-void/40 border border-white/5">
-                <p className="text-[8px] font-black uppercase text-zinc-500 mb-1">{t('onboarding.frequency')}</p>
-                <p className="text-xs font-bold text-white uppercase tracking-widest">{profile.trainingFrequency || 3} Missions / Wk</p>
-
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 gap-4">
-              <div className="p-4 bg-void/40 border border-white/5">
-                <p className="text-[8px] font-black uppercase text-zinc-500 mb-1">{t('settings.totalDuration')}</p>
-                <p className="text-xs font-bold text-white uppercase tracking-widest">
-                  {(profile.trainingDurationMonths || 3) * 4} {t('onboarding.weeks').toUpperCase()}
-                </p>
-              </div>
-            </div>
-          </div>
-        </motion.div>
       </div>
+
+      <ProgramDetailModal 
+        isOpen={showProgramDetail}
+        onClose={() => setShowProgramDetail(false)}
+        missionPeriod={profile.missionPeriod || '3M'}
+        trainingObjectives={profile.trainingObjectives || (profile.trainingGoal ? [profile.trainingGoal] : ['powerbuilding'])}
+        customProgramBlocks={profile.customProgramBlocks || []}
+      />
 
       {/* Biometrics Adjustment Modal */}
       {mounted && createPortal(
@@ -707,209 +614,6 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
                     className="flex-1 py-4 bg-volt text-void font-sans text-xs font-bold uppercase tracking-widest hover:bg-white hover:shadow-[0_0_20px_var(--primary-glow)] transition-all disabled:opacity-50"
                   >
                     {loading ? 'Saving...' : 'Save'}
-                  </button>
-                </div>
-              </motion.div>
-            </div>
-          )}
-        </AnimatePresence>,
-        document.body
-      )}
-
-      {/* Protocol Adjustment Modal */}
-      {mounted && createPortal(
-        <AnimatePresence>
-          {showProtocolModal && (
-            <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 overflow-y-auto custom-scrollbar">
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setShowProtocolModal(false)}
-                className="fixed inset-0 bg-void/80 backdrop-blur-sm"
-              />
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                className="relative w-full max-w-2xl glass-panel p-3 md:p-6 border-volt/30 shadow-2xl my-auto"
-              >
-                <div className="flex items-center gap-4 mb-8">
-                  <div className="p-2 md:p-4 bg-volt/10 text-volt">
-                    <Zap size={32} />
-                  </div>
-                  <div>
-                    <h3 className="font-sans text-2xl font-black uppercase italic tracking-tight text-white">{t('settings.deploymentSettings')}</h3>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">{t('settings.protocolRecalibrate')}</p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                  {/* Left Column: Objective & Timeline */}
-                  <div className="space-y-6">
-                    {/* Mission Objective */}
-                    <div className="space-y-4">
-                      <div>
-                        <div className="flex justify-between items-end mb-2">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 block">{t('settings.trainingObjective')}</label>
-                          <span className="text-[8px] font-black uppercase tracking-widest text-zinc-600">
-                            {adjustingObjectives.length} / 3 SELECTED
-                          </span>
-                        </div>
-                        <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
-                          {(['pure_strength', 'powerbuilding', 'hypertrophy', 'peaking', 'longevity'] as TrainingGoal[]).map(goal => {
-                            const goalIndex = adjustingObjectives.indexOf(goal);
-                            const isSelected = goalIndex !== -1;
-                            const priorityLabel = goalIndex === 0 ? 'P' : goalIndex === 1 ? 'S' : goalIndex === 2 ? 'T' : '';
-                            return (
-                              <button
-                                key={goal}
-                                onClick={() => {
-                                  let newObjectives = [...adjustingObjectives];
-                                  if (isSelected) {
-                                    if (newObjectives.length > 1) {
-                                      newObjectives = newObjectives.filter(g => g !== goal);
-                                    }
-                                  } else {
-                                    if (newObjectives.length < 3) {
-                                      newObjectives.push(goal);
-                                    }
-                                  }
-                                  setAdjustingObjectives(newObjectives);
-                                }}
-                                className={cn(
-                                  "p-3 border-none transition-all text-center relative group min-h-[44px] flex flex-col items-center justify-center gap-0.5",
-                                  isSelected
-                                    ? "bg-volt/10 text-white ring-1 ring-volt/30"
-                                    : "bg-surface-variant text-zinc-400 hover:bg-white/5 hover:text-zinc-200"
-                                )}
-                              >
-                                <span className={cn(
-                                  "font-sans text-[9px] font-bold uppercase tracking-widest transition-colors",
-                                  isSelected ? "text-white" : "text-zinc-400"
-                                )}>
-                                  {t(`goal.${goal}`)}
-                                </span>
-                                {isSelected && (
-                                  <div className="flex items-center gap-1">
-                                    <span className="text-[7px] font-black text-volt italic opacity-80">
-                                      {priorityLabel === 'P' ? 'PRIMARY' : priorityLabel === 'S' ? 'SECONDARY' : 'TERTIARY'}
-                                    </span>
-                                  </div>
-                                )}
-                                {isSelected && (
-                                  <div className="absolute top-1 right-1">
-                                    <CheckCircle2 size={8} className="text-volt" />
-                                  </div>
-                                )}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      <div className="p-4 bg-void/40 border border-white/5">
-                        <p className="text-[8px] font-bold uppercase tracking-widest text-zinc-500 mb-2">{t('settings.objective')} SPECS</p>
-                        <p className="text-[10px] text-white font-bold uppercase tracking-widest leading-relaxed">
-                          {adjustingObjectives.map(g => t(`goal.${g}`)).join(' + ')}: {t(`goal.${adjustingObjectives[0]}.desc`)}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('settings.monthsToComp')}</label>
-                      <div className="grid grid-cols-4 gap-2">
-                        {[3, 6, 9, 12].map((m) => (
-                          <button
-                            key={m}
-                            onClick={() => setAdjustingDuration(m)}
-                            className={cn(
-                              "py-3 border font-sans text-xs font-bold uppercase tracking-widest transition-all",
-                              adjustingDuration === m ? "bg-volt/10 border-volt text-white" : "bg-surface-variant border-white/5 text-zinc-500"
-                            )}
-                          >
-                            {m}M
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Right Column: Blocks & Frequency */}
-                  <div className="space-y-6">
-                    <div className="p-4 bg-void/40 border border-white/5">
-                      <p className="text-[8px] font-bold uppercase tracking-widest text-zinc-500 mb-2">{t('settings.blockRedistribution')} ({adjustingDuration * 4} {t('onboarding.weeks')})</p>
-                      <div className="space-y-2">
-                        {getPlanForDuration(adjustingDuration * 4, adjustingObjectives).map((b, i) => (
-                          <div key={i} className="flex justify-between items-center text-[10px]">
-                            <span className="font-bold uppercase text-zinc-400">{b.label || b.type}</span>
-                            <span className="font-bold text-volt">{b.durationWeeks} {t('onboarding.weeks')}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('onboarding.frequency')}</label>
-                      <div className="grid grid-cols-5 gap-2">
-                        {[3, 4, 5, 6, 7].map((f) => (
-                          <button
-                            key={f}
-                            onClick={() => setAdjustingFrequency(f)}
-                            className={cn(
-                              "py-3 border font-sans text-xs font-bold uppercase tracking-widest transition-all",
-                              adjustingFrequency === f ? "bg-volt/10 border-volt text-white" : "bg-surface-variant border-white/5 text-zinc-500"
-                            )}
-                          >
-                            {f}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="p-4 bg-void/40 border border-white/5">
-                      <p className="text-[8px] font-bold uppercase tracking-widest text-zinc-500 mb-2">{t('settings.weeklyVolumePreview')}</p>
-                      <p className="text-xs font-bold text-white uppercase tracking-widest">
-                        {adjustingFrequency} {t('nav.training')} / {t('workout.week')}
-                      </p>
-                      <p className="text-[10px] text-zinc-500 mt-1 uppercase">
-                        {t('settings.monthlyMissions')}: {adjustingFrequency * 4}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                { (adjustingDuration !== (profile.trainingDurationMonths || 3) || 
-                   adjustingFrequency !== (profile.trainingFrequency || 3) || 
-                   JSON.stringify(adjustingObjectives) !== JSON.stringify(profile.trainingObjectives || (profile.trainingGoal ? [profile.trainingGoal] : ['powerbuilding']))) && (
-                  <div className="p-4 bg-volt/10 border border-volt/30 mb-8">
-                    <div className="flex items-start gap-3 text-left">
-                      <Info size={16} className="text-volt shrink-0 mt-0.5" />
-                      <p className="text-xs sm:text-sm text-volt font-medium leading-relaxed">
-                        {t('settings.protocolWarning')}
-                        {adjustingDuration !== profile.trainingDurationMonths && ` ${t('settings.durationRestartWarning')}`}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-2 gap-4">
-                  <button
-                    onClick={() => setShowProtocolModal(false)}
-                    className="w-full btn-secondary py-4"
-                  >
-                    {t('common.close')}
-                  </button>
-                  <button
-                    onClick={handleAdjustProtocol}
-                    disabled={loading || (
-                      adjustingDuration === (profile.trainingDurationMonths || 3) &&
-                      adjustingFrequency === (profile.trainingFrequency || 3) &&
-                      JSON.stringify(adjustingObjectives) === JSON.stringify(profile.trainingObjectives || (profile.trainingGoal ? [profile.trainingGoal] : ['powerbuilding']))
-                    )}
-                    className="w-full btn-primary py-4 disabled:opacity-50"
-                  >
-                    {loading ? t('settings.recalculate') : t('settings.confirmProtocol')}
                   </button>
                 </div>
               </motion.div>

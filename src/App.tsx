@@ -23,6 +23,8 @@ import {
   LogOut,
   Loader2
 } from 'lucide-react';
+import { DeploymentIcon } from './components/DeploymentIcon';
+import { MissionIcon } from './components/MissionIcon';
 import { ViewType, NavItem, ImmersionMode } from './types';
 import { AnalysisView } from './components/AnalysisView';
 import { SafetyHUD } from './components/SafetyHUD';
@@ -33,7 +35,9 @@ import { BerserkerHUD } from './components/BerserkerHUD';
 import { ConfirmationModal } from './components/ConfirmationModal';
 import { SettingsView } from './components/SettingsView';
 import { ProfileView } from './components/ProfileView';
+import { DeploymentView } from './components/DeploymentView';
 import { OnboardingFlow } from './components/OnboardingFlow';
+import { WelcomeCarousel } from './components/WelcomeCarousel';
 import { WorkoutLog } from './components/WorkoutLog';
 import { PostWorkoutSummary } from './components/PostWorkoutSummary';
 import { WorkoutHistory } from './components/WorkoutHistory';
@@ -45,7 +49,7 @@ import { WorkoutProvider, useWorkout } from './contexts/WorkoutContext';
 import { auth, signInWithGoogle, logout, signInWithEmail, signUpWithEmail } from './firebase';
 import { calculateTier } from './lib/strength';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { Mail, Lock, UserPlus, Languages } from 'lucide-react';
+import { Mail, Lock, UserPlus, ChevronLeft } from 'lucide-react';
 
 import { ReadinessCheck } from './components/ReadinessCheck';
 import { ReflectionModal } from './components/ReflectionModal';
@@ -58,23 +62,6 @@ declare global {
     webkitSpeechRecognition: any;
   }
 }
-
-const MissionIcon = ({ size = 24, strokeWidth = 2, className }: { size?: number, strokeWidth?: number, className?: string }) => (
-  <svg 
-    xmlns="http://www.w3.org/2000/svg" 
-    width={size} 
-    height={size} 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth={strokeWidth} 
-    strokeLinecap="round" 
-    strokeLinejoin="round" 
-    className={cn("lucide lucide-navigation-2", className)}
-  >
-    <polygon points="12 2 19 21 12 17 5 21 12 2"/>
-  </svg>
-);
 
 const RecoveryIcon = ({ size = 24, strokeWidth = 2, className }: { size?: number, strokeWidth?: number, className?: string }) => (
   <svg 
@@ -98,8 +85,9 @@ const RecoveryIcon = ({ size = 24, strokeWidth = 2, className }: { size?: number
 
 const NAV_ITEMS: NavItem[] = [
   { id: 'analysis', label: 'nav.dashboard', icon: RecoveryIcon },
-  { id: 'training', label: 'nav.training', icon: MissionIcon },
   { id: 'analytics', label: 'nav.analytics', icon: BarChart3 },
+  { id: 'training', label: 'nav.training', icon: DeploymentIcon },
+  { id: 'deployment', label: 'nav.deployment', icon: MissionIcon },
 ];
 
 const SHOW_EXPERIMENTAL_FEATURES = false;
@@ -174,6 +162,7 @@ function AppContent() {
   const [isGuestMode, setIsGuestMode] = useState(() => localStorage.getItem('volt_guest_mode') === 'true');
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [isSafetyActive, setIsSafetyActive] = useState(false);
+  const [preAuthStep, setPreAuthStep] = useState<'carousel' | 'questionnaire' | 'auth'>('carousel');
   
   // Lock orientation to portrait
   useEffect(() => {
@@ -220,7 +209,7 @@ function AppContent() {
     localStorage.setItem('volt_active_view', activeView);
     
     // Track the last "main" view to support intelligent back-navigation from sub-views like History
-    const mainViews: ViewType[] = ['analysis', 'training', 'analytics', 'settings', 'profile'];
+    const mainViews: ViewType[] = ['analysis', 'training', 'analytics', 'settings', 'profile', 'deployment'];
     if (mainViews.includes(activeView)) {
       setLastView(activeView);
     }
@@ -270,6 +259,11 @@ function AppContent() {
       console.log("Auth: Global state changed. User:", user ? user.email : "NULL");
       setUser(user);
       setIsAuthChecking(false);
+      
+      // If user logs out, reset the onboarding view to carousel
+      if (!user) {
+        setPreAuthStep('carousel');
+      }
     });
     
     return () => unsubscribe();
@@ -440,13 +434,6 @@ function AppContent() {
   }
 
   if (!user && !isGuestMode) {
-    const languages: { code: any; label: string }[] = [
-      { code: 'en', label: 'English' },
-      { code: 'zh', label: '中文' },
-      { code: 'ko', label: '한국어' },
-      { code: 'es', label: 'Español' },
-    ];
-
     const handleAuth = async (e: React.FormEvent) => {
       e.preventDefault();
       if (isEmailAuthLoading || isGoogleAuthLoading) return;
@@ -514,6 +501,42 @@ function AppContent() {
       }
     };
 
+    if (preAuthStep === 'carousel') {
+      return (
+        <WelcomeCarousel
+          onSkip={() => {
+            setIsSigningUp(true);
+            if (localStorage.getItem('volt_pending_onboarding')) {
+              setPreAuthStep('auth');
+            } else {
+              setPreAuthStep('questionnaire');
+            }
+          }}
+          onSignUp={() => {
+            setIsSigningUp(true);
+            setPreAuthStep('auth');
+          }}
+          onSignIn={() => {
+            setIsSigningUp(false);
+            setPreAuthStep('auth');
+          }}
+        />
+      );
+    }
+
+    if (preAuthStep === 'questionnaire') {
+      return (
+        <OnboardingFlow 
+          onBack={() => setPreAuthStep('carousel')}
+          onCompleteHandler={(data) => {
+            localStorage.setItem('volt_pending_onboarding', JSON.stringify(data));
+            setIsSigningUp(true);
+            setPreAuthStep('auth');
+          }}
+        />
+      );
+    }
+
     return (
       <div className="h-screen w-screen bg-void flex justify-center p-2 md:p-8 relative overflow-y-auto custom-scrollbar">
         
@@ -522,16 +545,8 @@ function AppContent() {
           animate={{ opacity: 1, y: 0 }}
           className="relative z-10 max-w-md w-full glass-panel px-4 py-10 md:p-10 border border-white/10 flex flex-col items-center text-center my-auto"
         >
-          <div className="w-24 h-24 bg-surface-container-highest flex items-center justify-center mb-6 border border-volt/20 relative group overflow-hidden">
-            <div className="absolute inset-0 bg-volt/5 animate-pulse" />
-            <div className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-volt" />
-            <div className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-volt" />
-            <div className="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 border-volt" />
-            <div className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-volt" />
-            <VoltLogo size={64} className="text-volt relative z-10" />
-          </div>
-          
-          <h1 className="font-sans font-black tracking-tighter uppercase italic text-2xl text-white mb-1">
+
+          <h1 className="font-sans font-black tracking-tighter uppercase italic text-4xl text-white mb-1">
             {t('app.title')}
           </h1>
           <p className="font-sans font-bold text-[10px] tracking-[0.2em] uppercase text-zinc-500 mb-8">
@@ -617,53 +632,11 @@ function AppContent() {
 
           <button 
             type="button"
-            onClick={() => {
-              if (isEmailAuthLoading || isGoogleAuthLoading) return;
-              setIsSigningUp(!isSigningUp);
-              setAuthError(null);
-            }}
-            className="mt-6 w-full py-4 border border-volt/30 text-[10px] font-black text-volt uppercase tracking-widest hover:bg-volt/5 hover:border-volt transition-all duration-300"
+            onClick={() => setPreAuthStep('carousel')}
+            className="w-full mt-4 flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-widest text-zinc-500 hover:text-white transition-colors"
           >
-            {isSigningUp ? t('auth.signInPrompt') : t('auth.signUpPrompt')}
+            <ChevronLeft size={12} /> Back to onboarding
           </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setIsGuestMode(true);
-              localStorage.setItem('volt_guest_mode', 'true');
-              if (localStorage.getItem('volt_ghost_profile')) {
-                 setActiveView('analysis');
-              }
-            }}
-            className="w-full mt-4 flex items-center justify-center gap-2 bg-transparent text-zinc-400 py-3 font-sans text-[10px] font-bold uppercase tracking-widest hover:text-white transition-colors duration-300"
-          >
-            Start Training (Guest Mode) →
-          </button>
-
-          {/* Language Selector */}
-          <div className="mt-8 w-full space-y-3">
-            <div className="flex items-center gap-2 justify-center">
-              <Languages size={12} className="text-zinc-600" />
-              <span className="text-[8px] font-black text-zinc-600 uppercase tracking-widest">{t('auth.systemLanguage')}</span>
-            </div>
-            <div className="grid grid-cols-4 gap-1 w-full">
-              {languages.map((lang) => (
-                <button
-                  key={lang.code}
-                  onClick={() => setLanguage(lang.code)}
-                  className={cn(
-                    "py-2 border transition-all text-[8px] font-black",
-                    language === lang.code 
-                      ? "bg-volt border-volt text-void" 
-                      : "border-white/5 text-zinc-500 hover:text-white hover:border-white/20"
-                  )}
-                >
-                  {lang.label}
-                </button>
-              ))}
-            </div>
-          </div>
 
           <p className="mt-8 text-[8px] text-zinc-600 font-medium leading-relaxed max-w-[280px]">
             {t('auth.privacyNotice')}
@@ -726,6 +699,7 @@ function AppContent() {
         }} 
       />;
       case 'analytics': return <AnalyticsView />;
+      case 'deployment': return <DeploymentView />;
       case 'settings': return <SettingsView onExit={() => setIsExitModalOpen(true)} onNavigateToProfile={() => setActiveView('profile')} />;
       case 'profile': return <ProfileView onBack={() => setActiveView('settings')} />;
       case 'workout-log': return <WorkoutLog 
@@ -850,6 +824,12 @@ function AppContent() {
               </>
             )}
             <button className="text-zinc-500 hover:text-volt transition-colors p-1"><Bell size={18} className="md:w-5 md:h-5" /></button>
+            <button 
+              onClick={() => setActiveView('deployment')} 
+              className={cn("transition-colors p-1", activeView === 'deployment' ? "text-volt" : "text-zinc-500 hover:text-volt")}
+            >
+              <MissionIcon size={18} className="md:w-5 md:h-5" />
+            </button>
             <button onClick={() => setActiveView('settings')} className={cn("transition-colors p-1", activeView === 'settings' ? "text-volt" : "text-zinc-500 hover:text-volt")}><Settings size={18} className="md:w-5 md:h-5" /></button>
           </div>
         </div>
@@ -1077,19 +1057,7 @@ function AppContent() {
                     className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" 
                     style={{ background: "var(--primary-gradient)", zIndex: -1 }} 
                   />
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    width={24} 
-                    height={24} 
-                    viewBox="0 0 24 24" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    strokeWidth={isActive ? 3 : 2} 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round"
-                  >
-                    <polygon points="12 2 19 21 12 17 5 21 12 2" />
-                  </svg>
+                  <DeploymentIcon size={24} strokeWidth={isActive ? 3 : 2} />
                 </motion.div>
                 <span className={cn(
                   "text-[8px] font-black uppercase tracking-widest mt-1 transition-colors",
@@ -1101,6 +1069,20 @@ function AppContent() {
         </div>
 
         <div className="flex-1 flex justify-evenly items-center py-5">
+          <button
+            onClick={() => setActiveView('deployment')}
+            className={cn(
+              "flex flex-col items-center gap-1 transition-all",
+              activeView === 'deployment' ? "text-volt" : "text-zinc-500"
+            )}
+          >
+            <MissionIcon 
+              size={20} 
+              strokeWidth={activeView === 'deployment' ? 3 : 2}
+              className={activeView === 'deployment' ? "text-volt" : "text-zinc-500"}
+            />
+            <span className="text-[8px] font-black uppercase tracking-widest">DEPLOYMENT</span>
+          </button>
           <button
             onClick={() => setActiveView('settings')}
             className={cn(

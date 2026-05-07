@@ -1,13 +1,12 @@
 # Design System Documentation: Volt Arena
 
 ## 1. Visual Identity & Mood
-- **Core Aesthetic**: Cyberpunk, Tactical, Brutalist, Rigorous Sports Science.
+- **Core Aesthetic**: Tactical, Brutalist, Rigorous Sports Science.
 - **Philosophy**: "Hardware over Software." Interfaces should look like military-grade biometric monitors or high-performance ECU readouts.
 - **Key Traits**: 
   - Zero border-radius (Hard edges only).
   - High contrast (Neon on Void).
   - Heavy usage of skewed/italic transformations.
-  - Layered "HUD" (Heads-Up Display) elements.
 
 ## 2. Color Palette
 | Token | Hex | Usage |
@@ -26,6 +25,7 @@
   - **Data/Technical**: `font-mono uppercase tracking-widest`.
   - **Captions**: `text-[10px] font-bold text-zinc-500 uppercase tracking-widest`.
 - **Text Shadows**: Usage of `text-glow-volt` for high-importance metrics.
+- Do not use font size smaller than 10px unless it is absolutely necessary.
 
 ## 4. UI Components & Patterns
 ### Structure
@@ -49,10 +49,15 @@
 | **Tertiary** | View logs, details | `bg-white/10 text-zinc-400 text-[10px] font-black uppercase tracking-widest hover:bg-volt hover:text-void transition-all px-6 py-3 backdrop-blur-sm` |
 
 ### Specific Elements
-- **Hardware Decor**: Corner brackets (border-t/l-2), tick marks (1px lines), sensor labels (e.g., `Ref_System_V4.2`).
 - **Sliders**: Custom range inputs with explicit value readouts and track glows.
 
 ## 5. Layout Constants
 - **Max Width**: `1600px` (ultra-wide ready).
 - **Responsive Gutter**: `1rem` (mobile), `1.5rem` (tablet), `2rem` (desktop).
 - **Notch Support**: Included via `env(safe-area-inset-top)`.
+
+
+
+
+
+

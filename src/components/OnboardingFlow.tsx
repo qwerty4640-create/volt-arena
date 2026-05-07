@@ -1,18 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { User, Scale, Ruler, Dumbbell, ChevronRight, CheckCircle2, Trophy, ArrowLeft, Medal, Skull, Zap, Loader2, Info, ChevronDown } from 'lucide-react';
-import { useSettings, UserProfile, TrainingGoal } from '../contexts/SettingsContext';
+import { useSettings, UserProfile, TrainingGoal, MissionPeriod, CustomBlock } from '../contexts/SettingsContext';
+import { ProgramDesigner } from './ProgramDesigner';
 import { cn } from '../lib/utils';
 import { auth, logout } from '../firebase';
 
-type OnboardingStep = 'biometrics' | 'goals' | 'objective' | 'complete';
+type OnboardingStep = 'biometrics' | 'goals' | 'objective' | 'advanced' | 'period_setup' | 'complete';
 
-export const OnboardingFlow = () => {
+export const OnboardingFlow = ({ 
+  onCompleteHandler,
+  onBack
+}: { 
+  onCompleteHandler?: (data: any) => void,
+  onBack?: () => void
+}) => {
   const { profile, updateProfile, unit, setUnit, t } = useSettings();
   const [step, setStep] = useState<OnboardingStep>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('volt_onboarding_step');
-      if (saved && ['biometrics', 'goals', 'objective', 'complete'].includes(saved)) {
+      if (saved && ['biometrics', 'goals', 'objective', 'advanced', 'complete'].includes(saved)) {
         return saved as OnboardingStep;
       }
     }
@@ -36,6 +43,8 @@ export const OnboardingFlow = () => {
     trainingGoal: 'powerbuilding' as TrainingGoal,
     trainingObjectives: ['powerbuilding'] as TrainingGoal[],
     trainingDurationMonths: 3,
+    missionPeriod: '3M' as any, // Cast to any to avoid type issue if MissionPeriod not imported
+    customProgramBlocks: [] as any[],
     trainingFrequency: 4,
     trainingStyle: '' as string,
     trainingAge: 'untrained' as 'untrained' | 'novice' | 'intermediate' | 'advanced' | 'elite',
@@ -44,6 +53,10 @@ export const OnboardingFlow = () => {
     deadlift1RM: '',
     gymProfile: 'commercial' as 'commercial' | 'powerlifting',
     injuryNoGoList: [] as string[],
+    hasFullGymAccess: true,
+    hasMedicalConditions: false,
+    medicalConditionDetails: '',
+    isExperiencedAthlete: false,
   });
 
   const [isInitialized, setIsInitialized] = useState(false);
@@ -147,6 +160,17 @@ export const OnboardingFlow = () => {
     } else if (step === 'goals') {
       setStep('objective');
     } else if (step === 'objective') {
+      const advancedGoals = ['tactical', 'explosiveness', 'endurance', 'prehab'];
+      const needsAdvancedSetup = formData.trainingObjectives.some(g => advancedGoals.includes(g));
+
+      if (needsAdvancedSetup) {
+        setStep('advanced');
+      } else {
+        setStep('period_setup');
+      }
+    } else if (step === 'advanced') {
+      setStep('period_setup');
+    } else if (step === 'period_setup') {
       setLoading(true);
       try {
         const heightVal = unit === 'metric'
@@ -166,6 +190,8 @@ export const OnboardingFlow = () => {
           trainingGoal: formData.trainingGoal,
           trainingObjectives: formData.trainingObjectives,
           trainingDurationMonths: formData.trainingDurationMonths,
+          missionPeriod: formData.missionPeriod,
+          customBlocks: formData.customBlocks,
           trainingFrequency: formData.trainingFrequency,
           level: formData.trainingAge,
           squatPR: parseFloat(formData.squat1RM) || 0,
@@ -173,7 +199,11 @@ export const OnboardingFlow = () => {
           deadliftPR: parseFloat(formData.deadlift1RM) || 0,
           gymProfile: formData.gymProfile,
           injuryNoGoList: formData.injuryNoGoList,
-          onboardingCompleted: false, // Still need to click "Enter Arena"
+          hasFullGymAccess: formData.hasFullGymAccess,
+          hasMedicalConditions: formData.hasMedicalConditions,
+          medicalConditionDetails: formData.medicalConditionDetails,
+          isExperiencedAthlete: formData.isExperiencedAthlete,
+          onboardingCompleted: false,
         });
         setStep('complete');
       } finally {
@@ -185,7 +215,40 @@ export const OnboardingFlow = () => {
   const handleComplete = async () => {
     setLoading(true);
     try {
-      await updateProfile({ onboardingCompleted: true });
+      if (onCompleteHandler) {
+        // Collect all data and pass to handler
+        const heightVal = unit === 'metric'
+          ? (parseFloat(formData.height) || 0)
+          : ((parseFloat(formData.heightFeet) || 0) * 12) + (parseFloat(formData.heightInches) || 0);
+          
+        onCompleteHandler({
+            unit: unit,
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            gender: formData.gender,
+            age: parseInt(formData.age) || 0,
+            height: heightVal,
+            weight: parseFloat(formData.weight) || 0,
+            trainingGoal: formData.trainingGoal,
+            trainingObjectives: formData.trainingObjectives,
+            trainingDurationMonths: formData.trainingDurationMonths,
+            missionPeriod: formData.missionPeriod,
+            customProgramBlocks: formData.customProgramBlocks,
+            trainingFrequency: formData.trainingFrequency,
+            level: formData.trainingAge,
+            squatPR: parseFloat(formData.squat1RM) || 0,
+            benchPR: parseFloat(formData.bench1RM) || 0,
+            deadliftPR: parseFloat(formData.deadlift1RM) || 0,
+            gymProfile: formData.gymProfile,
+            injuryNoGoList: formData.injuryNoGoList,
+            hasFullGymAccess: formData.hasFullGymAccess,
+            hasMedicalConditions: formData.hasMedicalConditions,
+            medicalConditionDetails: formData.medicalConditionDetails,
+            isExperiencedAthlete: formData.isExperiencedAthlete,
+        });
+      } else {
+        await updateProfile({ onboardingCompleted: true });
+      }
       localStorage.removeItem('volt_onboarding_step');
     } finally {
       setLoading(false);
@@ -276,7 +339,7 @@ export const OnboardingFlow = () => {
             >
               <div className="flex items-center gap-6">
                 <button
-                  onClick={() => logout()} // Back to Step 1 (Signup) means logging out
+                  onClick={() => onBack ? onBack() : logout()} // Back to Carousel if possible, else Step 1 (Signup) means logging out
                   className="w-12 h-12 shrink-0 bg-surface-container-lowest border border-white/5 flex items-center justify-center text-zinc-400 hover:text-white hover:border-volt transition-all"
                 >
                   <ArrowLeft size={24} />
@@ -617,21 +680,28 @@ export const OnboardingFlow = () => {
                 </div>
 
                 <div className="space-y-4">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('onboarding.trainingPeriod')}</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('onboarding.missionPeriod')}</label>
                   <div className="grid grid-cols-4 gap-2">
-                    {[3, 6, 9, 12].map((m) => (
+                    {(['3M', '6M', '9M', '12M'] as MissionPeriod[]).map((m) => (
                       <button
                         key={m}
-                        onClick={() => setFormData({ ...formData, trainingDurationMonths: m })}
+                        onClick={() => setFormData({ 
+                          ...formData, 
+                          missionPeriod: m,
+                          trainingDurationMonths: parseInt(m)
+                        })}
                         className={cn(
                           "py-3 border font-headline text-xs font-black uppercase tracking-widest transition-all",
-                          formData.trainingDurationMonths === m ? "bg-volt/10 border-volt text-white" : "bg-surface-variant border-white/5 text-zinc-500"
+                          formData.missionPeriod === m ? "bg-volt/10 border-volt text-white" : "bg-surface-variant border-white/5 text-zinc-500"
                         )}
                       >
-                        {m}{t('onboarding.months').charAt(0)}
+                        {m}
                       </button>
                     ))}
                   </div>
+                  <p className="text-[9px] text-zinc-600 font-black uppercase tracking-widest italic">
+                    {t('onboarding.periodDescription')}
+                  </p>
                 </div>
 
                 <div className="space-y-4">
@@ -690,14 +760,14 @@ export const OnboardingFlow = () => {
                 <div className="flex justify-between items-end">
                   <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('onboarding.objective')}</label>
                   <span className="text-[8px] font-black uppercase tracking-widest text-zinc-600">
-                    {formData.trainingObjectives.length} / 3 SELECTED
+                    {formData.trainingObjectives.length} / 2 SELECTED
                   </span>
                 </div>
                 <div className="grid grid-cols-1 gap-3">
-                  {(['pure_strength', 'powerbuilding', 'hypertrophy', 'peaking', 'longevity'] as TrainingGoal[]).map((goal) => {
+                  {(['pure_strength', 'powerbuilding', 'hypertrophy', 'peaking', 'longevity', 'tactical', 'explosiveness', 'endurance', 'prehab'] as TrainingGoal[]).map((goal) => {
                     const goalIndex = formData.trainingObjectives.indexOf(goal);
                     const isSelected = goalIndex !== -1;
-                    const priorityLabel = goalIndex === 0 ? 'PRIMARY' : goalIndex === 1 ? 'SECONDARY' : goalIndex === 2 ? 'TERTIARY' : '';
+                    const priorityLabel = goalIndex === 0 ? 'PRIMARY' : goalIndex === 1 ? 'SECONDARY' : '';
                     
                     return (
                       <button
@@ -709,7 +779,7 @@ export const OnboardingFlow = () => {
                               newObjectives = newObjectives.filter(g => g !== goal);
                             }
                           } else {
-                            if (newObjectives.length < 3) {
+                            if (newObjectives.length < 2) {
                               newObjectives.push(goal);
                             }
                           }
@@ -773,6 +843,189 @@ export const OnboardingFlow = () => {
             </motion.div>
           )}
 
+          {step === 'advanced' && (
+            <motion.div
+              key="advanced"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="glass-panel px-4 md:px-8 py-6 md:p-10 space-y-6 md:space-y-8"
+            >
+              <div className="flex items-center gap-6">
+                <button
+                  onClick={() => setStep('objective')}
+                  className="w-12 h-12 shrink-0 bg-surface-container-lowest border border-white/5 flex items-center justify-center text-zinc-400 hover:text-white hover:border-volt transition-all"
+                >
+                  <ArrowLeft size={24} />
+                </button>
+                <div className="space-y-1">
+                  <h2 className="font-headline text-3xl font-black uppercase italic tracking-tight text-white">Environment & Experience</h2>
+                  <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">ADVANCED OBJECTIVES SETUP</p>
+                </div>
+              </div>
+
+              <div className="space-y-8">
+                {/* Gym Access */}
+                <div className="space-y-4">
+                  <label className="text-xs font-black tracking-widest text-zinc-500 uppercase flex items-center gap-2">
+                    <Info size={14} className="text-volt" />
+                    Do you have access to a fully equipped gym?
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      onClick={() => setFormData({ ...formData, hasFullGymAccess: true })}
+                      className={cn(
+                        "p-4 border transition-all text-left flex flex-col gap-1 items-center justify-center",
+                        formData.hasFullGymAccess ? "bg-volt/10 border-volt" : "bg-surface-variant border-white/5"
+                      )}
+                    >
+                      <span className="font-headline font-black italic tracking-widest uppercase">YES</span>
+                    </button>
+                    <button
+                      onClick={() => setFormData({ ...formData, hasFullGymAccess: false })}
+                      className={cn(
+                        "p-4 border transition-all text-left flex flex-col gap-1 items-center justify-center",
+                        !formData.hasFullGymAccess ? "bg-volt/10 border-volt" : "bg-surface-variant border-white/5"
+                      )}
+                    >
+                      <span className="font-headline font-black italic tracking-widest uppercase">NO</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Medical Conditions */}
+                <div className="space-y-4">
+                  <label className="text-xs font-black tracking-widest text-zinc-500 uppercase flex items-center gap-2">
+                    <Skull size={14} className="text-volt" />
+                    Do you have any medical conditions?
+                  </label>
+                  <p className="text-zinc-400 text-xs font-medium leading-relaxed">
+                    Let us know if you have any limitations or specific injuries we should be aware of.
+                  </p>
+                  
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      onClick={() => setFormData({ ...formData, hasMedicalConditions: true })}
+                      className={cn(
+                        "p-4 border transition-all text-left flex flex-col gap-1 items-center justify-center",
+                        formData.hasMedicalConditions ? "bg-volt/10 border-volt" : "bg-surface-variant border-white/5"
+                      )}
+                    >
+                      <span className="font-headline font-black italic tracking-widest uppercase">YES</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setFormData({ 
+                          ...formData, 
+                          hasMedicalConditions: false,
+                          medicalConditionDetails: ''
+                        });
+                      }}
+                      className={cn(
+                        "p-4 border transition-all text-left flex flex-col gap-1 items-center justify-center",
+                        !formData.hasMedicalConditions ? "bg-volt/10 border-volt" : "bg-surface-variant border-white/5"
+                      )}
+                    >
+                      <span className="font-headline font-black italic tracking-widest uppercase">NO</span>
+                    </button>
+                  </div>
+                  
+                  {formData.hasMedicalConditions && (
+                    <div className="mt-4">
+                      <label className="text-[10px] sm:text-xs font-black tracking-widest text-zinc-500 mb-2 sm:mb-3 block uppercase">
+                        Please describe your condition(s) briefly
+                      </label>
+                      <textarea
+                        value={formData.medicalConditionDetails}
+                        onChange={(e) => setFormData({ ...formData, medicalConditionDetails: e.target.value })}
+                        className="w-full bg-surface-container-lowest border border-white/5 p-4 text-white focus:border-volt focus:ring-1 focus:ring-volt transition-all text-sm outline-none resize-none h-24"
+                        placeholder="e.g., Lower back pain when squatting heavy, torn right meniscus..."
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Experience Level */}
+                <div className="space-y-4">
+                  <label className="text-xs font-black tracking-widest text-zinc-500 uppercase flex items-center gap-2">
+                    <Zap size={14} className="text-volt" />
+                    Are you an experienced athlete / soldier?
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      onClick={() => setFormData({ ...formData, isExperiencedAthlete: true })}
+                      className={cn(
+                        "p-4 border transition-all text-left flex flex-col gap-1 items-center justify-center",
+                        formData.isExperiencedAthlete ? "bg-volt/10 border-volt" : "bg-surface-variant border-white/5"
+                      )}
+                    >
+                      <span className="font-headline font-black italic tracking-widest uppercase">YES</span>
+                    </button>
+                    <button
+                      onClick={() => setFormData({ ...formData, isExperiencedAthlete: false })}
+                      className={cn(
+                        "p-4 border transition-all text-left flex flex-col gap-1 items-center justify-center",
+                        !formData.isExperiencedAthlete ? "bg-volt/10 border-volt" : "bg-surface-variant border-white/5"
+                      )}
+                    >
+                      <span className="font-headline font-black italic tracking-widest uppercase">NO</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={handleNext}
+                disabled={loading}
+                className="w-full btn-primary py-4 uppercase font-black tracking-[0.2em] text-sm flex items-center justify-center gap-2"
+              >
+                {loading ? t('onboarding.calibrating') : t('onboarding.analyzeProtocol')} <ChevronRight size={20} />
+              </button>
+            </motion.div>
+          )}
+
+          {step === 'period_setup' && (
+            <motion.div
+              key="period_setup"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="glass-panel px-4 md:px-8 py-6 md:p-10 space-y-6 md:space-y-8"
+            >
+              <div className="flex items-center gap-6">
+                <button
+                  onClick={() => setStep('objective')}
+                  className="w-12 h-12 shrink-0 bg-surface-container-lowest border border-white/5 flex items-center justify-center text-zinc-400 hover:text-white hover:border-volt transition-all"
+                >
+                  <ArrowLeft size={24} />
+                </button>
+                <div className="space-y-1">
+                  <h2 className="font-headline text-3xl font-black uppercase italic tracking-tight text-white">{t('onboarding.periodSetup')}</h2>
+                  <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">{t('onboarding.step5')}</p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-zinc-400 text-xs font-medium leading-relaxed">
+                  {t('onboarding.choosePeriod')}
+                </p>
+                <ProgramDesigner 
+                  missionPeriod={formData.missionPeriod || '3M'} 
+                  onUpdate={(blocks) => setFormData({ ...formData, customProgramBlocks: blocks })}
+                  initialBlocks={formData.customProgramBlocks}
+                />
+              </div>
+
+              <button
+                onClick={handleNext}
+                disabled={loading || (formData.customProgramBlocks || []).reduce((acc, b) => acc + (b as any).durationWeeks, 0) < (parseInt(formData.missionPeriod) * 4)}
+                className="w-full bg-volt text-void font-headline font-black uppercase tracking-widest p-5 flex items-center justify-center gap-2 rounded-none hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(0,182,255,0.3)] active:scale-[0.98] transition-all disabled:opacity-50"
+              >
+                {loading ? t('onboarding.calibrating') : t('onboarding.finalize')} <ChevronRight size={20} />
+              </button>
+            </motion.div>
+          )}
+
           {step === 'complete' && (
             <motion.div
               key="complete"
@@ -795,7 +1048,7 @@ export const OnboardingFlow = () => {
                 </button>
                 <div className="space-y-1">
                   <h2 className="font-headline text-3xl font-black uppercase italic tracking-tight text-white">{t('onboarding.protocolFinalized')}</h2>
-                  <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">{t('onboarding.step5')}</p>
+                  <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">{t('onboarding.step6')}</p>
                 </div>
               </div>
 

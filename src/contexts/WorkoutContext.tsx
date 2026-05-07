@@ -15,7 +15,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { db, auth, handleFirestoreError, OperationType } from '../firebase';
 import { useSettings, UserProfile } from './SettingsContext';
 import { useToast } from './ToastContext';
-import { BlockType, getBlockForWeek } from '../constants/periodization';
+import { BlockType, getBlockForWeek, getRetentionProtocol } from '../constants/periodization';
 import { 
   getExercisesByPattern, 
   ExerciseDefinition, 
@@ -89,6 +89,10 @@ export interface WorkoutSession {
   systemicFatigueModifier?: number;
   currentExerciseIndex: number;
   currentSetIndex: number;
+  warmupCompleted?: boolean;
+  warmupSkipped?: boolean;
+  cooldownCompleted?: boolean;
+  cooldownSkipped?: boolean;
 }
 
 export type RecoveryType = string;
@@ -204,6 +208,95 @@ const WORKOUT_TEMPLATES = [
   }
 ];
 
+const ENDURANCE_TEMPLATES = [
+  {
+    title: 'Mission: Aerobic Base',
+    slots: [
+      { pattern: 'impact', weight: 0, reps: '45 min', sets: 1 },
+      { pattern: 'core', weight: 0, reps: '1 min', sets: 3 },
+    ]
+  },
+  {
+    title: 'Mission: Threshold',
+    slots: [
+      { pattern: 'impact', weight: 0, reps: '5 min', sets: 4 },
+      { pattern: 'mobility', weight: 0, reps: '10 min', sets: 1 },
+    ]
+  },
+  {
+    title: 'Mission: Lactate',
+    slots: [
+      { pattern: 'impact', weight: 0, reps: '1 min', sets: 8 },
+      { pattern: 'pull_horizontal', weight: 20, reps: '15', sets: 2 },
+    ]
+  }
+];
+
+const TACTICAL_TEMPLATES = [
+  {
+    title: 'Mission: Combat Capacity',
+    slots: [
+      { pattern: 'impact', weight: 40, reps: '30 min', sets: 1 },
+      { pattern: 'push_vertical', weight: 20, reps: '15', sets: 3 },
+      { pattern: 'core', weight: 0, reps: '1 min', sets: 3 },
+    ]
+  },
+  {
+    title: 'Mission: Functional Strength',
+    slots: [
+      { pattern: 'hinge', weight: 60, reps: '8', sets: 4 },
+      { pattern: 'pull_vertical', weight: 0, reps: 'AMRAP', sets: 3 },
+      { pattern: 'plyometric', weight: 0, reps: '5', sets: 4 }
+    ]
+  },
+  {
+    title: 'Mission: Work Capacity',
+    slots: [
+      { pattern: 'squat', weight: 30, reps: '15', sets: 4 },
+      { pattern: 'push_horizontal', weight: 30, reps: '20', sets: 3 },
+      { pattern: 'impact', weight: 0, reps: '10 min', sets: 1 }
+    ]
+  }
+];
+
+const EXPLOSIVE_TEMPLATES = [
+  {
+    title: 'Mission: Rate of Force',
+    slots: [
+      { pattern: 'plyometric', weight: 0, reps: '3', sets: 5 },
+      { pattern: 'squat', weight: 70, reps: '3', sets: 4 },
+      { pattern: 'pull_horizontal', weight: 40, reps: '8', sets: 3 },
+    ]
+  },
+  {
+    title: 'Mission: Elasticity',
+    slots: [
+      { pattern: 'plyometric', weight: 0, reps: '5', sets: 4 },
+      { pattern: 'hinge', weight: 60, reps: '5', sets: 3 },
+      { pattern: 'core', weight: 0, reps: '30 sec', sets: 4 },
+    ]
+  },
+];
+
+const MEDICAL_TEMPLATES = [
+  {
+    title: 'Mission: Restoration',
+    slots: [
+      { pattern: 'mobility', weight: 0, reps: '5 min', sets: 2 },
+      { pattern: 'core', weight: 0, reps: '1 min', sets: 3 },
+      { pattern: 'accessory', weight: 10, reps: '15', sets: 3 },
+    ]
+  },
+  {
+    title: 'Mission: Stability',
+    slots: [
+      { pattern: 'core', weight: 0, reps: '45 sec', sets: 4 },
+      { pattern: 'accessory', weight: 15, reps: '12', sets: 3 },
+      { pattern: 'mobility', weight: 0, reps: '10 min', sets: 1 },
+    ]
+  }
+];
+
 const calculateFallback1RM = (
   exerciseName: string,
   bodyweight: number | undefined,
@@ -284,11 +377,28 @@ const createSessionFromTemplate = (
 ): WorkoutSession => {
   const goals = profile?.trainingObjectives || (profile?.trainingGoal ? [profile.trainingGoal] : ['powerbuilding']);
   const primaryGoal = goals[0] || 'powerbuilding';
-  const durationMonths = profile?.trainingDurationMonths || 3;
-  const totalDurationWeeks = durationMonths * 4;
-  const { block, weekInBlock } = getBlockForWeek(week, totalDurationWeeks, goals);
-  const templateIndex = (day - 1) % WORKOUT_TEMPLATES.length;
-  const initialTemplate = WORKOUT_TEMPLATES[templateIndex];
+  const customProgramBlocks = profile?.customProgramBlocks || [];
+  const hasCustomPlan = customProgramBlocks.length > 0;
+  
+  const totalDurationWeeks = hasCustomPlan 
+    ? customProgramBlocks.reduce((acc, b) => acc + b.durationWeeks, 0)
+    : (profile?.trainingDurationMonths || 3) * 4;
+
+  const { block, weekInBlock } = getBlockForWeek(week, totalDurationWeeks, goals, profile?.customProgramBlocks);
+
+  let templatePool = WORKOUT_TEMPLATES;
+  if (goals.includes('endurance')) {
+    templatePool = ENDURANCE_TEMPLATES;
+  } else if (goals.includes('tactical')) {
+    templatePool = TACTICAL_TEMPLATES;
+  } else if (goals.includes('explosiveness')) {
+    templatePool = EXPLOSIVE_TEMPLATES;
+  } else if (goals.includes('prehab') || goals.includes('longevity')) {
+    templatePool = MEDICAL_TEMPLATES;
+  }
+
+  const templateIndex = (day - 1) % templatePool.length;
+  const initialTemplate = templatePool[templateIndex];
 
   // --- PHASE 2: BLENDING ENGINE ---
   const interferenceModifier = getInterferenceAdjustment(goals);
@@ -297,13 +407,38 @@ const createSessionFromTemplate = (
   // Clone slots to avoid mutating constants
   let dynamicSlots = [...initialTemplate.slots];
 
+  // Apply Medical Conditions filtering
+  if (profile?.hasMedicalConditions && profile.medicalConditionDetails) {
+    const details = profile.medicalConditionDetails.toLowerCase();
+    
+    dynamicSlots = dynamicSlots.map(slot => {
+      const conditionMatch = (
+        (details.includes('squat') && slot.pattern === 'squat') ||
+        (details.includes('hinge') && slot.pattern === 'hinge') ||
+        (details.includes('run') && slot.pattern === 'impact') ||
+        (details.includes('row') && slot.pattern === 'impact') ||
+        (details.includes('carry') && slot.pattern === 'core')
+      );
+      
+      if (conditionMatch) {
+         if (slot.pattern === 'squat') return { ...slot, pattern: 'core' };
+         if (slot.pattern === 'hinge') return { ...slot, pattern: 'core' };
+         if (slot.pattern === 'impact') return { ...slot, pattern: 'mobility' };
+         return { ...slot, pattern: 'core' };
+      }
+      return slot;
+    });
+  }
+
   // Inject secondary goal work
   secondaryInjections.forEach(injection => {
     switch (injection) {
       case 'POWER_PRIMER':
+      case 'PLYOMETRICS':
         dynamicSlots.unshift({ pattern: 'plyometric', weight: 0, reps: '3-5', sets: 2 } as any);
         break;
       case 'MOBILITY_FLOW':
+      case 'REHAB_CIRCUIT':
         dynamicSlots.unshift({ pattern: 'mobility', weight: 0, reps: 'hold', sets: 1 } as any);
         break;
       case 'ACCESSORY_PUMP':
@@ -311,6 +446,10 @@ const createSessionFromTemplate = (
         break;
       case 'STRENGTH_ACCESORY':
         dynamicSlots.push({ pattern: 'pull_horizontal', weight: 30, reps: '8', sets: 3 } as any);
+        break;
+      case 'TACTICAL_CONDITIONING':
+      case 'ZONE_2_CARDIO':
+        dynamicSlots.push({ pattern: 'impact', weight: 0, reps: '20 min', sets: 1 } as any);
         break;
     }
   });
@@ -356,6 +495,7 @@ const createSessionFromTemplate = (
   }
 
   const finalIntensity = blockIntensity * readinessModifier * recoveryModifier;
+  const retentionProtocol = getRetentionProtocol(profile);
 
   return {
     id: `w${week}d${day}`,
@@ -369,8 +509,17 @@ const createSessionFromTemplate = (
     totalWeek: week,
     exercises: dynamicSlots.map((slot, i) => {
       const preferredImpact = goals.includes('longevity') ? 'low' : 'high';
-      const availableExercises = getExercisesByPattern(slot.pattern as any, preferredImpact);
+      let availableExercises = getExercisesByPattern(slot.pattern as any, preferredImpact);
       
+      // Filter by gym access
+      if (profile?.hasFullGymAccess === false) {
+        const gymKeywords = ['Barbell', 'Machine', 'Cable', 'Leg Press', 'Hack Squat', 'Assault Bike', 'Rowing', 'Sandbag', 'Ammo Can', 'Log '];
+        const noGym = availableExercises.filter(e => !gymKeywords.some(kw => e.name.toLowerCase().includes(kw.toLowerCase())));
+        if (noGym.length > 0) {
+          availableExercises = noGym;
+        }
+      }
+
       // Select best fit exercise for the goal
       let selectedExercise = availableExercises[0]; 
       
@@ -468,51 +617,62 @@ const createSessionFromTemplate = (
         isBench,
         isDeadlift,
         restPeriod: constraintExercise.restPeriod || (isMainLift ? 180 : 90),
-        sets: Array.from({ length: sets }).map((_, j) => {
-          let targetSetRpe = constraintExercise.targetRPE ? constraintExercise.targetRPE.toString() : '';
+        sets: [
+          ...Array.from({ length: sets }).map((_, j) => {
+            let targetSetRpe = constraintExercise.targetRPE ? constraintExercise.targetRPE.toString() : '';
 
-          // Overwrite RPE Logic based on Goal if no constraint RPE
-          if (!targetSetRpe) {
-            if (isMainLift) {
-              if (block.type === BlockType.PEAKING || block.type === BlockType.MAX_EFFORT || block.type === BlockType.OVERREACH || block.type === BlockType.COMPETITION) {
-                if (goals.includes('pure_strength')) {
-                  targetSetRpe = isFinalWeek ? '10' : '9';
-                } else if (goals.includes('hypertrophy')) {
-                  targetSetRpe = isFinalWeek ? '10' : '9.5';
-                } else if (goals.includes('peaking')) {
-                  targetSetRpe = isFinalWeek ? '10' : '7';
+            // Overwrite RPE Logic based on Goal if no constraint RPE
+            if (!targetSetRpe) {
+              if (isMainLift) {
+                if (block.type === BlockType.PEAKING || block.type === BlockType.MAX_EFFORT || block.type === BlockType.OVERREACH || block.type === BlockType.COMPETITION) {
+                  if (goals.includes('pure_strength')) {
+                    targetSetRpe = isFinalWeek ? '10' : '9';
+                  } else if (goals.includes('hypertrophy')) {
+                    targetSetRpe = isFinalWeek ? '10' : '9.5';
+                  } else if (goals.includes('peaking')) {
+                    targetSetRpe = isFinalWeek ? '10' : '7';
+                  } else if (goals.includes('longevity')) {
+                    targetSetRpe = '7.5';
+                  } else {
+                    targetSetRpe = j === 0 ? '9' : '8'; // Top set vs Back-off sets (Powerbuilding fallback)
+                  }
                 } else if (goals.includes('longevity')) {
                   targetSetRpe = '7.5';
-                } else {
-                  targetSetRpe = j === 0 ? '9' : '8'; // Top set vs Back-off sets (Powerbuilding fallback)
                 }
-              } else if (goals.includes('longevity')) {
-                targetSetRpe = '7.5';
-              }
-            } else {
-              // Accessories
-              if (block.type === BlockType.OVERREACH || block.type === BlockType.MAX_EFFORT) {
-                if (goals.includes('hypertrophy')) {
-                  targetSetRpe = '9';
-                } else if (goals.includes('powerbuilding') || goals.includes('pure_strength')) {
-                  targetSetRpe = '7.5';
+              } else {
+                // Accessories
+                if (block.type === BlockType.OVERREACH || block.type === BlockType.MAX_EFFORT) {
+                  if (goals.includes('hypertrophy')) {
+                    targetSetRpe = '9';
+                  } else if (goals.includes('powerbuilding') || goals.includes('pure_strength')) {
+                    targetSetRpe = '7.5';
+                  }
+                } else if (goals.includes('longevity')) {
+                  targetSetRpe = '7.0';
                 }
-              } else if (goals.includes('longevity')) {
-                targetSetRpe = '7.0';
               }
             }
-          }
 
-          return {
-            id: `s${i}-${j}`,
-            weight: weight.toString(),
-            baseWeight: weight.toString(),
-            reps: reps,
-            baseReps: reps,
-            rpe: targetSetRpe,
+            return {
+              id: `s${i}-${j}`,
+              weight: weight.toString(),
+              baseWeight: weight.toString(),
+              reps: reps,
+              baseReps: reps,
+              rpe: targetSetRpe,
+              isCompleted: false
+            };
+          }),
+          ...(retentionProtocol.active && isMainLift ? [{
+            id: `s${i}-retention`,
+            weight: (Math.round((weight * 1.05) / 5) * 5).toString(),
+            baseWeight: (Math.round((weight * 1.05) / 5) * 5).toString(),
+            reps: '1',
+            baseReps: '1',
+            rpe: '9',
             isCompleted: false
-          };
-        })
+          }] : [])
+        ]
       };
     }),
     currentExerciseIndex: 0,
@@ -526,6 +686,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [history, setHistory] = useState<WorkoutSession[]>([]);
   const [recoveryHistory, setRecoveryHistory] = useState<ActiveRecovery[]>([]);
   const [currentSession, setCurrentSession] = useState<WorkoutSession | null>(null);
+  const [restRemaining, setRestRemaining] = useState<number | null>(null);
   const [mockWorkoutCount, setMockWorkoutCount] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [pendingReflection, setPendingReflection] = useState<WorkoutSession | null>(null);
@@ -1169,6 +1330,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }));
     } else {
       session = getNextWorkoutTemplate();
+      session.startTime = Date.now();
       // Clear overrides when session starts
       setNextWorkoutOverrides(null);
       localStorage.removeItem('berserker_template_overrides');
@@ -1226,6 +1388,26 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const updateCurrentSession = (session: WorkoutSession) => {
     setCurrentSession(session);
   };
+
+  const startRestTimer = (seconds: number) => {
+    setRestRemaining(seconds);
+  };
+
+  useEffect(() => {
+    if (restRemaining === null || restRemaining <= 0) {
+      if (restRemaining === 0) setRestRemaining(null);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setRestRemaining(prev => {
+        if (prev === null || prev <= 1) return null;
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [restRemaining]);
 
   const addExerciseToSession = (newExercises: Exercise[]) => {
     if (!currentSession) return;
@@ -1553,6 +1735,9 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
       updateActiveRecovery,
       deleteActiveRecovery,
       updateCurrentSession,
+      startRestTimer,
+      restRemaining,
+      setRestRemaining,
       addExerciseToSession,
       replaceExerciseInSession,
       setNextWorkoutExercises,

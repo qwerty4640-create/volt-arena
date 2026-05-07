@@ -29,7 +29,6 @@ import { calculateTier } from '../lib/strength';
 import { FieldManual } from './FieldManual';
 import { getWarmupForLift, COOL_DOWN_ROUTINE } from '../data/warmupLibrary';
 import { getSwappableExercises } from '../constants/exercises';
-import { BlockWidget } from './AnalysisView';
 
 interface TrainingViewProps {
   onContinueSession?: () => void;
@@ -64,7 +63,16 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
   useEffect(() => {
     setMounted(true);
   }, []);
-  const [elapsedTime, setElapsedTime] = React.useState('00:00:00');
+  const [elapsedTime, setElapsedTime] = React.useState(() => {
+    if (activeOrNext && currentSession?.startTime && isLifting) {
+      const diff = Date.now() - currentSession.startTime;
+      const hours = Math.floor(diff / 3600000);
+      const minutes = Math.floor((diff % 3600000) / 60000);
+      const seconds = Math.floor((diff % 60000) / 1000);
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+    return '00:00:00';
+  });
 
   const currentTier = profile ? calculateTier(
     profile.squatPR || 0,
@@ -505,16 +513,6 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
           <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">REF_ID: {activeOrNext.id}</span>
         </div>
       </motion.div>
-
-        {/* Block Progression Widget */}
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.15 }}
-          className="col-span-1 md:col-span-2 lg:col-span-3 glass-panel p-4 md:p-8"
-        >
-          <BlockWidget />
-        </motion.div>
 
       {/* My PRs Module */}
       <motion.div

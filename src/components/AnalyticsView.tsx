@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Trophy, Target, TrendingUp, BarChart3, Calendar, Filter, ChevronDown, Plus, Settings2 } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
 import { useWorkout } from '../contexts/WorkoutContext';
-import { ExternalActivityWidget, BlockWidget } from './AnalysisView';
+import { ExternalActivityWidget } from './AnalysisView';
 import { isMainLiftMatch, calculateE1RM } from '../utils/workoutUtils';
 import { calculateExrxPercentile } from '../lib/strength';
 import { InfoTooltip } from './InfoTooltip';

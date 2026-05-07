@@ -349,7 +349,7 @@ interface WorkoutLogProps {
 export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps) => {
   const { t, unit, profile, lastVoiceCommand, experimentalFeatures } = useSettings();
   const { showToast } = useToast();
-  const { currentSession, updateCurrentSession, history, getCalibrationStatus, calculateProgramCalories } = useWorkout();
+  const { currentSession, updateCurrentSession, history, getCalibrationStatus, calculateProgramCalories, startRestTimer, restRemaining, setRestRemaining, discardSession } = useWorkout();
   const weightUnit = unit === 'metric' ? t('workout.kg') : t('workout.lbs');
 
   const [isCompleting, setIsCompleting] = useState(false);
@@ -359,13 +359,8 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
   const [exerciseToRemove, setExerciseToRemove] = useState<string | null>(null);
   const [isAICoachOpen, setIsAICoachOpen] = useState(false);
   const [showIntensityWarning, setShowIntensityWarning] = useState(false);
-  const [isWarmupCompleted, setIsWarmupCompleted] = useState(false);
-  const [isWarmupSkipped, setIsWarmupSkipped] = useState(false);
-  const [isCooldownCompleted, setIsCooldownCompleted] = useState(false);
-  const [isCooldownSkipped, setIsCooldownSkipped] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [elapsedMs, setElapsedMs] = useState(0);
-  const [restRemaining, setRestRemaining] = useState<number | null>(null);
+  const [elapsedMs, setElapsedMs] = useState(() => (currentSession?.startTime ? Date.now() - currentSession.startTime : 0));
   const lastAutoRegToastRef = useRef<{ [key: string]: number }>({});
   const { requestWakeLock, releaseWakeLock, isLocked } = useWakeLock();
 
@@ -387,17 +382,7 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
     };
   }, [releaseWakeLock]);
 
-  useEffect(() => {
-    if (restRemaining === null) return;
-    if (restRemaining <= 0) {
-      setRestRemaining(null);
-      return;
-    }
-    const interval = setInterval(() => {
-      setRestRemaining(prev => (prev !== null && prev > 0 ? prev - 1 : null));
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [restRemaining]);
+  // Rest timer effect - handled in WorkoutContext
 
   const formatRestTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -462,6 +447,16 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
   }, [lastVoiceCommand, experimentalFeatures]);
 
   if (!currentSession) return null;
+
+  const isWarmupCompleted = currentSession.warmupCompleted || false;
+  const isWarmupSkipped = currentSession.warmupSkipped || false;
+  const isCooldownCompleted = currentSession.cooldownCompleted || false;
+  const isCooldownSkipped = currentSession.cooldownSkipped || false;
+
+  const setIsWarmupCompleted = (val: boolean) => updateCurrentSession({ ...currentSession, warmupCompleted: val });
+  const setIsWarmupSkipped = (val: boolean) => updateCurrentSession({ ...currentSession, warmupSkipped: val });
+  const setIsCooldownCompleted = (val: boolean) => updateCurrentSession({ ...currentSession, cooldownCompleted: val });
+  const setIsCooldownSkipped = (val: boolean) => updateCurrentSession({ ...currentSession, cooldownSkipped: val });
 
   const exercises = currentSession.exercises || [];
   const completedSets = exercises.flatMap(ex => ex.sets || []).filter(s => s.isCompleted);
@@ -650,10 +645,65 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
       if (newlyCompletedSet?.isCompleted) {
         haptics.success();
         
+        // Auto-regulation trigger for toggleSetCompletion
+        const exIndex = newExercises.findIndex(e => e.id === exerciseId);
+        const ex = newExercises[exIndex];
+        const targetRpe = currentSession.targetRpe || 7;
+        const actualRpe = parseFloat(newlyCompletedSet.rpe || '');
+        
+        // Only trigger if completed AND RPE > targetRpe (Overshoot protection)
+        if (!isNaN(actualRpe) && actualRpe > targetRpe) {
+          const setIndex = ex.sets.findIndex(s => s.id === setId);
+          if (setIndex !== -1 && setIndex < ex.sets.length - 1) {
+            const actualWeight = parseFloat(newlyCompletedSet.weight) || 0;
+            const prescribedWeight = parseFloat(newlyCompletedSet.baseWeight || newlyCompletedSet.weight) || 0;
+            const actualReps = parseInt(newlyCompletedSet.reps) || 0;
+            const prescribedReps = parseInt(newlyCompletedSet.baseReps || newlyCompletedSet.reps) || 0;
+
+            let weightRatio = 1;
+            if (prescribedWeight > 0 && actualWeight > 0) weightRatio = actualWeight / prescribedWeight;
+            
+            let repFactor = 1;
+            if (prescribedReps > 0 && actualReps > 0) repFactor = 1 + (actualReps - prescribedReps) * 0.03;
+
+            const rpeDiff = actualRpe - targetRpe;
+            const adjustmentFactor = 1 - (rpeDiff * 0.04);
+            let totalFactor = weightRatio * repFactor * adjustmentFactor;
+
+            const isRepFailure = actualReps < prescribedReps && actualReps > 0;
+            if (isRepFailure && rpeDiff >= 0) totalFactor *= 0.95;
+            if (rpeDiff >= 2) totalFactor *= 0.90;
+
+            // Only apply if it's a downward regulation per user request
+            if (totalFactor < 1) {
+              let updatedSets = [...ex.sets];
+              let setsToKeep = updatedSets.length;
+              if (isRepFailure && rpeDiff >= 0) setsToKeep = Math.max(setIndex + 1, updatedSets.length - 1);
+              
+              updatedSets = updatedSets.slice(0, setsToKeep).map((s, idx) => {
+                if (idx > setIndex && !s.isCompleted) {
+                  const refWeight = parseFloat(s.baseWeight || s.weight);
+                  if (!isNaN(refWeight) && refWeight > 0) {
+                    let newWeight = refWeight * totalFactor;
+                    if (unit === 'metric') newWeight = Math.round(newWeight / 2.5) * 2.5;
+                    else newWeight = Math.round(newWeight / 5) * 5;
+                    return { ...s, baseWeight: s.baseWeight || s.weight, weight: Math.max(0, newWeight).toString() };
+                  }
+                }
+                return s;
+              });
+              newExercises[exIndex] = { ...ex, sets: updatedSets };
+              
+              // Show toast for autoregulation since it's happening here now too
+              showToast(t('toast.autoReg', { direction: t('workout.decreased' as any), rpe: targetRpe }), 5000, 'warning');
+            }
+          }
+        }
+
         // Auto-scroll logic: 
         // We need to check AFTER state update if all sets for this exercise are done
-        const ex = newExercises.find(e => e.id === exerciseId);
-        if (ex && ex.sets.every(s => s.isCompleted)) {
+        const exAfterCompletion = newExercises.find(e => e.id === exerciseId);
+        if (exAfterCompletion && exAfterCompletion.sets.every(s => s.isCompleted)) {
             const idx = newExercises.findIndex(e => e.id === exerciseId);
             const nextEx = newExercises[idx + 1];
             if (nextEx) {
@@ -671,8 +721,8 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
         // Use tactical green success toast
         showToast(t('toast.setCompleted', { remaining: remainingSets }), 3000, 'success');
 
-        // Start rest timer (120s default)
-        setRestRemaining(120);
+        // Start rest timer (use exercise specific or 120s default)
+        startRestTimer(ex.restPeriod || 120);
 
         // Set-Level Overrides: Check if first completed set of session is high RPE
         const allCompletedSets = newExercises.flatMap(ex => ex.sets).filter(s => s.isCompleted);
@@ -702,74 +752,77 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
       const actualRpe = field === 'rpe' ? parseFloat(value) : parseFloat(currentSet.rpe);
       const targetRpe = currentSession.targetRpe || 7;
 
-      const actualReps = field === 'reps' ? parseInt(value) : parseInt(currentSet.reps);
-      const prescribedReps = parseInt(currentSet.baseReps || currentSet.reps) || 0;
+      // Only trigger TOAST if completed AND over sRPE
+      if (currentSet.isCompleted && actualRpe > targetRpe) {
+        const actualReps = field === 'reps' ? parseInt(value) : parseInt(currentSet.reps);
+        const prescribedReps = parseInt(currentSet.baseReps || currentSet.reps) || 0;
 
-      const actualWeight = field === 'weight' ? parseFloat(value) : parseFloat(currentSet.weight);
-      const prescribedWeight = parseFloat(currentSet.baseWeight || currentSet.weight) || 0;
+        const actualWeight = field === 'weight' ? parseFloat(value) : parseFloat(currentSet.weight);
+        const prescribedWeight = parseFloat(currentSet.baseWeight || currentSet.weight) || 0;
 
-      // 1. FAIL DETECTION: Stopped early
-      const isRepFailure = actualReps < prescribedReps && actualReps > 0;
-      
-      // 2. OVERSHOOT DETECTION: Hit reps but too hard
-      const rpeDiff = actualRpe - targetRpe;
-      const isSevereOvershoot = rpeDiff >= 2;
+        // 1. FAIL DETECTION: Stopped early
+        const isRepFailure = actualReps < prescribedReps && actualReps > 0;
+        
+        // 2. OVERSHOOT DETECTION: Hit reps but too hard
+        const rpeDiff = actualRpe - targetRpe;
+        const isSevereOvershoot = rpeDiff >= 2;
 
-      if (!isNaN(actualRpe)) {
-        let weightRatio = 1;
-        if (prescribedWeight > 0 && actualWeight > 0) {
-          weightRatio = actualWeight / prescribedWeight;
-        }
+        if (!isNaN(actualRpe)) {
+          let weightRatio = 1;
+          if (prescribedWeight > 0 && actualWeight > 0) {
+            weightRatio = actualWeight / prescribedWeight;
+          }
 
-        let repFactor = 1;
-        if (prescribedReps > 0 && actualReps > 0) {
-          repFactor = 1 + (actualReps - prescribedReps) * 0.03;
-        }
+          let repFactor = 1;
+          if (prescribedReps > 0 && actualReps > 0) {
+            repFactor = 1 + (actualReps - prescribedReps) * 0.03;
+          }
 
-        const adjustmentFactor = 1 - (rpeDiff * 0.04);
-        let totalFactor = weightRatio * repFactor * adjustmentFactor;
+          const adjustmentFactor = 1 - (rpeDiff * 0.04);
+          let totalFactor = weightRatio * repFactor * adjustmentFactor;
 
-        // TACTICAL AUDIBLE: Volume Truncation on Failure
-        if (isRepFailure && rpeDiff >= 0) {
-          totalFactor *= 0.95; // Extra 5% drop for stalling
-          autoRegMessage = "RECOVERY CEILING HIT. TRUNCATING REMAINING VOLUME.";
-        }
+          // TACTICAL AUDIBLE: Volume Truncation on Failure
+          if (isRepFailure && rpeDiff >= 0) {
+            totalFactor *= 0.95; // Extra 5% drop for stalling
+            autoRegMessage = "RECOVERY CEILING HIT. TRUNCATING REMAINING VOLUME.";
+          }
 
-        // TACTICAL AUDIBLE: CNS Tax on Severe Overshoot
-        if (isSevereOvershoot) {
-          totalFactor *= 0.90; // Aggressive drop
-          autoRegMessage = "CRITICAL CNS STRAIN. SCALING INTENSITY TO PREVENT INJURY.";
-        }
+          // TACTICAL AUDIBLE: CNS Tax on Severe Overshoot
+          if (isSevereOvershoot) {
+            totalFactor *= 0.90; // Aggressive drop
+            autoRegMessage = "CRITICAL CNS STRAIN. SCALING INTENSITY TO PREVENT INJURY.";
+          }
 
-        // Apply changes if intensity is off or parameters modified
-        if (Math.abs(rpeDiff) >= 0.5 || Math.abs(weightRatio - 1) > 0.01 || Math.abs(repFactor - 1) > 0.01 || isRepFailure) {
-          // Check if at least ONE future set weight will actually change after rounding
-          let anyWeightChanges = false;
-          
-          for (let i = setIndex + 1; i < ex.sets.length; i++) {
-            const s = ex.sets[i];
-            if (!s.isCompleted) {
-              const referenceWeightLocal = parseFloat(s.baseWeight || s.weight);
-              if (!isNaN(referenceWeightLocal) && referenceWeightLocal > 0) {
-                let newWeight = referenceWeightLocal * totalFactor;
-                if (unit === 'metric') {
-                  newWeight = Math.round(newWeight / 2.5) * 2.5;
-                } else {
-                  newWeight = Math.round(newWeight / 5) * 5;
-                }
-                newWeight = Math.max(0, newWeight);
+          // Apply changes if intensity is off or parameters modified
+          if (totalFactor < 0.99 || isRepFailure) {
+            // Check if at least ONE future set weight will actually change after rounding
+            let anyWeightChanges = false;
+            
+            for (let i = setIndex + 1; i < ex.sets.length; i++) {
+              const s = ex.sets[i];
+              if (!s.isCompleted) {
+                const referenceWeightLocal = parseFloat(s.baseWeight || s.weight);
+                if (!isNaN(referenceWeightLocal) && referenceWeightLocal > 0) {
+                  let newWeight = referenceWeightLocal * totalFactor;
+                  if (unit === 'metric') {
+                    newWeight = Math.round(newWeight / 2.5) * 2.5;
+                  } else {
+                    newWeight = Math.round(newWeight / 5) * 5;
+                  }
+                  newWeight = Math.max(0, newWeight);
 
-                if (Math.abs(newWeight - (parseFloat(s.weight) || 0)) > 0.1) {
-                  anyWeightChanges = true;
-                  break;
+                  if (Math.abs(newWeight - (parseFloat(s.weight) || 0)) > 0.1) {
+                    anyWeightChanges = true;
+                    break;
+                  }
                 }
               }
             }
-          }
 
-          if (anyWeightChanges || (isRepFailure && rpeDiff >= 0)) {
-            willAutoRegulate = true;
-            autoRegDirection = totalFactor < 1 ? 'decreased' : 'increased';
+            if (anyWeightChanges || (isRepFailure && rpeDiff >= 0)) {
+              willAutoRegulate = true;
+              autoRegDirection = 'decreased';
+            }
           }
         }
       }
@@ -778,9 +831,11 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
     const isSevereOvershootMaster = (() => {
       const ex = exercises.find(e => e.id === exerciseId);
       if (!ex || field !== 'rpe') return false;
+      const currentSet = ex.sets.find(s => s.id === setId);
       const actualRpe = parseFloat(value);
       const targetRpe = currentSession.targetRpe || 7;
-      return !isNaN(actualRpe) && (actualRpe - targetRpe >= 2);
+      // Only systemic reduce if completed set is severe overshoot
+      return !isNaN(actualRpe) && currentSet?.isCompleted && (actualRpe - targetRpe >= 2);
     })();
 
     setExercises(prev => prev.map(ex => {
@@ -791,8 +846,10 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
         const setIndex = updatedSets.findIndex(s => s.id === setId);
         if (setIndex !== -1 && (field === 'weight' || field === 'reps')) {
           const newValue = value;
+          const currentIsWarmup = ex.sets[setIndex].isWarmup;
           updatedSets = updatedSets.map((s, idx) => {
-            if (idx >= setIndex && !s.isCompleted) {
+            // Decouple warmup sets from work sets for manual carry-over
+            if (idx >= setIndex && !s.isCompleted && s.isWarmup === currentIsWarmup) {
               return { 
                 ...s, 
                 [field]: newValue,
@@ -805,12 +862,13 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
           });
         }
 
-        // Autoregulation implementation
+        // Autoregulation implementation (Feedback Loop)
         const currentSet = updatedSets.find(s => s.id === setId);
         const actualRpe = parseFloat(currentSet?.rpe || '');
         const targetRpe = currentSession.targetRpe || 7;
 
-        if (!isNaN(actualRpe)) {
+        // FEEDBACK TRIGGER: Only if completed AND over sRPE
+        if (!isNaN(actualRpe) && currentSet?.isCompleted && actualRpe > targetRpe) {
           const setIndex = updatedSets.findIndex(s => s.id === setId);
 
           if (setIndex !== -1 && setIndex < updatedSets.length - 1) {
@@ -838,7 +896,8 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
             if (isRepFailure && rpeDiff >= 0) totalFactor *= 0.95;
             if (rpeDiff >= 2) totalFactor *= 0.90;
 
-            if (Math.abs(rpeDiff) >= 0.5 || Math.abs(weightRatio - 1) > 0.01 || Math.abs(repFactor - 1) > 0.01 || isRepFailure) {
+            // Only downward regulation (Overshoot protection)
+            if (totalFactor < 1) {
               // Volume Truncation check
               let setsToKeep = updatedSets.length;
               if (isRepFailure && rpeDiff >= 0) {

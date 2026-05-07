@@ -1,7 +1,7 @@
 # Project Persistence Rules
 
 ## Design Principles
-- **Aesthetic**: Cyberpunk/Tactical.
+- **Aesthetic**: Tactical.
 - **Rules**:
   - NEVER use rounded corners (`border-radius: 0 !important`).
   - ALWAYS use `Inter` with heavy italic/uppercase styling for primary headings.

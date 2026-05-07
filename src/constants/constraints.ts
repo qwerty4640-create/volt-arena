@@ -54,6 +54,27 @@ export const TRAINING_CONSTRAINTS: TrainingConstraint[] = [
         exercise.restPeriod = 300; // 5 minutes
       }
     }
+  },
+  {
+    id: 'prehab_axial_fatigue_cap',
+    condition: (goals) => goals.includes('prehab') || goals.includes('longevity'),
+    apply: (exercise) => {
+      if (exercise.axialFatigueScore && exercise.axialFatigueScore > 7) {
+        exercise.targetRPE = Math.min(exercise.targetRPE || 10, 7.5);
+        exercise.intensityCap = 0.8;
+      }
+    },
+    message: 'Pre-Hab/Longevity protocol active: high axial fatigue movements restricted'
+  },
+  {
+    id: 'endurance_interference',
+    condition: (goals) => goals.includes('endurance') && goals.includes('pure_strength'),
+    apply: (exercise) => {
+      if (exercise.pattern === 'squat' || exercise.pattern === 'hinge') {
+        exercise.volumeAdjustment = -0.2; // Reduce leg volume by 20% to account for aerobic leg fatigue
+      }
+    },
+    message: 'Concurrent Strength/Endurance training: lowering leg volume to manage interference'
   }
 ];
 
@@ -83,6 +104,10 @@ export const getSecondaryInjection = (goals: TrainingGoal[]): string[] => {
     if (goal === 'longevity') injections.push('MOBILITY_FLOW');
     if (goal === 'peaking') injections.push('POWER_PRIMER');
     if (goal === 'pure_strength') injections.push('STRENGTH_ACCESORY');
+    if (goal === 'tactical') injections.push('TACTICAL_CONDITIONING');
+    if (goal === 'explosiveness') injections.push('PLYOMETRICS');
+    if (goal === 'endurance') injections.push('ZONE_2_CARDIO');
+    if (goal === 'prehab') injections.push('REHAB_CIRCUIT');
   });
 
   return injections;

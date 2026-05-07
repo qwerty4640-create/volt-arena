@@ -1,10 +1,10 @@
 import { LucideIcon } from "lucide-react";
 
-export type ViewType = 'analysis' | 'safety' | 'analytics' | 'berserker' | 'training' | 'settings' | 'workout-log' | 'post-workout' | 'workout-history' | 'profile';
+export type ViewType = 'analysis' | 'safety' | 'analytics' | 'berserker' | 'training' | 'settings' | 'workout-log' | 'post-workout' | 'workout-history' | 'profile' | 'deployment';
 export type ImmersionMode = 'immersive' | 'ar';
 
-export type WidgetId = 'recovery-analysis' | 'pr' | 'macros' | 'joint-stress';
-export type PerformanceWidgetId = 'progression' | 'volume-trend' | 'joint-stress' | 'growth' | 'tactical';
+export type WidgetId = 'recovery-analysis' | 'pr' | 'macros';
+export type PerformanceWidgetId = 'progression' | 'volume-trend' | 'growth' | 'tactical';
 
 export interface NavItem {
   id: ViewType;

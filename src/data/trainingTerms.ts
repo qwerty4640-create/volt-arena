@@ -59,6 +59,11 @@ export const TRAINING_TERMS = {
     title: "Joint Stress Balance",
     short: "Ratio of high-impact work to low-impact recovery.",
     long: "Tracks the structural cost of your training. Maintaining a balance between high-intensity loading and low-impact restoration is critical for long-term joint health and longevity.",
+  },
+  DeploymentObjectives: {
+    title: "Deployment Objectives",
+    short: "The primary goals of your training sequence.",
+    long: "Pure Strength: Max force. Powerbuilding: Strength & size. Hypertrophy: Muscle growth. Longevity: Health & durability. Tactical: Field-ready fitness. Explosiveness: Power. Endurance: Stamina. Prehab: Injury prevention.",
   }
 } as const;
 

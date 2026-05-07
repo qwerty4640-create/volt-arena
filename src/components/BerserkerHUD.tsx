@@ -13,7 +13,27 @@ interface BerserkerHUDProps {
 export const BerserkerHUD = ({ onComplete, onAddActivity, viewType = 'training' }: BerserkerHUDProps) => {
   const { t } = useSettings();
   const { currentSession } = useWorkout();
-  
+  const [elapsedMs, setElapsedMs] = React.useState(() => (currentSession?.startTime ? Date.now() - currentSession.startTime : 0));
+
+  React.useEffect(() => {
+    if (!currentSession?.startTime) return;
+    const interval = setInterval(() => {
+      setElapsedMs(Date.now() - currentSession.startTime!);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [currentSession?.startTime]);
+
+  const formatDuration = (ms: number) => {
+    const totalSeconds = Math.floor(ms / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  };
+
   const isRedline = currentSession?.isRedline;
   const layoutPadding = "w-full";
 
@@ -110,7 +130,11 @@ export const BerserkerHUD = ({ onComplete, onAddActivity, viewType = 'training' 
           </motion.div>
 
           {/* Tactical Status Line */}
-          <div className="mt-8 flex gap-6 opacity-30 justify-center">
+          <div className="mt-8 flex gap-6 opacity-30 justify-center items-center">
+            <span className="font-sans text-[8px] font-bold uppercase tracking-[0.2em] flex items-center gap-2">
+              <Zap size={10} className="text-volt" />
+              ELAPSED: {formatDuration(elapsedMs)}
+            </span>
             <span className="font-sans text-[8px] font-bold uppercase tracking-[0.2em]">
               SYS_STATUS: ACTIVE {currentSession?.penaltyType ? '[RECOVERY_RESTRICTED]' : ''}
             </span>

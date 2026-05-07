@@ -42,9 +42,9 @@
   },
   "patterns": {
     "hardware_decor": {
-      "corner_brackets": true,
-      "tick_marks": true,
-      "sensor_labels": true
+      "corner_brackets": false,
+      "tick_marks": false,
+      "sensor_labels": false
     },
     "animations": {
       "tactical_pulse": "3s cubic-bezier(0.4, 0, 0.6, 1) infinite",

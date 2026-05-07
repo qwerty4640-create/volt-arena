@@ -8,18 +8,22 @@ export interface ExerciseDefinition {
   pattern: 'squat' | 'hinge' | 'push_horizontal' | 'push_vertical' | 'pull_horizontal' | 'pull_vertical' | 'core' | 'accessory' | 'impact' | 'plyometric' | 'mobility';
   impact: 'low' | 'medium' | 'high';
   velocity: 'slow' | 'medium' | 'fast';
+  energySystem?: 'anaerobic_alactic' | 'anaerobic_lactic' | 'aerobic' | 'mixed';
+  axialFatigueScore?: number;
+  connectiveTissueStressScore?: number;
+  gymRequired?: boolean;
 }
 
 export const EXERCISE_DATABASE: ExerciseDefinition[] = [
   // Plyometric / Explosive
-  { name: 'Box Jumps', category: 'Explosive', pattern: 'plyometric', impact: 'high', velocity: 'fast', muscles: ['Quads', 'Glutes', 'Calves'] },
-  { name: 'Med Ball Slams', category: 'Explosive', pattern: 'plyometric', impact: 'medium', velocity: 'fast', muscles: ['Core', 'Shoulders', 'Lats'] },
-  { name: 'Kettlebell Swings', category: 'Explosive', pattern: 'plyometric', impact: 'medium', velocity: 'fast', muscles: ['Hamstrings', 'Glutes', 'Lower Back'] },
+  { name: 'Box Jumps', category: 'Explosive', pattern: 'plyometric', impact: 'high', velocity: 'fast', muscles: ['Quads', 'Glutes', 'Calves'], energySystem: 'anaerobic_alactic', axialFatigueScore: 2, connectiveTissueStressScore: 7 },
+  { name: 'Med Ball Slams', category: 'Explosive', pattern: 'plyometric', impact: 'medium', velocity: 'fast', muscles: ['Core', 'Shoulders', 'Lats'], energySystem: 'anaerobic_alactic', axialFatigueScore: 1, connectiveTissueStressScore: 3 },
+  { name: 'Kettlebell Swings', category: 'Explosive', pattern: 'plyometric', impact: 'medium', velocity: 'fast', muscles: ['Hamstrings', 'Glutes', 'Lower Back'], energySystem: 'anaerobic_lactic', axialFatigueScore: 4, connectiveTissueStressScore: 4 },
   
   // Mobility / Longevity
-  { name: '90/90 Hip Flow', category: 'Mobility', pattern: 'mobility', impact: 'low', velocity: 'slow', muscles: ['Hips'] },
-  { name: 'Cat-Cow', category: 'Mobility', pattern: 'mobility', impact: 'low', velocity: 'slow', muscles: ['Spine', 'Core'] },
-  { name: 'World\'s Greatest Stretch', category: 'Mobility', pattern: 'mobility', impact: 'low', velocity: 'slow', muscles: ['Full Body'] },
+  { name: '90/90 Hip Flow', category: 'Mobility', pattern: 'mobility', impact: 'low', velocity: 'slow', muscles: ['Hips'], energySystem: 'aerobic', axialFatigueScore: 0, connectiveTissueStressScore: 1 },
+  { name: 'Cat-Cow', category: 'Mobility', pattern: 'mobility', impact: 'low', velocity: 'slow', muscles: ['Spine', 'Core'], energySystem: 'aerobic', axialFatigueScore: 0, connectiveTissueStressScore: 1 },
+  { name: 'World\'s Greatest Stretch', category: 'Mobility', pattern: 'mobility', impact: 'low', velocity: 'slow', muscles: ['Full Body'], energySystem: 'aerobic', axialFatigueScore: 0, connectiveTissueStressScore: 1 },
   
   // Squat Category
   { 
@@ -30,17 +34,20 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     velocity: 'medium',
     description: 'A lower-body compound exercise that builds strength in the quads, glutes, and core.',
     tips: ['Keep your chest up.', 'Drive knees outward.', 'Break parallel at the hip crease.'],
-    muscles: ['Quads', 'Glutes', 'Core', 'Hamstrings']
+    muscles: ['Quads', 'Glutes', 'Core', 'Hamstrings'],
+    energySystem: 'anaerobic_alactic',
+    axialFatigueScore: 9,
+    connectiveTissueStressScore: 8
   },
-  { name: 'Safety Bar Squat', category: 'Squat', pattern: 'squat', impact: 'medium', velocity: 'medium', description: 'Squat variation using a specialized bar to reduce shoulder stress while focusing on quads.', tips: ['Keep the chest up.', 'Drive through heels.', 'Ideal for those with limited mobility.'], muscles: ['Quads', 'Glutes', 'Core'] },
-  { name: 'Front Squat', category: 'Squat', pattern: 'squat', impact: 'high', velocity: 'medium', description: 'Front-loaded squat that emphasizes quads and core stability.', tips: ['Keep elbows high.', 'Maintain upright torso.', 'Depth is key.'], muscles: ['Quads', 'Core', 'Glutes'] },
-  { name: 'Goblet Squat', category: 'Squat', pattern: 'squat', impact: 'low', velocity: 'medium', description: 'Holding a weight at chest height to improve squat mechanics and depth.', tips: ['Keep chest up.', 'Drive knees out.', 'Keep weight against chest.'], muscles: ['Quads', 'Glutes', 'Core'] },
-  { name: 'Leg Press', category: 'Squat', pattern: 'squat', impact: 'low', velocity: 'slow', description: 'Machine exercise for legs, allowing high volume for hypertrophy.', tips: ['Full range of motion.', 'Keep feet shoulder-width.', 'Do not lock out knees.'], muscles: ['Quads', 'Glutes', 'Hamstrings'] },
-  { name: 'Hack Squat', category: 'Squat', pattern: 'squat', impact: 'medium', velocity: 'slow', description: 'A stable squat variation that targets quads extensively.', tips: ['Maintain neutral spine.', 'Push through heels.', 'Control the eccentric phase.'], muscles: ['Quads', 'Glutes'] },
-  { name: 'Landmine Squat', category: 'Squat', pattern: 'squat', impact: 'low', velocity: 'medium', description: 'A safe, functional squat variation using a landmine setup.', tips: ['Keep back straight.', 'Push back through hips.', 'Engage core.'], muscles: ['Quads', 'Glutes', 'Core'] },
-  { name: 'Landmine Goblet Squat', category: 'Squat', pattern: 'squat', impact: 'low', velocity: 'medium', description: 'Squat variation using landmine for increased stability and focus on quads.', tips: ['Keep weight close.', 'Maintain posture.', 'Controlled movement.'], muscles: ['Quads', 'Glutes', 'Core'] },
-  { name: 'Pistol Squat', category: 'Squat', pattern: 'squat', impact: 'medium', velocity: 'medium', description: 'Single-leg squat requiring balance and significant strength.', tips: ['Use counter-balance.', 'Keep heel down.', 'Ensure knee alignment.'], muscles: ['Quads', 'Glutes', 'Core'] },
-  { name: 'Shrimp Squat', category: 'Squat', pattern: 'squat', impact: 'medium', velocity: 'medium', description: 'Another single-leg squat variation targeting quads.', tips: ['Control descent.', 'Maintain balance.', 'Keep upright.'], muscles: ['Quads', 'Glutes', 'Core'] },
+  { name: 'Safety Bar Squat', category: 'Squat', pattern: 'squat', impact: 'medium', velocity: 'medium', description: 'Squat variation using a specialized bar to reduce shoulder stress while focusing on quads.', tips: ['Keep the chest up.', 'Drive through heels.', 'Ideal for those with limited mobility.'], muscles: ['Quads', 'Glutes', 'Core'], energySystem: 'anaerobic_alactic', axialFatigueScore: 7, connectiveTissueStressScore: 6 },
+  { name: 'Front Squat', category: 'Squat', pattern: 'squat', impact: 'high', velocity: 'medium', description: 'Front-loaded squat that emphasizes quads and core stability.', tips: ['Keep elbows high.', 'Maintain upright torso.', 'Depth is key.'], muscles: ['Quads', 'Core', 'Glutes'], energySystem: 'anaerobic_alactic', axialFatigueScore: 8, connectiveTissueStressScore: 7 },
+  { name: 'Goblet Squat', category: 'Squat', pattern: 'squat', impact: 'low', velocity: 'medium', description: 'Holding a weight at chest height to improve squat mechanics and depth.', tips: ['Keep chest up.', 'Drive knees out.', 'Keep weight against chest.'], muscles: ['Quads', 'Glutes', 'Core'], energySystem: 'anaerobic_lactic', axialFatigueScore: 3, connectiveTissueStressScore: 3 },
+  { name: 'Leg Press', category: 'Squat', pattern: 'squat', impact: 'low', velocity: 'slow', description: 'Machine exercise for legs, allowing high volume for hypertrophy.', tips: ['Full range of motion.', 'Keep feet shoulder-width.', 'Do not lock out knees.'], muscles: ['Quads', 'Glutes', 'Hamstrings'], energySystem: 'anaerobic_lactic', axialFatigueScore: 1, connectiveTissueStressScore: 4 },
+  { name: 'Hack Squat', category: 'Squat', pattern: 'squat', impact: 'medium', velocity: 'slow', description: 'A stable squat variation that targets quads extensively.', tips: ['Maintain neutral spine.', 'Push through heels.', 'Control the eccentric phase.'], muscles: ['Quads', 'Glutes'], energySystem: 'anaerobic_lactic', axialFatigueScore: 2, connectiveTissueStressScore: 5 },
+  { name: 'Landmine Squat', category: 'Squat', pattern: 'squat', impact: 'low', velocity: 'medium', description: 'A safe, functional squat variation using a landmine setup.', tips: ['Keep back straight.', 'Push back through hips.', 'Engage core.'], muscles: ['Quads', 'Glutes', 'Core'], energySystem: 'anaerobic_lactic', axialFatigueScore: 3, connectiveTissueStressScore: 3 },
+  { name: 'Landmine Goblet Squat', category: 'Squat', pattern: 'squat', impact: 'low', velocity: 'medium', description: 'Squat variation using landmine for increased stability and focus on quads.', tips: ['Keep weight close.', 'Maintain posture.', 'Controlled movement.'], muscles: ['Quads', 'Glutes', 'Core'], energySystem: 'anaerobic_lactic', axialFatigueScore: 3, connectiveTissueStressScore: 3 },
+  { name: 'Pistol Squat', category: 'Squat', pattern: 'squat', impact: 'medium', velocity: 'medium', description: 'Single-leg squat requiring balance and significant strength.', tips: ['Use counter-balance.', 'Keep heel down.', 'Ensure knee alignment.'], muscles: ['Quads', 'Glutes', 'Core'], energySystem: 'anaerobic_lactic', axialFatigueScore: 2, connectiveTissueStressScore: 6 },
+  { name: 'Shrimp Squat', category: 'Squat', pattern: 'squat', impact: 'medium', velocity: 'medium', description: 'Another single-leg squat variation targeting quads.', tips: ['Control descent.', 'Maintain balance.', 'Keep upright.'], muscles: ['Quads', 'Glutes', 'Core'], energySystem: 'anaerobic_lactic', axialFatigueScore: 2, connectiveTissueStressScore: 6 },
 
   // Bench Category
   { 
@@ -144,8 +151,43 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
   { name: 'Dips', category: 'Triceps', pattern: 'push_horizontal', impact: 'medium', velocity: 'medium', description: 'Bodyweight or weighted dip targeting chest and triceps.', tips: ['Full range.', 'Keep upright for triceps.', 'Control descent.'], muscles: ['Triceps', 'Chest'] },
 
   // Core
-  { name: 'Plank', category: 'Core', pattern: 'core', impact: 'low', velocity: 'slow', description: 'Static hold for core stability.', tips: ['Keep body straight.', 'Squeeze core.', 'Hold tight.'], muscles: ['Core'] },
-  { name: 'Hanging Leg Raises', category: 'Core', pattern: 'core', impact: 'low', velocity: 'medium', description: 'Hanging leg raise for lower abs.', tips: ['Control movement.', 'Avoid swinging.', 'Full range.'], muscles: ['Core (Abs)'] },
+  { name: 'Plank', category: 'Core', pattern: 'core', impact: 'low', velocity: 'slow', description: 'Static hold for core stability.', tips: ['Keep body straight.', 'Squeeze core.', 'Hold tight.'], muscles: ['Core'], energySystem: 'aerobic', axialFatigueScore: 1, connectiveTissueStressScore: 1 },
+  { name: 'Hanging Leg Raises', category: 'Core', pattern: 'core', impact: 'low', velocity: 'medium', description: 'Hanging leg raise for lower abs.', tips: ['Control movement.', 'Avoid swinging.', 'Full range.'], muscles: ['Core (Abs)'], energySystem: 'anaerobic_lactic', axialFatigueScore: 2, connectiveTissueStressScore: 2 },
+
+  // --- TACTICAL / MILITARY ---
+  { name: 'Sandbag Zercher Carry', category: 'Tactical', pattern: 'impact', impact: 'high', velocity: 'slow', description: 'Carrying a sandbag in the crooks of the elbows.', energySystem: 'mixed', axialFatigueScore: 8, connectiveTissueStressScore: 6, muscles: ['Upper Back', 'Core', 'Biceps'] },
+  { name: 'Ruck March', category: 'Tactical', pattern: 'impact', impact: 'medium', velocity: 'medium', description: 'Weighted walking for endurance and structural strength.', energySystem: 'aerobic', axialFatigueScore: 5, connectiveTissueStressScore: 7, muscles: ['Quads', 'Glutes', 'Calves', 'Core'] },
+  { name: 'Ammo Can Press', category: 'Tactical', pattern: 'push_vertical', impact: 'medium', velocity: 'fast', description: 'Rapid overhead pressing of a weighted can.', energySystem: 'anaerobic_lactic', axialFatigueScore: 4, connectiveTissueStressScore: 4, muscles: ['Shoulders', 'Triceps'] },
+  { name: 'Farmer Carry', category: 'Tactical', pattern: 'impact', impact: 'high', velocity: 'slow', description: 'Walking with maximal weight in both hands.', energySystem: 'mixed', axialFatigueScore: 7, connectiveTissueStressScore: 5, muscles: ['Forearms', 'Traps', 'Core'] },
+  { name: 'Bear Crawl', category: 'Tactical', pattern: 'core', impact: 'low', velocity: 'medium', description: 'Quadrupedal movement for core and shoulder stability.', energySystem: 'anaerobic_lactic', axialFatigueScore: 1, connectiveTissueStressScore: 3, muscles: ['Shoulders', 'Core', 'Hips'] },
+  { name: 'Burpee Over Bar', category: 'Tactical', pattern: 'impact', impact: 'high', velocity: 'fast', description: 'High-intensity burpee with a lateral jump over a barbell.', energySystem: 'mixed', axialFatigueScore: 2, connectiveTissueStressScore: 8, muscles: ['Full Body'] },
+  { name: 'Log Clean & Press', category: 'Tactical', pattern: 'push_vertical', impact: 'high', velocity: 'fast', description: 'Lifting a log from ground to overhead.', energySystem: 'anaerobic_alactic', axialFatigueScore: 9, connectiveTissueStressScore: 9, muscles: ['Full Body'] },
+
+  // --- EXPLOSIVENESS / ATHLETICISM ---
+  { name: 'Depth Jumps', category: 'Explosive', pattern: 'plyometric', impact: 'high', velocity: 'fast', description: 'Jumping off a box and immediately jumping up upon landing.', energySystem: 'anaerobic_alactic', axialFatigueScore: 1, connectiveTissueStressScore: 10, muscles: ['Quads', 'Calves'] },
+  { name: 'Broad Jump', category: 'Explosive', pattern: 'plyometric', impact: 'high', velocity: 'fast', description: 'Max distance horizontal jump.', energySystem: 'anaerobic_alactic', axialFatigueScore: 1, connectiveTissueStressScore: 9, muscles: ['Glutes', 'Hamstrings', 'Quads'] },
+  { name: 'Single Arm Snatch (DB)', category: 'Explosive', pattern: 'plyometric', impact: 'medium', velocity: 'fast', description: 'Pulling a dumbbell from floor to overhead in one motion.', energySystem: 'anaerobic_alactic', axialFatigueScore: 5, connectiveTissueStressScore: 6, muscles: ['Glutes', 'Lower Back', 'Shoulders'] },
+  { name: 'Broad Jump to Sprint', category: 'Explosive', pattern: 'plyometric', impact: 'high', velocity: 'fast', description: 'Explosive jump into an immediate sprint start.', energySystem: 'anaerobic_alactic', axialFatigueScore: 1, connectiveTissueStressScore: 9, muscles: ['Full Body'] },
+  { name: 'Bounding', category: 'Explosive', pattern: 'plyometric', impact: 'high', velocity: 'fast', description: 'Max distance single leg bounds.', energySystem: 'anaerobic_alactic', axialFatigueScore: 1, connectiveTissueStressScore: 9, muscles: ['Glutes', 'Quads'] },
+
+  // --- ENDURANCE / METABOLIC ---
+  { name: 'Running (Steady State)', category: 'Endurance', pattern: 'impact', impact: 'medium', velocity: 'medium', description: 'Long duration aerobic running.', energySystem: 'aerobic', axialFatigueScore: 4, connectiveTissueStressScore: 6, muscles: ['Quads', 'Hamstrings', 'Calves', 'Core'] },
+  { name: 'Cycling (Steady State)', category: 'Endurance', pattern: 'impact', impact: 'low', velocity: 'medium', description: 'Long duration aerobic cycling.', energySystem: 'aerobic', axialFatigueScore: 1, connectiveTissueStressScore: 2, muscles: ['Quads', 'Glutes', 'Calves'] },
+  { name: 'Rucking (Steady State)', category: 'Endurance', pattern: 'impact', impact: 'medium', velocity: 'medium', description: 'Long duration weighted walk.', energySystem: 'aerobic', axialFatigueScore: 6, connectiveTissueStressScore: 7, muscles: ['Quads', 'Glutes', 'Calves', 'Core', 'Traps'] },
+  { name: 'Assault Bike Intervals', category: 'Endurance', pattern: 'impact', impact: 'low', velocity: 'fast', description: 'Max effort sprints on the fan bike.', energySystem: 'mixed', axialFatigueScore: 0, connectiveTissueStressScore: 2, muscles: ['Full Body'] },
+  { name: 'Rowing (Steady State)', category: 'Endurance', pattern: 'impact', impact: 'low', velocity: 'medium', description: 'Long duration rhythmic rowing.', energySystem: 'aerobic', axialFatigueScore: 1, connectiveTissueStressScore: 3, muscles: ['Lats', 'Legs', 'Core'] },
+  { name: 'Hill Sprints', category: 'Endurance', pattern: 'impact', impact: 'medium', velocity: 'fast', description: 'Short, high-intensity sprints up an incline.', energySystem: 'anaerobic_lactic', axialFatigueScore: 1, connectiveTissueStressScore: 6, muscles: ['Hamstrings', 'Glutes', 'Calves'] },
+  { name: 'Battle Rope Waves', category: 'Endurance', pattern: 'impact', impact: 'low', velocity: 'fast', description: 'Rhythmic arm waves for metabolic conditioning.', energySystem: 'anaerobic_lactic', axialFatigueScore: 0, connectiveTissueStressScore: 2, muscles: ['Shoulders', 'Core'] },
+  { name: 'Swimming (Freestyle)', category: 'Endurance', pattern: 'impact', impact: 'low', velocity: 'medium', description: 'Low impact full body conditioning.', energySystem: 'aerobic', axialFatigueScore: 0, connectiveTissueStressScore: 1, muscles: ['Lats', 'Shoulders', 'Core'] },
+
+  // --- PRE-HAB / REHAB ---
+  { name: 'Band Pull-Aparts', category: 'Prehab', pattern: 'accessory', impact: 'low', velocity: 'slow', description: 'Horizontal band abduction for scapular health.', energySystem: 'aerobic', axialFatigueScore: 0, connectiveTissueStressScore: 1, muscles: ['Rear Delts', 'Traps'] },
+  { name: 'Dead Bug', category: 'Prehab', pattern: 'core', impact: 'low', velocity: 'slow', description: 'Core stabilization with alternating limb movement.', energySystem: 'aerobic', axialFatigueScore: 0, connectiveTissueStressScore: 1, muscles: ['Core'] },
+  { name: 'Monster Walk', category: 'Prehab', pattern: 'mobility', impact: 'low', velocity: 'slow', description: 'Banded lateral walk for glute medius activation.', energySystem: 'aerobic', axialFatigueScore: 0, connectiveTissueStressScore: 2, muscles: ['Glute Medius'] },
+  { name: 'Wall Slides', category: 'Prehab', pattern: 'mobility', impact: 'low', velocity: 'slow', description: 'Scapular control exercise against a wall.', energySystem: 'aerobic', axialFatigueScore: 0, connectiveTissueStressScore: 1, muscles: ['Traps', 'Shoulders'] },
+  { name: 'Bird-Dog', category: 'Prehab', pattern: 'core', impact: 'low', velocity: 'slow', description: 'Quadrupedal balance for spinal stabilization.', energySystem: 'aerobic', axialFatigueScore: 0, connectiveTissueStressScore: 1, muscles: ['Core', 'Glutes'] },
+  { name: 'Eccentric Calf Raise', category: 'Prehab', pattern: 'mobility', impact: 'low', velocity: 'slow', description: 'Slow lowering for Achilles tendon health.', energySystem: 'aerobic', axialFatigueScore: 0, connectiveTissueStressScore: 5, muscles: ['Calves'] },
+  { name: 'Face Pulls', category: 'Prehab', pattern: 'accessory', impact: 'low', velocity: 'slow', description: 'Cable pull for rear deltoid and rotator cuff health.', energySystem: 'aerobic', axialFatigueScore: 0, connectiveTissueStressScore: 2, muscles: ['Rear Delts', 'Shoulders'] },
 ] as const;
 
 export const EXERCISE_DATABASE_TYPED: ExerciseDefinition[] = EXERCISE_DATABASE as unknown as ExerciseDefinition[];

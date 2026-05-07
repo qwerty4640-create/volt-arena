@@ -10,7 +10,15 @@ export type Language = SupportedLanguage;
 type Unit = 'imperial' | 'metric';
 type Gender = 'male' | 'female' | 'other';
 
-export type TrainingGoal = 'pure_strength' | 'powerbuilding' | 'hypertrophy' | 'peaking' | 'longevity';
+export type TrainingGoal = 'pure_strength' | 'powerbuilding' | 'hypertrophy' | 'peaking' | 'longevity' | 'tactical' | 'explosiveness' | 'endurance' | 'prehab';
+
+export type MissionPeriod = '3M' | '6M' | '9M' | '12M';
+
+export interface CustomBlock {
+  id: string;
+  type: string; // From BlockType in periodization.ts
+  durationWeeks: number;
+}
 
 export interface UserProfile {
   uid: string;
@@ -33,10 +41,17 @@ export interface UserProfile {
   level: 'untrained' | 'novice' | 'intermediate' | 'advanced' | 'elite';
   trainingWeekOffset?: number;
   trainingDurationMonths?: number;
+  missionPeriod?: MissionPeriod;
+  isCustomProgram?: boolean;
+  customProgramBlocks?: CustomBlock[];
   competitionDate?: number;
   gymProfile?: 'commercial' | 'powerlifting' | 'home';
   injuryNoGoList?: string[];
   excludedMovements?: string[];
+  hasFullGymAccess?: boolean;
+  hasMedicalConditions?: boolean;
+  medicalConditionDetails?: string;
+  isExperiencedAthlete?: boolean;
   unit: Unit;
   language: Language;
   isVoiceActive: boolean;
@@ -127,8 +142,8 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [immersionMode, setImmersionModeState] = useState<ImmersionMode>('immersive');
   const [showExperimentalMenus, setShowExperimentalMenusState] = useState(false);
   const [experimentalFeatures, setExperimentalFeaturesState] = useState(false);
-  const [dashboardWidgets, setDashboardWidgetsState] = useState<WidgetId[]>(['recovery-analysis', 'pr', 'macros', 'joint-stress']);
-  const [performanceWidgets, setPerformanceWidgetsState] = useState<PerformanceWidgetId[]>(['progression', 'volume-trend', 'joint-stress', 'growth', 'tactical']);
+  const [dashboardWidgets, setDashboardWidgetsState] = useState<WidgetId[]>(['recovery-analysis', 'pr', 'macros']);
+  const [performanceWidgets, setPerformanceWidgetsState] = useState<PerformanceWidgetId[]>(['progression', 'volume-trend', 'growth', 'tactical']);
   const [lastVoiceCommand, setLastVoiceCommand] = useState<{ text: string; timestamp: number } | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isProfileLoading, setIsProfileLoading] = useState(true);
@@ -171,6 +186,17 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
           } else {
             // Initialize user profile
             console.log("Auth: Initializing new user profile in Firestore...");
+            let pendingOnboarding: any = {};
+            const savedOnboarding = localStorage.getItem('volt_pending_onboarding');
+            if (savedOnboarding) {
+              try {
+                pendingOnboarding = JSON.parse(savedOnboarding);
+                pendingOnboarding.onboardingCompleted = true;
+              } catch(e) {
+                console.error("Failed to parse pending onboarding data");
+              }
+            }
+
             const newProfile: UserProfile = {
               uid: user.uid,
               email: user.email || '',
@@ -182,14 +208,16 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
               immersionMode: 'immersive',
               showExperimentalMenus: false,
               experimentalFeatures: false,
-              dashboardWidgets: ['recovery-analysis', 'pr', 'macros', 'joint-stress'],
-              performanceWidgets: ['progression', 'volume-trend', 'joint-stress', 'growth', 'tactical'],
-              onboardingCompleted: false,
+              dashboardWidgets: ['recovery-analysis', 'pr', 'macros'],
+              performanceWidgets: ['progression', 'volume-trend', 'growth', 'tactical'],
+              onboardingCompleted: false, // fallback
               level: 'untrained',
               createdAt: Date.now(),
-              role: (user.email === 'qwerty4640@gmail.com' || user.email === 'admin@volt.com') ? 'admin' : 'user'
+              role: (user.email === 'qwerty4640@gmail.com' || user.email === 'admin@volt.com') ? 'admin' : 'user',
+              ...pendingOnboarding
             };
             setDoc(doc(db, userDocPath), newProfile).then(() => {
+              if (savedOnboarding) localStorage.removeItem('volt_pending_onboarding');
               setIsProfileLoading(false);
             }).catch(err => {
               console.error("Auth: Failed to initialize user profile:", err);
@@ -222,8 +250,8 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
             immersionMode: 'immersive',
             showExperimentalMenus: false,
             experimentalFeatures: false,
-            dashboardWidgets: ['recovery-analysis', 'pr', 'macros', 'joint-stress'],
-            performanceWidgets: ['progression', 'volume-trend', 'joint-stress', 'growth', 'tactical'],
+            dashboardWidgets: ['recovery-analysis', 'pr', 'macros'],
+            performanceWidgets: ['progression', 'volume-trend', 'growth', 'tactical'],
             onboardingCompleted: false,
             level: initialLevel,
             trainingGoal: 'powerbuilding',
