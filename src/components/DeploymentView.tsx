@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  Zap, 
-  Dumbbell, 
-  CheckCircle2, 
-  Info, 
-  Loader2, 
+import {
+  Zap,
+  Dumbbell,
+  CheckCircle2,
+  Info,
+  Loader2,
   Calendar,
   Activity,
   ArrowRight,
@@ -28,7 +28,7 @@ export const DeploymentView = () => {
   const { profile, updateProfile, t } = useSettings();
   const { history, resetProgram } = useWorkout();
   const { showToast } = useToast();
-  
+
   const [loading, setLoading] = useState(false);
   const [showProgramDetail, setShowProgramDetail] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
@@ -49,10 +49,10 @@ export const DeploymentView = () => {
   );
   const [adjustingCustomProgramBlocks, setAdjustingCustomProgramBlocks] = useState<CustomBlock[]>(
     profile?.customProgramBlocks && profile.customProgramBlocks.length > 0
-      ? profile.customProgramBlocks 
+      ? profile.customProgramBlocks
       : []
   );
-  
+
   const [isCustomizingProgram, setIsCustomizingProgram] = useState<boolean>(
     profile?.customProgramBlocks && profile.customProgramBlocks.length > 0 ? true : false
   );
@@ -95,7 +95,7 @@ export const DeploymentView = () => {
       setAdjustingMissionPeriod(profile.missionPeriod || '3M');
       setAdjustingDuration(profile.trainingDurationMonths || 3);
       setAdjustingFrequency(profile.trainingFrequency || 3);
-      
+
       if (profile.customProgramBlocks && profile.customProgramBlocks.length > 0) {
         setAdjustingCustomProgramBlocks(profile.customProgramBlocks);
         setIsCustomizingProgram(true);
@@ -170,7 +170,7 @@ export const DeploymentView = () => {
         {/* Widget 1: Deployment Status */}
         <div className="glass-panel px-4 py-4 md:p-4 border-white/5 bg-zinc-900/40 flex flex-col justify-between">
           <div>
-            <h2 className="font-sans text-xl font-black uppercase italic tracking-tight text-white mb-2">
+            <h2 className="font-sans text-2xl font-black uppercase italic tracking-tight text-white mb-2">
               Deployment Status
             </h2>
             <p className="text-xs text-zinc-500 mb-8 font-medium">
@@ -179,15 +179,15 @@ export const DeploymentView = () => {
 
             <div className="space-y-6">
               <div className="flex flex-col items-start py-3 border-b border-white/5 gap-1">
-                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest leading-none">Current Deployment Plan</span>
+                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest leading-none">Deployment Plan</span>
                 <span className="text-xs font-black uppercase tracking-widest text-white mt-0.5">
-                  {(profile?.trainingObjectives && profile.trainingObjectives.length > 0) 
+                  {(profile?.trainingObjectives && profile.trainingObjectives.length > 0)
                     ? profile.trainingObjectives.map(g => t(`goal.${g}`)).join(' + ')
                     : t(`goal.${profile?.trainingGoal || 'powerbuilding'}`)}
                 </span>
               </div>
               <div className="flex flex-col items-start py-3 border-b border-white/5 gap-1">
-                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest leading-none">Current Block</span>
+                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest leading-none">Block in progress</span>
                 <span className="text-xs font-black uppercase tracking-widest text-volt mt-0.5">{currentBlock?.block.label || 'Loading...'}</span>
               </div>
               <div className="flex flex-col items-start py-3 border-b border-white/5 gap-1">
@@ -196,24 +196,24 @@ export const DeploymentView = () => {
               </div>
               <div className="flex flex-col items-start py-3 border-b border-white/5 mb-8 gap-1">
                 <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest leading-none">Mission Period</span>
-                <span className="text-xs font-black uppercase tracking-widest text-white mt-0.5">{profile?.missionPeriod || '3M'} Horizon</span>
+                <span className="text-xs font-black uppercase tracking-widest text-white mt-0.5">{profile?.missionPeriod || '3 Month'}</span>
               </div>
             </div>
           </div>
 
           <button
             onClick={() => setShowSettingsModal(true)}
-            className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-volt text-void font-headline text-xs font-black uppercase tracking-widest transition-all hover:bg-white"
+            className="px-6 py-4 bg-volt btn-primary"
           >
             <Settings size={16} />
-            <span>Configure Deployment</span>
+            <span>Recalibrate Deployment</span>
           </button>
         </div>
 
         {/* Widget 2: Upcoming Missions */}
         <div className="glass-panel px-4 py-4 md:p-4 border-white/5 bg-zinc-900/40 flex flex-col justify-between">
           <div>
-            <h2 className="font-sans text-xl font-black uppercase italic tracking-tight text-white mb-2">
+            <h2 className="font-sans text-2xl font-black uppercase italic tracking-tight text-white mb-2">
               Upcoming missions
             </h2>
             <p className="text-xs text-zinc-500 mb-8 font-medium">
@@ -228,16 +228,16 @@ export const DeploymentView = () => {
                 const intensity = blockForThisMission ? Math.round((blockForThisMission.block.baseIntensity + (blockForThisMission.weekInBlock * blockForThisMission.block.intensityIncrementPerWeek)) * 100) : 0;
 
                 const missionDetails = {
-                    missionNum,
-                    weekForThisMission,
-                    block: blockForThisMission?.block,
-                    intensity,
-                    weekInBlock: blockForThisMission?.weekInBlock
+                  missionNum,
+                  weekForThisMission,
+                  block: blockForThisMission?.block,
+                  intensity,
+                  weekInBlock: blockForThisMission?.weekInBlock
                 };
 
                 return (
-                  <div 
-                    key={i} 
+                  <div
+                    key={i}
                     onClick={() => setSelectedMission(missionDetails)}
                     className="p-4 bg-void/50 border border-white/5 group hover:border-volt/30 transition-colors cursor-pointer"
                   >
@@ -247,11 +247,11 @@ export const DeploymentView = () => {
                     </div>
                     <div className="flex items-end justify-between">
                       <div>
-                        <p className="text-[10px] font-bold text-zinc-300 uppercase tracking-widest leading-none mb-1">
+                        <p className="text-[10px] font-bold text-zinc-300 uppercase tracking-widest mb-1">
                           Objective: {blockForThisMission?.block.label || 'TBD'}
                         </p>
                         <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">
-                          {blockForThisMission?.block.baseSets || 3}x{blockForThisMission?.block.baseReps || '8'} @ {intensity}% Load
+                          {blockForThisMission?.block.baseSets || 3}x{blockForThisMission?.block.baseReps || '8'} @ {intensity}%
                         </p>
                       </div>
                       <div className="opacity-0 group-hover:opacity-100 transition-opacity">
@@ -266,7 +266,7 @@ export const DeploymentView = () => {
 
           <button
             onClick={() => setShowProgramDetail(true)}
-            className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-zinc-800 border border-white/5 text-white font-headline text-xs font-black uppercase tracking-widest transition-all hover:bg-zinc-700"
+            className="btn-secondary w-full px-6 py-4"
           >
             <span>View Full Details</span>
           </button>
@@ -292,7 +292,7 @@ export const DeploymentView = () => {
                 className="relative w-full max-w-6xl max-h-[90vh] overflow-hidden glass-panel border-volt/30 flex flex-col bg-zinc-950 shadow-2xl"
               >
                 {/* Modal Header */}
-                <div className="p-6 md:p-8 border-b border-white/5 flex items-center justify-between bg-void/50">
+                <div className="p-4 md:p-8 border-b border-white/5 flex items-center justify-between bg-void/50">
                   <div className="flex items-center gap-4">
                     <div className="p-2 bg-volt/10 text-volt border border-volt/20">
                       <Settings size={20} />
@@ -303,9 +303,9 @@ export const DeploymentView = () => {
                     </div>
                   </div>
                 </div>
-  
+
                 {/* Modal Content */}
-                <div className="flex-1 overflow-y-auto p-6 md:p-8 custom-scrollbar">
+                <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar">
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
                     {/* Left Column: Direct Inputs */}
                     <div className="lg:col-span-4 space-y-10">
@@ -331,8 +331,8 @@ export const DeploymentView = () => {
                               }}
                               className={cn(
                                 "py-3 border-none font-sans text-xs font-bold uppercase tracking-widest transition-all",
-                                adjustingMissionPeriod === m 
-                                  ? "bg-volt text-void shadow-[0_0_15px_var(--primary-glow)]" 
+                                adjustingMissionPeriod === m
+                                  ? "bg-volt text-void shadow-[0_0_15px_var(--primary-glow)]"
                                   : "bg-surface-variant text-zinc-500 hover:text-zinc-300"
                               )}
                             >
@@ -351,9 +351,9 @@ export const DeploymentView = () => {
                               key={f}
                               onClick={() => setAdjustingFrequency(f)}
                               className={cn(
-                                "py-3 border-none font-sans text-[10px] font-bold uppercase tracking-widest transition-all",
-                                adjustingFrequency === f 
-                                  ? "bg-volt text-void shadow-[0_0_15px_var(--primary-glow)]" 
+                                "py-3 border-none font-sans text-xs font-bold uppercase tracking-widest transition-all",
+                                adjustingFrequency === f
+                                  ? "bg-volt text-void shadow-[0_0_15px_var(--primary-glow)]"
                                   : "bg-surface-variant text-zinc-500 hover:text-zinc-300"
                               )}
                             >
@@ -370,6 +370,8 @@ export const DeploymentView = () => {
                           <span className="text-[8px] font-black uppercase tracking-widest text-zinc-600">
                             {adjustingObjectives.length} / {currentMaxObjectives} SELECTED
                           </span>
+
+
                         </div>
                         <div className="grid grid-cols-2 gap-2">
                           {(['pure_strength', 'powerbuilding', 'hypertrophy', 'longevity', 'tactical', 'explosiveness', 'endurance', 'prehab'] as TrainingGoal[]).map(goal => {
@@ -403,18 +405,18 @@ export const DeploymentView = () => {
                                 )}
                               >
                                 <span className={cn(
-                                  "font-sans text-[9px] font-bold uppercase tracking-widest transition-colors",
+                                  "font-sans text-[10px] font-bold uppercase tracking-widest transition-colors",
                                   isSelected ? "text-white" : "text-zinc-500"
                                 )}>
                                   {t(`goal.${goal}`)}
                                 </span>
                                 {isSelected && (
                                   <>
-                                    <span className="text-[7px] font-black uppercase tracking-[0.2em] text-volt mt-0.5 leading-none">
+                                    <span className="text-[8px] font-bold uppercase tracking-[0.2em] text-volt mt-0.5 leading-none">
                                       {getRankLabel(goalIndex)}
                                     </span>
                                     <div className="absolute top-1 right-1">
-                                      <CheckCircle2 size={7} className="text-volt" />
+                                      <CheckCircle2 size={10} className="text-volt" />
                                     </div>
                                   </>
                                 )}
@@ -424,7 +426,7 @@ export const DeploymentView = () => {
                         </div>
                       </section>
                     </div>
-  
+
                     {/* Right Column: Timeline Designer */}
                     <div className="lg:col-span-8 space-y-6">
                       <div className="space-y-4">
@@ -432,8 +434,9 @@ export const DeploymentView = () => {
                           <h3 className="font-sans text-[10px] font-black uppercase tracking-widest text-zinc-500 flex items-center gap-2">
                             Strategic Timeline Designer
                           </h3>
+                          <span class="text-[10px] font-medium text-white/50">Press the toggle below to enable complete program customization.</span>
                           <div className="flex items-center gap-4">
-                            <button 
+                            <button
                               onClick={() => {
                                 setIsCustomizingProgram(!isCustomizingProgram);
                                 if (!isCustomizingProgram) {
@@ -444,9 +447,9 @@ export const DeploymentView = () => {
                                 }
                               }}
                               className={cn(
-                                "text-[8px] font-black uppercase tracking-widest transition-colors flex items-center gap-1.5 px-3 py-1.5 border",
-                                isCustomizingProgram 
-                                  ? "bg-volt/10 text-volt border-volt/30" 
+                                "btn-secondadry text-[8px] font-black uppercase tracking-widest transition-colors flex items-center gap-1.5 px-3 py-1.5 border",
+                                isCustomizingProgram
+                                  ? "bg-volt/10 text-volt border-volt/30"
                                   : "bg-void hover:bg-white/5 text-zinc-500 border-white/10"
                               )}
                             >
@@ -454,7 +457,7 @@ export const DeploymentView = () => {
                               {isCustomizingProgram ? "Disable Customization" : "Enable Customization"}
                             </button>
                             {isCustomizingProgram && (
-                              <button 
+                              <button
                                 onClick={() => setAdjustingCustomProgramBlocks(getDefaultBlocks(adjustingObjectives, adjustingMissionPeriod))}
                                 className="text-[8px] font-black uppercase tracking-widest text-zinc-500 hover:text-white transition-colors flex items-center gap-1.5"
                               >
@@ -464,12 +467,12 @@ export const DeploymentView = () => {
                             )}
                           </div>
                         </div>
-                        
+
                         <div className={cn(
                           "bg-void/50 rounded-none transition-all duration-500",
                           !isCustomizingProgram && "opacity-75 pointer-events-none select-none"
                         )}>
-                          <ProgramDesigner 
+                          <ProgramDesigner
                             missionPeriod={adjustingMissionPeriod}
                             onUpdate={setAdjustingCustomProgramBlocks}
                             initialBlocks={isCustomizingProgram ? adjustingCustomProgramBlocks : getDefaultBlocks(adjustingObjectives, adjustingMissionPeriod)}
@@ -479,9 +482,9 @@ export const DeploymentView = () => {
                     </div>
                   </div>
                 </div>
-  
+
                 {/* Modal Footer */}
-                <div className="p-6 md:p-8 border-t border-white/5 bg-void/50">
+                <div className="p-4 md:p-8 border-t border-white/5 bg-void/50">
                   <div className="flex gap-4 w-full">
                     <button
                       onClick={() => setShowSettingsModal(false)}
@@ -492,7 +495,7 @@ export const DeploymentView = () => {
                     <button
                       onClick={handleAdjustProtocol}
                       disabled={loading || !hasChanges}
-                      className="flex-1 btn-primary py-4 disabled:opacity-50 flex items-center justify-center gap-2"
+                      className="flex-2 btn-primary py-4 disabled:opacity-50 flex items-center justify-center gap-2"
                     >
                       {loading ? (
                         <Loader2 className="animate-spin" size={18} />
@@ -511,8 +514,8 @@ export const DeploymentView = () => {
         )}
       </AnimatePresence>
 
-      <ProgramDetailModal 
-        isOpen={showProgramDetail} 
+      <ProgramDetailModal
+        isOpen={showProgramDetail}
         onClose={() => setShowProgramDetail(false)}
         initialDuration={profile?.trainingDurationMonths || 3}
         customProgramBlocks={adjustingCustomProgramBlocks}
@@ -541,12 +544,14 @@ export const DeploymentView = () => {
                     <span className="text-[10px] font-black tracking-widest text-volt uppercase leading-none">Mission Dossier</span>
                     <h3 className="font-sans text-2xl font-black uppercase italic tracking-tight text-white mt-1">Mission #{selectedMission.missionNum}</h3>
                   </div>
+                  {/*}
                   <button
                     onClick={() => setSelectedMission(null)}
                     className="p-2 bg-white/5 text-zinc-500 hover:text-white transition-all hover:bg-white/10"
                   >
                     <X size={20} />
                   </button>
+                  {*/}
                 </div>
 
                 <div className="p-6 md:p-8 space-y-6">
@@ -554,7 +559,7 @@ export const DeploymentView = () => {
                     <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-left">Timeline</span>
                     <span className="text-sm font-black text-white uppercase text-right">Week {selectedMission.weekForThisMission}</span>
                   </div>
-                  
+
                   <div className="flex justify-between items-center pb-4 border-b border-white/5">
                     <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-left">Objective</span>
                     <span className="text-sm font-black text-volt uppercase italic text-right">{selectedMission.block?.label || 'TBD'}</span>
@@ -585,9 +590,9 @@ export const DeploymentView = () => {
                 <div className="p-6 border-t border-white/5 bg-void/50 flex justify-end">
                   <button
                     onClick={() => setSelectedMission(null)}
-                    className="btn-primary w-full py-4 tracking-[0.2em]"
+                    className="btn-secondary w-full py-4 uppercase"
                   >
-                    ACKNOWLEDGE
+                    Close
                   </button>
                 </div>
               </motion.div>

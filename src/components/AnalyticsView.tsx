@@ -347,7 +347,7 @@ export const AnalyticsView = () => {
                     </div>
                   </div>
 
-                  <div className="h-[250px] w-full mt-4 min-w-0">
+                  <div className="h-[250px] w-full min-w-0">
                     {volumeTrendData.length > 0 ? (
                       <ResponsiveContainer width="100%" height="100%">
                         <ComposedChart data={volumeTrendData} margin={{ top: 5, right: 5, left: -20, bottom: 25 }}>
@@ -425,7 +425,7 @@ export const AnalyticsView = () => {
                   className="glass-panel px-4 py-6 md:p-8 relative overflow-hidden min-w-0"
                 >
                   <h3 className="font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tight mb-2">
-                    {t('analysis.est1rmGrowth')}
+                    {t('Estimated 1rm')}
                   </h3>
 
                   {(() => {
@@ -435,13 +435,13 @@ export const AnalyticsView = () => {
                       return e1rms.length > 0 ? Math.round(Math.max(...e1rms)) : 0;
                     });
                     const totalSBD = latestE1RMs.reduce((a, b) => a + b, 0);
-                    
+
                     const p = calculateExrxPercentile(totalSBD, profile?.weight || 0, profile?.gender || 'male', profile?.age);
-                    
+
                     return (
                       <div className="mb-12">
-                        <div className="text-zinc-400 text-sm italic font-medium mt-2">
-                          {t('analysis.youAreTop')} <span className="text-volt">{p < 1 ? '<1' : p.toFixed(1)}%</span> {t('analysis.ofPopulation')} <InfoTooltip term="Percentile" className="inline-block z-10 relative" />
+                        <div className="text-zinc-400 text-xs font-medium mt-2">
+                          {t('analysis.youAreTop')} <span className="text-volt font-bold">{p < 1 ? '<1' : p.toFixed(1)}%</span> {t('analysis.ofPopulation')} <InfoTooltip term="Percentile" className="inline-block z-10 relative" />
                         </div>
                       </div>
                     );
@@ -452,7 +452,7 @@ export const AnalyticsView = () => {
                       const liftHistory = [...history]
                         .filter(s => s.exercises.some(ex => isMainLiftMatch(ex.name, lift.id)))
                         .sort((a, b) => (a.completedAt || 0) - (b.completedAt || 0));
-                      
+
                       const e1rms = liftHistory.flatMap(s => s.exercises.find(ex => isMainLiftMatch(ex.name, lift.id))?.sets.map(set => calculateE1RM(parseFloat(set.weight) || 0, parseInt(set.reps) || 0)) || []);
                       const maxE1RM = e1rms.length > 0 ? Math.round(Math.max(...e1rms)) : 0;
                       const firstE1RM = e1rms.length > 0 ? Math.round(e1rms[0]) : 0;
@@ -463,10 +463,10 @@ export const AnalyticsView = () => {
                         <div key={i} className="flex flex-col">
                           <span className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-2">{lift.label}</span>
                           <div className="flex items-baseline gap-2">
-                            <span className="font-headline text-3xl md:text-4xl font-black italic text-white">{maxE1RM > 0 ? maxE1RM : '–'}</span>
+                            <span className="font-headline text-2xl md:text-3xl font-black italic text-white">{maxE1RM > 0 ? maxE1RM : '–'}</span>
                             <span className="font-headline text-xs font-black text-zinc-500">{weightUnit}</span>
                           </div>
-                          <span className="text-[10px] font-black text-volt tracking-widest mt-1 uppercase">
+                          <span className="text-[8px] font-bold text-volt tracking-widest mt-1 uppercase">
                             {liftHistory.length > 1 ? (
                               <>+{diff.toFixed(1)}{weightUnit} ({growth}%)</>
                             ) : (
@@ -482,9 +482,9 @@ export const AnalyticsView = () => {
                         const liftHistory = [...history]
                           .filter(s => s.exercises.some(ex => isMainLiftMatch(ex.name, lift.id)))
                           .sort((a, b) => (a.completedAt || 0) - (b.completedAt || 0));
-                        
+
                         const e1rms = liftHistory.flatMap(s => s.exercises.find(ex => isMainLiftMatch(ex.name, lift.id))?.sets.map(set => calculateE1RM(parseFloat(set.weight) || 0, parseInt(set.reps) || 0)) || []);
-                        
+
                         return {
                           max: e1rms.length > 0 ? Math.round(Math.max(...e1rms)) : 0,
                           first: e1rms.length > 0 ? Math.round(e1rms[0]) : 0,
@@ -503,10 +503,10 @@ export const AnalyticsView = () => {
                         <div className="flex flex-col">
                           <span className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-2">{t('analysis.sbd_total')}</span>
                           <div className="flex items-baseline gap-2">
-                            <span className="font-headline text-3xl md:text-4xl font-black italic text-white">{total > 0 ? total : '–'}</span>
+                            <span className="font-headline text-2xl md:text-3xl font-black italic text-white">{total > 0 ? total : '–'}</span>
                             <span className="font-headline text-xs font-black text-zinc-500">{weightUnit}</span>
                           </div>
-                          <span className="text-[10px] font-black text-volt tracking-widest mt-1 uppercase">
+                          <span className="text-[8px] font-bold text-volt tracking-widest mt-1 uppercase">
                             {hasMultiSession ? (
                               <>+{diff.toFixed(1)}{weightUnit} ({growth}%)</>
                             ) : (

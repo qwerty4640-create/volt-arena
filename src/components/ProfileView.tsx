@@ -223,7 +223,7 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
 
       {onBack && (
         <div className="flex items-center mb-6 md:mb-8">
-          <button 
+          <button
             onClick={onBack}
             className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors group"
           >
@@ -236,7 +236,7 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
       <div className="relative border border-white/5 bg-surface-high p-6 md:p-8 mb-8 md:mb-12 shadow-2xl overflow-hidden group">
         <div className="absolute top-0 right-0 w-64 h-64 bg-volt/5 blur-3xl -z-10 rounded-full group-hover:bg-volt/10 transition-colors duration-1000" />
         <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-volt/20 to-transparent" />
-        
+
         <div className="flex items-center justify-between mb-8 relative z-10">
           <div className="flex items-center gap-3">
             <User className="text-volt" size={20} />
@@ -251,10 +251,10 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
         </div>
 
         <div className="flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-8 relative z-10">
-          
+
           <div className="flex flex-col items-center gap-4">
             <div className="relative">
-              <div className="w-20 h-20 md:w-24 md:h-24 border border-white/10 p-1 bg-void shadow-xl relative">
+              <div className="w-30 h-30 md:w-30 md:h-30 border border-white/10 p-1 bg-void shadow-xl relative">
                 <div className="w-full h-full overflow-hidden bg-zinc-900 border border-white/5 aspect-square">
                   <img
                     src={profile.photoURL || "https://picsum.photos/seed/athlete/200/200"}
@@ -305,22 +305,22 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
 
             <div className="flex flex-wrap items-center justify-center md:justify-start gap-6 md:gap-8 md:pt-2">
               <div className="flex flex-col gap-1 items-center md:items-start text-zinc-500">
-                <span className="text-[8px] font-black uppercase tracking-widest mb-0.5 opacity-60">Age</span>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-white">{profile.age || 'N/A'}</span>
-              </div>
-              
-              <div className="hidden md:block w-px h-6 bg-white/10" />
-
-              <div className="flex flex-col gap-1 items-center md:items-start text-zinc-500">
-                <span className="text-[8px] font-black uppercase tracking-widest mb-0.5 opacity-60">Gender</span>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-white">{t(`gender.${profile.gender}` || 'gender.other')}</span>
+                <span className="text-xs font-black uppercase tracking-widest mb-0.5 opacity-60">Age</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-white">{profile.age || 'N/A'}</span>
               </div>
 
               <div className="hidden md:block w-px h-6 bg-white/10" />
 
               <div className="flex flex-col gap-1 items-center md:items-start text-zinc-500">
-                <span className="text-[8px] font-black uppercase tracking-widest mb-0.5 opacity-60">Height / Wt</span>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-white">
+                <span className="text-xs font-black uppercase tracking-widest mb-0.5 opacity-60">Gender</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-white">{t(`gender.${profile.gender}` || 'gender.other')}</span>
+              </div>
+
+              <div className="hidden md:block w-px h-6 bg-white/10" />
+
+              <div className="flex flex-col gap-1 items-center md:items-start text-zinc-500">
+                <span className="text-xs font-black uppercase tracking-widest mb-0.5 opacity-60">Height / Wt</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-white">
                   {formatHeight(profile.height || 0)} / {profile.weight || 0} {unit === 'metric' ? 'kg' : 'LBS'}
                 </span>
               </div>
@@ -328,10 +328,10 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
               <div className="hidden md:block w-px h-6 bg-white/10" />
 
               <div className="flex flex-col gap-1 items-center md:items-start text-zinc-500">
-                <span className="text-[8px] font-black uppercase tracking-widest mb-0.5 opacity-60">Active Since</span>
+                <span className="text-xs font-black uppercase tracking-widest mb-0.5 opacity-60">Active Since</span>
                 <div className="flex items-center gap-2">
                   <Calendar size={12} className="text-volt" />
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-white">{new Date(profile.createdAt).toLocaleDateString()}</span>
+                  <span className="text-xs font-bold uppercase tracking-wider text-white">{new Date(profile.createdAt).toLocaleDateString()}</span>
                 </div>
               </div>
             </div>
@@ -398,7 +398,7 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
         </motion.div>
       </div>
 
-      <ProgramDetailModal 
+      <ProgramDetailModal
         isOpen={showProgramDetail}
         onClose={() => setShowProgramDetail(false)}
         missionPeriod={profile.missionPeriod || '3M'}
@@ -425,7 +425,7 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
                 initial={{ opacity: 0, scale: 0.9, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                className="relative w-full max-w-md glass-panel p-3 md:p-6 border-volt/30 shadow-2xl my-auto"
+                className="relative w-full max-w-md glass-panel p-4 md:p-8 border-volt/30 shadow-2xl my-auto"
               >
                 <div className="flex items-center gap-4 mb-8">
                   <div className="p-2 md:p-4 bg-volt/10 text-volt">
@@ -465,7 +465,7 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
                           )}
                         </div>
                       </div>
-                      <button 
+                      <button
                         onClick={handleImageClick}
                         disabled={uploadLoading}
                         className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-400 hover:text-volt transition-colors flex items-center gap-1.5 py-1.5 px-3 bg-zinc-900 border border-white/5 hover:border-volt/30"
@@ -576,7 +576,7 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
                             </div>
                           </div>
                         )}
-                        {! (unit === 'metric') && (
+                        {!(unit === 'metric') && (
                           <div className="flex gap-2">
                             <p className="flex-1 text-[8px] font-bold text-zinc-500 text-center uppercase">{t('settings.feet')}</p>
                             <p className="flex-1 text-[8px] font-bold text-zinc-500 text-center uppercase">{t('settings.inches')}</p>
@@ -604,14 +604,14 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
                       setShowBiometricsModal(false);
                       setAgeError(null);
                     }}
-                    className="flex-1 py-4 bg-white/5 text-zinc-500 font-sans text-xs font-bold uppercase tracking-widest hover:text-white transition-all"
+                    className="btn-secondary flex-1 py-4"
                   >
                     Close
                   </button>
                   <button
                     onClick={handleSave}
                     disabled={loading || !!ageError}
-                    className="flex-1 py-4 bg-volt text-void font-sans text-xs font-bold uppercase tracking-widest hover:bg-white hover:shadow-[0_0_20px_var(--primary-glow)] transition-all disabled:opacity-50"
+                    className="btn-primary flex-2 py-4"
                   >
                     {loading ? 'Saving...' : 'Save'}
                   </button>
@@ -639,7 +639,7 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
                 initial={{ opacity: 0, scale: 0.9, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                className="relative w-full max-w-md glass-panel p-3 md:p-6 border-volt/30 shadow-2xl my-auto"
+                className="relative w-full max-w-md glass-panel p-4 md:p-8 border-volt/30 shadow-2xl my-auto"
               >
                 <div className="flex items-center gap-4 mb-8">
                   <div className="p-2 md:p-4 bg-volt/10 text-volt">
@@ -654,7 +654,7 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
                 <div className="space-y-6">
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <label className="text-xs font-bold uppercase tracking-widest text-white">Squat ({unit === 'metric' ? 'kg' : 'LBS'})</label>
+                      <label className="text-[10px] font-black uppercase tracking-widest text-white">Squat ({unit === 'metric' ? 'kg' : 'LBS'})</label>
                       <input
                         type="number"
                         value={edit1RMData.squatPR || ''}
@@ -663,7 +663,7 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs font-bold uppercase tracking-widest text-white">Bench ({unit === 'metric' ? 'kg' : 'LBS'})</label>
+                      <label className="text-[10px] font-black uppercase tracking-widest text-white">Bench ({unit === 'metric' ? 'kg' : 'LBS'})</label>
                       <input
                         type="number"
                         value={edit1RMData.benchPR || ''}
@@ -672,7 +672,7 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs font-bold uppercase tracking-widest text-white">Deadlift ({unit === 'metric' ? 'kg' : 'LBS'})</label>
+                      <label className="text-[10px] font-black uppercase tracking-widest text-white">Deadlift ({unit === 'metric' ? 'kg' : 'LBS'})</label>
                       <input
                         type="number"
                         value={edit1RMData.deadliftPR || ''}
@@ -683,6 +683,7 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
                   </div>
 
                   {/* Tier Preview */}
+                  {/*}
                   <div className="p-4 bg-void/40 border border-white/5">
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('settings.projectedTier') || "Projected Tier"}</span>
@@ -722,18 +723,18 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
                       )}</span>.
                     </p>
                   </div>
-
+                  {*/}
                   <div className="flex gap-4">
                     <button
                       onClick={() => setShow1RMModal(false)}
-                      className="flex-1 py-4 bg-white/5 text-zinc-500 font-sans text-xs font-bold uppercase tracking-widest hover:text-white transition-all"
+                      className="btn-secondary flex-1 py-4"
                     >
                       {t('common.close')}
                     </button>
                     <button
                       onClick={handleUpdate1RM}
                       disabled={loading}
-                      className="flex-1 py-4 bg-volt text-void font-sans text-xs font-bold uppercase tracking-widest hover:bg-white hover:shadow-[0_0_20px_var(--primary-glow)] transition-all disabled:opacity-50"
+                      className="btn-primary flex-2 py-4"
                     >
                       {loading ? t('settings.recalculate') : t('coach.confirm')}
                     </button>

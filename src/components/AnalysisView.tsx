@@ -294,12 +294,12 @@ export const ReadinessAnalysisWidget = () => {
     // ── Display values per factor (0-100% scale for bar) ──────────────────────
     const sleepDisplay = Math.round((sleepScore / 5) * 100);
     const stressDisplay = Math.round((5 - stressScore) * 20);
-    
+
     // Fatigue: 0-18 scale. 0 is low fatigue, 18 is high fatigue.
     const rawFatigue = calibration.cumulativeFatigueScore || 0;
     const fatigueDisplay = hasHistory ? Math.round((rawFatigue / 18) * 100) : 0;
-    const objectiveFatigueDisplay = fatigueDisplay; 
-    
+    const objectiveFatigueDisplay = fatigueDisplay;
+
     const getStatusColorText = (val: number) => {
         if (val >= 75) return 'text-emerald-500'; // High readiness = green
         if (val >= 40) return 'text-amber-500'; // Moderate readiness = amber
@@ -443,30 +443,30 @@ export const ReadinessAnalysisWidget = () => {
                         <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed mb-6 md:mb-12">
                             Bio-mechanical readiness is system-managed based on historical training volume.
                         </p>
-                        <div className="grid grid-cols-2 gap-8 mt-2 items-start">
-                             <div className="flex flex-col items-start">
-                                 <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-4 block w-full">
-                                     {t('analysis.readiness')}
-                                     <InfoTooltip term="Readiness" />
-                                 </span>
-                                 <div className="flex items-baseline gap-2">
-                                     <span className={cn(
-                                         'text-5xl md:text-7xl lg:text-8xl font-black italic tracking-tighter leading-none',
-                                         readinessScore !== null ? statusColor : 'text-zinc-600'
-                                     )}>
-                                         {readinessScore !== null ? readinessScore : '–'}
-                                     </span>
-                                     {readinessScore !== null && <span className="text-xl md:text-2xl font-black italic text-zinc-600"> %</span>}
-                                 </div>
-                             </div>
-                             
-                             {/* ACWR Widget */}
-                             <div className="flex flex-col items-start">
-                                 <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-4 block w-full">
-                                     ACWR
-                                     <InfoTooltip term="ACWR" />
-                                 </span>
-                                 {acwrData ? (
+                        <div className="grid grid-cols-2 gap-4 mt-2 items-start">
+                            <div className="flex flex-col items-start">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-4 block w-full">
+                                    {t('analysis.readiness')}
+                                    <InfoTooltip term="Readiness" />
+                                </span>
+                                <div className="flex items-baseline gap-2">
+                                    <span className={cn(
+                                        'text-5xl md:text-7xl lg:text-8xl font-black italic tracking-tighter leading-none',
+                                        readinessScore !== null ? statusColor : 'text-zinc-600'
+                                    )}>
+                                        {readinessScore !== null ? readinessScore : '–'}
+                                    </span>
+                                    {readinessScore !== null && <span className="text-xl md:text-2xl font-black italic text-zinc-600"> %</span>}
+                                </div>
+                            </div>
+
+                            {/* ACWR Widget */}
+                            <div className="flex flex-col items-start">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-4 block w-full">
+                                    ACWR
+                                    <InfoTooltip term="ACWR" />
+                                </span>
+                                {acwrData ? (
                                     <div className="flex flex-col h-full items-start">
                                         <div className="flex items-baseline gap-2 mb-2">
                                             <span className="text-3xl md:text-4xl font-black italic tracking-tighter leading-none text-white">
@@ -474,19 +474,19 @@ export const ReadinessAnalysisWidget = () => {
                                             </span>
                                         </div>
                                         <span className={cn(
-                                            "font-headline text-[10px] font-black uppercase tracking-widest border-l-2 pl-3 block mb-4 border-zinc-800",
+                                            "font-headline text-[10px] font-black uppercase tracking-widest border-l-2 pl-3 block mb-4 text-zinc-600 border-zinc-800",
                                             acwrData.ratio > 1.5 ? "text-crimson" : acwrData.ratio >= 0.8 && acwrData.ratio <= 1.3 ? "text-volt" : "text-zinc-400"
                                         )}>
                                             {acwrData.ratio > 1.5 ? "Elevated" : acwrData.ratio >= 0.8 && acwrData.ratio <= 1.3 ? "Optimal" : "Monitor"}
                                         </span>
                                     </div>
-                                 ) : (
-                                     <div className="flex items-baseline gap-2 mb-2">
-                                         <span className="text-3xl md:text-4xl font-black italic tracking-tighter leading-none text-zinc-600">–</span>
-                                     </div>
-                                 )}
-                             </div>
-                         </div>
+                                ) : (
+                                    <div className="flex items-baseline gap-2 mb-2">
+                                        <span className="text-3xl md:text-4xl font-black italic tracking-tighter leading-none text-zinc-600">–</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -504,7 +504,7 @@ export const ReadinessAnalysisWidget = () => {
                                 {calibration.overtrainingRisk === 'critical' ? "CRITICAL OVERTRAINING RISK" : "FATIGUE DECAY OUTPACED"}
                             </span>
                             <p className="text-[9px] font-bold uppercase tracking-wider text-zinc-400 leading-[1.4]">
-                                {calibration.overtrainingRisk === 'critical' 
+                                {calibration.overtrainingRisk === 'critical'
                                     ? "YOUR CURRENT ACUTE LOAD IS >1.6X CHRONIC BASELINE. RECOVERY FAIL RISK IS HIGH."
                                     : "DAILY STRAIN IS TRENDING ABOVE RECOVERY CAPACITY. MONITOR PERFORMANCE CLOSELY."}
                             </p>
@@ -898,13 +898,13 @@ export const ExternalActivityWidget = () => {
 
     const filteredData = useMemo(() => {
         if (!recoveryHistory || recoveryHistory.length === 0) return [];
-        
+
         const now = new Date();
         let startDate = new Date(0);
         if (timeFrame === '1M') startDate = new Date(now.setMonth(now.getMonth() - 1));
         else if (timeFrame === '3M') startDate = new Date(now.setMonth(now.getMonth() - 3));
         else if (timeFrame === '6M') startDate = new Date(now.setMonth(now.getMonth() - 6));
-        
+
         return recoveryHistory.filter(r => r.timestamp > startDate.getTime());
     }, [recoveryHistory, timeFrame]);
 
@@ -933,7 +933,7 @@ export const ExternalActivityWidget = () => {
                 <div>
                     <h2 className="font-headline text-2xl font-black uppercase italic tracking-tight">{t('analysis.tacticalIntegration')}</h2>
                 </div>
-                
+
                 <div className="flex gap-1 bg-void p-1 border border-white/5 flex-wrap md:flex-nowrap shrink-0">
                     {(['1M', '3M', '6M', 'ALL'] as const).map((tf) => (
                         <button
@@ -953,9 +953,9 @@ export const ExternalActivityWidget = () => {
             <div className="grid grid-cols-2 mb-6 relative z-10 w-full gap-4">
                 <div className="flex flex-col">
                     <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2">
-                        {timeFrame === '1M' ? t('analysis.monthly') : 
-                         timeFrame === '3M' ? '3 MONTHS' :
-                         timeFrame === '6M' ? '6 MONTHS' : 'TOTAL'} HOURS
+                        {timeFrame === '1M' ? t('analysis.monthly') :
+                            timeFrame === '3M' ? '3 MONTHS' :
+                                timeFrame === '6M' ? '6 MONTHS' : 'TOTAL'} HOURS
                     </span>
                     <div className="flex items-end gap-1">
                         <span className="text-2xl sm:text-3xl lg:text-4xl font-black italic">{totalHours.toFixed(1)}</span>
@@ -975,8 +975,8 @@ export const ExternalActivityWidget = () => {
                         </span>
                         <InfoTooltip term="ProgramImpact" />
                     </div>
-                    <span className={`text-2xl sm:text-3xl lg:text-4xl font-black uppercase tracking-widest ${impactColor}`}>
-                        {impactLabel} <span className="text-white italic text-lg sm:text-xl lg:text-2xl ml-1">({weeklyCumulativeScore.toFixed(1)})</span>
+                    <span className={`text-xl sm:text-2xl lg:text-3xl font-black uppercase ${impactColor}`}>
+                        {impactLabel} <span className="text-white text-lg sm:text-xl lg:text-2xl ml-1">({weeklyCumulativeScore.toFixed(1)})</span>
                     </span>
                 </div>
             </div>

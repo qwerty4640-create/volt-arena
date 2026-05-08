@@ -34,9 +34,9 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
     fantasyColorScheme, setFantasyColorScheme,
     t
   } = useSettings();
-  const { 
+  const {
     mockWorkoutCount, setMockWorkoutCount, history, resetProgress, resetProgram,
-    debugForceCritical, setDebugForceCritical 
+    debugForceCritical, setDebugForceCritical
   } = useWorkout();
   const [showFieldManual, setShowFieldManual] = React.useState(false);
   const [isResetting, setIsResetting] = React.useState(false);
@@ -89,14 +89,14 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
           initial={{ y: -10, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.05 }}
-          className="relative overflow-hidden border border-volt/40 bg-zinc-900/40 shadow-[0_0_30px_rgba(204,255,0,0.06)]"
+          className="relative overflow-hidden bg-zinc-900/40"
         >
           <button
             onClick={onNavigateToProfile}
-            className="w-full px-4 py-4 md:p-8 flex items-center justify-between hover:bg-volt/[0.06] transition-all group active:scale-[0.995]"
+            className="glass-panel w-full px-4 py-4 md:p-8 flex items-center justify-between hover:bg-volt/[0.06] transition-all group active:scale-[0.995]"
           >
             <div className="flex items-center gap-3">
-               <div className="w-10 h-10 bg-volt/10 flex items-center justify-center border border-volt/20 group-hover:border-volt/50 transition-colors overflow-hidden">
+              <div className="w-10 h-10 bg-volt/10 flex items-center justify-center border border-volt/20 group-hover:border-volt/50 transition-colors overflow-hidden">
                 {profile?.photoURL ? (
                   <img src={profile.photoURL} alt="Profile" className="w-full h-full object-cover aspect-square" />
                 ) : (
@@ -105,11 +105,11 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
               </div>
               <div className="text-left">
                 <h3 className="font-sans text-xl italic font-black uppercase tracking-tight text-white group-hover:text-volt transition-colors">
-                  {profile?.firstName && profile?.lastName 
-                    ? `${profile.firstName} ${profile.lastName}` 
+                  {profile?.firstName && profile?.lastName
+                    ? `${profile.firstName} ${profile.lastName}`
                     : profile?.firstName || profile?.lastName || 'Athlete Profile'}
                 </h3>
-                <p className="text-xs text-zinc-500 font-medium mt-1">View performance metrics, biometrics, and deployment settings.</p>
+                <p className="text-xs text-zinc-500 font-medium mt-1">View performance metrics and biometrics.</p>
               </div>
             </div>
             <div className="flex items-center gap-2 text-zinc-500 group-hover:text-volt transition-colors">
@@ -181,7 +181,7 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
                 </div>
               </div>
             )}
-            
+
             {/* Fantasy Color Scheme */}
             {theme === 'fantasy' && (
               <div className="space-y-4 sm:col-span-2">
@@ -204,7 +204,7 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
                           "flex items-center justify-between p-3 transition-all relative overflow-hidden",
                           fantasyColorScheme === item.id
                             ? "bg-volt/10 text-volt border-l-[3px] border-volt"
-                            : isLocked 
+                            : isLocked
                               ? "bg-zinc-900/40 text-zinc-600 border-l-[3px] border-zinc-800 grayscale cursor-not-allowed"
                               : "bg-surface-variant text-zinc-400 hover:bg-white/5 hover:text-zinc-200 border-l-[3px] border-white/5"
                         )}
@@ -235,6 +235,7 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
         </motion.div>
 
         {/* Language Settings */}
+        {/*}
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -262,7 +263,7 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
             ))}
           </div>
         </motion.div>
-
+        {*/}
         {/* Unit Settings */}
         <motion.div
           initial={{ y: 20, opacity: 0 }}
@@ -294,6 +295,7 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
         </motion.div>
 
         {/* Experience Settings */}
+        {/*}
         {(profile?.role === 'admin' || profile?.role === 'engineer') && (
           <motion.div
             initial={{ y: 20, opacity: 0 }}
@@ -307,7 +309,9 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Voice Control */}
+        {*/}
+        {/* Voice Control */}
+        {/*}
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <Mic className="text-volt" size={18} />
@@ -339,8 +343,9 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
                   </div>
                 </button>
               </div>
-
-              {/* Immersion Mode */}
+              {*/}
+        {/* Immersion Mode */}
+        {/*}
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <Eye className="text-volt" size={18} />
@@ -370,7 +375,7 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
             </div>
           </motion.div>
         )}
-
+{*/}
         {/* Program Management */}
         <motion.div
           initial={{ y: 20, opacity: 0 }}

@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  PlusCircle, 
-  Search, 
-  Check, 
+import {
+  PlusCircle,
+  Search,
+  Check,
   Plus,
   X
 } from 'lucide-react';
@@ -36,27 +36,27 @@ export const ExerciseSelectorModal = ({ isOpen, onClose, onSelect }: ExerciseSel
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center p-6">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
             className="absolute inset-0 bg-void/80 backdrop-blur-md"
           />
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="relative w-full max-w-md glass-panel p-6 md:p-8 border-volt/20 shadow-[0_0_50px_var(--primary-glow)] flex flex-col max-h-[80vh]"
+            className="relative w-full max-w-md glass-panel p-4 md:p-8 border-volt/20 shadow-[0_0_50px_var(--primary-glow)] flex flex-col max-h-[80vh]"
           >
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
-                <PlusCircle className="text-volt" size={24} />
+                {/*}<PlusCircle className="text-volt" size={24} />{*/}
                 <h2 className="font-sans text-2xl font-black uppercase italic tracking-tight">
                   {isCircuitMode ? t('workout.createCircuit') : t('workout.addExercise')}
                 </h2>
               </div>
-              <button 
+              <button
                 onClick={() => {
                   setIsCircuitMode(!isCircuitMode);
                   setSelectedCircuitExercises([]);
@@ -73,7 +73,7 @@ export const ExerciseSelectorModal = ({ isOpen, onClose, onSelect }: ExerciseSel
 
             {isCircuitMode && (
               <div className="mb-6">
-                <input 
+                <input
                   type="text"
                   placeholder={t('workout.circuitTitlePlaceholder')}
                   value={circuitTitle}
@@ -82,10 +82,10 @@ export const ExerciseSelectorModal = ({ isOpen, onClose, onSelect }: ExerciseSel
                 />
               </div>
             )}
-            
+
             <div className="relative mb-6">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
-              <input 
+              <input
                 type="text"
                 placeholder={t('workout.searchPlaceholder')}
                 value={searchQuery}
@@ -96,7 +96,7 @@ export const ExerciseSelectorModal = ({ isOpen, onClose, onSelect }: ExerciseSel
 
             <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-2">
               {(() => {
-                const filtered = EXERCISE_DATABASE.filter(ex => 
+                const filtered = EXERCISE_DATABASE.filter(ex =>
                   ex.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                   ex.category.toLowerCase().includes(searchQuery.toLowerCase())
                 );
@@ -110,9 +110,9 @@ export const ExerciseSelectorModal = ({ isOpen, onClose, onSelect }: ExerciseSel
                           key={ex.name}
                           onClick={() => {
                             if (isCircuitMode) {
-                              setSelectedCircuitExercises(prev => 
-                                prev.includes(ex.name) 
-                                  ? prev.filter(n => n !== ex.name) 
+                              setSelectedCircuitExercises(prev =>
+                                prev.includes(ex.name)
+                                  ? prev.filter(n => n !== ex.name)
                                   : [...prev, ex.name]
                               );
                             } else {
@@ -148,7 +148,7 @@ export const ExerciseSelectorModal = ({ isOpen, onClose, onSelect }: ExerciseSel
                         </button>
                       );
                     })}
-                    
+
                     {searchQuery && !filtered.some(ex => ex.name.toLowerCase() === searchQuery.toLowerCase()) && (
                       <button
                         onClick={() => {
@@ -181,7 +181,7 @@ export const ExerciseSelectorModal = ({ isOpen, onClose, onSelect }: ExerciseSel
 
             {isCircuitMode && selectedCircuitExercises.length > 0 && (
               <div className="mt-6 pt-6 border-t border-white/5">
-                <button 
+                <button
                   onClick={() => onSelect(selectedCircuitExercises, circuitTitle || t('workout.tacticalCircuit'))}
                   className="w-full py-4 bg-volt text-void font-headline text-sm font-black uppercase italic tracking-widest hover:bg-white transition-all flex items-center justify-center gap-3"
                 >
@@ -191,7 +191,7 @@ export const ExerciseSelectorModal = ({ isOpen, onClose, onSelect }: ExerciseSel
               </div>
             )}
 
-            <button 
+            <button
               onClick={onClose}
               className="w-full mt-6 btn-secondary py-4"
             >

@@ -16,15 +16,15 @@ import { db, auth, handleFirestoreError, OperationType } from '../firebase';
 import { useSettings, UserProfile } from './SettingsContext';
 import { useToast } from './ToastContext';
 import { BlockType, getBlockForWeek, getRetentionProtocol } from '../constants/periodization';
-import { 
-  getExercisesByPattern, 
-  ExerciseDefinition, 
-  getSwappableExercises 
+import {
+  getExercisesByPattern,
+  ExerciseDefinition,
+  getSwappableExercises
 } from '../constants/exercises';
-import { 
-  TRAINING_CONSTRAINTS, 
-  getInterferenceAdjustment, 
-  getSecondaryInjection 
+import {
+  TRAINING_CONSTRAINTS,
+  getInterferenceAdjustment,
+  getSecondaryInjection
 } from '../constants/constraints';
 import { calculateTier } from '../lib/strength';
 import { ACTIVITY_LIBRARY } from '../data/activityLibrary';
@@ -183,7 +183,7 @@ const WorkoutContext = createContext<WorkoutContextType | undefined>(undefined);
 
 const WORKOUT_TEMPLATES = [
   {
-    title: 'Mission: Foundation',
+    title: 'Foundation',
     slots: [
       { pattern: 'squat', weight: 60, reps: '8', sets: 3 },
       { pattern: 'push_horizontal', weight: 40, reps: '10', sets: 3 },
@@ -191,7 +191,7 @@ const WORKOUT_TEMPLATES = [
     ]
   },
   {
-    title: 'Mission: Power',
+    title: 'Power',
     slots: [
       { pattern: 'hinge', weight: 80, reps: '5', sets: 3 },
       { pattern: 'push_vertical', weight: 30, reps: '8', sets: 3 },
@@ -199,7 +199,7 @@ const WORKOUT_TEMPLATES = [
     ]
   },
   {
-    title: 'Mission: Hybrid',
+    title: 'Hybrid',
     slots: [
       { pattern: 'squat', weight: 40, reps: '12', sets: 3 },
       { pattern: 'push_vertical', weight: 25, reps: '10', sets: 3 },
@@ -210,21 +210,21 @@ const WORKOUT_TEMPLATES = [
 
 const ENDURANCE_TEMPLATES = [
   {
-    title: 'Mission: Aerobic Base',
+    title: 'Aerobic Base',
     slots: [
       { pattern: 'impact', weight: 0, reps: '45 min', sets: 1 },
       { pattern: 'core', weight: 0, reps: '1 min', sets: 3 },
     ]
   },
   {
-    title: 'Mission: Threshold',
+    title: 'Threshold',
     slots: [
       { pattern: 'impact', weight: 0, reps: '5 min', sets: 4 },
       { pattern: 'mobility', weight: 0, reps: '10 min', sets: 1 },
     ]
   },
   {
-    title: 'Mission: Lactate',
+    title: 'Lactate',
     slots: [
       { pattern: 'impact', weight: 0, reps: '1 min', sets: 8 },
       { pattern: 'pull_horizontal', weight: 20, reps: '15', sets: 2 },
@@ -234,7 +234,7 @@ const ENDURANCE_TEMPLATES = [
 
 const TACTICAL_TEMPLATES = [
   {
-    title: 'Mission: Combat Capacity',
+    title: 'Combat Capacity',
     slots: [
       { pattern: 'impact', weight: 40, reps: '30 min', sets: 1 },
       { pattern: 'push_vertical', weight: 20, reps: '15', sets: 3 },
@@ -242,7 +242,7 @@ const TACTICAL_TEMPLATES = [
     ]
   },
   {
-    title: 'Mission: Functional Strength',
+    title: 'Functional Strength',
     slots: [
       { pattern: 'hinge', weight: 60, reps: '8', sets: 4 },
       { pattern: 'pull_vertical', weight: 0, reps: 'AMRAP', sets: 3 },
@@ -250,7 +250,7 @@ const TACTICAL_TEMPLATES = [
     ]
   },
   {
-    title: 'Mission: Work Capacity',
+    title: 'Work Capacity',
     slots: [
       { pattern: 'squat', weight: 30, reps: '15', sets: 4 },
       { pattern: 'push_horizontal', weight: 30, reps: '20', sets: 3 },
@@ -261,7 +261,7 @@ const TACTICAL_TEMPLATES = [
 
 const EXPLOSIVE_TEMPLATES = [
   {
-    title: 'Mission: Rate of Force',
+    title: 'Rate of Force',
     slots: [
       { pattern: 'plyometric', weight: 0, reps: '3', sets: 5 },
       { pattern: 'squat', weight: 70, reps: '3', sets: 4 },
@@ -269,7 +269,7 @@ const EXPLOSIVE_TEMPLATES = [
     ]
   },
   {
-    title: 'Mission: Elasticity',
+    title: 'Elasticity',
     slots: [
       { pattern: 'plyometric', weight: 0, reps: '5', sets: 4 },
       { pattern: 'hinge', weight: 60, reps: '5', sets: 3 },
@@ -280,7 +280,7 @@ const EXPLOSIVE_TEMPLATES = [
 
 const MEDICAL_TEMPLATES = [
   {
-    title: 'Mission: Restoration',
+    title: 'Restoration',
     slots: [
       { pattern: 'mobility', weight: 0, reps: '5 min', sets: 2 },
       { pattern: 'core', weight: 0, reps: '1 min', sets: 3 },
@@ -288,7 +288,7 @@ const MEDICAL_TEMPLATES = [
     ]
   },
   {
-    title: 'Mission: Stability',
+    title: 'Stability',
     slots: [
       { pattern: 'core', weight: 0, reps: '45 sec', sets: 4 },
       { pattern: 'accessory', weight: 15, reps: '12', sets: 3 },
@@ -379,8 +379,8 @@ const createSessionFromTemplate = (
   const primaryGoal = goals[0] || 'powerbuilding';
   const customProgramBlocks = profile?.customProgramBlocks || [];
   const hasCustomPlan = customProgramBlocks.length > 0;
-  
-  const totalDurationWeeks = hasCustomPlan 
+
+  const totalDurationWeeks = hasCustomPlan
     ? customProgramBlocks.reduce((acc, b) => acc + b.durationWeeks, 0)
     : (profile?.trainingDurationMonths || 3) * 4;
 
@@ -403,14 +403,14 @@ const createSessionFromTemplate = (
   // --- PHASE 2: BLENDING ENGINE ---
   const interferenceModifier = getInterferenceAdjustment(goals);
   const secondaryInjections = getSecondaryInjection(goals);
-  
+
   // Clone slots to avoid mutating constants
   let dynamicSlots = [...initialTemplate.slots];
 
   // Apply Medical Conditions filtering
   if (profile?.hasMedicalConditions && profile.medicalConditionDetails) {
     const details = profile.medicalConditionDetails.toLowerCase();
-    
+
     dynamicSlots = dynamicSlots.map(slot => {
       const conditionMatch = (
         (details.includes('squat') && slot.pattern === 'squat') ||
@@ -419,12 +419,12 @@ const createSessionFromTemplate = (
         (details.includes('row') && slot.pattern === 'impact') ||
         (details.includes('carry') && slot.pattern === 'core')
       );
-      
+
       if (conditionMatch) {
-         if (slot.pattern === 'squat') return { ...slot, pattern: 'core' };
-         if (slot.pattern === 'hinge') return { ...slot, pattern: 'core' };
-         if (slot.pattern === 'impact') return { ...slot, pattern: 'mobility' };
-         return { ...slot, pattern: 'core' };
+        if (slot.pattern === 'squat') return { ...slot, pattern: 'core' };
+        if (slot.pattern === 'hinge') return { ...slot, pattern: 'core' };
+        if (slot.pattern === 'impact') return { ...slot, pattern: 'mobility' };
+        return { ...slot, pattern: 'core' };
       }
       return slot;
     });
@@ -510,7 +510,7 @@ const createSessionFromTemplate = (
     exercises: dynamicSlots.map((slot, i) => {
       const preferredImpact = goals.includes('longevity') ? 'low' : 'high';
       let availableExercises = getExercisesByPattern(slot.pattern as any, preferredImpact);
-      
+
       // Filter by gym access
       if (profile?.hasFullGymAccess === false) {
         const gymKeywords = ['Barbell', 'Machine', 'Cable', 'Leg Press', 'Hack Squat', 'Assault Bike', 'Rowing', 'Sandbag', 'Ammo Can', 'Log '];
@@ -521,8 +521,8 @@ const createSessionFromTemplate = (
       }
 
       // Select best fit exercise for the goal
-      let selectedExercise = availableExercises[0]; 
-      
+      let selectedExercise = availableExercises[0];
+
       // Secondary selection logic: if longevity, prefer non-barbell if available for certain patterns
       if (goals.includes('longevity') && selectedExercise.name.includes('Barbell')) {
         const safer = availableExercises.find(e => !e.name.includes('Barbell'));
@@ -1102,16 +1102,16 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     // 1. "Sum of Drains" Readiness Engine
     // Readiness = 100 - Sleep_Deficit - Fatigue - Stress
     let systemReadiness = 100;
-    
+
     // We base systemReadiness strictly on the last session + time elapsed.
-    const filteredHistory = profile?.programResetAt 
+    const filteredHistory = profile?.programResetAt
       ? history.filter(s => (s.completedAt || 0) > profile.programResetAt!)
       : history;
     const lastSession = filteredHistory.length > 0 ? filteredHistory[0] : null;
 
     let cumulativeFatigueScore = 0; // Keeping for redline check
     const activeRecoveryHistory = recoveryOverride || recoveryHistory;
-    const last24hTotalHistory = activeRecoveryHistory.filter(r => 
+    const last24hTotalHistory = activeRecoveryHistory.filter(r =>
       (Date.now() - r.timestamp) / 3600000 < 24
     );
     cumulativeFatigueScore = last24hTotalHistory.reduce((sum, r) => sum + r.rpe, 0);
@@ -1121,46 +1121,46 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     let k_stress = 0.04;
 
     // Recovery Acceleration: Active recovery dynamically modifies decay rate
-    const last72hRecovery = activeRecoveryHistory.filter(r => 
+    const last72hRecovery = activeRecoveryHistory.filter(r =>
       (Date.now() - r.timestamp) / 3600000 < 72
     );
 
     last72hRecovery.forEach(recovery => {
       const activityDef = RECOVERY_MAP.find(a => a.id === recovery.activityId);
       if (activityDef) {
-         // Convert boostRange into a multiplier for the decay rate
-         const avgBoost = (activityDef.boostRange[0] + activityDef.boostRange[1]) / 2;
-         const multiplier = 1 + (avgBoost / 10); 
-         if (activityDef.targets.includes('fatigue')) k_fatigue *= multiplier;
-         if (activityDef.targets.includes('stress')) k_stress *= multiplier;
+        // Convert boostRange into a multiplier for the decay rate
+        const avgBoost = (activityDef.boostRange[0] + activityDef.boostRange[1]) / 2;
+        const multiplier = 1 + (avgBoost / 10);
+        if (activityDef.targets.includes('fatigue')) k_fatigue *= multiplier;
+        if (activityDef.targets.includes('stress')) k_stress *= multiplier;
       }
     });
 
     let currentFatigue = 0;
     if (lastSession && lastSession.completedAt) {
       const t = Math.max(0, (Date.now() - lastSession.completedAt) / 3600000); // Time in hours
-      
+
       let volumeVal = 0;
       let rpeSum = 0;
       let rpeCount = 0;
       if (lastSession.exercises) {
-         lastSession.exercises.forEach(ex => {
-            ex.sets?.forEach(s => {
-               if (s.isCompleted) {
-                  const weight = parseFloat(s.weight) || 0;
-                  const reps = parseInt(s.reps) || 0;
-                  volumeVal += weight * reps;
-                  const sRpe = parseFloat(s.rpe) || 0;
-                  if (sRpe > 0) {
-                     rpeSum += sRpe;
-                     rpeCount += 1;
-                  }
-               }
-            });
-         });
+        lastSession.exercises.forEach(ex => {
+          ex.sets?.forEach(s => {
+            if (s.isCompleted) {
+              const weight = parseFloat(s.weight) || 0;
+              const reps = parseInt(s.reps) || 0;
+              volumeVal += weight * reps;
+              const sRpe = parseFloat(s.rpe) || 0;
+              if (sRpe > 0) {
+                rpeSum += sRpe;
+                rpeCount += 1;
+              }
+            }
+          });
+        });
       }
       const avgRpe = rpeCount > 0 ? rpeSum / rpeCount : (lastSession.actualRpe || lastSession.rpe || 7);
-      
+
       // Normalizing based on a hypothetical baseline strength/volume
       const rawIntensity = volumeVal * avgRpe;
       const intensityScale = unit === 'imperial' ? 400 : 180; // 400 LBS or 180 KG to normalize
@@ -1178,7 +1178,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     if (subjectiveReadiness) {
       const t_stress = Math.max(0, (Date.now() - subjectiveReadiness.timestamp) / 3600000);
-      
+
       const subjectiveStressDeficit = (5 - (subjectiveReadiness.stress || 5)) * 4; // up to 16
       stressPenalty = 1.0 + subjectiveStressDeficit * Math.exp(-k_stress * t_stress);
 
@@ -1206,7 +1206,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     // 5. Trend Identification: Strain vs Decay
     let overtrainingRisk: 'none' | 'warning' | 'critical' = 'none';
     const last14Days = history.filter(s => (Date.now() - (s.completedAt || 0)) / 86400000 < 14);
-    
+
     if (last14Days.length >= 4) {
       const acuteSessions = last14Days.filter(s => (Date.now() - (s.completedAt || 0)) / 86400000 < 7);
       const chronicSessions = last14Days;
@@ -1346,7 +1346,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
         session.stress = finalBiometrics.stress;
         session.fatigue = finalBiometrics.fatigue;
       }
-      
+
       if (!calibration.isRedline && readinessScore !== undefined && readinessModifier !== undefined) {
         session.readiness = readinessScore;
         session.targetRpe = targetRpe;
@@ -1536,13 +1536,13 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const backupData = async (uid: string, filename: string, data: any) => {
     try {
-        await fetch('/api/backup-data', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ uid, filename, data })
-        });
+      await fetch('/api/backup-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uid, filename, data })
+      });
     } catch (e) {
-        console.error('Backup failed', e);
+      console.error('Backup failed', e);
     }
   };
 

@@ -71,11 +71,11 @@ export const JointStressWidget = () => {
       // Only count actual restorative activities as "Low Impact" for this metric
       const restorativeTypes = ['Walking', 'Yoga', 'Pilates', 'Mobility', 'Stretching'];
       const isRestorative = restorativeTypes.includes(log.type);
-      
+
       let impactValue = 0;
       if (isRestorative) {
         // High duration low intensity = good for joints
-        impactValue = log.durationMinutes * (11 - log.rpe); 
+        impactValue = log.durationMinutes * (11 - log.rpe);
       }
 
       if (!weeks[weekKey]) {
@@ -103,7 +103,7 @@ export const JointStressWidget = () => {
   const latestStats = useMemo(() => {
     if (stressData.length === 0) return { ratio: 0, status: 'N/A', color: 'text-zinc-500' };
     const latest = stressData[stressData.length - 1];
-    
+
     let status = 'BALANCED';
     let color = 'text-volt';
 
@@ -180,7 +180,7 @@ export const JointStressWidget = () => {
         </div>
       </div>
 
-      <div className="h-[250px] w-full mt-4 min-w-0">
+      <div className="h-[250px] w-full min-w-0">
         {stressData.length > 0 ? (
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={stressData} margin={{ top: 5, right: 5, left: -20, bottom: 25 }}>
@@ -213,25 +213,25 @@ export const JointStressWidget = () => {
 
       <div className="mt-8 grid grid-cols-2 gap-4">
         <div className="p-4 bg-void/40 border border-white/5 relative">
-           <div className="flex items-center gap-1 mb-1">
-             <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest">{t('analysis.jointStressRatio')}</span>
-             <InfoTooltip term="jointStress" className="ml-0" />
-           </div>
-           <div className="flex items-baseline gap-2">
-              <span className="font-headline text-2xl font-black italic text-white">{latestStats.ratio.toFixed(1)}</span>
-              <span className="text-[10px] font-black text-zinc-600 uppercase">%</span>
-           </div>
+          <div className="flex items-center gap-1 mb-1">
+            <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest">{t('analysis.jointStressRatio')}</span>
+            <InfoTooltip term="jointStress" className="ml-0" />
+          </div>
+          <div className="flex items-baseline gap-2">
+            <span className="font-headline text-2xl font-black italic text-white">{latestStats.ratio.toFixed(1)}</span>
+            <span className="text-[10px] font-black text-zinc-600 uppercase">%</span>
+          </div>
         </div>
         <div className="p-4 bg-void/40 border border-white/5 flex flex-col justify-center">
-           <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest mb-1 block">{t('onboarding.recommended')} Zone</span>
-           <div className="w-full h-1 bg-zinc-800 relative">
-              <div className="absolute left-[30%] right-[30%] h-full bg-volt/30" />
-              <motion.div 
-                initial={{ left: 0 }}
-                animate={{ left: `${Math.min(latestStats.ratio, 100)}%` }}
-                className="absolute top-1/2 -translate-y-1/2 w-1 h-3 bg-white shadow-[0_0_10px_white]" 
-              />
-           </div>
+          <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest mb-1 block">{t('onboarding.recommended')} Zone</span>
+          <div className="w-full h-1 bg-zinc-800 relative">
+            <div className="absolute left-[30%] right-[30%] h-full bg-volt/30" />
+            <motion.div
+              initial={{ left: 0 }}
+              animate={{ left: `${Math.min(latestStats.ratio, 100)}%` }}
+              className="absolute top-1/2 -translate-y-1/2 w-1 h-3 bg-white shadow-[0_0_10px_white]"
+            />
+          </div>
         </div>
       </div>
     </motion.div>

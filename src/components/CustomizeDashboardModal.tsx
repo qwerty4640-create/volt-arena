@@ -1,27 +1,27 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  X, 
-  GripVertical, 
-  Check, 
-  Layout, 
+import {
+  X,
+  GripVertical,
+  Check,
+  Layout,
   Save
 } from 'lucide-react';
-import { 
-  DndContext, 
-  closestCenter, 
-  KeyboardSensor, 
-  PointerSensor, 
-  useSensor, 
-  useSensors, 
-  DragEndEvent 
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent
 } from '@dnd-kit/core';
-import { 
-  arrayMove, 
-  SortableContext, 
-  sortableKeyboardCoordinates, 
-  verticalListSortingStrategy, 
-  useSortable 
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { ALL_WIDGETS, ALL_PERFORMANCE_WIDGETS, Widget, PerformanceWidget } from '../constants/widgets';
@@ -76,9 +76,9 @@ const SortableItem: React.FC<SortableItemProps> = ({ id, isSelected, onToggle, l
         !isSelected && "opacity-40"
       )}
     >
-      <div 
-        {...attributes} 
-        {...listeners} 
+      <div
+        {...attributes}
+        {...listeners}
         className="cursor-grab active:cursor-grabbing text-zinc-600 hover:text-zinc-400 transition-colors p-2 -m-2"
       >
         <GripVertical size={18} />
@@ -115,7 +115,7 @@ const SortableItem: React.FC<SortableItemProps> = ({ id, isSelected, onToggle, l
 export const CustomizeDashboardModal = ({ isOpen, onClose, currentWidgets, onSave, type }: CustomizeDashboardModalProps) => {
   const { t } = useSettings();
   const allWidgets = type === 'dashboard' ? ALL_WIDGETS : ALL_PERFORMANCE_WIDGETS;
-  
+
   const [tempWidgets, setTempWidgets] = useState<(WidgetId | PerformanceWidgetId)[]>(() => {
     const otherWidgets = allWidgets.map(w => w.id).filter(id => !currentWidgets.includes(id as any));
     return [...currentWidgets, ...otherWidgets] as (WidgetId | PerformanceWidgetId)[];
@@ -172,70 +172,70 @@ export const CustomizeDashboardModal = ({ isOpen, onClose, currentWidgets, onSav
               onClick={onClose}
               className="absolute inset-0 bg-void/80 backdrop-blur-md"
             />
-            
+
             <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               className="relative w-full max-w-lg bg-surface-container-lowest border border-white/10 shadow-[0_40px_80px_rgba(0,0,0,0.8)] flex flex-col max-h-[90vh]"
             >
-            {/* Header */}
-            <div className="flex items-center p-6 border-b border-white/5">
-              <div className="flex items-center gap-3">
-                <Layout className="text-volt" size={20} />
-                <h2 className="font-headline text-lg font-black uppercase italic tracking-tight text-white leading-tight">
-                  {t('analysis.customizeDashboard')}
-                </h2>
+              {/* Header */}
+              <div className="flex items-center p-6 border-b border-white/5">
+                <div className="flex items-center gap-3">
+                  <Layout className="text-volt" size={20} />
+                  <h2 className="font-headline text-lg font-black uppercase italic tracking-tight text-white leading-tight">
+                    {t('analysis.customizeDashboard')}
+                  </h2>
+                </div>
               </div>
-            </div>
 
-            {/* List */}
-            <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={handleDragEnd}
-              >
-                <SortableContext
-                  items={tempWidgets}
-                  strategy={verticalListSortingStrategy}
+              {/* List */}
+              <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
                 >
-                  {tempWidgets.map((id) => {
-                    const widget = allWidgets.find(w => w.id === id);
-                    return (
-                      <SortableItem
-                        key={id}
-                        id={id}
-                        isSelected={selectedIds.has(id)}
-                        onToggle={toggleWidget}
-                        label={widget?.label || id}
-                        allWidgets={allWidgets}
-                      />
-                    );
-                  })}
-                </SortableContext>
-              </DndContext>
-            </div>
+                  <SortableContext
+                    items={tempWidgets}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    {tempWidgets.map((id) => {
+                      const widget = allWidgets.find(w => w.id === id);
+                      return (
+                        <SortableItem
+                          key={id}
+                          id={id}
+                          isSelected={selectedIds.has(id)}
+                          onToggle={toggleWidget}
+                          label={widget?.label || id}
+                          allWidgets={allWidgets}
+                        />
+                      );
+                    })}
+                  </SortableContext>
+                </DndContext>
+              </div>
 
-            {/* Footer */}
-            <div className="p-6 border-t border-white/5 flex gap-4">
-              <button
-                onClick={onClose}
-                className="flex-1 py-4 font-headline text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500 border border-white/10 hover:bg-white/5 hover:text-white transition-all flex items-center justify-center gap-2"
-              >
-                <X size={14} />
-                {t('common.close')}
-              </button>
-              <button
-                onClick={handleSave}
-                className="flex-1 py-4 bg-volt text-void font-headline text-[10px] font-black uppercase tracking-[0.3em] shadow-[0_0_20px_rgba(0,182,255,0.4)] hover:bg-white transition-all flex items-center justify-center gap-2"
-              >
-                <Save size={14} />
-                {t('common.save')}
-              </button>
-            </div>
-          </motion.div>
-        </div>
+              {/* Footer */}
+              <div className="p-6 border-t border-white/5 flex gap-4">
+                <button
+                  onClick={onClose}
+                  className="btn-secondary flex-1 py-4"
+                >
+                  <X size={14} />
+                  {t('common.close')}
+                </button>
+                <button
+                  onClick={handleSave}
+                  className="btn-primary flex-2 py-4"
+                >
+                  <Save size={14} />
+                  {t('common.save')}
+                </button>
+              </div>
+            </motion.div>
+          </div>
         </Portal>
       )}
     </AnimatePresence>

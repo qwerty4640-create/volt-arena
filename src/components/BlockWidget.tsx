@@ -19,7 +19,7 @@ export const BlockWidget = () => {
     const basicPlan = profile?.customProgramBlocks && profile.customProgramBlocks.length > 0
         ? getPlanFromCustomBlocks(profile.customProgramBlocks)
         : getPlanForDuration((profile?.trainingDurationMonths || 3) * 4, profile?.trainingObjectives || (profile?.trainingGoal ? [profile.trainingGoal] : ['powerbuilding']));
-    
+
     const plan = expandPlan(basicPlan);
     const blockDef = plan.find(b => b.type === currentBlock);
     const totalWeeks = blockDef?.durationWeeks || 4;
@@ -86,7 +86,7 @@ export const BlockWidget = () => {
 
             <div className="flex items-center justify-between mb-6 md:mb-8 relative z-10">
                 <div className="flex items-center gap-3">
-                    <h3 className="font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tight mb-2">{t('analysis.blockProgression')}</h3>
+                    <h3 className="font-headline text-3xl md:text-3xl font-black uppercase italic tracking-tight mb-2">{t('Deployment Progress')}</h3>
                 </div>
             </div>
 
@@ -157,7 +157,7 @@ export const BlockWidget = () => {
                         </div>
                     </div>
                 </div>
-
+                {/*}
                 <div className="space-y-4">
                     <div className="flex items-center gap-2 mb-2">
                         <Info size={12} className="text-zinc-500" />
@@ -166,7 +166,7 @@ export const BlockWidget = () => {
                         </span>
                     </div>
                 </div>
-
+{*/}
                 {/* Intensity Graph */}
                 <div className="flex flex-col">
                     <div className="flex justify-between items-end mb-4">

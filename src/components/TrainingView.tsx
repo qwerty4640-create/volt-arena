@@ -39,15 +39,15 @@ interface TrainingViewProps {
 
 export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAddActivity }: TrainingViewProps) => {
   const { t, unit, profile } = useSettings();
-  const { 
-    currentSession, 
+  const {
+    currentSession,
     startNewSession,
     replaceExerciseInSession,
     setNextWorkoutExercises,
-    getNextWorkoutTemplate, 
-    history, 
-    getCalibrationStatus, 
-    calculateProgramCalories 
+    getNextWorkoutTemplate,
+    history,
+    getCalibrationStatus,
+    calculateProgramCalories
   } = useWorkout();
   const calibration = getCalibrationStatus();
 
@@ -285,7 +285,7 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
                 </div>
               )}
             </div>
-            <h1 className="font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tight mb-2">{displayTitle}</h1>
+            <h1 className="font-headline text-3xl md:text-3xl font-black uppercase italic tracking-tight mb-2">{displayTitle}</h1>
             <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed">
               {focusText}
             </p>
@@ -322,7 +322,7 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
                     {calibration.overtrainingRisk === 'critical' ? "CRITICAL OVERTRAINING RISK" : "FATIGUE DECAY OUTPACED"}
                   </span>
                   <p className="text-[9px] font-bold uppercase tracking-wider text-zinc-400 leading-[1.4]">
-                    {calibration.overtrainingRisk === 'critical' 
+                    {calibration.overtrainingRisk === 'critical'
                       ? "YOUR CURRENT ACUTE LOAD IS >1.6X CHRONIC BASELINE. RECOVERY FAIL RISK IS HIGH."
                       : "DAILY STRAIN IS TRENDING ABOVE RECOVERY CAPACITY. MONITOR PERFORMANCE CLOSELY."}
                   </p>
@@ -432,9 +432,9 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
             <span aria-live="polite" className="text-zinc-400 text-[10px] md:text-xs font-medium uppercase tracking-widest block mt-1">
               {isActiveSession
                 ? <span aria-live="assertive">{t('analysis.setOfPattern', { current: currentSetIdx + 1, total: displayTotalSets, weight: displayTargetWeight, unit: weightUnit })}</span>
-                : (isTimedExercise(mainLift?.name || '') 
-                    ? `${displayTotalSets} sets x ${displayTargetReps} sec @ ${displayTargetWeight}${weightUnit}`
-                    : t('analysis.repsAtPattern', { sets: displayTotalSets, reps: displayTargetReps, weight: displayTargetWeight, unit: weightUnit }))}
+                : (isTimedExercise(mainLift?.name || '')
+                  ? `${displayTotalSets} sets x ${displayTargetReps} sec @ ${displayTargetWeight}${weightUnit}`
+                  : t('analysis.repsAtPattern', { sets: displayTotalSets, reps: displayTargetReps, weight: displayTargetWeight, unit: weightUnit }))}
             </span>
             <button
               onClick={() => setShowRoutineModal(true)}
