@@ -43,6 +43,11 @@ export interface Set {
   rpe: string;
   isCompleted: boolean;
   isWarmup?: boolean;
+  duration_seconds?: number;
+  distance_meters?: number;
+  heart_rate_avg?: number;
+  pain_scale?: number;
+  rom_quality?: 'restricted' | 'fluid';
 }
 
 export interface Exercise {
@@ -79,6 +84,7 @@ export interface WorkoutSession {
   duration?: string;
   volume?: string;
   caloriesBurned?: number;
+  workCapacity?: number;
   blockType?: BlockType;
   blockLabel?: string;
   weekInBlock?: number;
@@ -126,6 +132,7 @@ interface WorkoutContextType {
   setNextWorkoutExercises: (exercises: Exercise[]) => void;
   discardSession: () => void;
   getNextWorkoutTemplate: () => WorkoutSession;
+  getWorkoutTemplate: (week: number, day: number) => WorkoutSession;
   getCalibrationStatus: () => {
     readiness: number;
     readinessModifier: number;
@@ -1292,6 +1299,19 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return session;
   };
 
+  const getWorkoutTemplate = (week: number, day: number) => {
+    const filteredHistory = profile?.programResetAt
+      ? history.filter(s => (s.completedAt || 0) > profile.programResetAt!)
+      : history;
+
+    const lastSession = filteredHistory.length > 0 ? filteredHistory[0] : null;
+    const calibration = getCalibrationStatus();
+    const currentReadiness = calibration.readiness;
+    const hasAerobicInterference = calibration.hasAerobicInterference;
+
+    return createSessionFromTemplate(week, day, profile, unit, lastSession, currentReadiness, hasAerobicInterference);
+  };
+
   const startNewSession = (template?: WorkoutSession, readinessScore?: number, readinessModifier?: number, targetRpe?: number, biometrics?: { sleep: number; stress: number; fatigue: number }) => {
     const calibration = getCalibrationStatus();
     let session: WorkoutSession;
@@ -1743,6 +1763,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setNextWorkoutExercises,
       discardSession,
       getNextWorkoutTemplate,
+      getWorkoutTemplate,
       getCalibrationStatus,
       mockWorkoutCount,
       setMockWorkoutCount,

@@ -145,6 +145,8 @@
   "settings.tier.advanced": "Advanced",
   "settings.tier.elite": "Elite",
   "analysis.nextSession": "Next Mission",
+  "analysis.upcomingMissions": "Upcoming Missions",
+  "analysis.viewMoreDetails": "View More Details",
   "analysis.activeSession": "Active Mission",
   "analysis.recoveryScore": "Recovery Score",
   "analysis.personalRecord": "Personal Record",

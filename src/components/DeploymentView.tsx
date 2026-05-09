@@ -24,15 +24,18 @@ import { ConfirmationModal } from './ConfirmationModal';
 import { InfoTooltip } from './InfoTooltip';
 import { BlockWidget } from './BlockWidget';
 
+import { MissionBriefingModal } from './MissionBriefingModal';
+import { WorkoutSession } from '../contexts/WorkoutContext';
+
 export const DeploymentView = () => {
   const { profile, updateProfile, t } = useSettings();
-  const { history, resetProgram } = useWorkout();
+  const { history, resetProgram, getWorkoutTemplate } = useWorkout();
   const { showToast } = useToast();
 
   const [loading, setLoading] = useState(false);
   const [showProgramDetail, setShowProgramDetail] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
-  const [selectedMission, setSelectedMission] = useState<any | null>(null);
+  const [selectedMission, setSelectedMission] = useState<WorkoutSession | null>(null);
 
   // States for adjustment
   const [adjustingObjectives, setAdjustingObjectives] = useState<TrainingGoal[]>(
@@ -168,108 +171,61 @@ export const DeploymentView = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Widget 1: Deployment Status */}
-        <div className="glass-panel px-4 py-4 md:p-4 border-white/5 bg-zinc-900/40 flex flex-col justify-between">
-          <div>
-            <h2 className="font-sans text-2xl font-black uppercase italic tracking-tight text-white mb-2">
-              Deployment Status
-            </h2>
-            <p className="text-xs text-zinc-500 mb-8 font-medium">
-              See your deployment details and progression over time.
-            </p>
+        <div className="glass-panel px-4 py-4 md:p-4 border-white/5 bg-zinc-900/40 flex flex-col justify-between md:col-span-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 divide-x-0 md:divide-x divide-white/5">
+            <div>
+              <h2 className="font-sans text-2xl font-black uppercase italic tracking-tight text-white mb-2">
+                Deployment Status
+              </h2>
+              <p className="text-xs text-zinc-500 mb-8 font-medium">
+                See your deployment details and progression over time.
+              </p>
 
-            <div className="space-y-6">
-              <div className="flex flex-col items-start py-3 border-b border-white/5 gap-1">
-                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest leading-none">Deployment Plan</span>
-                <span className="text-xs font-black uppercase tracking-widest text-white mt-0.5">
-                  {(profile?.trainingObjectives && profile.trainingObjectives.length > 0)
-                    ? profile.trainingObjectives.map(g => t(`goal.${g}`)).join(' + ')
-                    : t(`goal.${profile?.trainingGoal || 'powerbuilding'}`)}
-                </span>
+              <div className="space-y-6">
+                <div className="flex flex-col items-start py-3 border-b border-white/5 gap-1">
+                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest leading-none">Deployment Plan</span>
+                  <span className="text-xs font-black uppercase tracking-widest text-white mt-0.5">
+                    {(profile?.trainingObjectives && profile.trainingObjectives.length > 0)
+                      ? profile.trainingObjectives.map(g => t(`goal.${g}`)).join(' + ')
+                      : t(`goal.${profile?.trainingGoal || 'powerbuilding'}`)}
+                  </span>
+                </div>
+                <div className="flex flex-col items-start py-3 border-b border-white/5 gap-1">
+                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest leading-none">Block in progress</span>
+                  <span className="text-xs font-black uppercase tracking-widest text-volt mt-0.5">{currentBlock?.block.label || 'Loading...'}</span>
+                </div>
               </div>
-              <div className="flex flex-col items-start py-3 border-b border-white/5 gap-1">
-                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest leading-none">Block in progress</span>
-                <span className="text-xs font-black uppercase tracking-widest text-volt mt-0.5">{currentBlock?.block.label || 'Loading...'}</span>
+            </div>
+
+            <div className="md:pl-8 flex flex-col justify-between">
+              <div className="space-y-6 mb-8 mt-8 md:mt-0">
+                <div className="flex flex-col items-start py-3 border-b border-white/5 gap-1">
+                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest leading-none">Mission Frequency</span>
+                  <span className="text-xs font-black uppercase tracking-widest text-white mt-0.5">{profile?.trainingFrequency || 3}x Sessions / Week</span>
+                </div>
+                <div className="flex flex-col items-start py-3 border-b border-white/5 gap-1">
+                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest leading-none">Mission Period</span>
+                  <span className="text-xs font-black uppercase tracking-widest text-white mt-0.5">{profile?.missionPeriod || '3 Month'}</span>
+                </div>
               </div>
-              <div className="flex flex-col items-start py-3 border-b border-white/5 gap-1">
-                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest leading-none">Mission Frequency</span>
-                <span className="text-xs font-black uppercase tracking-widest text-white mt-0.5">{profile?.trainingFrequency || 3}x Sessions / Week</span>
-              </div>
-              <div className="flex flex-col items-start py-3 border-b border-white/5 mb-8 gap-1">
-                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest leading-none">Mission Period</span>
-                <span className="text-xs font-black uppercase tracking-widest text-white mt-0.5">{profile?.missionPeriod || '3 Month'}</span>
+
+              <div className="flex gap-4">
+                <button
+                  onClick={() => setShowSettingsModal(true)}
+                  className="flex-1 px-6 py-4 bg-volt btn-primary"
+                >
+                  <Settings size={16} />
+                  <span>Recalibrate Deployment</span>
+                </button>
+                <button
+                  onClick={() => setShowProgramDetail(true)}
+                  className="flex-1 btn-secondary px-6 py-4"
+                >
+                  <span>View Full Details</span>
+                </button>
               </div>
             </div>
           </div>
-
-          <button
-            onClick={() => setShowSettingsModal(true)}
-            className="px-6 py-4 bg-volt btn-primary"
-          >
-            <Settings size={16} />
-            <span>Recalibrate Deployment</span>
-          </button>
-        </div>
-
-        {/* Widget 2: Upcoming Missions */}
-        <div className="glass-panel px-4 py-4 md:p-4 border-white/5 bg-zinc-900/40 flex flex-col justify-between">
-          <div>
-            <h2 className="font-sans text-2xl font-black uppercase italic tracking-tight text-white mb-2">
-              Upcoming missions
-            </h2>
-            <p className="text-xs text-zinc-500 mb-8 font-medium">
-              Preview upcoming mission details before next mission. Mission details can be changed depending on individual deployment progression.
-            </p>
-
-            <div className="space-y-3 mb-8">
-              {[0, 1, 2].map((i) => {
-                const missionNum = (history?.length || 0) + i + 1;
-                const weekForThisMission = Math.floor((missionNum - 1) / (profile?.trainingFrequency || 3)) + 1;
-                const blockForThisMission = profile ? getBlockForWeek(weekForThisMission, profile.missionPeriod || '3M', profile.trainingGoal || 'powerbuilding', profile.customProgramBlocks || []) : null;
-                const intensity = blockForThisMission ? Math.round((blockForThisMission.block.baseIntensity + (blockForThisMission.weekInBlock * blockForThisMission.block.intensityIncrementPerWeek)) * 100) : 0;
-
-                const missionDetails = {
-                  missionNum,
-                  weekForThisMission,
-                  block: blockForThisMission?.block,
-                  intensity,
-                  weekInBlock: blockForThisMission?.weekInBlock
-                };
-
-                return (
-                  <div
-                    key={i}
-                    onClick={() => setSelectedMission(missionDetails)}
-                    className="p-4 bg-void/50 border border-white/5 group hover:border-volt/30 transition-colors cursor-pointer"
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <span className="text-[10px] font-black tracking-widest text-volt uppercase leading-none">Mission #{missionNum}</span>
-                      <span className="text-[8px] font-bold text-zinc-600 uppercase tracking-widest leading-none">Week {weekForThisMission}</span>
-                    </div>
-                    <div className="flex items-end justify-between">
-                      <div>
-                        <p className="text-[10px] font-bold text-zinc-300 uppercase tracking-widest mb-1">
-                          Objective: {blockForThisMission?.block.label || 'TBD'}
-                        </p>
-                        <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">
-                          {blockForThisMission?.block.baseSets || 3}x{blockForThisMission?.block.baseReps || '8'} @ {intensity}%
-                        </p>
-                      </div>
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                        <ArrowRight size={14} className="text-volt" />
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          <button
-            onClick={() => setShowProgramDetail(true)}
-            className="btn-secondary w-full px-6 py-4"
-          >
-            <span>View Full Details</span>
-          </button>
         </div>
       </div>
 
@@ -298,7 +254,7 @@ export const DeploymentView = () => {
                       <Settings size={20} />
                     </div>
                     <div>
-                      <h2 className="font-sans text-xl font-black uppercase italic tracking-tight text-white">Deployment Setting</h2>
+                      <h2 className="font-sans text-xl font-black uppercase italic tracking-tight text-white">Deployment Settings</h2>
                       <p className="text-[8px] font-black uppercase tracking-widest text-zinc-500">Recalibrate Program Architecture</p>
                     </div>
                   </div>
@@ -434,7 +390,7 @@ export const DeploymentView = () => {
                           <h3 className="font-sans text-[10px] font-black uppercase tracking-widest text-zinc-500 flex items-center gap-2">
                             Strategic Timeline Designer
                           </h3>
-                          <span class="text-[10px] font-medium text-white/50">Press the toggle below to enable complete program customization.</span>
+                          <span className="text-[10px] font-medium text-white/50">Press the toggle below to enable complete program customization.</span>
                           <div className="flex items-center gap-4">
                             <button
                               onClick={() => {
@@ -522,84 +478,11 @@ export const DeploymentView = () => {
       />
 
       {/* Mission Detail Modal */}
-      <AnimatePresence>
-        {selectedMission && (
-          <Portal>
-            <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setSelectedMission(null)}
-                className="fixed inset-0 bg-void/90 backdrop-blur-md"
-              />
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                className="relative w-full max-w-lg glass-panel border-volt/30 shadow-2xl flex flex-col overflow-hidden"
-              >
-                <div className="p-6 md:p-8 flex items-center justify-between border-b border-white/5 bg-void/50">
-                  <div>
-                    <span className="text-[10px] font-black tracking-widest text-volt uppercase leading-none">Mission Dossier</span>
-                    <h3 className="font-sans text-2xl font-black uppercase italic tracking-tight text-white mt-1">Mission #{selectedMission.missionNum}</h3>
-                  </div>
-                  {/*}
-                  <button
-                    onClick={() => setSelectedMission(null)}
-                    className="p-2 bg-white/5 text-zinc-500 hover:text-white transition-all hover:bg-white/10"
-                  >
-                    <X size={20} />
-                  </button>
-                  {*/}
-                </div>
-
-                <div className="p-6 md:p-8 space-y-6">
-                  <div className="flex justify-between items-center pb-4 border-b border-white/5">
-                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-left">Timeline</span>
-                    <span className="text-sm font-black text-white uppercase text-right">Week {selectedMission.weekForThisMission}</span>
-                  </div>
-
-                  <div className="flex justify-between items-center pb-4 border-b border-white/5">
-                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-left">Objective</span>
-                    <span className="text-sm font-black text-volt uppercase italic text-right">{selectedMission.block?.label || 'TBD'}</span>
-                  </div>
-
-                  <div className="flex justify-between items-center pb-4 border-b border-white/5">
-                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-left">Prescription</span>
-                    <div className="text-right">
-                      <span className="text-sm font-black text-white block">{selectedMission.block?.baseSets || 3} SETS × {selectedMission.block?.baseReps || '8'} REPS</span>
-                      <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Base Target</span>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-between items-center pb-4 border-b border-white/5">
-                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-left">Load Intensity</span>
-                    <div className="text-right">
-                      <span className="text-sm font-black text-volt uppercase italic block">{selectedMission.intensity}%</span>
-                      <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">of 1RM Focus</span>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-between items-center">
-                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-left">Block Progress</span>
-                    <span className="text-sm font-black text-white uppercase text-right">Wk {selectedMission.weekInBlock} / {selectedMission.block?.durationWeeks}</span>
-                  </div>
-                </div>
-
-                <div className="p-6 border-t border-white/5 bg-void/50 flex justify-end">
-                  <button
-                    onClick={() => setSelectedMission(null)}
-                    className="btn-secondary w-full py-4 uppercase"
-                  >
-                    Close
-                  </button>
-                </div>
-              </motion.div>
-            </div>
-          </Portal>
-        )}
-      </AnimatePresence>
+      <MissionBriefingModal
+        isOpen={!!selectedMission}
+        onClose={() => setSelectedMission(null)}
+        session={selectedMission}
+      />
 
       <Portal>
         <ConfirmationModal

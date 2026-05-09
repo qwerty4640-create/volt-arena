@@ -1,4 +1,4 @@
-import { Activity, Star, Utensils, ShieldCheck, LucideIcon, TrendingUp, BarChart3 } from 'lucide-react';
+import { Activity, Star, Utensils, ShieldCheck, LucideIcon, TrendingUp, BarChart3, Timer, Bone } from 'lucide-react';
 import { WidgetId, PerformanceWidgetId } from '../types';
 
 export interface Widget {
@@ -25,4 +25,7 @@ export const ALL_PERFORMANCE_WIDGETS: PerformanceWidget[] = [
     { id: 'volume-trend', label: 'analysis.weeklyVolumeTrend', icon: BarChart3 },
     { id: 'growth', label: 'analysis.est1rmGrowth', icon: Star },
     { id: 'tactical', label: 'analysis.tacticalIntegration', icon: Activity },
+    { id: 'conditioning-tracker', label: 'Conditioning Tracker', icon: Timer },
+    { id: 'mobility-matrix', label: 'Mobility Matrix', icon: Bone },
+    { id: 'joint-stress', label: 'Joint Stress', icon: ShieldCheck },
 ];

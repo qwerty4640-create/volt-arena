@@ -91,10 +91,8 @@ export function autoregulateTrainingMax(
   if (!performance.isAMRAP) {
     const rpeDiff = performance.targetRPE - performance.actualRPE;
     if (rpeDiff >= 2) {
-      // It was much easier than expected. Increase max slightly.
-      newMax += (currentMax * 0.025); // 2.5% bump
+      newMax += (currentMax * 0.025); 
     } else if (rpeDiff <= -2) {
-      // It was much harder than expected. Decrease max.
       newMax -= (currentMax * 0.025);
     }
   }
@@ -103,21 +101,64 @@ export function autoregulateTrainingMax(
   if (performance.isAMRAP) {
     const repDiff = performance.actualReps - performance.targetReps;
     if (repDiff >= 3) {
-      // Crushed the AMRAP. Significant bump.
-      newMax += (currentMax * 0.05); // 5% bump
+      newMax += (currentMax * 0.05);
     } else if (repDiff < 0) {
-      // Missed target reps.
       newMax -= (currentMax * 0.025);
     }
   }
 
-  // Apply Safety Guardrail
   const maxAllowed = currentMax * (1 + MAX_INCREASE_PERCENT);
   if (newMax > maxAllowed) {
     newMax = maxAllowed;
   }
 
-  return Math.round(newMax * 10) / 10; // Round to nearest decimal
+  return Math.round(newMax * 10) / 10;
+}
+
+export interface ObjectivePerformance {
+  goal: string;
+  targetReps?: number;
+  actualReps?: number;
+  weightUsed?: number;
+  targetHeartRate?: number;
+  actualHeartRate?: number;
+  timeExceedingThreshold?: number; // percentage 0-100
+  painScale?: number;
+  exerciseName?: string;
+}
+
+export function generateAutoregulationFeedback(perf: ObjectivePerformance): { message: string, action: string, type: 'decrease' | 'swap' | 'none' } {
+  if (perf.goal === 'pure_strength' || perf.goal === 'hypertrophy' || perf.goal === 'powerbuilding') {
+    if (perf.targetReps !== undefined && perf.actualReps !== undefined) {
+      const diff = perf.targetReps - perf.actualReps;
+      if (diff >= 2) {
+        return {
+          message: `You missed your rep target by ${diff}, dropping weight by 5%.`,
+          action: 'drop_weight_5_percent',
+          type: 'decrease'
+        };
+      }
+    }
+  } else if (perf.goal === 'endurance' || perf.goal === 'tactical') {
+    if (perf.timeExceedingThreshold !== undefined && perf.timeExceedingThreshold >= 40) {
+      return {
+        message: `Heart rate exceeded aerobic threshold for ${perf.timeExceedingThreshold}% of the movement; pace objective will be reduced by 30 seconds.`,
+        action: 'reduce_pace_30s',
+        type: 'decrease'
+      };
+    }
+  } else if (perf.goal === 'prehab' || perf.goal === 'longevity') {
+    if (perf.painScale !== undefined && perf.painScale > 4) {
+      const exercise = perf.exerciseName || "movement";
+      return {
+        message: `Shoulder pain scale reported > 4 for ${exercise}. Automatically substituting with dumbbell neutral grip pressing.`,
+        action: 'substitute_exercise_neutral_grip',
+        type: 'swap'
+      };
+    }
+  }
+  
+  return { message: "Performance within expected parameters. Maintaining current progression.", action: 'none', type: 'none' };
 }
 
 /**

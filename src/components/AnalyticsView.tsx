@@ -9,6 +9,8 @@ import { calculateExrxPercentile } from '../lib/strength';
 import { InfoTooltip } from './InfoTooltip';
 import { JointStressWidget } from './JointStressWidget';
 import { CustomizeDashboardModal } from './CustomizeDashboardModal';
+import { ConditioningTrackerWidget } from './ConditioningTrackerWidget';
+import { MobilityMatrixWidget } from './MobilityMatrixWidget';
 import { PerformanceWidgetId } from '../types';
 import {
   LineChart,
@@ -530,6 +532,32 @@ export const AnalyticsView = () => {
                   className="glass-panel p-0 overflow-hidden border-none min-w-0"
                 >
                   <ExternalActivityWidget />
+                </motion.div>
+              );
+
+            case 'conditioning-tracker':
+              return (
+                <motion.div
+                  key="conditioning-tracker"
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.45 }}
+                  className="min-w-0 h-[300px]"
+                >
+                  <ConditioningTrackerWidget workoutHistory={history} />
+                </motion.div>
+              );
+
+            case 'mobility-matrix':
+              return (
+                <motion.div
+                  key="mobility-matrix"
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.5 }}
+                  className="min-w-0 h-[300px]"
+                >
+                  <MobilityMatrixWidget workoutHistory={history} />
                 </motion.div>
               );
 

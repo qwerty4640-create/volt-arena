@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion } from 'motion/react';
-const CHART_COLOR = '#00b6ff';
+const CHART_COLOR = 'var(--primary-color)';
 import {
   Zap,
   Trash2,
@@ -10,7 +10,8 @@ import {
   Maximize2,
   AlertTriangle,
   CheckCircle2,
-  ArrowRight
+  ArrowRight,
+  X
 } from 'lucide-react';
 import {
   DndContext,
@@ -31,11 +32,13 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 
 import { CustomBlock, MissionPeriod } from '../contexts/SettingsContext';
-import { BlockType, analyzeSequenceConflicts, expandPlan, BLOCK_TEMPLATES, BlockDefinition } from '../constants/periodization';
+import { BlockType, analyzeSequenceConflicts, expandPlan, BLOCK_TEMPLATES, BlockDefinition, applyFluidReorder } from '../constants/periodization';
 import { cn } from '../lib/utils';
 import {
   AreaChart,
   Area,
+  XAxis,
+  YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer
@@ -256,13 +259,20 @@ export const ProgramDesigner: React.FC<ProgramDesignerProps> = ({
     }
 
     for (let w = weekAcc + 1; w <= totalWeeks; w++) {
-      data.push({ week: w, intensity: 0, type: 'EMPTY' });
+      data.push({ week: w, intensity: 40, type: 'EMPTY' });
     }
-
     return data;
   }, [blocks, totalWeeks]);
 
+  const xTicks = useMemo(() => {
+    const ticks = [];
+    for (let i = 5; i < totalWeeks; i += 5) ticks.push(i);
+    return [1, ...ticks, totalWeeks];
+  }, [totalWeeks]);
+
   const advisories = useMemo(() => analyzeSequenceConflicts(blocks), [blocks]);
+
+  const [activeAdvisoryIdx, setActiveAdvisoryIdx] = useState<number | null>(null);
 
   const applyRecommendation = () => {
     if (advisories.length === 0) return;
@@ -275,9 +285,43 @@ export const ProgramDesigner: React.FC<ProgramDesignerProps> = ({
       let insertionIdx = -1;
 
       if (adv.suggestedBlock === BlockType.STRENGTH) {
-        insertionIdx = types.indexOf(BlockType.PEAKING);
+        if (adv.issue.includes("Deload to Peaking")) {
+          const peakingIdx = types.indexOf(BlockType.PEAKING);
+          insertionIdx = peakingIdx !== -1 ? peakingIdx : -1;
+        } else if (adv.issue.includes("Power focus immediately followed")) {
+          // Insert between POWER and HYPERTROPHY
+          for (let i = 0; i < types.length - 1; i++) {
+            if (types[i] === BlockType.POWER && types[i+1] === BlockType.HYPERTROPHY) {
+              insertionIdx = i + 1;
+              break;
+            }
+          }
+        } else {
+          // Default to middle if we don't know
+          insertionIdx = Math.floor(blocks.length / 2);
+        }
       } else if (adv.suggestedBlock === BlockType.HYPERTROPHY) {
-        insertionIdx = 0;
+        insertionIdx = 0; // Insert at the beginning to reset baseline
+      } else if (adv.suggestedBlock === BlockType.RETENTION) {
+         // Find the gap that needs retention
+         for (let i = 0; i < types.length - 1; i++) {
+           const current = types[i];
+           const next = types[i+1];
+           const isMaintenance = [BlockType.RETENTION, BlockType.DELOAD, BlockType.REGENERATION].includes(current as BlockType) ||
+                                 [BlockType.RETENTION, BlockType.DELOAD, BlockType.REGENERATION].includes(next as BlockType);
+           if (!isMaintenance && current !== next) {
+             const currentBlockWeeks = blocks[i].durationWeeks;
+             const nextBlockWeeks = blocks[i+1].durationWeeks;
+             if (currentBlockWeeks >= 8 && nextBlockWeeks >= 8) {
+                insertionIdx = i + 1;
+                break;
+             }
+           }
+         }
+         if (insertionIdx === -1) {
+            // fallback
+            insertionIdx = Math.min(types.length - 1, 1);
+         }
       }
 
       if (insertionIdx !== -1) {
@@ -302,39 +346,61 @@ export const ProgramDesigner: React.FC<ProgramDesignerProps> = ({
           }
         }
       }
-    } else {
-      const hierarchy = [
-        BlockType.FOUNDATION,
-        BlockType.CAPACITY,
-        BlockType.HYPERTROPHY,
-        BlockType.STRENGTH,
-        BlockType.POWER,
-        BlockType.PEAKING,
-        BlockType.REGENERATION,
-        BlockType.DELOAD
-      ];
-
-      newBlocks.sort((a, b) => hierarchy.indexOf(a.type as BlockType) - hierarchy.indexOf(b.type as BlockType));
+    } else if (adv.actionType === 'REORDER') {
+      const reordered = applyFluidReorder(newBlocks);
+      setBlocks(reordered);
+      onUpdate(reordered);
+      return;
     }
 
     setBlocks(newBlocks);
     onUpdate(newBlocks);
   };
-
+  
   return (
     <div className="space-y-6">
       {/* 1. Visual Intensity Graph */}
-      <div className="glass-panel h-32 relative overflow-hidden bg-void">
+      <div className="glass-panel h-48 relative overflow-hidden bg-void pt-10">
+        <div className="absolute top-4 left-6 flex items-center gap-2">
+          <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-500">INTENSITY CURVE</h4>
+          <div className="inline-flex items-center justify-center w-4 h-4 border border-volt/40">
+            <span className="text-[8px] font-black italic text-volt transform translate-y-[0.5px]">i</span>
+          </div>
+        </div>
+        
+        <div className="absolute top-4 right-6">
+          <h4 className="text-[10px] font-black uppercase tracking-widest text-volt">{totalWeeks}-WEEK CYCLE</h4>
+        </div>
 
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={graphData} margin={{ top: 20, right: 0, left: 0, bottom: 0 }}>
+          <AreaChart data={graphData} margin={{ top: 10, right: 10, left: -20, bottom: 10 }}>
             <defs>
               <linearGradient id="pdIntensityGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={CHART_COLOR} stopOpacity={0.8} />
+                <stop offset="5%" stopColor={CHART_COLOR} stopOpacity={0.6} />
                 <stop offset="95%" stopColor={CHART_COLOR} stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
+            <CartesianGrid strokeDasharray="4 4" stroke="#ffffff10" vertical={false} />
+            
+            <XAxis 
+              dataKey="week" 
+              axisLine={false}
+              tickLine={false}
+              ticks={xTicks}
+              tick={{ fill: '#52525b', fontSize: 9, fontWeight: 900, fontFamily: 'Inter' }}
+              tickFormatter={(val) => `WEEK ${val}`}
+              dy={10}
+            />
+            
+            <YAxis 
+              domain={[40, 100]}
+              ticks={[40, 55, 70, 85, 100]}
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: '#52525b', fontSize: 9, fontWeight: 900, fontFamily: 'Inter' }}
+              dx={-5}
+            />
+
             <Tooltip
               content={({ active, payload }) => {
                 if (active && payload && payload.length) {
@@ -348,14 +414,15 @@ export const ProgramDesigner: React.FC<ProgramDesignerProps> = ({
                 }
                 return null;
               }}
+              cursor={{ stroke: CHART_COLOR, strokeWidth: 1, strokeDasharray: '4 4' }}
             />
             <Area
-              type="monotone"
+              type="linear"
               dataKey="intensity"
               stroke={CHART_COLOR}
               fillOpacity={1}
               fill="url(#pdIntensityGradient)"
-              strokeWidth={2}
+              strokeWidth={3}
               isAnimationActive={false}
             />
           </AreaChart>
@@ -429,51 +496,92 @@ export const ProgramDesigner: React.FC<ProgramDesignerProps> = ({
           </div>
         </div>
       </div>
-
-      {/* 4. Recommendation Engine */}
       {advisories.length > 0 ? (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="p-4 bg-void border border-volt/20 space-y-4"
+          className="p-4 bg-orange-400/5 border border-orange-400/20 space-y-4"
         >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Zap className="text-volt" size={16} />
-              <h5 className="text-[10px] font-black uppercase tracking-widest text-white">TACTICAL ADVISORY</h5>
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 shrink-0 bg-orange-400/10 flex items-center justify-center text-orange-400">
+              <AlertTriangle size={20} />
             </div>
-            <button
-              onClick={applyRecommendation}
-              className="flex items-center gap-1.5 px-3 py-1 bg-volt text-void text-[9px] font-black uppercase tracking-widest hover:bg-white transition-colors"
-            >
-              Apply Optimization
-              <ArrowRight size={10} />
-            </button>
-          </div>
-
-          <div className="space-y-3">
-            {advisories.map((adv, idx) => (
-              <div key={idx} className="space-y-1">
-                <div className="flex items-start gap-3">
-                  <AlertTriangle size={12} className="text-orange-400 shrink-0 mt-0.5" />
-                  <p className="text-[9px] font-bold uppercase tracking-widest text-orange-400 leading-relaxed">
-                    {adv.issue}
-                  </p>
-                </div>
-                <div className="flex items-start gap-3 pl-5">
-                  <Info size={10} className="text-volt shrink-0 mt-0.5" />
-                  <p className="text-[8px] font-bold uppercase tracking-widest text-zinc-500 leading-relaxed">
-                    {adv.recommendation}
+            <div className="flex-1">
+              {advisories.map((adv, idx) => (
+                <div key={idx} className="space-y-0.5">
+                  <div className="flex items-center gap-2">
                     {adv.decayRisk > 0 && (
-                      <span className="ml-2 text-crimson font-black italic">
-                        -{Math.round(adv.decayRisk * 100)}% EFFICIENCY LOSS
+                      <span className="text-[10px] font-black uppercase tracking-widest text-orange-400">
+                        -{Math.round(adv.decayRisk * 100)}% EFFICIENCY DETECTED
                       </span>
                     )}
+                    <button 
+                      onClick={() => setActiveAdvisoryIdx(idx)}
+                      className="inline-flex items-center justify-center w-4 h-4 border border-orange-400/40 hover:border-orange-400 hover:bg-orange-400/10 transition-colors cursor-pointer pointer-events-auto"
+                      title="View Analysis"
+                    >
+                      <span className="text-[8px] font-black italic text-orange-400 transform translate-y-[0.5px]">i</span>
+                    </button>
+                  </div>
+                  <p className="text-[8px] font-black text-zinc-500">
+                    {adv.recommendation}
                   </p>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
+
+          <button
+            onClick={applyRecommendation}
+            className="flex items-center justify-center w-full gap-1.5 px-3 py-2 bg-volt text-void text-[9px] font-black uppercase tracking-widest hover:bg-white transition-colors"
+          >
+            Apply Optimization
+            <ArrowRight size={10} />
+          </button>
+          
+          {/* Tactical Modal Popup Pattern */}
+          {activeAdvisoryIdx !== null && (
+            <div 
+              className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-void/90 backdrop-blur-md" 
+              onClick={() => setActiveAdvisoryIdx(null)}
+            >
+              <motion.div 
+                initial={{ scale: 0.95, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                className="bg-void border border-volt/20 p-8 max-w-sm w-full space-y-8 relative shadow-[0_0_50px_rgba(0,182,255,0.1)]"
+                onClick={e => e.stopPropagation()}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-1.5 h-6 bg-volt" />
+                  <h3 className="font-black italic text-2xl uppercase tracking-tighter text-white">ADVISORY</h3>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="p-4 bg-zinc-900/40 border border-zinc-800/50 space-y-2">
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-volt">ANALYSIS</h4>
+                    <p className="text-xs font-medium text-zinc-300 leading-relaxed">
+                      {advisories[activeAdvisoryIdx].issue.charAt(0).toUpperCase() + advisories[activeAdvisoryIdx].issue.slice(1).toLowerCase()}
+                    </p>
+                  </div>
+
+                  <div className="p-4 bg-zinc-900/40 border border-zinc-800/50 space-y-2">
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-500">GOAL</h4>
+                    <p className="text-xs font-medium text-zinc-400 leading-relaxed">
+                      {advisories[activeAdvisoryIdx].recommendation.charAt(0).toUpperCase() + advisories[activeAdvisoryIdx].recommendation.slice(1).toLowerCase()}
+                    </p>
+                  </div>
+                </div>
+
+                <button 
+                  onClick={() => setActiveAdvisoryIdx(null)}
+                  className="w-full py-4 bg-zinc-900/60 border border-zinc-800 hover:bg-volt hover:text-void transition-all flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-void"
+                >
+                  <X size={14} className="transform -translate-y-[0.5px]" />
+                  CLOSE
+                </button>
+              </motion.div>
+            </div>
+          )}
         </motion.div>
       ) : usedWeeks === totalWeeks && blocks.length > 0 && (
         <motion.div

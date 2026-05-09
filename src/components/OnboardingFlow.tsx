@@ -154,6 +154,28 @@ export const OnboardingFlow = ({
     setUnit(newUnit);
   };
 
+  // Auto-fill custom blocks when reaching period_setup if empty
+  useEffect(() => {
+    if (step === 'period_setup' && (!formData.customProgramBlocks || formData.customProgramBlocks.length === 0)) {
+      const totalWeeks = (parseInt(formData.missionPeriod) || 3) * 4;
+      
+      // Determine default block types based on goal
+      let defaultType = 'PURE_STRENGTH';
+      if (formData.trainingGoal === 'hypertrophy') defaultType = 'HYPERTROPHY';
+      if (formData.trainingGoal === 'powerbuilding') defaultType = 'POWERBUILDING';
+      if (formData.trainingGoal === 'tactical') defaultType = 'TACTICAL';
+      if (formData.trainingGoal === 'endurance') defaultType = 'ENDURANCE';
+      
+      const defaultBlocks = [
+        { id: 'def-1', type: defaultType, durationWeeks: Math.floor(totalWeeks / 3) },
+        { id: 'def-2', type: defaultType, durationWeeks: Math.floor(totalWeeks / 3) },
+        { id: 'def-3', type: defaultType, durationWeeks: totalWeeks - (Math.floor(totalWeeks / 3) * 2) }
+      ];
+      
+      setFormData(prev => ({ ...prev, customProgramBlocks: defaultBlocks }));
+    }
+  }, [step, formData.missionPeriod, formData.trainingGoal]);
+
   const handleNext = async () => {
     if (step === 'biometrics') {
       setStep('goals');
@@ -191,7 +213,8 @@ export const OnboardingFlow = ({
           trainingObjectives: formData.trainingObjectives,
           trainingDurationMonths: formData.trainingDurationMonths,
           missionPeriod: formData.missionPeriod,
-          customBlocks: formData.customBlocks,
+          customProgramBlocks: formData.customProgramBlocks,
+          isCustomProgram: true,
           trainingFrequency: formData.trainingFrequency,
           level: formData.trainingAge,
           squatPR: parseFloat(formData.squat1RM) || 0,
@@ -247,7 +270,34 @@ export const OnboardingFlow = ({
             isExperiencedAthlete: formData.isExperiencedAthlete,
         });
       } else {
-        await updateProfile({ onboardingCompleted: true });
+        const heightVal = unit === 'metric'
+          ? (parseFloat(formData.height) || 0)
+          : ((parseFloat(formData.heightFeet) || 0) * 12) + (parseFloat(formData.heightInches) || 0);
+
+        await updateProfile({
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          gender: formData.gender,
+          age: parseInt(formData.age) || 0,
+          height: heightVal,
+          weight: parseFloat(formData.weight) || 0,
+          trainingGoal: formData.trainingGoal,
+          trainingObjectives: formData.trainingObjectives,
+          trainingDurationMonths: formData.trainingDurationMonths,
+          missionPeriod: formData.missionPeriod,
+          customProgramBlocks: formData.customProgramBlocks,
+          isCustomProgram: true,
+          trainingFrequency: formData.trainingFrequency,
+          level: formData.trainingAge,
+          squatPR: parseFloat(formData.squat1RM) || 0,
+          benchPR: parseFloat(formData.bench1RM) || 0,
+          deadliftPR: parseFloat(formData.deadlift1RM) || 0,
+          hasFullGymAccess: formData.hasFullGymAccess,
+          hasMedicalConditions: formData.hasMedicalConditions,
+          medicalConditionDetails: formData.medicalConditionDetails,
+          isExperiencedAthlete: formData.isExperiencedAthlete,
+          onboardingCompleted: true,
+        });
       }
       localStorage.removeItem('volt_onboarding_step');
     } finally {
@@ -1018,7 +1068,7 @@ export const OnboardingFlow = ({
 
               <button
                 onClick={handleNext}
-                disabled={loading || (formData.customProgramBlocks || []).reduce((acc, b) => acc + (b as any).durationWeeks, 0) < (parseInt(formData.missionPeriod) * 4)}
+                disabled={loading}
                 className="w-full bg-volt text-void font-headline font-black uppercase tracking-widest p-5 flex items-center justify-center gap-2 rounded-none hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(0,182,255,0.3)] active:scale-[0.98] transition-all disabled:opacity-50"
               >
                 {loading ? t('onboarding.calibrating') : t('onboarding.finalize')} <ChevronRight size={20} />
@@ -1041,7 +1091,7 @@ export const OnboardingFlow = ({
             >
               <div className="flex items-center gap-6 text-left mb-4">
                 <button
-                  onClick={() => setStep('objective')}
+                  onClick={() => setStep('period_setup')}
                   className="w-12 h-12 shrink-0 bg-surface-container-lowest border border-white/5 flex items-center justify-center text-zinc-400 hover:text-white hover:border-volt transition-all"
                 >
                   <ArrowLeft size={24} />

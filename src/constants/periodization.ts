@@ -70,7 +70,7 @@ export const BLOCK_TEMPLATES: Record<string, Partial<BlockDefinition>> = {
   [BlockType.EXPLOSIVENESS]: { type: BlockType.EXPLOSIVENESS as BlockType, label: 'Explosiveness', baseIntensity: 0.80, baseReps: '3', baseSets: 5, intensityIncrementPerWeek: 0.02 },
   [BlockType.ENDURANCE]: { type: BlockType.ENDURANCE as BlockType, label: 'Endurance', baseIntensity: 0.65, baseReps: '20', baseSets: 3, intensityIncrementPerWeek: 0.01 },
   [BlockType.PREHAB]: { type: BlockType.PREHAB as BlockType, label: 'Prehab/Rehab', baseIntensity: 0.55, baseReps: '15', baseSets: 3, intensityIncrementPerWeek: 0.01 },
-  [BlockType.RETENTION]: { type: BlockType.RETENTION as BlockType, label: 'Retention Protocol', baseIntensity: 0.85, baseReps: '3', baseSets: 2, intensityIncrementPerWeek: 0 }
+  [BlockType.RETENTION]: { type: BlockType.RETENTION as BlockType, label: 'Retention Protocol', baseIntensity: 0.60, baseReps: '5', baseSets: 2, intensityIncrementPerWeek: 0 }
 };
 
 const GOAL_EXPANSIONS: Record<string, { type: BlockType; ratio: number }[]> = {
@@ -129,10 +129,6 @@ const GOAL_EXPANSIONS: Record<string, { type: BlockType; ratio: number }[]> = {
     { type: BlockType.REGENERATION, ratio: 0.4 },
     { type: BlockType.DELOAD, ratio: 0.1 }
   ],
-  [BlockType.RETENTION]: [
-     { type: BlockType.STRENGTH, ratio: 0.8 },
-     { type: BlockType.DELOAD, ratio: 0.2 }
-  ]
 };
 
 export const expandPlan = (plan: BlockDefinition[]): BlockDefinition[] => {
@@ -147,11 +143,11 @@ export const expandPlan = (plan: BlockDefinition[]): BlockDefinition[] => {
         const subWeeks = isLast ? remainingWeeks : Math.max(1, Math.round(block.durationWeeks * sub.ratio));
         
         if (subWeeks > 0) {
-          const template = BLOCK_TEMPLATES[sub.type] || BLOCK_TEMPLATES[BlockType.FOUNDATION];
+          const template = BLOCK_TEMPLATES[sub.type] || BLOCK_TEMPLATES[BlockType.FOUNDATION] || { type: BlockType.FOUNDATION, label: 'Foundation', baseIntensity: 0.60, baseReps: '12', baseSets: 3, intensityIncrementPerWeek: 0.02 };
           expanded.push({
             ...template,
             durationWeeks: subWeeks,
-            label: `${block.label} - ${template.label}`
+            label: `${block.label || 'Project'} - ${template.label || 'Phase'}`
           } as BlockDefinition);
           remainingWeeks -= subWeeks;
         }
@@ -165,7 +161,9 @@ export const expandPlan = (plan: BlockDefinition[]): BlockDefinition[] => {
 };
 
 export const getPlanForDuration = (totalWeeks: number, goalOrGoals: HybridGoal = 'powerbuilding'): BlockDefinition[] => {
-  const goals: TrainingGoal[] = Array.isArray(goalOrGoals) ? goalOrGoals : [goalOrGoals];
+  const goalArray: TrainingGoal[] = Array.isArray(goalOrGoals) ? goalOrGoals : [goalOrGoals];
+  // Ensure we use the lowercase versions for lookup
+  const goals = goalArray.map(g => (g?.toLowerCase() || 'powerbuilding') as TrainingGoal);
   const plan: BlockDefinition[] = [];
 
   const baseGoalBlocks: Record<string, Partial<BlockDefinition>> = {
@@ -218,6 +216,72 @@ export const getPlanForDuration = (totalWeeks: number, goalOrGoals: HybridGoal =
   return plan.filter(b => b.durationWeeks > 0);
 };
 
+export const BLOCK_PHASE_ORDER: Record<string, number> = {
+  [BlockType.FOUNDATION]: 1,
+  [BlockType.PREHAB]: 1,
+  [BlockType.AEROBIC_BASE]: 1,
+  
+  [BlockType.ENDURANCE]: 2,
+  [BlockType.CAPACITY]: 2,
+  [BlockType.HYPERTROPHY]: 2,
+  [BlockType.LONGEVITY]: 2,
+
+  [BlockType.POWERBUILDING]: 3,
+  [BlockType.STRENGTH]: 3,
+  [BlockType.PURE_STRENGTH]: 3,
+  [BlockType.RESILIENCY]: 3,
+  [BlockType.TACTICAL]: 3,
+
+  [BlockType.EXPLOSIVENESS]: 4,
+  [BlockType.POWER]: 4,
+  [BlockType.THRESHOLD]: 4,
+
+  [BlockType.PEAKING]: 5,
+  [BlockType.MAX_EFFORT]: 5,
+  [BlockType.VO2_MAX]: 5,
+  
+  [BlockType.COMPETITION]: 6,
+
+  [BlockType.DELOAD]: 0,
+  [BlockType.REGENERATION]: 0,
+  [BlockType.RETENTION]: 0
+};
+
+export const applyFluidReorder = (blocks: any[]): any[] => {
+  const groups: { main: any, maintenance: any[] }[] = [];
+  let currentGroup: { main: any, maintenance: any[] } | null = null;
+  const standaloneMaintenance: any[] = [];
+  
+  for (const b of blocks) {
+    const phase = BLOCK_PHASE_ORDER[b.type as string];
+    if (phase === 0) {
+      if (currentGroup) {
+        currentGroup.maintenance.push(b);
+      } else {
+        standaloneMaintenance.push(b);
+      }
+    } else {
+      currentGroup = { main: b, maintenance: [] };
+      groups.push(currentGroup);
+    }
+  }
+
+  groups.sort((a, b) => {
+    const pA = BLOCK_PHASE_ORDER[a.main.type as string] || 1;
+    const pB = BLOCK_PHASE_ORDER[b.main.type as string] || 1;
+    return pA - pB;
+  });
+
+  const result: any[] = [];
+  result.push(...standaloneMaintenance);
+  for (const g of groups) {
+    result.push(g.main);
+    result.push(...g.maintenance);
+  }
+  
+  return result;
+};
+
 export interface SequenceAdvisory {
   issue: string;
   recommendation: string;
@@ -237,11 +301,10 @@ export const analyzeSequenceConflicts = (customProgramBlocks: any[]): SequenceAd
   if (peakingIdx !== -1 && peakingIdx > 0) {
     const priorBlock = customProgramBlocks[peakingIdx - 1];
     if (priorBlock.type === BlockType.DELOAD || priorBlock.type === BlockType.REGENERATION) {
-      // Check if there was high intensity BEFORE the deload
       const beforeDeloadIdx = peakingIdx - 2;
       if (beforeDeloadIdx >= 0) {
         const beforeDeload = customProgramBlocks[beforeDeloadIdx];
-        if (beforeDeload.type === BlockType.POWER || beforeDeload.type === BlockType.STRENGTH) {
+        if (beforeDeload.type === BlockType.POWER || beforeDeload.type === BlockType.STRENGTH || beforeDeload.type === BlockType.EXPLOSIVENESS) {
           advisories.push({
             issue: "Direct transition from Deload to Peaking may result in a 15% CNS recruitment decay.",
             recommendation: "Insert a 2-week Strength-Maintenance phase between Deload and Peaking.",
@@ -254,9 +317,9 @@ export const analyzeSequenceConflicts = (customProgramBlocks: any[]): SequenceAd
     }
   }
 
-  // 2. Structural Integrity: Long cycle without Hypertrophy/Foundation
-  const totalWeeks = customProgramBlocks.reduce((acc, b) => acc + b.durationWeeks, 0);
-  if (totalWeeks >= 24 && !types.includes(BlockType.HYPERTROPHY) && !types.includes(BlockType.FOUNDATION)) {
+  // 2. Structural Integrity: Long cycle without Hypertrophy/Foundation/Powerbuilding
+  const totalWeeks = customProgramBlocks.reduce((acc, b) => acc + (parseInt(b.durationWeeks) || 0), 0);
+  if (totalWeeks >= 24 && !types.includes(BlockType.HYPERTROPHY) && !types.includes(BlockType.FOUNDATION) && !types.includes(BlockType.POWERBUILDING)) {
     advisories.push({
       issue: "Long-term force production focus without structural support may increase injury risk.",
       recommendation: "Add a HYPERTROPHY block to reset structural baseline.",
@@ -266,9 +329,32 @@ export const analyzeSequenceConflicts = (customProgramBlocks: any[]): SequenceAd
     });
   }
 
-  // 3. Specific Conflict: Power -> Hypertrophy
+  // 3. Phase-based Sequencing Conflict (Fluid Approach)
+  let lastPhase = 0;
+  let hasInversion = false;
+  for (const b of customProgramBlocks) {
+    const phase = BLOCK_PHASE_ORDER[b.type as string] || 0;
+    if (phase > 0) {
+      if (phase < lastPhase) {
+        hasInversion = true;
+        break;
+      }
+      lastPhase = phase;
+    }
+  }
+
+  if (hasInversion) {
+    advisories.push({
+      issue: "Suboptimal phase sequencing: Transitioning from high-intensity realization back to accumulation fragments adaptive momentum.",
+      recommendation: "Reorder blocks to follow the Accumulation → Transmutation → Realization spectrum.",
+      decayRisk: 0.15,
+      actionType: 'REORDER'
+    });
+  }
+
+  // 4. Specific Metabolic Conflict: Power -> Hypertrophy
   for (let i = 0; i < types.length - 1; i++) {
-    if (types[i] === BlockType.POWER && types[i+1] === BlockType.HYPERTROPHY) {
+    if ((types[i] === BlockType.POWER || types[i] === BlockType.EXPLOSIVENESS) && types[i+1] === BlockType.HYPERTROPHY) {
       advisories.push({
         issue: "Metabolic conflict: Power focus immediately followed by high volume hypertrophy.",
         recommendation: "Insert a STRENGTH block to bridge metabolic pathways.",
@@ -276,6 +362,28 @@ export const analyzeSequenceConflicts = (customProgramBlocks: any[]): SequenceAd
         actionType: 'INSERT',
         suggestedBlock: BlockType.STRENGTH
       });
+    }
+  }
+
+  // 5. Missing Retention blocks between major distinct phases
+  for (let i = 0; i < types.length - 1; i++) {
+    const current = types[i];
+    const next = types[i+1];
+    const isMaintenance = [BlockType.RETENTION, BlockType.DELOAD, BlockType.REGENERATION].includes(current as BlockType) ||
+                          [BlockType.RETENTION, BlockType.DELOAD, BlockType.REGENERATION].includes(next as BlockType);
+    
+    if (!isMaintenance && current !== next) {
+      const currentBlockWeeks = parseInt(customProgramBlocks[i].durationWeeks) || 0;
+      const nextBlockWeeks = parseInt(customProgramBlocks[i+1].durationWeeks) || 0;
+      if (currentBlockWeeks >= 8 && nextBlockWeeks >= 8) {
+        advisories.push({
+          issue: `Direct transition from ${current} to ${next} without a retention phase risks significant decay coefficient of previous adaptations.`,
+          recommendation: "Insert a RETENTION block to stabilize gains before shifting physical focus.",
+          decayRisk: 0.12,
+          actionType: 'INSERT',
+          suggestedBlock: BlockType.RETENTION
+        });
+      }
     }
   }
 
@@ -326,10 +434,24 @@ export const getBlockForWeek = (totalWeek: number, totalDurationWeeks: number | 
   // Because 'expandPlan' was breaking down top-level objectives (like Hypertrophy) into sub-phases (Foundation -> Hypertrophy -> Overreach -> Deload).
   // A 6-month Hypertrophy block has a 20% Foundation phase (5 weeks). So week 3 (Mission #9) remained Foundation.
   // Fix: By bypassing 'expandPlan' for custom blocks, the timeline remains exactly as crafted by the user. If they drag Hypertrophy for 12 weeks, it stays Hypertrophy for 12 weeks.
-  const plan = hasCustomBlocks ? basicPlan : expandPlan(basicPlan);
+  const plan = (hasCustomBlocks ? basicPlan : expandPlan(basicPlan)).filter(b => b && b.label);
+
+  if (!plan || plan.length === 0) {
+    const fallbackTemplate = BLOCK_TEMPLATES[BlockType.FOUNDATION];
+    return {
+      block: {
+        ...fallbackTemplate,
+        durationWeeks: 1,
+        label: fallbackTemplate.label || 'Foundation'
+      } as BlockDefinition,
+      weekInBlock: 1,
+      totalWeek,
+      plan: []
+    };
+  }
 
   let accumulatedWeeks = 0;
-  const cycleLength = plan.reduce((acc, block) => acc + block.durationWeeks, 0);
+  const cycleLength = plan.reduce((acc, block) => acc + (block.durationWeeks || 0), 0) || 1;
   const currentCycleWeek = ((totalWeek - 1) % cycleLength) + 1;
 
   for (const block of plan) {
@@ -345,11 +467,20 @@ export const getBlockForWeek = (totalWeek: number, totalDurationWeeks: number | 
     }
   }
 
-  // Fallback
+  // Fallback to absolute first template if everything fails
+  const absoluteFallback = BLOCK_TEMPLATES[BlockType.FOUNDATION] || { 
+    type: BlockType.FOUNDATION, 
+    label: 'Foundation', 
+    baseIntensity: 0.60, 
+    baseReps: '12', 
+    baseSets: 3, 
+    intensityIncrementPerWeek: 0.02 
+  };
+
   return {
-    block: plan[0],
+    block: (plan && plan[0]) || absoluteFallback,
     weekInBlock: 1,
     totalWeek,
-    plan
+    plan: plan || []
   };
 };

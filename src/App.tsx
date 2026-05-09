@@ -36,6 +36,7 @@ import { ConfirmationModal } from './components/ConfirmationModal';
 import { SettingsView } from './components/SettingsView';
 import { ProfileView } from './components/ProfileView';
 import { DeploymentView } from './components/DeploymentView';
+import { UpcomingMissionsView } from './components/UpcomingMissionsView';
 import { OnboardingFlow } from './components/OnboardingFlow';
 import { WelcomeCarousel } from './components/WelcomeCarousel';
 import { WorkoutLog } from './components/WorkoutLog';
@@ -686,6 +687,7 @@ function AppContent() {
           setActiveView('workout-history');
         }}
         onAddActivity={() => setIsRecoveryModalOpen(true)}
+        onViewUpcomingMissions={() => setActiveView('upcoming-missions')}
         onContinueSession={() => {
           if (!currentSession) {
             setShowReadinessCheck(true);
@@ -700,6 +702,7 @@ function AppContent() {
       />;
       case 'analytics': return <AnalyticsView />;
       case 'deployment': return <DeploymentView />;
+      case 'upcoming-missions': return <UpcomingMissionsView onBack={() => setActiveView('training')} />;
       case 'settings': return <SettingsView onExit={() => setIsExitModalOpen(true)} onNavigateToProfile={() => setActiveView('profile')} />;
       case 'profile': return <ProfileView onBack={() => setActiveView('settings')} />;
       case 'workout-log': return <WorkoutLog 

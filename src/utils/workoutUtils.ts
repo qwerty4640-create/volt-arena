@@ -47,3 +47,39 @@ export function isTimedExercise(exName: string): boolean {
          lowerName.includes('l-sit') || 
          lowerName.includes('lever');
 }
+
+export function calculatePace(distance_meters?: number, time_seconds?: number): number {
+  if (!distance_meters || !time_seconds || time_seconds <= 0) return 0;
+  // returns Pace in m/s
+  return distance_meters / time_seconds;
+}
+
+export function calculateWorkCapacity(volume: number, duration_minutes: number): number {
+  if (duration_minutes <= 0) return 0;
+  return volume / duration_minutes; // e.g. Tonnage per minute
+}
+
+export function calculateMobilityIntegrity(sets: any[]): number {
+  if (!sets || sets.length === 0) return 100;
+  let totalScore = 0;
+  let validSets = 0;
+
+  sets.forEach(set => {
+    // Both pain scale and rom_quality can adjust the baseline 100
+    if (set.pain_scale !== undefined || set.rom_quality) {
+      let setScore = 100;
+      if (set.pain_scale !== undefined) {
+        // Pain is 1-10. Each point of pain reduces score by 5
+        setScore -= (set.pain_scale * 5); 
+      }
+      if (set.rom_quality === 'restricted') {
+        setScore -= 20;
+      }
+      totalScore += Math.max(0, setScore);
+      validSets++;
+    }
+  });
+
+  if (validSets === 0) return 100;
+  return totalScore / validSets;
+}

@@ -29,15 +29,25 @@ import { calculateTier } from '../lib/strength';
 import { FieldManual } from './FieldManual';
 import { getWarmupForLift, COOL_DOWN_ROUTINE } from '../data/warmupLibrary';
 import { getSwappableExercises } from '../constants/exercises';
+import { getBlockForWeek } from '../constants/periodization';
+
+import { MissionBriefingModal } from './MissionBriefingModal';
 
 interface TrainingViewProps {
   onContinueSession?: () => void;
   isLifting?: boolean;
   onViewHistory?: (sessionId?: string) => void;
   onAddActivity?: () => void;
+  onViewUpcomingMissions?: () => void;
 }
 
-export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAddActivity }: TrainingViewProps) => {
+export const TrainingView = ({ 
+  onContinueSession, 
+  isLifting, 
+  onViewHistory, 
+  onAddActivity,
+  onViewUpcomingMissions
+}: TrainingViewProps) => {
   const { t, unit, profile } = useSettings();
   const {
     currentSession,
@@ -45,6 +55,7 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
     replaceExerciseInSession,
     setNextWorkoutExercises,
     getNextWorkoutTemplate,
+    getWorkoutTemplate,
     history,
     getCalibrationStatus,
     calculateProgramCalories
@@ -59,6 +70,7 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
   const [showFieldManual, setShowFieldManual] = useState(false);
   const [swappingExerciseIdx, setSwappingExerciseIdx] = useState<number | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [selectedMission, setSelectedMission] = useState<WorkoutSession | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -513,6 +525,77 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
           <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">REF_ID: {activeOrNext.id}</span>
         </div>
       </motion.div>
+      
+      {/* Upcoming Missions Module */}
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.2 }}
+        className="col-span-1 md:col-span-2 lg:col-span-3 shrink-0 glass-panel p-4 md:p-8 flex flex-col w-full"
+      >
+        <div className="flex items-center gap-3 mb-6">
+          <h2 className="font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tight">{t('analysis.upcomingMissions')}</h2>
+        </div>
+        <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed mb-8">
+          Preview upcoming mission details before next mission. Mission details can be changed depending on individual deployment progression.
+        </p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+          {[0, 1, 2].map((i) => {
+            const missionNum = (history?.length || 0) + i + 1;
+            const weekForThisMission = Math.floor((missionNum - 1) / (profile?.trainingFrequency || 3)) + 1;
+            const blockForThisMission = profile ? getBlockForWeek(weekForThisMission, profile.missionPeriod || '3M', profile.trainingGoal || 'powerbuilding', profile.customProgramBlocks || []) : null;
+            const intensity = (blockForThisMission && blockForThisMission.block) 
+              ? Math.round((blockForThisMission.block.baseIntensity + ((blockForThisMission.weekInBlock - 1) * blockForThisMission.block.intensityIncrementPerWeek)) * 100) 
+              : 0;
+
+            const dayForThisMission = ((missionNum - 1) % (profile?.trainingFrequency || 3)) + 1;
+
+            return (
+              <div
+                key={i}
+                onClick={() => setSelectedMission(getWorkoutTemplate(weekForThisMission, dayForThisMission))}
+                className="p-4 bg-void/50 border border-white/5 group hover:border-volt/30 transition-all cursor-pointer flex flex-col justify-between h-full"
+              >
+                <div>
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-black tracking-widest text-volt uppercase leading-none mb-1">Mission #{missionNum}</span>
+                      <span className="text-[8px] font-bold text-zinc-500 uppercase tracking-widest leading-none">Week {weekForThisMission} | Day {dayForThisMission}</span>
+                    </div>
+                    <div className="w-8 h-8 border border-white/5 flex items-center justify-center bg-zinc-900 group-hover:border-volt/30 transition-colors">
+                      <ArrowRight size={14} className="text-zinc-600 group-hover:text-volt transition-colors" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest mb-1">Objective</p>
+                      <p className="text-xs font-black text-white uppercase italic tracking-tight">
+                        {blockForThisMission?.block.label || 'TBD'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest mb-1">Prescription</p>
+                      <p className="text-[10px] font-bold text-zinc-300 uppercase tracking-[0.1em]">
+                        {blockForThisMission?.block.baseSets || 3}x{blockForThisMission?.block.baseReps || '8'} @ {intensity}%
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <button
+          onClick={onViewUpcomingMissions}
+          className="w-full btn-secondary mt-8 py-4"
+        >
+          <span>{t('analysis.viewMoreDetails')}</span>
+          <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform text-volt" />
+        </button>
+      </motion.div>
 
       {/* My PRs Module */}
       <motion.div
@@ -523,7 +606,7 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
         className="col-span-1 md:col-span-2 lg:col-span-3 shrink-0 glass-panel p-4 md:p-8 flex flex-col w-full"
       >
         <div className="flex items-center gap-3">
-          <h2 className="font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tight mb-2">{t('personal records')}</h2>
+          <h2 className="font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tight mb-2">{t('analysis.myPRs')}</h2>
 
         </div>
         <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed mb-6 md:mb-12">Personal records measured per set.</p>
@@ -649,245 +732,19 @@ export const TrainingView = ({ onContinueSession, isLifting, onViewHistory, onAd
         </div>
       </motion.div>
       {/* Routine Detail Modal */}
-      {mounted && createPortal(
-        <AnimatePresence>
-          {showRoutineModal && (
-            <div
-              className="fixed inset-0 z-[9999] flex items-center justify-center p-4 md:p-8"
-            >
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => {
-                  setShowRoutineModal(false);
-                  setSwappingExerciseIdx(null);
-                }}
-                className="absolute inset-0 bg-void/90 backdrop-blur-md"
-              />
+      <MissionBriefingModal
+        isOpen={showRoutineModal || !!selectedMission}
+        onClose={() => {
+          setShowRoutineModal(false);
+          setSelectedMission(null);
+          setSwappingExerciseIdx(null);
+        }}
+        session={selectedMission || activeOrNext}
+        onSwapExercise={selectedMission ? undefined : setSwappingExerciseIdx}
+        isLifting={isLifting}
+        calibration={calibration}
+      />
 
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                className="relative w-full max-w-2xl h-[85vh] glass-panel border-volt/30 flex flex-col shadow-[0_0_100px_rgba(0,0,0,0.5)] z-[9999]"
-              >
-                <div className="flex items-center justify-between p-3 md:p-6 border-b border-white/5 shrink-0">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-volt/10 border border-volt/20 flex items-center justify-center text-volt">
-                      <ListOrdered size={24} />
-                    </div>
-                    <div>
-                      <h2 className="text-xl md:text-2xl font-black uppercase italic tracking-tight text-white">Mission Details</h2>
-                      <p className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest mt-0.5">{activeOrNext.title}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar">
-                  <div className="space-y-12">
-                    {/* Warm-up Section */}
-                    <div className="space-y-6">
-                      <div className="flex items-baseline gap-3 border-b border-white/10 pb-2">
-                        <h3 className="font-headline text-lg font-black uppercase italic tracking-tight text-volt">
-                          0. Warm-Up: {getWarmupForLift(activeOrNext.exercises[0].name).title}
-                        </h3>
-                      </div>
-                      <div className="grid grid-cols-1 gap-4">
-                        {getWarmupForLift(activeOrNext.exercises[0].name).items.map((item) => (
-                          <div key={item.id} className="relative p-3 md:p-6 glass-panel border-white/5 hover:border-volt/30 transition-all duration-300 bg-void/50 group">
-                            <div className="absolute inset-0 bg-volt/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 -skew-x-2" />
-                            <div className="relative">
-                              <div className="flex items-center justify-between mb-4">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-1 h-6 bg-volt" />
-                                  <h4 className="text-lg font-black uppercase italic tracking-tighter text-white">
-                                    {item.name}
-                                  </h4>
-                                </div>
-                                <div className="px-2 py-0.5 bg-zinc-900 border border-white/10 text-[8px] font-black uppercase tracking-widest text-zinc-500">
-                                  {item.durationMinutes}m
-                                </div>
-                              </div>
-                              <div className="space-y-4">
-                                <div className="space-y-1.5">
-                                  <p className="text-[10px] font-black text-volt uppercase tracking-[0.2em]">Summary</p>
-                                  <p className="text-zinc-200 text-sm leading-relaxed font-medium pl-4 border-l border-volt/20">
-                                    {item.description}
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Main Exercises Section */}
-                    <div className="grid grid-cols-1 gap-6">
-                      {activeOrNext.exercises.map((ex, exIdx) => (
-                        <div key={ex.id || exIdx} className="relative p-3 md:p-6 glass-panel border-white/5 hover:border-volt/30 transition-all duration-300 bg-void/50 group">
-                          <div className="absolute inset-0 bg-volt/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 -skew-x-2" />
-                          <div className="relative">
-                            <div className="flex items-center justify-between mb-4">
-                              <div className="flex items-center gap-3">
-                                <div className="w-1 h-6 bg-volt" />
-                                <h4 className="text-lg font-black uppercase italic tracking-tighter text-white">
-                                  {ex.name}
-                                </h4>
-                              </div>
-                              <button
-                                onClick={() => setSwappingExerciseIdx(exIdx)}
-                                className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 text-[8px] font-black uppercase tracking-widest text-zinc-400 hover:text-volt hover:border-volt/30 transition-all"
-                              >
-                                <RefreshCw size={10} />
-                                Swap
-                              </button>
-                            </div>
-
-                            <div className="space-y-4">
-                              <div className="space-y-1.5">
-                                <p className="text-[10px] font-black text-volt uppercase tracking-[0.2em]">Mission Protocol</p>
-                                <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 pl-4 border-l border-volt/20">
-                                  {ex.sets?.map((set, sIdx) => {
-                                    const w = parseFloat(set.weight) || 0;
-                                    const displayWeight = !isActiveSession && calibration.isRedline
-                                      ? Math.round((w * 0.75) / 5) * 5
-                                      : w;
-
-                                    return (
-                                      <div key={sIdx} className="bg-void/40 border border-white/5 p-3 flex flex-col items-center justify-center">
-                                        <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest mb-1">Set {sIdx + 1}</span>
-                                        <span className="text-[10px] sm:text-xs font-black text-white">{set.reps} Reps</span>
-                                        <span className="text-[8px] sm:text-[10px] font-black text-volt">{displayWeight}{weightUnit}</span>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Cool-down Section */}
-                    <div className="space-y-6">
-                      <div className="flex items-baseline gap-3 border-b border-white/10 pb-2">
-                        <h3 className="font-headline text-lg font-black uppercase italic tracking-tight text-zinc-500">
-                          {activeOrNext.exercises.length + 1}. Cool-Down Protocol
-                        </h3>
-                      </div>
-                      <div className="grid grid-cols-1 gap-4 opacity-70">
-                        {COOL_DOWN_ROUTINE.items.map((item) => (
-                          <div key={item.id} className="relative p-3 md:p-6 glass-panel border-white/5 hover:border-volt/30 transition-all duration-300 bg-void/50 group">
-                            <div className="absolute inset-0 bg-volt/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 -skew-x-2" />
-                            <div className="relative">
-                              <div className="flex items-center justify-between mb-4">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-1 h-6 bg-zinc-500" />
-                                  <h4 className="text-lg font-black uppercase italic tracking-tighter text-white">
-                                    {item.name}
-                                  </h4>
-                                </div>
-                                <div className="px-2 py-0.5 bg-zinc-900 border border-white/10 text-[8px] font-black uppercase tracking-widest text-zinc-500">
-                                  {item.durationMinutes}m
-                                </div>
-                              </div>
-                              <div className="space-y-4">
-                                <div className="space-y-1.5">
-                                  <p className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">Summary</p>
-                                  <p className="text-zinc-400 text-sm leading-relaxed font-medium pl-4 border-l border-zinc-800">
-                                    {item.description}
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Swapping Overlay */}
-                <AnimatePresence>
-                  {swappingExerciseIdx !== null && (
-                    <motion.div
-                      initial={{ opacity: 0, x: 50 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: 50 }}
-                      className="absolute inset-0 bg-black/95 z-[10000] flex flex-col"
-                    >
-                      <div className="p-4 md:p-8 border-b border-white/10 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <RefreshCw className="text-volt" size={24} />
-                          <h2 className="font-headline text-xl font-black uppercase italic tracking-tight text-white">Swap Exercise</h2>
-                        </div>
-                        <button
-                          onClick={() => setSwappingExerciseIdx(null)}
-                          className="p-2 hover:bg-white/5 text-zinc-500 hover:text-white transition-all"
-                        >
-                          <X size={20} />
-                        </button>
-                      </div>
-                      <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar space-y-3">
-                        <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest mb-4">
-                          Alternative movements for {activeOrNext.exercises[swappingExerciseIdx].name}:
-                        </p>
-                        {getSwappableExercises(activeOrNext.exercises[swappingExerciseIdx].name).map((alt) => (
-                          <button
-                            key={alt.name}
-                            onClick={() => {
-                              const exerciseId = activeOrNext.exercises[swappingExerciseIdx].id;
-                              const newExercise = {
-                                ...activeOrNext.exercises[swappingExerciseIdx],
-                                name: alt.name
-                              };
-
-                              if (!currentSession) {
-                                // Update template before starting
-                                const newExercises = nextWorkout.exercises.map((ex, i) =>
-                                  i === swappingExerciseIdx ? newExercise : ex
-                                );
-                                setNextWorkoutExercises(newExercises);
-                              } else {
-                                replaceExerciseInSession(exerciseId, newExercise);
-                              }
-                              setSwappingExerciseIdx(null);
-                            }}
-                            className="w-full p-4 bg-zinc-900 border border-white/5 hover:border-volt/30 text-left transition-all group"
-                          >
-                            <div className="font-headline text-lg font-black uppercase italic tracking-tight text-white group-hover:text-volt">
-                              {alt.name}
-                            </div>
-                            <div className="text-[8px] font-black uppercase tracking-widest text-zinc-500">
-                              {alt.category}
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                <div className="p-4 bg-zinc-950 border-t border-white/5">
-                  <button
-                    onClick={() => {
-                      setShowRoutineModal(false);
-                      setSwappingExerciseIdx(null);
-                    }}
-                    className="w-full btn-secondary py-4 flex items-center justify-center gap-2"
-                  >
-                    <X size={16} /> Close Briefing
-                  </button>
-                </div>
-              </motion.div>
-            </div>
-          )}
-        </AnimatePresence>,
-        document.body
-      )}
       <FieldManual isOpen={showFieldManual} onClose={() => setShowFieldManual(false)} />
     </div>
   );

@@ -466,6 +466,19 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
   };
 
   const updateProfile = async (data: Partial<UserProfile>) => {
+    // Dynamically route dashboard widgets if trainingGoal changes
+    if (data.trainingGoal) {
+      if (data.trainingGoal === 'longevity') {
+        data.performanceWidgets = ['mobility-matrix', 'joint-stress', 'volume-trend', 'progression'];
+      } else if (data.trainingGoal === 'tactical') {
+        data.performanceWidgets = ['conditioning-tracker', 'tactical', 'progression', 'volume-trend'];
+      } else {
+        // Default strength/hypertrophy goals
+        data.performanceWidgets = ['progression', 'volume-trend', 'growth', 'tactical'];
+      }
+      setPerformanceWidgetsState(data.performanceWidgets);
+    }
+
     if (auth.currentUser) {
       const userDocPath = `users/${auth.currentUser.uid}`;
       try {
