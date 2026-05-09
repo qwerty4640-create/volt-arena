@@ -1,0 +1,142 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Information about the user, including their level, settings, and onboarding status.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "The unique ID of the user." },
+        "email": { "type": "string", "format": "email", "description": "The user's email address." },
+        "displayName": { "type": "string", "description": "The user's display name." },
+        "photoURL": { "type": "string", "format": "uri", "description": "The user's profile picture URL." },
+        "firstName": { "type": "string", "description": "User's first name." },
+        "lastName": { "type": "string", "description": "User's last name." },
+        "gender": { "type": "string", "enum": ["male", "female", "other"], "description": "User's gender." },
+        "height": { "type": "number", "description": "User's height in cm or inches." },
+        "weight": { "type": "number", "description": "User's body weight in kg or LBS." },
+        "squatPR": { "type": "number", "description": "User's squat personal record." },
+        "benchPR": { "type": "number", "description": "User's bench press personal record." },
+        "deadliftPR": { "type": "number", "description": "User's deadlift personal record." },
+        "trainingGoal": { "type": "string", "enum": ["strength", "strength_size"], "description": "User's primary training goal." },
+        "trainingFrequency": { "type": "number", "description": "Preferred training frequency (days per week)." },
+        "onboardingCompleted": { "type": "boolean", "description": "Whether the user has completed the onboarding flow." },
+        "level": { "type": "string", "enum": ["untrained", "novice", "newbie", "intermediate", "advanced", "elite"], "description": "The user's training level." },
+        "trainingWeekOffset": { "type": "number", "description": "Training week offset." },
+        "trainingDurationMonths": { "type": "number", "description": "Training duration in months." },
+        "competitionDate": { "type": "integer", "description": "Timestamp of the competition date." },
+        "gymProfile": { "type": "string", "enum": ["commercial", "powerlifting", "home"], "description": "User's gym profile." },
+        "injuryNoGoList": { "type": "array", "items": { "type": "string" }, "description": "List of exercise IDs to avoid." },
+        "unit": { "type": "string", "enum": ["metric", "imperial"], "description": "Preferred weight unit." },
+        "language": { "type": "string", "enum": ["en", "zh", "ko", "ja", "es", "hi", "nl"], "description": "Preferred language." },
+        "isVoiceActive": { "type": "boolean", "description": "Whether voice control is active." },
+        "immersionMode": { "type": "string", "enum": ["immersive", "ar"], "description": "Preferred immersion mode." },
+        "showExperimentalMenus": { "type": "boolean", "description": "Whether to show experimental menus." },
+        "createdAt": { "type": "integer", "description": "Timestamp of account creation." }
+      },
+      "required": ["uid", "email", "level", "unit"]
+    },
+    "WorkoutSession": {
+      "title": "WorkoutSession",
+      "description": "A completed workout session with exercises, sets, and performance data.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique session ID." },
+        "uid": { "type": "string", "description": "The user who performed the workout." },
+        "title": { "type": "string", "description": "Title of the workout (e.g., 'Heavy Legs')." },
+        "date": { "type": "string", "description": "Human-readable date." },
+        "time": { "type": "string", "description": "Human-readable time." },
+        "completedAt": { "type": "integer", "description": "Timestamp of completion." },
+        "rpe": { "type": "number", "description": "Average RPE of the session." },
+        "note": { "type": "string", "description": "User notes for the session." },
+        "duration": { "type": "string", "description": "Duration of the session." },
+        "volume": { "type": "number", "description": "Total volume lifted." },
+        "caloriesBurned": { "type": "number", "description": "Estimated calories burned." },
+        "exercises": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "name": { "type": "string" },
+              "groupId": { "type": "string" },
+              "groupTitle": { "type": "string" },
+              "isAdditional": { "type": "boolean" },
+              "sets": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "string" },
+                    "weight": { "type": "string" },
+                    "baseWeight": { "type": "string" },
+                    "reps": { "type": "string" },
+                    "baseReps": { "type": "string" },
+                    "rpe": { "type": "string" },
+                    "isCompleted": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "required": ["id", "uid", "title", "completedAt", "exercises"]
+    },
+    "ActiveRecovery": {
+      "title": "ActiveRecovery",
+      "description": "Tactical activity log including calorie burn estimation.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique recovery session ID." },
+        "uid": { "type": "string", "description": "The user who performed the activity." },
+        "type": { "type": "string", "description": "The label of the activity (e.g., 'Muay Thai')." },
+        "activityId": { "type": "string", "description": "The library ID of the activity." },
+        "rpe": { "type": "number", "description": "Rate of Perceived Exertion (1-10)." },
+        "durationMinutes": { "type": "number", "description": "Duration in minutes." },
+        "caloriesBurned": { "type": "number", "description": "Estimated calories burned." },
+        "date": { "type": "string", "description": "Human-readable date." },
+        "timestamp": { "type": "integer", "description": "Timestamp of when the activity was performed." },
+        "performedAt": { "type": "string", "description": "ISO date string of when the activity was performed." },
+        "note": { "type": "string", "description": "User notes." },
+        "updatedAt": { "type": "integer", "description": "Timestamp of update." }
+      },
+      "required": ["id", "uid", "type", "rpe", "timestamp", "activityId"]
+    },
+    "RecoveryData": {
+      "title": "RecoveryData",
+      "description": "Subjective recovery metrics (HMS Scale) for AI context.",
+      "type": "object",
+      "properties": {
+        "sleep": { "type": "number" },
+        "stress": { "type": "number" },
+        "fatigue": { "type": "number" },
+        "soreness": { "type": "number" },
+        "mood": { "type": "number" },
+        "timestamp": { "type": "integer" }
+      },
+      "required": ["sleep", "stress", "fatigue", "soreness", "mood", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profile data."
+    },
+    "/users/{userId}/workouts/{workoutId}": {
+      "schema": "WorkoutSession",
+      "description": "Individual workout sessions for a user."
+    },
+    "/users/{userId}/active_recovery/{recoveryId}": {
+      "schema": "ActiveRecovery",
+      "description": "External cardio/recovery sessions."
+    },
+    "/users/{userId}/recovery_data/{docId}": {
+      "schema": "RecoveryData",
+      "description": "Daily health check HMS metrics."
+    },
+    "/users/{userId}/biometric_history/{docId}": {
+      "schema": "RecoveryData",
+      "description": "History of daily health check HMS metrics."
+    }
+  }
+}

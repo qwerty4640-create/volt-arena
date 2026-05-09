@@ -1,0 +1,151 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // ===============================================================
+    // GLOBAL HELPERS
+    // ===============================================================
+
+    function isValidId(id) { 
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); 
+    }
+    
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isSignedIn() { return request.auth != null; }
+    
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() { 
+      return isSignedIn() && (
+        request.auth.token.email == "qwerty4640@gmail.com" && request.auth.token.email_verified == true
+      ); 
+    }
+
+    // ===============================================================
+    // USER PROFILES
+    // ===============================================================
+
+    function isValidUser(data) {
+      return data.uid == request.auth.uid &&
+             data.email is string && data.email.size() <= 100 &&
+             data.level in ['untrained', 'novice', 'newbie', 'intermediate', 'advanced', 'elite'] &&
+             data.unit in ['metric', 'imperial'] &&
+             (data.get('displayName', '') is string && data.displayName.size() <= 100) &&
+             (data.get('gender', '') == '' || data.gender in ['male', 'female', 'other']) &&
+             (data.get('trainingGoal', '') == '' || data.trainingGoal in ['strength', 'strength_size']) &&
+             (data.get('role', 'user') in ['user', 'admin', 'engineer']);
+    }
+
+    match /users/{userId} {
+      allow read, update, create: if request.auth != null && request.auth.uid == userId;
+
+      // ===============================================================
+      // WORKOUTS
+      // ===============================================================
+
+      function isValidWorkout(data) {
+        return data.uid == request.auth.uid &&
+               isValidId(data.id) &&
+               (data.get('title', '') is string && data.title.size() <= 200) &&
+               (data.get('completedAt', 0) is int) &&
+               (data.get('exercises', []) is list && data.exercises.size() <= 100);
+      }
+
+      match /workouts/{workoutId} {
+        allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+        
+        allow create: if isOwner(userId) && isValidId(workoutId) && isValidWorkout(incoming());
+        
+        allow update: if isOwner(userId) && isValidId(workoutId) && isValidWorkout(incoming()) &&
+                        incoming().uid == existing().get('uid', incoming().uid) &&
+                        incoming().id == existing().get('id', incoming().id) && (
+                          // Action: Edit/Finalize Workout
+                          incoming().diff(existing()).affectedKeys().hasOnly([
+                            'id', 'uid', 'title', 'note', 'exercises', 'volume', 'rpe', 'duration', 
+                            'caloriesBurned', 'date', 'time', 'updatedAt', 'completedAt',
+                            'startTime', 'targetRpe', 'actualRpe', 'reflectionSaved',
+                            'readiness', 'blockType', 'blockLabel', 'weekInBlock',
+                            'totalWeek', 'penaltyApplied', 'isRedline', 'penaltyType',
+                            'currentExerciseIndex', 'currentSetIndex', 'isAdditional'
+                          ]) ||
+                          isAdmin()
+                        );
+                        
+        allow delete: if isOwner(userId) || isAdmin();
+      }
+
+      // ===============================================================
+      // ACTIVE RECOVERY
+      // ===============================================================
+
+      function isValidActiveRecovery(data) {
+        return data.uid == request.auth.uid &&
+               isValidId(data.id) &&
+               data.type is string && data.type.size() <= 100 &&
+               data.activityId is string && data.activityId.size() <= 100 &&
+               data.rpe is number && data.rpe >= 0 && data.rpe <= 10 &&
+               data.durationMinutes is number && data.durationMinutes >= 0 &&
+               data.timestamp is int;
+      }
+
+      match /active_recovery/{recoveryId} {
+        allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+        
+        allow create: if isOwner(userId) && isValidId(recoveryId) && isValidActiveRecovery(incoming());
+        
+        allow update: if isOwner(userId) && isValidId(recoveryId) && isValidActiveRecovery(incoming()) &&
+                        incoming().uid == existing().uid &&
+                        incoming().id == existing().id && (
+                          // Action: Edit
+                          incoming().diff(existing()).affectedKeys().hasOnly([
+                            'type', 'activityId', 'rpe', 'durationMinutes', 'caloriesBurned', 
+                            'date', 'note', 'updatedAt', 'performedAt', 'timestamp'
+                          ]) ||
+                          isAdmin()
+                        );
+                        
+        allow delete: if isOwner(userId) || isAdmin();
+      }
+
+      // ===============================================================
+      // RECOVERY DATA
+      // ===============================================================
+
+      function isValidRecoveryData(data) {
+        return data.sleep is number && data.sleep >= 1 && data.sleep <= 5 &&
+               data.stress is number && data.stress >= 1 && data.stress <= 5 &&
+               data.fatigue is number && data.fatigue >= 1 && data.fatigue <= 5 &&
+               data.soreness is number && data.soreness >= 1 && data.soreness <= 5 &&
+               data.mood is number && data.mood >= 1 && data.mood <= 5 &&
+               data.timestamp is number;
+      }
+
+      match /recovery_data/{docId} {
+        allow read: if isOwner(userId) || isAdmin();
+        
+        allow create, update: if isOwner(userId) && isValidId(docId) && isValidRecoveryData(incoming());
+        
+        allow delete: if isOwner(userId) || isAdmin();
+      }
+
+      match /biometric_history/{docId} {
+        allow read: if isOwner(userId) || isAdmin();
+        
+        // Use create instead of update because this is an append-only log.
+        // Wait, setDoc will create if it does not exist, and update if it does.
+        allow create, update: if isOwner(userId) && isValidId(docId) && isValidRecoveryData(incoming());
+        
+        allow delete: if isOwner(userId) || isAdmin();
+      }
+    }
+  }
+}

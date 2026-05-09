@@ -1,0 +1,231 @@
+import React, { useState, useMemo } from 'react';
+import { motion } from 'motion/react';
+import { Zap, Info } from 'lucide-react';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
+import { InfoTooltip } from './InfoTooltip';
+import { cn } from '../lib/utils';
+import { useSettings } from '../contexts/SettingsContext';
+import { useWorkout } from '../contexts/WorkoutContext';
+import { BlockType, getPlanForDuration, getPlanFromCustomBlocks, expandPlan } from '../constants/periodization';
+
+export const BlockWidget = () => {
+    const { t, profile } = useSettings();
+    const { history, getNextWorkoutTemplate } = useWorkout();
+    const nextWorkout = getNextWorkoutTemplate();
+    const currentBlock = nextWorkout.blockType || BlockType.HYPERTROPHY;
+    const weekInBlock = nextWorkout.weekInBlock || 1;
+    const totalWeek = nextWorkout.totalWeek || 1;
+
+    const basicPlan = profile?.customProgramBlocks && profile.customProgramBlocks.length > 0
+        ? getPlanFromCustomBlocks(profile.customProgramBlocks)
+        : getPlanForDuration((profile?.trainingDurationMonths || 3) * 4, profile?.trainingObjectives || (profile?.trainingGoal ? [profile.trainingGoal] : ['powerbuilding']));
+
+    const plan = expandPlan(basicPlan);
+    const blockDef = plan.find(b => b.type === currentBlock);
+    const totalWeeks = blockDef?.durationWeeks || 4;
+    const cycleLength = plan.reduce((acc, b) => acc + b.durationWeeks, 0);
+    const hasHistory = (history?.length || 0) > 0;
+
+    const [hoveredWeekData, setHoveredWeekData] = useState<any>(null);
+
+    // Only show progress if they've actually started lifting
+    // And calculate based on completed weeks (e.g., Week 1 = 0% complete)
+    const programProgress = hasHistory ? ((totalWeek - 1) / cycleLength) * 100 : 0;
+
+    const currentCycleWeek = ((totalWeek - 1) % cycleLength) + 1;
+
+    const graphData = useMemo(() => {
+        const data = [];
+        let weekAcc = 0;
+        for (const block of plan) {
+            for (let w = 1; w <= block.durationWeeks; w++) {
+                weekAcc++;
+                const intensity = block.baseIntensity + (w - 1) * block.intensityIncrementPerWeek;
+                data.push({
+                    week: weekAcc,
+                    intensity: Math.round(intensity * 100),
+                    block: block.label || block.type,
+                    blockType: block.type,
+                    isCurrent: weekAcc === currentCycleWeek
+                });
+            }
+        }
+        return data;
+    }, [currentCycleWeek, plan]);
+
+    const intensityCurveTicks = useMemo(() => {
+        if (!graphData.length) return [];
+        return graphData
+            .map(d => d.week)
+            .filter(w => w === 1 || w % 5 === 0);
+    }, [graphData]);
+
+    const activeFocus = hoveredWeekData || {
+        block: nextWorkout.blockLabel || currentBlock,
+        blockType: nextWorkout.blockType || currentBlock,
+        week: totalWeek
+    };
+
+    const CustomTooltip = ({ active, payload }: any) => {
+        if (active && payload && payload.length) {
+            const data = payload[0].payload;
+            return (
+                <div className="glass-panel p-3 border-volt/30 shadow-xl bg-void/90 backdrop-blur-md">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-volt mb-1">{data.block}</p>
+                    <p className="text-xs font-bold text-white">Week {data.week}</p>
+                    <p className="text-xs font-bold text-zinc-400">Intensity: {data.intensity}%</p>
+                </div>
+            );
+        }
+        return null;
+    };
+
+    return (
+        <div className="glass-panel px-4 py-6 md:p-8 border-none flex flex-col justify-between h-full relative overflow-hidden min-w-0">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-volt/5 blur-[40px] -z-10" />
+
+            <div className="flex items-center justify-between mb-6 md:mb-8 relative z-10">
+                <div className="flex items-center gap-3">
+                    <h3 className="font-headline text-3xl md:text-3xl font-black uppercase italic tracking-tight mb-2">{t('Deployment Progress')}</h3>
+                </div>
+            </div>
+
+            <div className="flex flex-col gap-6 md:gap-8 flex-1">
+                {/* Detailed Block Info */}
+                <div className="space-y-4">
+                    <div className="space-y-2">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('analysis.trainingCycle')}</span>
+                        <div className="grid grid-cols-1 gap-2">
+                            {plan.map((block, idx) => {
+                                const isCurrent = currentBlock === block.type;
+                                const blockKey = `block.${block.type.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+                                const translatedLabel = t(blockKey);
+                                const finalLabel = translatedLabel !== blockKey ? translatedLabel : (block.label || block.type);
+
+                                let accumulated = 0;
+                                for (let i = 0; i < idx; i++) accumulated += plan[i].durationWeeks;
+                                const startWeek = accumulated + 1;
+                                const endWeek = accumulated + block.durationWeeks;
+
+                                return (
+                                    <div
+                                        key={block.type + idx}
+                                        className={cn(
+                                            "p-3 border-none transition-all duration-300",
+                                            isCurrent
+                                                ? "bg-white/10 ring-1 ring-volt/30"
+                                                : "bg-white/5 opacity-40 hover:opacity-60"
+                                        )}
+                                    >
+                                        <div className="flex justify-between items-center mb-1">
+                                            <span className={cn(
+                                                "text-[10px] font-black uppercase tracking-widest",
+                                                isCurrent ? "text-volt" : "text-zinc-400"
+                                            )}>
+                                                Block {idx + 1}: {finalLabel}
+                                            </span>
+                                            {isCurrent && <Zap size={10} className="text-volt animate-pulse" />}
+                                        </div>
+                                        <div className="flex justify-between items-end">
+                                            <span className="text-[8px] font-bold text-zinc-500 uppercase tracking-widest">
+                                                Weeks {startWeek}-{endWeek}
+                                            </span>
+                                            {isCurrent && (
+                                                <span className="text-[10px] font-black italic text-white">
+                                                    WK {weekInBlock} / {block.durationWeeks}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <div className="w-full h-2 bg-void overflow-hidden border border-white/5">
+                            <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${programProgress}%` }}
+                                className="h-full bg-volt shadow-[0_0_10px_var(--primary-glow)]"
+                            />
+                        </div>
+                        <div className="flex justify-between text-[8px] font-black uppercase tracking-widest text-zinc-600">
+                            <span>{t('analysis.start')}</span>
+                            <span>{Math.round(programProgress)}% {t('analysis.complete')}</span>
+                            <span>{t('analysis.peak')}</span>
+                        </div>
+                    </div>
+                </div>
+                {/*}
+                <div className="space-y-4">
+                    <div className="flex items-center gap-2 mb-2">
+                        <Info size={12} className="text-zinc-500" />
+                        <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500">
+                            {hoveredWeekData ? `Week ${hoveredWeekData.week} Focus` : 'Current Focus'}
+                        </span>
+                    </div>
+                </div>
+{*/}
+                {/* Intensity Graph */}
+                <div className="flex flex-col">
+                    <div className="flex justify-between items-end mb-4">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                            {t('analysis.intensityCurve')}
+                            <InfoTooltip term="RPE" />
+                        </span>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-volt">{cycleLength}-Week Cycle</span>
+                    </div>
+
+                    <div className="h-[180px] md:h-[200px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart
+                                data={graphData}
+                                margin={{ top: 10, right: 10, left: -20, bottom: 25 }}
+                                onMouseMove={(e: any) => {
+                                    if (e && e.activePayload) {
+                                        setHoveredWeekData(e.activePayload[0].payload);
+                                    }
+                                }}
+                                onMouseLeave={() => setHoveredWeekData(null)}
+                            >
+                                <defs>
+                                    <linearGradient id="intensity-grad" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="var(--primary-color)" stopOpacity={0.3} />
+                                        <stop offset="95%" stopColor="var(--primary-color)" stopOpacity={0} />
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
+                                <XAxis
+                                    dataKey="week"
+                                    axisLine={false}
+                                    tickLine={false}
+                                    tick={{ fill: '#71717a', fontSize: 9, fontWeight: 900, fontFamily: 'Inter' }}
+                                    ticks={intensityCurveTicks}
+                                    tickFormatter={(val) => `${t('workout.week').toUpperCase()} ${val}`}
+                                />
+                                <YAxis
+                                    axisLine={false}
+                                    tickLine={false}
+                                    tick={{ fill: '#71717a', fontSize: 10, fontWeight: 900, fontFamily: 'Inter' }}
+                                    domain={[40, 100]}
+                                />
+                                <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'var(--primary-color)', strokeWidth: 1, strokeDasharray: '4 4' }} />
+                                <Area
+                                    type="linear"
+                                    dataKey="intensity"
+                                    stroke="var(--primary-color)"
+                                    strokeWidth={3}
+                                    fillOpacity={1}
+                                    fill="url(#intensity-grad)"
+                                    animationDuration={1500}
+                                />
+                                <ReferenceLine x={currentCycleWeek} stroke="var(--primary-color)" strokeDasharray="3 3" label={{ position: 'top', value: 'NOW', fill: 'var(--primary-color)', fontSize: 8, fontWeight: 900 }} />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};

@@ -1,0 +1,957 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-headline: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Inter", ui-monospace, SFMono-Regular, monospace;
+
+  --color-volt: var(--primary-color);
+  --color-crimson: var(--theme-crimson);
+  --color-void: var(--theme-void);
+  --color-surface: var(--theme-surface);
+  --color-surface-container-lowest: var(--theme-surface-container-lowest);
+  --color-surface-container-low: var(--theme-surface-container-low);
+  --color-surface-container-high: var(--theme-surface-container-high);
+  --color-surface-container-highest: var(--theme-surface-container-highest);
+  --color-surface-variant: var(--theme-surface-variant);
+
+  --color-white: var(--theme-white);
+  --color-black: var(--theme-black);
+
+  --color-zinc-50: var(--theme-zinc-50);
+  --color-zinc-100: var(--theme-zinc-100);
+  --color-zinc-200: var(--theme-zinc-200);
+  --color-zinc-300: var(--theme-zinc-300);
+  --color-zinc-400: var(--theme-zinc-400);
+  --color-zinc-500: var(--theme-zinc-500);
+  --color-zinc-600: var(--theme-zinc-600);
+  --color-zinc-700: var(--theme-zinc-700);
+  --color-zinc-800: var(--theme-zinc-800);
+  --color-zinc-900: var(--theme-zinc-900);
+  --color-zinc-950: var(--theme-zinc-950);
+
+  --color-tier-advanced: var(--theme-tier-advanced);
+  --color-tier-elite: var(--theme-tier-elite);
+}
+
+:root {
+  --font-primary: 'Inter', system-ui, -apple-system, sans-serif;
+  --primary-color: #00b6ff;
+  --primary-glow: rgba(0, 182, 255, 0.6);
+  --primary-gradient: linear-gradient(135deg, #4dd0ff 0%, #0088cc 100%);
+  --app-gutter: 1rem;
+  --app-max-width: 1600px;
+
+  --theme-crimson: #FF8D7A;
+  --theme-void: #0D0F0B;
+  --theme-surface: #131313;
+  --theme-surface-container-lowest: #0e0e0e;
+  --theme-surface-container-low: #121410;
+  --theme-surface-container-high: #1E201B;
+  --theme-surface-container-highest: #353534;
+  --theme-surface-variant: #242721;
+  --theme-white: #ffffff;
+  --theme-black: #000000;
+
+  --theme-zinc-50: #fafafa;
+  --theme-zinc-100: #f4f4f5;
+  --theme-zinc-200: #e4e4e7;
+  --theme-zinc-300: #d4d4d8;
+  --theme-zinc-400: #a1a1aa;
+  --theme-zinc-500: #71717a;
+  --theme-zinc-600: #52525b;
+  --theme-zinc-700: #3f3f46;
+  --theme-zinc-800: #27272a;
+  --theme-zinc-900: #18181b;
+  --theme-zinc-950: #09090b;
+
+  --theme-tier-advanced: #FFD700;
+  --theme-tier-elite: #9333EA;
+}
+
+@media (min-width: 640px) {
+  :root {
+    --app-gutter: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --app-gutter: 2rem;
+  }
+}
+
+[data-tier="advanced"] {
+  --primary-color: #FFD700;
+  --primary-glow: rgba(255, 215, 0, 0.6);
+  --primary-gradient: linear-gradient(135deg, #ffe866 0%, #ccac00 100%);
+}
+
+[data-tier="elite"] {
+  --primary-color: #C692FF;
+  --primary-glow: rgba(198, 146, 255, 0.6);
+  --primary-gradient: linear-gradient(135deg, #d9b3ff 0%, #9933ff 100%);
+}
+
+.tier-untrained,
+.tier-novice,
+.tier-newbie,
+.tier-intermediate {
+  --primary-color: #00b6ff;
+  --primary-glow: rgba(0, 182, 255, 0.6);
+  --primary-gradient: linear-gradient(135deg, #4dd0ff 0%, #0088cc 100%);
+}
+
+.tier-advanced {
+  --primary-color: #FFD700;
+  --primary-glow: rgba(255, 215, 0, 0.6);
+  --primary-gradient: linear-gradient(135deg, #ffe866 0%, #ccac00 100%);
+}
+
+.tier-elite {
+  --primary-color: #C692FF;
+  --primary-glow: rgba(198, 146, 255, 0.6);
+  --primary-gradient: linear-gradient(135deg, #d9b3ff 0%, #9933ff 100%);
+}
+
+@keyframes flaming {
+
+  0%,
+  100% {
+    transform: scale(1);
+    filter: brightness(1) drop-shadow(0 0 5px #ff4500);
+  }
+
+  50% {
+    transform: scale(1.1) rotate(-2deg);
+    filter: brightness(1.3) drop-shadow(0 0 20px #ff8c00);
+  }
+}
+
+.animate-flaming {
+  animation: flaming 1.5s ease-in-out infinite;
+}
+
+@keyframes tactical-pulse {
+
+  0%,
+  100% {
+    border-color: var(--primary-color-muted, rgba(234, 126, 8, 0.4));
+    box-shadow: 0 0 0px transparent;
+  }
+
+  50% {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 8px var(--primary-glow);
+  }
+}
+
+.animate-tactical-pulse {
+  animation: tactical-pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Tooltip Animation */
+.tooltip-enter {
+  animation: tooltip-in 0.2s ease-out forwards;
+}
+
+@keyframes tooltip-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px) scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+@layer base {
+  * {
+    border-radius: 0 !important;
+  }
+
+  html,
+  body {
+    max-width: 100%;
+    overflow-x: hidden;
+    position: relative;
+    font-family: var(--font-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    @apply bg-void text-white;
+  }
+
+  .font-mono,
+  .font-headline,
+  .font-display,
+  .tracking-tighter {
+    font-family: var(--font-primary) !important;
+  }
+
+  button,
+  a,
+  [role="button"],
+  input[type="submit"],
+  input[type="button"],
+  select {
+    @apply cursor-pointer transition-all duration-100 ease-in-out;
+  }
+
+  button:active,
+  [role="button"]:active {
+    @apply scale-[0.97] brightness-90;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-volt outline-offset-4;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-volt text-void font-headline text-xs md:text-sm font-black uppercase tracking-widest hover:bg-white active:scale-95 active:brightness-90 transition-all flex items-center justify-center gap-2;
+  }
+
+  .btn-secondary {
+    @apply bg-zinc-900 border border-white/5 text-zinc-500 font-headline text-[10px] md:text-xs font-black uppercase tracking-widest hover:bg-zinc-800 hover:text-white hover:border-white/10 active:scale-95 active:bg-zinc-950 transition-all flex items-center justify-center gap-2 px-6;
+  }
+
+  button svg,
+  [role="button"] svg {
+    @apply fill-none stroke-current;
+  }
+
+  .btn-secondary svg {
+    @apply text-volt transition-colors duration-200;
+  }
+
+  .btn-secondary:hover svg {
+    @apply text-white;
+  }
+
+  .btn-tertiary {
+    @apply text-zinc-500 hover:text-white font-headline text-[10px] font-black uppercase tracking-widest active:scale-95 active:opacity-70 transition-all flex items-center gap-2;
+  }
+
+  .glass-panel {
+    @apply bg-surface-variant/40 backdrop-blur-[40px];
+  }
+
+  .volt-glow {
+    box-shadow: 0 0 20px var(--primary-glow);
+  }
+
+  .app-header {
+    padding-top: 1rem;
+  }
+
+  @media (min-width: 768px) {
+    .app-header {
+      padding-top: 2rem;
+    }
+  }
+
+  /* Conditional logic for mobile devices with notches */
+  @supports (padding-top: env(safe-area-inset-top)) {
+    .app-header {
+      padding-top: max(1rem, env(safe-area-inset-top));
+    }
+  }
+
+  .text-glow-volt {
+    text-shadow: 0 0 15px var(--primary-glow);
+  }
+
+  .text-glow-crimson {
+    text-shadow: 0 0 15px rgba(255, 141, 122, 0.6);
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 2px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: var(--primary-glow);
+    border-radius: 10px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-color);
+    opacity: 0.5;
+  }
+}
+
+:root[data-theme="light"] {
+  --theme-void: #f4f4f5;
+  --theme-surface: #e4e4e7;
+  --theme-surface-container-lowest: #ffffff;
+  --theme-surface-container-low: #fafafa;
+  --theme-surface-container-high: #d4d4d8;
+  --theme-surface-container-highest: #a1a1aa;
+  --theme-surface-variant: #e4e4e7;
+
+  --theme-white: #09090b;
+  --theme-black: #ffffff;
+  --theme-crimson: #c62828;
+
+  --theme-zinc-50: #09090b;
+  --theme-zinc-100: #18181b;
+  --theme-zinc-200: #27272a;
+  --theme-zinc-300: #3f3f46;
+  --theme-zinc-400: #52525b;
+  --theme-zinc-500: #71717a;
+  --theme-zinc-600: #a1a1aa;
+  --theme-zinc-700: #d4d4d8;
+  --theme-zinc-800: #e4e4e7;
+  --theme-zinc-900: #f4f4f5;
+  --theme-zinc-950: #ffffff;
+
+  --theme-tier-advanced: #8a6500;
+  --theme-tier-elite: #550a8a;
+}
+
+:root[data-theme="light"][data-light-scheme="default"],
+[data-theme="light"][data-light-scheme="default"] [data-tier],
+[data-theme="light"][data-light-scheme="default"] .tier-untrained,
+[data-theme="light"][data-light-scheme="default"] .tier-novice,
+[data-theme="light"][data-light-scheme="default"] .tier-newbie,
+[data-theme="light"][data-light-scheme="default"] .tier-intermediate,
+[data-theme="light"][data-light-scheme="default"] .tier-advanced,
+[data-theme="light"][data-light-scheme="default"] .tier-elite {
+  --primary-color: #00478f !important;
+  --primary-glow: rgba(0, 71, 143, 0.4) !important;
+  --primary-gradient: linear-gradient(135deg, #0073e6 0%, #00478f 100%) !important;
+}
+
+:root[data-theme="light"][data-light-scheme="ocean"],
+[data-theme="light"][data-light-scheme="ocean"] [data-tier],
+[data-theme="light"][data-light-scheme="ocean"] .tier-untrained,
+[data-theme="light"][data-light-scheme="ocean"] .tier-novice,
+[data-theme="light"][data-light-scheme="ocean"] .tier-newbie,
+[data-theme="light"][data-light-scheme="ocean"] .tier-intermediate,
+[data-theme="light"][data-light-scheme="ocean"] .tier-advanced,
+[data-theme="light"][data-light-scheme="ocean"] .tier-elite {
+  --primary-color: #005080 !important;
+  --primary-glow: rgba(0, 80, 128, 0.4) !important;
+  --primary-gradient: linear-gradient(135deg, #0088cc 0%, #005080 100%) !important;
+}
+
+:root[data-theme="light"][data-light-scheme="neon"],
+[data-theme="light"][data-light-scheme="neon"] [data-tier],
+[data-theme="light"][data-light-scheme="neon"] .tier-untrained,
+[data-theme="light"][data-light-scheme="neon"] .tier-novice,
+[data-theme="light"][data-light-scheme="neon"] .tier-newbie,
+[data-theme="light"][data-light-scheme="neon"] .tier-intermediate,
+[data-theme="light"][data-light-scheme="neon"] .tier-advanced,
+[data-theme="light"][data-light-scheme="neon"] .tier-elite {
+  --primary-color: #b30080 !important;
+  --primary-glow: rgba(179, 0, 128, 0.4) !important;
+  --primary-gradient: linear-gradient(135deg, #ff33cc 0%, #b30080 100%) !important;
+}
+
+:root[data-theme="light"][data-light-scheme="solar"],
+[data-theme="light"][data-light-scheme="solar"] [data-tier],
+[data-theme="light"][data-light-scheme="solar"] .tier-untrained,
+[data-theme="light"][data-light-scheme="solar"] .tier-novice,
+[data-theme="light"][data-light-scheme="solar"] .tier-newbie,
+[data-theme="light"][data-light-scheme="solar"] .tier-intermediate,
+[data-theme="light"][data-light-scheme="solar"] .tier-advanced,
+[data-theme="light"][data-light-scheme="solar"] .tier-elite {
+  --primary-color: #aa3300 !important;
+  --primary-glow: rgba(170, 51, 0, 0.4) !important;
+  --primary-gradient: linear-gradient(135deg, #ff5500 0%, #aa3300 100%) !important;
+}
+
+:root[data-theme="light"][data-light-scheme="monochrome"],
+[data-theme="light"][data-light-scheme="monochrome"] [data-tier],
+[data-theme="light"][data-light-scheme="monochrome"] .tier-untrained,
+[data-theme="light"][data-light-scheme="monochrome"] .tier-novice,
+[data-theme="light"][data-light-scheme="monochrome"] .tier-newbie,
+[data-theme="light"][data-light-scheme="monochrome"] .tier-intermediate,
+[data-theme="light"][data-light-scheme="monochrome"] .tier-advanced,
+[data-theme="light"][data-light-scheme="monochrome"] .tier-elite {
+  --primary-color: #000000 !important;
+  --primary-glow: rgba(0, 0, 0, 0.2) !important;
+  --primary-gradient: linear-gradient(135deg, #666666 0%, #000000 100%) !important;
+}
+
+:root[data-theme="fantasy"][data-fantasy-scheme="hud"] {
+  --theme-void: #0B0F16;
+  --theme-surface: #11151C;
+  --theme-surface-container-lowest: #080A0E;
+  --theme-surface-container-low: #0D1118;
+  --theme-surface-container-high: #161A23;
+  --theme-surface-container-highest: #1C212C;
+  --theme-surface-variant: #141820;
+
+  --theme-white: #ffffff;
+  --theme-black: #000000;
+  --theme-crimson: #E52E4D;
+
+  --theme-zinc-50: #fafafa;
+  --theme-zinc-100: #f4f4f5;
+  --theme-zinc-200: #e4e4e7;
+  --theme-zinc-300: #d4d4d8;
+  --theme-zinc-400: #a1a1aa;
+  --theme-zinc-500: #71717a;
+  --theme-zinc-600: #52525b;
+  --theme-zinc-700: #3f3f46;
+  --theme-zinc-800: #27272a;
+  --theme-zinc-900: #18181b;
+  --theme-zinc-950: #09090b;
+
+  --theme-tier-advanced: #FFD700;
+  --theme-tier-elite: #9333EA;
+}
+
+:root[data-theme="fantasy"][data-fantasy-scheme="hud"],
+[data-theme="fantasy"][data-fantasy-scheme="hud"] [data-tier],
+[data-theme="fantasy"][data-fantasy-scheme="hud"] .tier-untrained,
+[data-theme="fantasy"][data-fantasy-scheme="hud"] .tier-novice,
+[data-theme="fantasy"][data-fantasy-scheme="hud"] .tier-newbie,
+[data-theme="fantasy"][data-fantasy-scheme="hud"] .tier-intermediate,
+[data-theme="fantasy"][data-fantasy-scheme="hud"] .tier-advanced,
+[data-theme="fantasy"][data-fantasy-scheme="hud"] .tier-elite {
+  --primary-color: #F81B43 !important;
+  --primary-glow: rgba(248, 27, 67, 0.5) !important;
+  --primary-gradient: linear-gradient(135deg, #FF4564 0%, #D80F33 100%) !important;
+}
+
+[data-theme="fantasy"][data-fantasy-scheme="hud"] body {
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 30px 30px;
+}
+
+[data-theme="fantasy"][data-fantasy-scheme="hud"] .glass-panel {
+  background-color: rgba(11, 15, 22, 0.7);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: none;
+}
+
+[data-theme="fantasy"][data-fantasy-scheme="hud"] .hud-widget-grid {
+  background-image: 
+    linear-gradient(rgba(248, 27, 67, 0.15) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(248, 27, 67, 0.15) 1px, transparent 1px),
+    linear-gradient(rgba(248, 27, 67, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(248, 27, 67, 0.05) 1px, transparent 1px);
+  background-size: 60px 60px, 60px 60px, 15px 15px, 15px 15px;
+  background-position: center center, center center, center center, center center;
+}
+
+/* Sovereign Theme */
+:root[data-theme="fantasy"][data-fantasy-scheme="sovereign"] {
+  --theme-void: #1A120B;
+  --theme-surface: #261910;
+  --theme-surface-container-lowest: #140d08;
+  --theme-surface-container-low: #1A120B;
+  --theme-surface-container-high: #332216;
+  --theme-surface-container-highest: #402c1c;
+  --theme-surface-variant: #2d1e13;
+
+  --theme-white: #F4F4F4;
+  --theme-black: #000000;
+  --theme-crimson: #E52E4D;
+
+  --theme-zinc-50: #fcfbfb;
+  --theme-zinc-100: #f5f2f0;
+  --theme-zinc-200: #e8e2dc;
+  --theme-zinc-300: #d6ccbd;
+  --theme-zinc-400: #bfae99;
+  --theme-zinc-500: #a38f75;
+  --theme-zinc-600: #8c7659;
+  --theme-zinc-700: #756148;
+  --theme-zinc-800: #5c4d3b;
+  --theme-zinc-900: #4a3e30;
+  --theme-zinc-950: #29221a;
+
+  --theme-tier-advanced: #FFD700;
+  --theme-tier-elite: #9333EA;
+}
+
+:root[data-theme="fantasy"][data-fantasy-scheme="sovereign"],
+[data-theme="fantasy"][data-fantasy-scheme="sovereign"] [data-tier],
+[data-theme="fantasy"][data-fantasy-scheme="sovereign"] .tier-untrained,
+[data-theme="fantasy"][data-fantasy-scheme="sovereign"] .tier-novice,
+[data-theme="fantasy"][data-fantasy-scheme="sovereign"] .tier-newbie,
+[data-theme="fantasy"][data-fantasy-scheme="sovereign"] .tier-intermediate,
+[data-theme="fantasy"][data-fantasy-scheme="sovereign"] .tier-advanced,
+[data-theme="fantasy"][data-fantasy-scheme="sovereign"] .tier-elite {
+  --primary-color: #F9C043 !important;
+  --primary-glow: rgba(249, 192, 67, 0.4) !important;
+  --primary-gradient: linear-gradient(135deg, #F9C043 0%, #D49D20 100%) !important;
+}
+
+/* Stained Theme */
+:root[data-theme="fantasy"][data-fantasy-scheme="stained"] {
+  --theme-void: #050505;
+  --theme-surface: #0a0a0a;
+  --theme-surface-container-lowest: #000000;
+  --theme-surface-container-low: #050505;
+  --theme-surface-container-high: #121212;
+  --theme-surface-container-highest: #1a1a1a;
+  --theme-surface-variant: #0f0f0f;
+
+  --theme-white: #DCE1E5;
+  --theme-black: #000000;
+  --theme-crimson: #E52E4D;
+
+  --theme-zinc-50: #fcfcfd;
+  --theme-zinc-100: #f5f6f7;
+  --theme-zinc-200: #e2e5e8;
+  --theme-zinc-300: #c5cbd3;
+  --theme-zinc-400: #a1abb7;
+  --theme-zinc-500: #7b8897;
+  --theme-zinc-600: #606d7d;
+  --theme-zinc-700: #4e5a66;
+  --theme-zinc-800: #414a54;
+  --theme-zinc-900: #373e46;
+  --theme-zinc-950: #252a2f;
+
+  --theme-tier-advanced: #FFD700;
+  --theme-tier-elite: #9333EA;
+}
+
+:root[data-theme="fantasy"][data-fantasy-scheme="stained"],
+[data-theme="fantasy"][data-fantasy-scheme="stained"] [data-tier],
+[data-theme="fantasy"][data-fantasy-scheme="stained"] .tier-untrained,
+[data-theme="fantasy"][data-fantasy-scheme="stained"] .tier-novice,
+[data-theme="fantasy"][data-fantasy-scheme="stained"] .tier-newbie,
+[data-theme="fantasy"][data-fantasy-scheme="stained"] .tier-intermediate,
+[data-theme="fantasy"][data-fantasy-scheme="stained"] .tier-advanced,
+[data-theme="fantasy"][data-fantasy-scheme="stained"] .tier-elite {
+  --primary-color: #8B160D !important;
+  --primary-glow: rgba(139, 22, 13, 0.5) !important;
+  --primary-gradient: linear-gradient(135deg, #A8251C 0%, #5E0C06 100%) !important;
+}
+
+/* Helios Theme */
+:root[data-theme="fantasy"][data-fantasy-scheme="helios"] {
+  --theme-void: #391416;
+  --theme-surface: #4a1d20;
+  --theme-surface-container-lowest: #2b0e10;
+  --theme-surface-container-low: #391416;
+  --theme-surface-container-high: #5c262a;
+  --theme-surface-container-highest: #6d2e33;
+  --theme-surface-variant: #522225;
+
+  --theme-white: #e9e3df; 
+  --theme-black: #000000;
+  --theme-crimson: #E52E4D;
+
+  --theme-zinc-50: #fbf9f8;
+  --theme-zinc-100: #f5f0ec;
+  --theme-zinc-200: #e8ded4;
+  --theme-zinc-300: #d6c6b7;
+  --theme-zinc-400: #bfaA99;
+  --theme-zinc-500: #a67c52;
+  --theme-zinc-600: #8c6742;
+  --theme-zinc-700: #735436;
+  --theme-zinc-800: #5c442c;
+  --theme-zinc-900: #4a3724;
+  --theme-zinc-950: #291e14;
+
+  --theme-tier-advanced: #FFD700;
+  --theme-tier-elite: #9333EA;
+}
+
+:root[data-theme="fantasy"][data-fantasy-scheme="helios"],
+[data-theme="fantasy"][data-fantasy-scheme="helios"] [data-tier],
+[data-theme="fantasy"][data-fantasy-scheme="helios"] .tier-untrained,
+[data-theme="fantasy"][data-fantasy-scheme="helios"] .tier-novice,
+[data-theme="fantasy"][data-fantasy-scheme="helios"] .tier-newbie,
+[data-theme="fantasy"][data-fantasy-scheme="helios"] .tier-intermediate,
+[data-theme="fantasy"][data-fantasy-scheme="helios"] .tier-advanced,
+[data-theme="fantasy"][data-fantasy-scheme="helios"] .tier-elite {
+  --primary-color: #FF3B30 !important;
+  --primary-glow: rgba(255, 59, 48, 0.4) !important;
+  --primary-gradient: linear-gradient(135deg, #FF665E 0%, #D82B22 100%) !important;
+}
+
+/* Blues Theme */
+:root[data-theme="fantasy"][data-fantasy-scheme="blues"] {
+  --theme-void: #020617;
+  --theme-surface: #0f172a;
+  --theme-surface-container-lowest: #020617;
+  --theme-surface-container-low: #0f172a;
+  --theme-surface-container-high: #1e293b;
+  --theme-surface-container-highest: #334155;
+  --theme-surface-variant: #1e293b;
+
+  --theme-white: #F8FAFC;
+  --theme-black: #000000;
+  --theme-crimson: #E52E4D;
+
+  --theme-zinc-50: #f8fafc;
+  --theme-zinc-100: #f1f5f9;
+  --theme-zinc-200: #e2e8f0;
+  --theme-zinc-300: #cbd5e1;
+  --theme-zinc-400: #94a3b8;
+  --theme-zinc-500: #64748b;
+  --theme-zinc-600: #475569;
+  --theme-zinc-700: #334155;
+  --theme-zinc-800: #1e293b;
+  --theme-zinc-900: #0f172a;
+  --theme-zinc-950: #020617;
+
+  --theme-tier-advanced: #FFD700;
+  --theme-tier-elite: #9333EA;
+}
+
+:root[data-theme="fantasy"][data-fantasy-scheme="blues"],
+[data-theme="fantasy"][data-fantasy-scheme="blues"] [data-tier],
+[data-theme="fantasy"][data-fantasy-scheme="blues"] .tier-untrained,
+[data-theme="fantasy"][data-fantasy-scheme="blues"] .tier-novice,
+[data-theme="fantasy"][data-fantasy-scheme="blues"] .tier-newbie,
+[data-theme="fantasy"][data-fantasy-scheme="blues"] .tier-intermediate,
+[data-theme="fantasy"][data-fantasy-scheme="blues"] .tier-advanced,
+[data-theme="fantasy"][data-fantasy-scheme="blues"] .tier-elite {
+  --primary-color: #06B6D4 !important;
+  --primary-glow: rgba(6, 182, 212, 0.4) !important;
+  --primary-gradient: linear-gradient(135deg, #22D3EE 0%, #0891B2 100%) !important;
+}
+
+/* Grays Theme */
+:root[data-theme="fantasy"][data-fantasy-scheme="grays"] {
+  --theme-void: #374151;
+  --theme-surface: #4b5563; 
+  --theme-surface-container-lowest: #1f2937;
+  --theme-surface-container-low: #374151;
+  --theme-surface-container-high: #6b7280;
+  --theme-surface-container-highest: #9ca3af;
+  --theme-surface-variant: #4b5563;
+
+  --theme-white: #f3f4f6; 
+  --theme-black: #000000;
+  --theme-crimson: #E52E4D;
+
+  --theme-zinc-50: #f9fafb;
+  --theme-zinc-100: #f3f4f6;
+  --theme-zinc-200: #e5e7eb;
+  --theme-zinc-300: #d1d5db;
+  --theme-zinc-400: #9ca3af;
+  --theme-zinc-500: #6b7280;
+  --theme-zinc-600: #4b5563;
+  --theme-zinc-700: #374151;
+  --theme-zinc-800: #1f2937;
+  --theme-zinc-900: #111827;
+  --theme-zinc-950: #030712;
+
+  --theme-tier-advanced: #FFD700;
+  --theme-tier-elite: #9333EA;
+}
+
+:root[data-theme="fantasy"][data-fantasy-scheme="grays"],
+[data-theme="fantasy"][data-fantasy-scheme="grays"] [data-tier],
+[data-theme="fantasy"][data-fantasy-scheme="grays"] .tier-untrained,
+[data-theme="fantasy"][data-fantasy-scheme="grays"] .tier-novice,
+[data-theme="fantasy"][data-fantasy-scheme="grays"] .tier-newbie,
+[data-theme="fantasy"][data-fantasy-scheme="grays"] .tier-intermediate,
+[data-theme="fantasy"][data-fantasy-scheme="grays"] .tier-advanced,
+[data-theme="fantasy"][data-fantasy-scheme="grays"] .tier-elite {
+  --primary-color: #FACC15 !important;
+  --primary-glow: rgba(250, 204, 21, 0.4) !important;
+  --primary-gradient: linear-gradient(135deg, #FDE047 0%, #EAB308 100%) !important;
+}
+
+/* Peerless Theme */
+:root[data-theme="fantasy"][data-fantasy-scheme="peerless"] {
+  --theme-void: #12100E;
+  --theme-surface: #1e1b18; 
+  --theme-surface-container-lowest: #0c0a09;
+  --theme-surface-container-low: #12100E;
+  --theme-surface-container-high: #2d2824;
+  --theme-surface-container-highest: #3a342f;
+  --theme-surface-variant: #282420;
+
+  --theme-white: #E5E1D8; 
+  --theme-black: #000000;
+  --theme-crimson: #9B1B1B;
+
+  --theme-zinc-50: #fbfbf9;
+  --theme-zinc-100: #f4f3ef;
+  --theme-zinc-200: #e5e1d8;
+  --theme-zinc-300: #d4cfc1;
+  --theme-zinc-400: #beb6a3;
+  --theme-zinc-500: #a39981;
+  --theme-zinc-600: #857b64;
+  --theme-zinc-700: #6b6351;
+  --theme-zinc-800: #554f42;
+  --theme-zinc-900: #464138;
+  --theme-zinc-950: #26241e;
+
+  --theme-tier-advanced: #FFD700;
+  --theme-tier-elite: #9333EA;
+}
+
+:root[data-theme="fantasy"][data-fantasy-scheme="peerless"],
+[data-theme="fantasy"][data-fantasy-scheme="peerless"] [data-tier],
+[data-theme="fantasy"][data-fantasy-scheme="peerless"] .tier-untrained,
+[data-theme="fantasy"][data-fantasy-scheme="peerless"] .tier-novice,
+[data-theme="fantasy"][data-fantasy-scheme="peerless"] .tier-newbie,
+[data-theme="fantasy"][data-fantasy-scheme="peerless"] .tier-intermediate,
+[data-theme="fantasy"][data-fantasy-scheme="peerless"] .tier-advanced,
+[data-theme="fantasy"][data-fantasy-scheme="peerless"] .tier-elite {
+  --primary-color: #D4AF37 !important;
+  --primary-glow: rgba(212, 175, 55, 0.4) !important;
+  --primary-gradient: linear-gradient(135deg, #E6C556 0%, #B89626 100%) !important;
+}
+
+/* Primary Button Global Overrides for Light Themes */
+:root[data-theme="light"] button.bg-volt,
+:root[data-theme="light"] button.bg-crimson {
+  background-color: var(--primary-color) !important;
+  color: var(--theme-void) !important;
+  box-shadow: 0 0 20px var(--primary-glow) !important;
+}
+
+:root[data-theme="light"] button.bg-volt:hover,
+:root[data-theme="light"] button.bg-crimson:hover {
+  filter: brightness(1.2);
+  box-shadow: 0 0 30px var(--primary-glow) !important;
+}
+
+/* Specific fix for text-void legibility on primary buttons in light mode */
+:root[data-theme="light"] button.bg-volt,
+:root[data-theme="light"] button.bg-crimson {
+  text-shadow: none !important;
+}
+
+/* Force Destructive Styling */
+.btn-destructive {
+  background-color: #dc2626 !important;
+  /* Crimson Red */
+  color: #ffffff !important;
+  border: none !important;
+  box-shadow: 0 4px 14px 0 rgba(220, 38, 38, 0.39) !important;
+  transition: all 0.2s ease-in-out !important;
+}
+
+.btn-destructive:hover {
+  background-color: #ef4444 !important;
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px 0 rgba(220, 38, 38, 0.5) !important;
+}
+
+.btn-destructive:active {
+  transform: translateY(0);
+}
+
+/* Sovereign Patterns */
+[data-theme="fantasy"][data-fantasy-scheme="sovereign"] body {
+  background-image: 
+    linear-gradient(45deg, rgba(244, 244, 244, 0.03) 1px, transparent 1px),
+    linear-gradient(-45deg, rgba(244, 244, 244, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+[data-theme="fantasy"][data-fantasy-scheme="sovereign"] .glass-panel {
+  background-color: rgba(38, 25, 16, 0.7);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(249, 192, 67, 0.1);
+  box-shadow: none;
+}
+
+[data-theme="fantasy"][data-fantasy-scheme="sovereign"] .hud-widget-grid {
+  background-image: 
+    linear-gradient(45deg, rgba(249, 192, 67, 0.15) 1px, transparent 1px),
+    linear-gradient(-45deg, rgba(249, 192, 67, 0.15) 1px, transparent 1px),
+    linear-gradient(45deg, rgba(249, 192, 67, 0.05) 1px, transparent 1px),
+    linear-gradient(-45deg, rgba(249, 192, 67, 0.05) 1px, transparent 1px);
+  background-size: 80px 80px, 80px 80px, 20px 20px, 20px 20px;
+  background-position: center center, center center, center center, center center;
+}
+
+/* Stained Patterns */
+[data-theme="fantasy"][data-fantasy-scheme="stained"] body {
+  background-image: 
+    linear-gradient(115deg, rgba(220, 225, 229, 0.02) 1px, transparent 1px),
+    linear-gradient(245deg, rgba(220, 225, 229, 0.02) 1px, transparent 1px);
+  background-size: 50px 80px;
+}
+
+[data-theme="fantasy"][data-fantasy-scheme="stained"] .glass-panel {
+  background-color: rgba(10, 10, 10, 0.8);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(139, 22, 13, 0.15);
+  box-shadow: none;
+}
+
+[data-theme="fantasy"][data-fantasy-scheme="stained"] .hud-widget-grid {
+  background-image: 
+    linear-gradient(60deg, rgba(139, 22, 13, 0.1) 1px, transparent 1px),
+    linear-gradient(120deg, rgba(139, 22, 13, 0.1) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(139, 22, 13, 0.15) 1px, transparent 1px);
+  background-size: 60px 105px, 60px 105px, 60px 105px;
+  background-position: center center;
+}
+
+/* Helios Patterns */
+[data-theme="fantasy"][data-fantasy-scheme="helios"] body {
+  background-image: 
+    repeating-linear-gradient(45deg, rgba(166, 124, 82, 0.03) 0, rgba(166, 124, 82, 0.03) 1px, transparent 1px, transparent 10px),
+    repeating-linear-gradient(-45deg, rgba(166, 124, 82, 0.03) 0, rgba(166, 124, 82, 0.03) 1px, transparent 1px, transparent 10px);
+  background-size: 20px 20px;
+}
+
+[data-theme="fantasy"][data-fantasy-scheme="helios"] .glass-panel {
+  background-color: rgba(74, 29, 32, 0.7);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 59, 48, 0.1);
+  box-shadow: none;
+}
+
+[data-theme="fantasy"][data-fantasy-scheme="helios"] .hud-widget-grid {
+  background-image: 
+    repeating-linear-gradient(0deg, rgba(255, 59, 48, 0.12) 0, rgba(255, 59, 48, 0.12) 2px, transparent 2px, transparent 40px),
+    repeating-linear-gradient(90deg, rgba(255, 59, 48, 0.12) 0, rgba(255, 59, 48, 0.12) 2px, transparent 2px, transparent 40px);
+  background-size: 40px 40px;
+}
+
+/* Blues Patterns */
+[data-theme="fantasy"][data-fantasy-scheme="blues"] body {
+  background-image: 
+    radial-gradient(rgba(248, 250, 252, 0.05) 1px, transparent 1px);
+  background-size: 30px 30px;
+}
+
+[data-theme="fantasy"][data-fantasy-scheme="blues"] .glass-panel {
+  background-color: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(6, 182, 212, 0.15);
+  box-shadow: inset 0 0 10px rgba(6, 182, 212, 0.03);
+}
+
+[data-theme="fantasy"][data-fantasy-scheme="blues"] .hud-widget-grid {
+  background-image: 
+    radial-gradient(circle, rgba(6, 182, 212, 0.1) 1px, transparent 1px),
+    linear-gradient(rgba(6, 182, 212, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(6, 182, 212, 0.04) 1px, transparent 1px);
+  background-size: 40px 40px, 20px 20px, 20px 20px;
+}
+
+/* Grays Patterns */
+[data-theme="fantasy"][data-fantasy-scheme="grays"] body {
+  background-image: 
+    linear-gradient(45deg, rgba(255, 255, 255, 0.02) 25%, transparent 25%, transparent 75%, rgba(255, 255, 255, 0.02) 75%, rgba(255, 255, 255, 0.02)),
+    linear-gradient(45deg, rgba(255, 255, 255, 0.02) 25%, transparent 25%, transparent 75%, rgba(255, 255, 255, 0.02) 75%, rgba(255, 255, 255, 0.02));
+  background-size: 10px 10px;
+  background-position: 0 0, 5px 5px;
+}
+
+[data-theme="fantasy"][data-fantasy-scheme="grays"] .glass-panel {
+  background-color: rgba(75, 85, 99, 0.7);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(249, 250, 251, 0.05);
+  box-shadow: none;
+}
+
+[data-theme="fantasy"][data-fantasy-scheme="grays"] .hud-widget-grid {
+  background-image: 
+    repeating-linear-gradient(45deg, rgba(250, 204, 21, 0.08) 0, rgba(250, 204, 21, 0.08) 1px, transparent 1px, transparent 20px),
+    repeating-linear-gradient(-45deg, rgba(250, 204, 21, 0.08) 0, rgba(250, 204, 21, 0.08) 1px, transparent 1px, transparent 20px);
+}
+
+/* Peerless Patterns */
+[data-theme="fantasy"][data-fantasy-scheme="peerless"] body {
+  background-image: 
+    linear-gradient(to right, rgba(229, 225, 216, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(229, 225, 216, 0.03) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+
+[data-theme="fantasy"][data-fantasy-scheme="peerless"] .glass-panel {
+  background-color: rgba(30, 27, 24, 0.7);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(212, 175, 55, 0.15);
+  box-shadow: none;
+}
+
+[data-theme="fantasy"][data-fantasy-scheme="peerless"] .hud-widget-grid {
+  background-image: 
+    repeating-linear-gradient(135deg, rgba(155, 27, 27, 0.1) 0, rgba(155, 27, 27, 0.1) 2px, transparent 2px, transparent 30px),
+    repeating-linear-gradient(45deg, rgba(212, 175, 55, 0.05) 0, rgba(212, 175, 55, 0.05) 1px, transparent 1px, transparent 60px);
+}
+
+/* Visual Degradation: Glitch Effect */
+@keyframes glitch-skew {
+  0% { transform: skew(0deg); }
+  20% { transform: skew(-1deg); }
+  40% { transform: skew(1deg); }
+  60% { transform: skew(-0.5deg); }
+  80% { transform: skew(0.5deg); }
+  100% { transform: skew(0deg); }
+}
+
+@keyframes glitch-anim {
+  0% { clip: rect(42px, 9999px, 44px, 0); }
+  5% { clip: rect(12px, 9999px, 59px, 0); }
+  10% { clip: rect(48px, 9999px, 29px, 0); }
+  15% { clip: rect(42px, 9999px, 73px, 0); }
+  20% { clip: rect(63px, 9999px, 27px, 0); }
+  25% { clip: rect(34px, 9999px, 55px, 0); }
+  30% { clip: rect(86px, 9999px, 73px, 0); }
+  35% { clip: rect(20px, 9999px, 20px, 0); }
+  40% { clip: rect(26px, 9999px, 60px, 0); }
+  45% { clip: rect(25px, 9999px, 66px, 0); }
+  50% { clip: rect(57px, 9999px, 98px, 0); }
+  55% { clip: rect(5px, 9999px, 46px, 0); }
+  60% { clip: rect(82px, 9999px, 31px, 0); }
+  65% { clip: rect(54px, 9999px, 27px, 0); }
+  70% { clip: rect(28px, 9999px, 99px, 0); }
+  75% { clip: rect(45px, 9999px, 69px, 0); }
+  80% { clip: rect(23px, 9999px, 85px, 0); }
+  85% { clip: rect(55px, 9999px, 46px, 0); }
+  90% { clip: rect(10px, 9999px, 35px, 0); }
+  95% { clip: rect(33px, 9999px, 81px, 0); }
+  100% { clip: rect(63px, 9999px, 37px, 0); }
+}
+
+.glitch-active {
+  position: relative;
+}
+
+.glitch-active::before,
+.glitch-active::after {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: inherit;
+  visibility: visible;
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 50;
+}
+
+.glitch-active::before {
+  left: 2px;
+  text-shadow: -2px 0 #ff00c1;
+  clip: rect(44px, 450px, 56px, 0);
+  animation: glitch-anim 5s infinite linear alternate-reverse;
+}
+
+.glitch-active::after {
+  left: -2px;
+  text-shadow: -2px 0 #00fff9, 2px 2px #ff00c1;
+  animation: glitch-anim 2s infinite linear alternate-reverse;
+}
+
+/* Extreme Glitch - For text elements */
+.text-glitch {
+  display: inline-block;
+  animation: glitch-skew 0.5s infinite linear alternate-reverse;
+}
