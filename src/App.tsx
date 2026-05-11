@@ -873,9 +873,10 @@ function AppContent() {
       </AnimatePresence>
 
       {/* Top App Bar Shell - Hidden on Desktop/Tablet */}
-      <header className="fixed top-0 left-0 right-0 z-50 flex md:hidden justify-center items-center px-4 md:px-10 pb-4 md:pb-8 bg-void/50 backdrop-blur-md md:bg-transparent pointer-events-none">
-        
-        <div className="flex flex-col items-center justify-center w-[40vw] mt-4 md:mt-8">
+      <header className={cn(
+        "fixed top-0 left-0 right-0 z-50 flex md:hidden justify-center items-center px-4 md:px-10 pb-4 md:pb-8 bg-void/50 backdrop-blur-md md:bg-transparent pointer-events-none pt-safe"
+      )}>
+        <div className="flex flex-col items-center justify-center w-[40vw] mt-2 sm:mt-4 md:mt-8">
           <VanguardLogo className="drop-shadow-[0_0_10px_var(--primary-glow)]" />
         </div>
       </header>
@@ -1125,7 +1126,7 @@ function AppContent() {
       {/* Main Content Area */}
       <main 
         ref={mainRef}
-        className="flex-1 w-full md:w-[calc(100%-260px)] max-w-none ml-0 md:ml-[260px] px-4 md:px-[var(--app-gutter)] relative h-full flex flex-col items-center pt-24 md:pt-[100px] pb-24 md:pb-12 overflow-x-hidden overflow-y-auto custom-scrollbar hud-widget-grid"
+        className="flex-1 w-full md:w-[calc(100%-260px)] max-w-none ml-0 md:ml-[260px] px-4 md:px-[var(--app-gutter)] relative h-full flex flex-col items-center pt-[calc(6rem+env(safe-area-inset-top))] md:pt-[100px] pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-12 overflow-x-hidden overflow-y-auto custom-scrollbar hud-widget-grid"
       >
         <div className="hidden md:flex flex-col w-full mb-4">
           <PageHeader activeView={activeView} />

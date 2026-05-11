@@ -71,7 +71,7 @@ export const WelcomeCarousel: React.FC<WelcomeCarouselProps> = ({ onSkip, onSign
   }, [currentStep, handleNext]);
 
   return (
-    <div className="fixed inset-0 z-50 bg-void flex flex-col items-center p-6 text-white text-center">
+    <div className="fixed inset-0 z-50 bg-void flex flex-col items-center px-6 pb-6 text-white text-center pt-safe">
       {/* Branding Header */}
       <div className="flex flex-col items-center mb-6">
         <h1 className="font-headline text-3xl font-black tracking-tighter uppercase text-volt mb-1 drop-shadow-[0_0_10px_var(--primary-glow)]">

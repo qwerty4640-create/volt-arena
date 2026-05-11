@@ -382,7 +382,7 @@ export const OnboardingFlow = ({
   return (
     <div
       ref={scrollContainerRef}
-      className="fixed inset-0 z-[100] bg-void flex justify-center p-2 md:p-6 overflow-y-auto custom-scrollbar"
+      className="fixed inset-0 z-[100] bg-void flex justify-center px-2 pb-2 md:p-6 overflow-y-auto custom-scrollbar pt-safe"
     >
       <div className="w-full max-w-2xl my-auto py-4 md:py-8">
         <AnimatePresence mode="wait">

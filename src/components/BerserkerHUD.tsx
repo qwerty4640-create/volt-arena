@@ -38,7 +38,7 @@ export const BerserkerHUD = ({ onComplete, onAddActivity, viewType = 'training' 
   const layoutPadding = "w-full";
 
   return (
-    <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
+    <div className="relative w-full h-full flex items-center justify-center overflow-hidden pt-safe pb-safe px-4 md:p-12 text-white">
       <div className={`relative z-10 max-w-[var(--app-max-width)] grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center mx-auto ${layoutPadding}`}>
         {/* Left: Aggression Metrics */}
         <div className="col-span-3 flex flex-col gap-8">
