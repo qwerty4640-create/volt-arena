@@ -48,7 +48,7 @@ export const ReflectionModal = ({ session, onSave, onClose }: ReflectionModalPro
           <div className="inline-flex items-center justify-center w-16 h-16 bg-volt/10 text-volt border border-volt/20 mb-2">
             <MessageSquare size={32} />
           </div>
-          <h2 className="font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tight text-white">Post-Mission Reflection</h2>
+          <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight text-white">Post-Mission Reflection</h2>
           <p className="text-xs text-zinc-500 uppercase font-bold tracking-widest">
             {session.title} • {new Date(session.completedAt || 0).toLocaleDateString()}
           </p>
@@ -62,7 +62,7 @@ export const ReflectionModal = ({ session, onSave, onClose }: ReflectionModalPro
                 <span className="text-[10px] font-black uppercase tracking-widest">Actual Mission RPE</span>
                 <InfoTooltip term="sRPE" />
               </div>
-              <span className="text-3xl font-black italic text-volt">{rpe}</span>
+              <span className="text-3xl font-black text-volt">{rpe}</span>
             </div>
             
             <div className="relative h-12 flex items-center">

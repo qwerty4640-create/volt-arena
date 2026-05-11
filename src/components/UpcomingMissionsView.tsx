@@ -53,6 +53,10 @@ export const UpcomingMissionsView: React.FC<UpcomingMissionsViewProps> = ({ onBa
     };
   });
 
+  const filteredHistory = profile?.programResetAt
+    ? history.filter(s => (s.completedAt || 0) > profile.programResetAt!)
+    : history;
+
   const handleBack = () => {
     if (viewState.level === 'missions') {
       setViewState(prev => ({ ...prev, level: 'phases', phaseIndex: null }));
@@ -64,7 +68,7 @@ export const UpcomingMissionsView: React.FC<UpcomingMissionsViewProps> = ({ onBa
   };
 
   const getBreadcrumbs = () => {
-    const crumbs = ['Upcoming Cycle'];
+    const crumbs = ['Upcoming Deployment'];
     if (viewState.blockIndex !== null) crumbs.push(hierarchy[viewState.blockIndex].label);
     if (viewState.phaseIndex !== null && viewState.blockIndex !== null) {
       crumbs.push(hierarchy[viewState.blockIndex].phases[viewState.phaseIndex].label.split(' - ').pop() || '');
@@ -73,7 +77,7 @@ export const UpcomingMissionsView: React.FC<UpcomingMissionsViewProps> = ({ onBa
   };
 
   return (
-    <div className="flex flex-col min-h-full w-full max-w-7xl mx-auto px-4 md:px-8 pt-24 md:pt-32 pb-20">
+    <div className="flex flex-col min-h-full w-full max-w-7xl mx-auto px-4 pt-12 md:pt-16 pb-20">
       <header className="mb-12">
         <button
           onClick={handleBack}
@@ -86,14 +90,14 @@ export const UpcomingMissionsView: React.FC<UpcomingMissionsViewProps> = ({ onBa
         </button>
         <div className="flex flex-col mb-2">
           <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600 mb-2">{getBreadcrumbs()}</span>
-          <h1 className="font-headline text-4xl md:text-6xl font-black uppercase italic tracking-tighter text-white">
+          <h1 className="font-headline text-2xl font-black uppercase tracking-tighter text-white">
             {viewState.level === 'blocks' && <>Current <span className="text-volt">Strategy</span></>}
             {viewState.level === 'phases' && <>Operational <span className="text-volt">Phases</span></>}
             {viewState.level === 'missions' && <>Mission <span className="text-volt">Deployment</span></>}
           </h1>
         </div>
         <p className="text-zinc-500 text-sm font-medium max-w-xl">
-          {viewState.level === 'blocks' && "View the high-level program blocks defining your current multi-month training cycle."}
+          {viewState.level === 'blocks' && "View the high-level program blocks defining your current multi-month deployment cycle."}
           {viewState.level === 'phases' && `Drilling down into the specific tactical phases for the ${hierarchy[viewState.blockIndex!]?.label} block.`}
           {viewState.level === 'missions' && "Individual mission logistics and performance prescriptions for this operational phase."}
         </p>
@@ -112,24 +116,24 @@ export const UpcomingMissionsView: React.FC<UpcomingMissionsViewProps> = ({ onBa
               className="glass-panel p-6 bg-void/50 border border-white/5 group hover:border-volt/30 transition-all cursor-pointer"
             >
               <div className="flex justify-between items-start mb-8">
-                <div className="px-3 py-1 bg-zinc-900 border border-white/10">
-                  <span className="text-[10px] font-black tracking-widest text-volt uppercase italic">Block #0{i + 1}</span>
+                <div className="h-8 inline-flex items-center px-3 bg-zinc-900 border border-white/10">
+                  <span className="text-[10px] font-black tracking-widest text-volt uppercase">Block #0{i + 1}</span>
                 </div>
                 <div className="w-10 h-10 border border-white/5 flex items-center justify-center bg-zinc-900 group-hover:border-volt/30 transition-colors">
                   <ArrowRight size={18} className="text-zinc-600 group-hover:text-volt transition-colors" />
                 </div>
               </div>
 
-              <h3 className="font-headline text-3xl font-black uppercase italic tracking-tight text-white mb-2">{block.label}</h3>
+              <h3 className="font-headline text-xl font-black uppercase tracking-tight text-white mb-2">{block.label}</h3>
               <div className="flex items-center gap-4">
                 <div>
                   <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest mb-1">Duration</p>
-                  <p className="text-xs font-black text-zinc-300 uppercase italic">{block.totalWeeks} Weeks</p>
+                  <p className="text-xs font-black text-zinc-300 uppercase">{block.totalWeeks} Weeks</p>
                 </div>
                 <div className="w-px h-8 bg-white/5" />
                 <div>
-                  <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest mb-1">Tactical Sub-systems</p>
-                  <p className="text-xs font-black text-zinc-300 uppercase italic">{block.phases.length} Phases</p>
+                  <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest mb-1">Phases</p>
+                  <p className="text-xs font-black text-zinc-300 uppercase">{block.phases.length} Phases</p>
                 </div>
               </div>
             </motion.div>
@@ -150,7 +154,7 @@ export const UpcomingMissionsView: React.FC<UpcomingMissionsViewProps> = ({ onBa
               className="glass-panel p-6 bg-void/50 border border-white/5 group hover:border-volt/30 transition-all cursor-pointer"
             >
               <div className="flex justify-between items-start mb-8">
-                <div className="px-3 py-1 bg-zinc-900 border border-white/10 uppercase italic">
+                <div className="h-8 inline-flex items-center px-3 bg-zinc-900 border border-white/10 uppercase">
                   <span className="text-[10px] font-black tracking-widest text-volt uppercase">Phase #0{i + 1}</span>
                 </div>
                 <div className="w-10 h-10 border border-white/5 flex items-center justify-center bg-zinc-900 group-hover:border-volt/30 transition-colors">
@@ -158,18 +162,18 @@ export const UpcomingMissionsView: React.FC<UpcomingMissionsViewProps> = ({ onBa
                 </div>
               </div>
 
-              <h3 className="font-headline text-2xl font-black uppercase italic tracking-tight text-white mb-2">
+              <h3 className="font-headline text-2xl font-black uppercase tracking-tight text-white mb-2">
                 {phase.label.split(' - ').pop()}
               </h3>
               <div className="flex items-center gap-4">
                 <div>
                   <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest mb-1">Window</p>
-                  <p className="text-xs font-black text-zinc-300 uppercase italic">{phase.durationWeeks} Weeks</p>
+                  <p className="text-xs font-black text-zinc-300 uppercase">{phase.durationWeeks} Weeks</p>
                 </div>
                 <div className="w-px h-8 bg-white/5" />
                 <div>
                   <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest mb-1">Engagements</p>
-                  <p className="text-xs font-black text-zinc-300 uppercase italic">{phase.durationWeeks * missionsPerWeek} Missions</p>
+                  <p className="text-xs font-black text-zinc-300 uppercase">{phase.durationWeeks * missionsPerWeek} Missions</p>
                 </div>
               </div>
             </motion.div>
@@ -199,7 +203,7 @@ export const UpcomingMissionsView: React.FC<UpcomingMissionsViewProps> = ({ onBa
               ? Math.round((blockForThisMission.block.baseIntensity + ((blockForThisMission.weekInBlock - 1) * blockForThisMission.block.intensityIncrementPerWeek)) * 100) 
               : 0;
 
-            const isCompleted = absoluteMissionNum <= (history?.length || 0);
+            const isCompleted = filteredHistory.some(s => s.title?.startsWith(`W${absoluteWeek}D${dayInWeek}:`));
 
             return (
               <motion.div
@@ -209,8 +213,7 @@ export const UpcomingMissionsView: React.FC<UpcomingMissionsViewProps> = ({ onBa
                 transition={{ delay: i * 0.05 }}
                 onClick={() => setSelectedMission(getWorkoutTemplate(absoluteWeek, dayInWeek))}
                 className={`glass-panel p-4 border transition-all cursor-pointer flex flex-col justify-between ${
-                  isCompleted ? 'bg-zinc-900/50 border-white/5 opacity-50 grayscale' : 'bg-void/50 border-white/5 group hover:border-volt/30'
-                }`}
+ isCompleted ? 'bg-zinc-900/50 border-white/5 opacity-50 grayscale' : 'bg-void/50 border-white/5 group hover:border-volt/30' }`}
               >
                 <div>
                   <div className="flex justify-between items-start mb-4">
@@ -219,7 +222,7 @@ export const UpcomingMissionsView: React.FC<UpcomingMissionsViewProps> = ({ onBa
                       <span className="text-[8px] font-bold text-zinc-500 uppercase tracking-widest leading-none">Week {absoluteWeek} | Day {dayInWeek}</span>
                     </div>
                     {isCompleted ? (
-                      <div className="px-2 py-0.5 bg-green-500/10 border border-green-500/20">
+                      <div className="h-8 inline-flex items-center px-2 bg-green-500/10 border border-green-500/20">
                         <span className="text-[8px] font-black text-green-500 uppercase tracking-widest">Completed</span>
                       </div>
                     ) : (
@@ -232,7 +235,7 @@ export const UpcomingMissionsView: React.FC<UpcomingMissionsViewProps> = ({ onBa
                   <div className="space-y-3">
                     <div>
                       <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest mb-1">Objective</p>
-                      <p className="text-xs font-black text-white uppercase italic tracking-tight">
+                      <p className="text-xs md:text-sm font-bold text-white uppercase tracking-tight">
                         {blockForThisMission?.block.label || 'TBD'}
                       </p>
                     </div>

@@ -104,7 +104,7 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
                 )}
               </div>
               <div className="text-left">
-                <h3 className="font-sans text-xl italic font-black uppercase tracking-tight text-white group-hover:text-volt transition-colors">
+                <h3 className="font-sans text-xl font-black uppercase tracking-tight text-white group-hover:text-volt transition-colors">
                   {profile?.firstName && profile?.lastName
                     ? `${profile.firstName} ${profile.lastName}`
                     : profile?.firstName || profile?.lastName || 'Athlete Profile'}
@@ -119,6 +119,35 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
           </button>
         </motion.div>
       )}
+
+      {/* Tactical Field Manual Trigger */}
+      <motion.div
+        initial={{ y: -10, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.08 }}
+        className="relative overflow-hidden bg-zinc-900/40"
+      >
+        <button
+          onClick={() => setShowFieldManual(true)}
+          className="glass-panel w-full px-4 py-4 md:p-8 flex items-center justify-between hover:bg-volt/[0.06] transition-all group active:scale-[0.995]"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-volt/10 flex items-center justify-center border border-volt/20 group-hover:border-volt/50 transition-colors">
+              <Book size={20} className="text-volt" />
+            </div>
+            <div className="text-left">
+              <h3 className="font-sans text-xl font-black uppercase tracking-tight text-white group-hover:text-volt transition-colors">
+                Tactical Field Manual
+              </h3>
+              <p className="text-xs text-zinc-500 font-medium mt-1">Access combat guidelines and operational procedures.</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 text-zinc-500 group-hover:text-volt transition-colors">
+            <span className="text-[10px] font-black uppercase tracking-widest hidden sm:block">Open Manual</span>
+            <ChevronRight size={24} className="text-volt group-hover:scale-110 transition-transform" />
+          </div>
+        </button>
+      </motion.div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Theme Settings */}

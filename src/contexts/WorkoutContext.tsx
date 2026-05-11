@@ -51,7 +51,8 @@ export interface Set {
 }
 
 export interface Exercise {
-  id: string;
+  id: string; // Session-specific unique ID
+  exerciseId: string; // Permanent ID from EXERCISE_DATABASE
   name: string;
   sets: Set[];
   restPeriod?: number;
@@ -208,9 +209,9 @@ const WORKOUT_TEMPLATES = [
   {
     title: 'Hybrid',
     slots: [
-      { pattern: 'squat', weight: 40, reps: '12', sets: 3 },
-      { pattern: 'push_vertical', weight: 25, reps: '10', sets: 3 },
-      { pattern: 'pull_horizontal', weight: 30, reps: '12', sets: 3 },
+      { pattern: 'squat', weight: 40, reps: '12', sets: 3, impact: 'low' },
+      { pattern: 'push_horizontal', weight: 25, reps: '10', sets: 3, impact: 'low' },
+      { pattern: 'pull_vertical', weight: 30, reps: '12', sets: 3, impact: 'low' },
     ]
   }
 ];
@@ -305,7 +306,7 @@ const MEDICAL_TEMPLATES = [
 ];
 
 const calculateFallback1RM = (
-  exerciseName: string,
+  exercise: ExerciseDefinition,
   bodyweight: number | undefined,
   level: string,
   unit: string,
@@ -329,34 +330,52 @@ const calculateFallback1RM = (
   const maxBw = unit === 'imperial' ? 250 : 115;
   const effectiveBw = Math.min(bw, maxBw);
 
-  const name = exerciseName.toLowerCase();
+  const name = exercise.name.toLowerCase();
   let multiplier = 0;
   const isFemale = gender === 'female';
 
-  if (isMainLiftMatch(name, 'Squat')) {
+  if (exercise.pattern === 'squat' && exercise.impact === 'high') {
     if (isFemale) {
       multiplier = { 'untrained': 0.5, 'novice': 0.8, 'intermediate': 1.0, 'advanced': 1.3, 'elite': 1.6 }[level] || 0.5;
     } else {
       multiplier = { 'untrained': 0.8, 'novice': 1.2, 'intermediate': 1.5, 'advanced': 2.0, 'elite': 2.4 }[level] || 0.8;
     }
-  } else if (isMainLiftMatch(name, 'Bench Press')) {
+  } else if (exercise.pattern === 'push_horizontal' && exercise.impact === 'medium') {
+    // Bench Press equivalent
     if (isFemale) {
       multiplier = { 'untrained': 0.4, 'novice': 0.5, 'intermediate': 0.7, 'advanced': 0.9, 'elite': 1.2 }[level] || 0.4;
     } else {
       multiplier = { 'untrained': 0.6, 'novice': 0.9, 'intermediate': 1.2, 'advanced': 1.5, 'elite': 1.9 }[level] || 0.6;
     }
-  } else if (isMainLiftMatch(name, 'Deadlift')) {
+  } else if (exercise.pattern === 'hinge' && exercise.impact === 'high') {
+    // Deadlift equivalent
     if (isFemale) {
       multiplier = { 'untrained': 0.6, 'novice': 1.0, 'intermediate': 1.2, 'advanced': 1.6, 'elite': 2.0 }[level] || 0.6;
     } else {
       multiplier = { 'untrained': 1.0, 'novice': 1.5, 'intermediate': 1.8, 'advanced': 2.3, 'elite': 2.8 }[level] || 1.0;
     }
+  } else if (exercise.pattern === 'push_vertical' && exercise.impact === 'high') {
+      // Overhead Press equivalent
+      if (isFemale) {
+          multiplier = { 'untrained': 0.3, 'novice': 0.4, 'intermediate': 0.5, 'advanced': 0.7, 'elite': 0.9 }[level] || 0.3;
+      } else {
+          multiplier = { 'untrained': 0.5, 'novice': 0.7, 'intermediate': 0.9, 'advanced': 1.1, 'elite': 1.3 }[level] || 0.5;
+      }
   } else {
-    // For accessories, scale the template base weight to an estimated 1RM
+    // For accessories, machine, or low-impact alternatives, scale the template base weight
     const tierMultiplier = { 'untrained': 0.8, 'novice': 1, 'intermediate': 1.2, 'advanced': 1.4, 'elite': 1.6 }[level] || 0.8;
     const unitMultiplier = unit === 'imperial' ? 2.20462 : 1;
     const genderMultiplier = isFemale ? 0.65 : 1.0;
-    multiplier = (templateBaseWeight / effectiveBw) * tierMultiplier * unitMultiplier * 1.33 * genderMultiplier;
+    
+    // Goblet squat, DB presses, etc. require significantly reduced weight relative to barbells
+    let exerciseTypeModifier = 1.0;
+    if (name.includes('dumbbell') || name.includes('db')) exerciseTypeModifier = 0.45;
+    else if (name.includes('goblet')) exerciseTypeModifier = 0.35;
+    else if (name.includes('machine') || name.includes('cable') || name.includes('lat pulldown')) exerciseTypeModifier = 0.8;
+    else if (name.includes('leg press')) exerciseTypeModifier = 1.8; // Leg press leverages differently
+    else if (exercise.impact === 'low') exerciseTypeModifier = 0.6;
+
+    multiplier = (templateBaseWeight / effectiveBw) * tierMultiplier * unitMultiplier * 1.33 * genderMultiplier * exerciseTypeModifier;
   }
 
   let estimated1RM = effectiveBw * multiplier;
@@ -484,6 +503,20 @@ const createSessionFromTemplate = (
 
   // 4. Volume and Goal-Specific Logic
   let volumeModifier = 1.0 * interferenceModifier;
+
+  // Intelligent Frequency Compensation: Scale volume per session if training more frequently
+  // than the 3-day baseline to prevent excessive weekly load on repeated patterns.
+  const frequency = profile?.trainingFrequency || 3;
+  if (frequency > 3) {
+    // If training 4 days, scale each session by ~82% (4 * 0.82 = 3.3 sessions worth of volume)
+    // If training 5 days, scale each session by ~66% (5 * 0.66 = 3.3 sessions worth of volume)
+    // This allows for a slight weekly increase (~10%) but prevents 100% hikes on repeated templates.
+    const baselineDays = 3;
+    const loadAllowance = 1.1; // 10% more weekly volume capacity allowed for higher frequency
+    const scalingFactor = (baselineDays / frequency) * loadAllowance;
+    volumeModifier *= Math.min(1.0, scalingFactor);
+  }
+
   const isFinalWeek = weekInBlock === block.durationWeeks;
 
   if (goals.includes('pure_strength') && block.type === BlockType.PEAKING && isFinalWeek) {
@@ -516,7 +549,8 @@ const createSessionFromTemplate = (
     totalWeek: week,
     exercises: dynamicSlots.map((slot, i) => {
       const preferredImpact = goals.includes('longevity') ? 'low' : 'high';
-      let availableExercises = getExercisesByPattern(slot.pattern as any, preferredImpact);
+      const selectedImpact = (slot as any).impact || preferredImpact;
+      let availableExercises = getExercisesByPattern(slot.pattern as any, selectedImpact);
 
       // Filter by gym access
       if (profile?.hasFullGymAccess === false) {
@@ -557,9 +591,13 @@ const createSessionFromTemplate = (
       });
 
       let weight = 0;
-      const isSquat = slot.pattern === 'squat';
-      const isBench = slot.pattern === 'push_horizontal';
-      const isDeadlift = slot.pattern === 'hinge';
+      const isSquatPattern = slot.pattern === 'squat';
+      const isBenchPattern = slot.pattern === 'push_horizontal';
+      const isDeadliftPattern = slot.pattern === 'hinge';
+      
+      const isSquat = isSquatPattern && selectedExercise.impact === 'high' && !selectedExercise.name.toLowerCase().includes('dumbbell') && !selectedExercise.name.toLowerCase().includes('goblet');
+      const isBench = isBenchPattern && selectedExercise.impact === 'high' && !selectedExercise.name.toLowerCase().includes('dumbbell');
+      const isDeadlift = isDeadliftPattern && selectedExercise.impact === 'high' && !selectedExercise.name.toLowerCase().includes('dumbbell');
       const isMainLift = isSquat || isBench || isDeadlift;
 
       const currentTier = profile ? calculateTier(
@@ -589,12 +627,12 @@ const createSessionFromTemplate = (
           weight = Math.round((normalizedPR * adjustedIntensity) / 5) * 5;
         } else {
           const baseWeight = typeof slot.weight === 'string' ? parseFloat(slot.weight) : slot.weight;
-          const estimated1RM = calculateFallback1RM(selectedExercise.name, profile.weight, currentTier, currentUnit, baseWeight, profile.age, profile.gender, profile.unit);
+          const estimated1RM = calculateFallback1RM(selectedExercise, profile.weight, currentTier, currentUnit, baseWeight, profile.age, profile.gender, profile.unit);
           weight = Math.round((estimated1RM * adjustedIntensity) / 5) * 5;
         }
       } else {
         const baseWeight = typeof slot.weight === 'string' ? parseFloat(slot.weight) : slot.weight;
-        const estimated1RM = calculateFallback1RM(selectedExercise.name, profile?.weight, currentTier, currentUnit, baseWeight, profile?.age, profile?.gender, profile?.unit);
+        const estimated1RM = calculateFallback1RM(selectedExercise, profile?.weight, currentTier, currentUnit, baseWeight, profile?.age, profile?.gender, profile?.unit);
         weight = Math.round((estimated1RM * adjustedIntensity) / 5) * 5;
       }
 
@@ -619,6 +657,7 @@ const createSessionFromTemplate = (
 
       return {
         id: `e${i}`,
+        exerciseId: selectedExercise.id,
         name: exerciseName,
         isSquat,
         isBench,

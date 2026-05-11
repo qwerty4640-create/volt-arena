@@ -169,18 +169,20 @@ export function getExerciseSubstitution(
   injuryList: string[], 
   gymProfile: GymProfile
 ): string {
-  // Example Substitution Map
-  const swapMap: Record<string, string[]> = {
-    'squat_conventional': ['squat_high_bar', 'squat_safety_bar', 'leg_press'],
-    'deadlift_conventional': ['deadlift_sumo', 'deadlift_hex_bar', 'rdl'],
-    'bench_flat': ['bench_incline', 'dumbbell_press', 'machine_chest_press']
+  // Mapping of primary movements to their swappable variations based on pattern and impact
+  const substitutions: Record<string, string[]> = {
+    'barbell_squat': ['squat_high_bar', 'squat_front', 'squat_safety_bar', 'squat_goblet'],
+    'deadlift_conventional': ['deadlift_sumo', 'deadlift_hex_bar', 'rdl', 'stiff_leg_deadlift'],
+    'bench_press': ['bench_press_close_grip', 'bench_press_incline', 'bench_press_dumbbell'],
+    'overhead_press': ['push_press', 'seated_db_press', 'z_press', 'db_shoulder_press'],
+    'pull_ups': ['lat_pulldowns', 'chin_ups', 'neutral_grip_pull_ups']
   };
 
   if (!injuryList.includes(targetExerciseId)) {
     return targetExerciseId; // No injury, proceed as normal
   }
 
-  const alternatives = swapMap[targetExerciseId] || [];
+  const alternatives = substitutions[targetExerciseId] || [];
   
   for (const alt of alternatives) {
     if (!injuryList.includes(alt)) {

@@ -75,7 +75,7 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({
                     <BarChart3 size={24} />
                   </div>{*/}
                   <div>
-                    <h3 className="font-sans text-2xl font-black uppercase italic tracking-tight text-white">Full Deployment Plan</h3>
+                    <h3 className="font-sans text-2xl font-black uppercase tracking-tight text-white">Full Deployment Plan</h3>
                     <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Comprehensive Mission Roadmap</p>
                   </div>
                 </div>
@@ -118,12 +118,12 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({
                             {/* Block Type Badge */}
                             <div className="flex-1 flex items-center gap-4">
                               <div className="w-12 h-12 flex flex-col items-center justify-center border border-white/10 bg-void">
-                                <span className="text-[14px] font-black italic text-white leading-none">{idx + 1}</span>
+                                <span className="text-[14px] font-black text-white leading-none">{idx + 1}</span>
                                 <span className="text-[8px] font-black text-zinc-500 uppercase">BLOCK</span>
                               </div>
                               <div>
                                 <div className="flex items-center gap-4">
-                                  <h5 className="font-headline text-lg font-black italic text-white uppercase tracking-tight">{block.type}</h5>
+                                  <h5 className="font-headline text-lg font-black text-white uppercase tracking-tight">{block.type}</h5>
                                   <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500 border border-white/10 px-1.5 py-0.5">
                                     {block.durationWeeks}W
                                   </span>
@@ -138,11 +138,11 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({
                             <div className="flex items-center justify-center gap-8 w-full md:w-auto pt-4 md:pt-0 border-t md:border-t-0 border-white/5">
                               <div className="flex flex-col items-center">
                                 <span className="text-[8px] font-black uppercase text-zinc-500 tracking-tighter">REP RANGE</span>
-                                <span className="text-sm font-black italic text-volt">{block.baseReps}</span>
+                                <span className="text-sm font-black text-volt">{block.baseReps}</span>
                               </div>
                               <div className="flex flex-col items-center">
                                 <span className="text-[8px] font-black uppercase text-zinc-500 tracking-tighter">SETS</span>
-                                <span className="text-sm font-black italic text-white">{block.baseSets}</span>
+                                <span className="text-sm font-black text-white">{block.baseSets}</span>
                               </div>
                               <div className="flex flex-col items-center min-w-[60px]">
                                 <span className="text-[8px] font-black uppercase text-zinc-500 tracking-tighter">EFFORT</span>

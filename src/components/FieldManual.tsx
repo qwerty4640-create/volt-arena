@@ -50,7 +50,7 @@ export const FieldManual = ({ isOpen, onClose }: FieldManualProps) => {
                   <Book size={24} />
                 </div>
                 <div>
-                  <h2 className="text-xl md:text-2xl font-black uppercase italic tracking-tight text-white">
+                  <h2 className="text-xl md:text-2xl font-black uppercase tracking-tight text-white">
                     {t('settings.fieldManual')}
                   </h2>
                   <p className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest mt-0.5">
@@ -85,7 +85,7 @@ export const FieldManual = ({ isOpen, onClose }: FieldManualProps) => {
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-3">
                           <div className="w-1 h-6 bg-volt" />
-                          <h4 className="text-lg font-black uppercase italic tracking-tighter text-white">
+                          <h4 className="text-lg font-black uppercase tracking-tighter text-white">
                             {t(`tooltip.${key}.title`)}
                           </h4>
                         </div>

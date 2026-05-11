@@ -22,7 +22,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     return (
       <div className="glass-panel p-3 border-volt bg-void/90 min-w-[150px]">
         <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2">{label}</p>
-        <p className="text-xs font-black italic uppercase text-white mb-2">{dataPoint.types}</p>
+        <p className="text-xs font-black uppercase text-white mb-2">{dataPoint.types}</p>
         
         <div className="space-y-1">
           <div className="flex justify-between items-center text-[10px]">

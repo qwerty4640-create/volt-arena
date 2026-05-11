@@ -183,7 +183,7 @@ export const CustomizeDashboardModal = ({ isOpen, onClose, currentWidgets, onSav
               <div className="flex items-center p-6 border-b border-white/5">
                 <div className="flex items-center gap-3">
                   <Layout className="text-volt" size={20} />
-                  <h2 className="font-headline text-lg font-black uppercase italic tracking-tight text-white leading-tight">
+                  <h2 className="font-headline text-lg font-black uppercase tracking-tight text-white leading-tight">
                     {t('analysis.customizeDashboard')}
                   </h2>
                 </div>

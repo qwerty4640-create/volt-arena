@@ -168,7 +168,7 @@ export const NonProgramActivityModal = ({ isOpen, onClose, initialData }: NonPro
             <div className="p-4 md:p-6 bg-zinc-900 border-b border-zinc-800 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-4">
                 <div>
-                  <h3 className={cn("text-xl md:text-2xl font-black uppercase italic tracking-tight text-white")}>{t('analysis.logNonProgramActivity')}</h3>
+                  <h3 className={cn("text-xl md:text-2xl font-black uppercase  tracking-tight text-white")}>{t('analysis.logNonProgramActivity')}</h3>
                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">
                     {t('analysis.tacticalIntegration')}
                   </p>
@@ -247,7 +247,7 @@ export const NonProgramActivityModal = ({ isOpen, onClose, initialData }: NonPro
                 <div>
                   <h4 className="text-zinc-500 text-[10px] uppercase tracking-widest font-black mb-1">{t('nonProgram.estimatedBurn')}</h4>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-headline font-black italic text-volt tracking-tight">{estimatedCalories}</span>
+                    <span className="text-3xl font-headline font-black text-volt tracking-tight">{estimatedCalories}</span>
                     <span className="text-xs text-volt/70 uppercase tracking-widest font-black">kcal</span>
                   </div>
                 </div>
@@ -262,7 +262,7 @@ export const NonProgramActivityModal = ({ isOpen, onClose, initialData }: NonPro
                 <div className="space-y-4">
                   <div className="flex justify-between items-end">
                     <label htmlFor="intensity-range" className="block text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('nonProgram.intensity')}</label>
-                    <span className="text-2xl font-black italic text-volt">{rpe}</span>
+                    <span className="text-2xl font-black text-volt">{rpe}</span>
                   </div>
                   <input
                     id="intensity-range"
@@ -284,7 +284,7 @@ export const NonProgramActivityModal = ({ isOpen, onClose, initialData }: NonPro
                 <div className="space-y-4">
                   <div className="flex justify-between items-end">
                     <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('nonProgram.duration')}</label>
-                    <span className="text-2xl font-black italic text-white">{duration}</span>
+                    <span className="text-2xl font-black text-white">{duration}</span>
                   </div>
                   <div className="flex gap-2">
                     {[15, 30, 45, 60, 90].map((d) => (

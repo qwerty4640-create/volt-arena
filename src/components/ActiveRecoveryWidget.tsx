@@ -40,12 +40,12 @@ const SwipeCard = ({
           </div>
           <div className="flex flex-col items-end">
             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-volt mb-1 text-right">{t('recovery.impact')}</span>
-            <span className="text-3xl font-black italic text-white leading-none">+{dynamicBoost}%</span>
+            <span className="text-3xl font-black text-white leading-none">+{dynamicBoost}%</span>
           </div>
         </div>
 
         <div className="flex-1 flex flex-col justify-center relative z-10">
-          <h3 className="font-headline text-2xl md:text-3xl font-black uppercase italic leading-tight mb-2 tracking-tighter">
+          <h3 className="font-headline text-2xl md:text-3xl font-black uppercase leading-tight mb-2 tracking-tighter">
             {activity.label}
           </h3>
           <p className="text-[12px] text-zinc-500 font-medium mb-6 max-w-[280px]">
@@ -120,7 +120,7 @@ export const ActiveRecoveryWidget = () => {
     <div className="w-full mt-6 flex flex-col gap-6 overflow-hidden">
       <div className="flex items-center justify-between px-4">
         <div className="flex flex-col">
-          <h2 className="font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tight">
+          <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight">
             {t('recovery.title')}
           </h2>
           <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed">
@@ -138,7 +138,7 @@ export const ActiveRecoveryWidget = () => {
         {*/}
       </div>
 
-      <div className="relative w-full h-[320px] sm:h-[360px] perspective-1000 mb-8">
+      <div className="relative w-full h-[420px] sm:h-[480px] perspective-1000 mb-8">
         <AnimatePresence mode="popLayout">
           {activities.map((activity, index) => {
             if (index < currentIndex || index > currentIndex + 2) return null;
@@ -186,7 +186,7 @@ export const ActiveRecoveryWidget = () => {
             <div className="w-16 h-16 bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 flex items-center justify-center rounded-full mb-4">
               <Check size={32} />
             </div>
-            <h3 className="font-headline text-2xl font-black uppercase italic mb-2 text-white">{t('recovery.cleared')}</h3>
+            <h3 className="font-headline text-2xl font-black uppercase mb-2 text-white">{t('recovery.cleared')}</h3>
             <p className="text-zinc-500 text-xs uppercase tracking-widest font-bold">{t('recovery.optimized')}</p>
             <button
               onClick={resetStack}

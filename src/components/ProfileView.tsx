@@ -204,9 +204,9 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
   const isElite = profile.level === 'elite';
 
   const stats = [
-    { label: t('onboarding.squat'), value: profile.squatPR || 0, icon: Dumbbell, color: 'text-volt', glow: 'drop-shadow-[0_0_5px_rgba(0,182,255,0.5)]', animation: '' },
-    { label: t('onboarding.bench'), value: profile.benchPR || 0, icon: Dumbbell, color: 'text-volt', glow: 'drop-shadow-[0_0_5px_rgba(0,182,255,0.5)]', animation: '' },
-    { label: t('onboarding.deadlift'), value: profile.deadliftPR || 0, icon: Dumbbell, color: 'text-volt', glow: 'drop-shadow-[0_0_5px_rgba(0,182,255,0.5)]', animation: '' },
+    { label: t('onboarding.squat'), value: profile.squatPR || 0, icon: Dumbbell, color: 'text-volt', glow: 'drop-shadow-[0_0_5px_var(--primary-glow)]', animation: '' },
+    { label: t('onboarding.bench'), value: profile.benchPR || 0, icon: Dumbbell, color: 'text-volt', glow: 'drop-shadow-[0_0_5px_var(--primary-glow)]', animation: '' },
+    { label: t('onboarding.deadlift'), value: profile.deadliftPR || 0, icon: Dumbbell, color: 'text-volt', glow: 'drop-shadow-[0_0_5px_var(--primary-glow)]', animation: '' },
     { label: t('analysis.total'), value: (profile.squatPR || 0) + (profile.benchPR || 0) + (profile.deadliftPR || 0), icon: tierStyle.icon, color: tierStyle.color, glow: tierStyle.glow, animation: tierStyle.animation },
   ];
 
@@ -279,7 +279,7 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
           <div className="flex-1 text-center md:text-left space-y-4 pt-1">
             <div className="space-y-1">
               <div className="flex flex-col md:flex-row items-center justify-start gap-3">
-                <h2 className="font-sans text-3xl md:text-4xl font-black uppercase italic tracking-tighter text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.1)]">
+                <h2 className="font-sans text-3xl md:text-4xl font-black uppercase tracking-tighter text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.1)]">
                   {profile.firstName} {profile.lastName}
                 </h2>
                 <div className={cn(
@@ -370,7 +370,7 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
             <div className="p-8 bg-void/60 border-l-4 border-volt relative overflow-hidden">
               <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-500 mb-4 relative z-10">{t('analysis.totalLiftWeight')}</p>
               <div className="flex items-baseline gap-4 relative z-10">
-                <span className="text-7xl font-sans font-black text-volt italic tracking-tighter drop-shadow-[0_0_30px_rgba(0,182,255,0.4)]">
+                <span className="text-7xl font-sans font-black text-volt tracking-tighter drop-shadow-[0_0_30px_var(--primary-glow)]">
                   {(profile.squatPR || 0) + (profile.benchPR || 0) + (profile.deadliftPR || 0)}
                 </span>
                 <span className="text-sm font-black text-zinc-400 uppercase tracking-[0.2em]">{unit === 'metric' ? 'kg' : 'LBS'}</span>
@@ -388,7 +388,7 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
                     <span className="text-xs font-bold text-white uppercase tracking-widest group-hover:text-volt transition-colors">{stat.label}</span>
                   </div>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-lg font-sans font-black text-white italic">{stat.value}</span>
+                    <span className="text-lg font-sans font-black text-white">{stat.value}</span>
                     <span className="text-[8px] font-bold text-zinc-400 uppercase">{unit === 'metric' ? 'kg' : 'LBS'}</span>
                   </div>
                 </div>
@@ -432,7 +432,7 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
                     <User size={32} />
                   </div>
                   <div>
-                    <h3 className="font-sans text-2xl font-black uppercase italic tracking-tight text-white">Update Profile</h3>
+                    <h3 className="font-sans text-2xl font-black uppercase tracking-tight text-white">Update Profile</h3>
                     <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Edit your Operator Dossier</p>
                   </div>
                 </div>
@@ -484,7 +484,7 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
                           value={editData.firstName}
                           onChange={(e) => setEditData({ ...editData, firstName: e.target.value })}
                           placeholder="John"
-                          className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black italic focus:border-volt outline-none transition-all"
+                          className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black focus:border-volt outline-none transition-all"
                         />
                       </div>
                       {/* Last Name */}
@@ -495,7 +495,7 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
                           value={editData.lastName}
                           onChange={(e) => setEditData({ ...editData, lastName: e.target.value })}
                           placeholder="Doe"
-                          className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black italic focus:border-volt outline-none transition-all"
+                          className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black focus:border-volt outline-none transition-all"
                         />
                       </div>
                     </div>
@@ -507,7 +507,7 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
                         <select
                           value={editData.gender}
                           onChange={(e) => setEditData({ ...editData, gender: e.target.value as any })}
-                          className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black italic focus:border-volt outline-none transition-all"
+                          className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black focus:border-volt outline-none transition-all"
                         >
                           <option value="male">{t('gender.male')}</option>
                           <option value="female">{t('gender.female')}</option>
@@ -532,7 +532,7 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
                             }
                           }}
                           className={cn(
-                            "w-full bg-surface-container-lowest border-b-2 p-4 text-white font-sans text-xl font-black italic outline-none transition-all text-center",
+                            "w-full bg-surface-container-lowest border-b-2 p-4 text-white font-sans text-xl font-black  outline-none transition-all text-center",
                             ageError ? "border-crimson text-crimson" : "border-white/5 focus:border-volt"
                           )}
                         />
@@ -552,7 +552,7 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
                               type="number"
                               value={editData.height}
                               onChange={(e) => setEditData({ ...editData, height: parseFloat(e.target.value) || 0 })}
-                              className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black italic focus:border-volt outline-none transition-all text-center"
+                              className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black focus:border-volt outline-none transition-all text-center"
                             />
                             <span className="text-xs font-bold text-zinc-500">CM</span>
                           </div>
@@ -563,7 +563,7 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
                                 type="number"
                                 value={editData.heightFeet}
                                 onChange={(e) => setEditData({ ...editData, heightFeet: parseInt(e.target.value) || 0 })}
-                                className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black italic focus:border-volt outline-none transition-all text-center"
+                                className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black focus:border-volt outline-none transition-all text-center"
                               />
                             </div>
                             <div className="flex-1 space-y-1">
@@ -571,7 +571,7 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
                                 type="number"
                                 value={editData.heightInches}
                                 onChange={(e) => setEditData({ ...editData, heightInches: parseInt(e.target.value) || 0 })}
-                                className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black italic focus:border-volt outline-none transition-all text-center"
+                                className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black focus:border-volt outline-none transition-all text-center"
                               />
                             </div>
                           </div>
@@ -591,7 +591,7 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
                           type="number"
                           value={editData.weight}
                           onChange={(e) => setEditData({ ...editData, weight: parseFloat(e.target.value) || 0 })}
-                          className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black italic focus:border-volt outline-none transition-all text-center"
+                          className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black focus:border-volt outline-none transition-all text-center"
                         />
                       </div>
                     </div>
@@ -646,7 +646,7 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
                     <Dumbbell size={32} />
                   </div>
                   <div>
-                    <h3 className="font-sans text-2xl font-black uppercase italic tracking-tight text-white">{t('settings.update1rm')}</h3>
+                    <h3 className="font-sans text-2xl font-black uppercase tracking-tight text-white">{t('settings.update1rm')}</h3>
                     <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">{t('settings.currentMaxes')}</p>
                   </div>
                 </div>
@@ -659,7 +659,7 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
                         type="number"
                         value={edit1RMData.squatPR || ''}
                         onChange={(e) => setEdit1RMData({ ...edit1RMData, squatPR: parseFloat(e.target.value) || 0 })}
-                        className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black italic focus:border-volt outline-none transition-all text-center"
+                        className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black focus:border-volt outline-none transition-all text-center"
                       />
                     </div>
                     <div className="space-y-2">
@@ -668,7 +668,7 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
                         type="number"
                         value={edit1RMData.benchPR || ''}
                         onChange={(e) => setEdit1RMData({ ...edit1RMData, benchPR: parseFloat(e.target.value) || 0 })}
-                        className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black italic focus:border-volt outline-none transition-all text-center"
+                        className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black focus:border-volt outline-none transition-all text-center"
                       />
                     </div>
                     <div className="space-y-2">
@@ -677,7 +677,7 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
                         type="number"
                         value={edit1RMData.deadliftPR || ''}
                         onChange={(e) => setEdit1RMData({ ...edit1RMData, deadliftPR: parseFloat(e.target.value) || 0 })}
-                        className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black italic focus:border-volt outline-none transition-all text-center"
+                        className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black focus:border-volt outline-none transition-all text-center"
                       />
                     </div>
                   </div>
@@ -782,14 +782,14 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
                   </div>
                   {*/}
                   <div>
-                    <h3 className="font-sans text-2xl font-black uppercase italic tracking-tight text-white">Strength Standards</h3>
+                    <h3 className="font-sans text-2xl font-black uppercase tracking-tight text-white">Strength Standards</h3>
                     <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Tier Designation Logic</p>
                   </div>
                 </div>
 
                 <div className="space-y-6">
                   <p className="text-zinc-400 text-xs leading-relaxed">
-                    Your tier is calculated based on your <span className="text-white font-bold italic uppercase">Strength-to-Bodyweight Ratio</span>.
+                    Your tier is calculated based on your <span className="text-white font-bold uppercase">Strength-to-Bodyweight Ratio</span>.
                     This is the sum of your Squat, Bench, and Deadlift PRs divided by your bodyweight.
                   </p>
 

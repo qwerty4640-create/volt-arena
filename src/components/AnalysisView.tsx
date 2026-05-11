@@ -117,7 +117,7 @@ const ReadinessTrendWidget = () => {
         { id: 'Readiness', label: 'Readiness', color: 'var(--primary-color)' },
         { id: 'Fatigue', label: t('analysis.fatigue'), color: '#ef4444' },
         { id: 'Sleep', label: t('analysis.sleep'), color: '#00b6ff' },
-        { id: 'Stress', label: t('analysis.stress'), color: '#eab308' }
+        { id: 'Stress', label: t('analysis.stress'), color: '#a855f7' }
     ];
 
     const toggleMetric = (metricId: string) => {
@@ -150,9 +150,9 @@ const ReadinessTrendWidget = () => {
                 displayDate: new Date(session.completedAt || session.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
                 fullDate: new Date(session.completedAt || session.date).toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' }),
                 Readiness: session.readiness != null ? session.readiness : 0,
-                Fatigue: session.fatigue != null ? session.fatigue * 20 : 0,
+                Fatigue: session.fatigue != null ? (5 - session.fatigue) * 20 : 0,
                 Sleep: session.sleep != null ? session.sleep * 20 : 0,
-                Stress: session.stress != null ? session.stress * 20 : 0
+                Stress: session.stress != null ? (5 - session.stress) * 20 : 0
             };
         });
     }, [history, timeFrame]);
@@ -166,7 +166,7 @@ const ReadinessTrendWidget = () => {
                     <div className="space-y-4">
                         <div>
                             <p className="text-[8px] font-black uppercase tracking-[0.3em] text-zinc-500 mb-1">{t('analysis.telemetryLog')}</p>
-                            <p className="text-xs font-black italic uppercase text-white">{data.fullDate}</p>
+                            <p className="text-xs font-black uppercase text-white">{data.fullDate}</p>
                             <p className="text-[10px] font-black uppercase tracking-tight text-volt mt-1">{data.title}</p>
                         </div>
                         <div className="space-y-2 pt-3 border-t border-white/5">
@@ -176,7 +176,7 @@ const ReadinessTrendWidget = () => {
                                         <div className="w-1.5 h-1.5" style={{ backgroundColor: entry.color }} />
                                         <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">{entry.name}</span>
                                     </div>
-                                    <span className="text-sm font-black italic text-white">
+                                    <span className="text-sm font-black text-white">
                                         {entry.value}{['READINESS', 'SLEEP', 'FATIGUE', 'STRESS'].includes(entry.name?.toUpperCase()) ? '%' : ''}
                                     </span>
                                 </div>
@@ -193,7 +193,7 @@ const ReadinessTrendWidget = () => {
         <div className="glass-panel px-4 py-6 md:p-8 flex flex-col min-w-0 overflow-hidden border-none bg-void/20">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6">
                 <div>
-                    <h2 className="font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tight mb-2">{t('analysis.readinessTrend')}</h2>
+                    <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight mb-2">{t('analysis.readinessTrend')}</h2>
                     <p className="text-zinc-400 text-xs font-medium max-w-md mb-8 leading-relaxed">
                         {t('analysis.readinessTrendDesc')}
                     </p>
@@ -416,10 +416,10 @@ export const ReadinessAnalysisWidget = () => {
                     {tooltip && <InfoTooltip term={tooltip as any} />}
                 </span>
                 <div className="flex items-baseline gap-2 mb-2 justify-start items-baseline w-full">
-                    <span className="text-3xl md:text-4xl font-black italic tracking-tighter leading-none text-white">
+                    <span className="text-3xl md:text-4xl font-black tracking-tighter leading-none text-white">
                         {noData ? '–' : displayVal}
                     </span>
-                    {!noData && <span className="text-lg font-black italic text-zinc-600 mb-0.5">%</span>}
+                    {!noData && <span className="text-lg font-black text-zinc-600 mb-0.5">%</span>}
                 </div>
                 <span className="font-headline text-[10px] font-black uppercase tracking-widest border-l-2 pl-3 block mb-4 text-zinc-600 border-zinc-800">
                     {noData ? t('analysis.awaitingData') : getStatusText(goodness)}
@@ -437,7 +437,7 @@ export const ReadinessAnalysisWidget = () => {
                 {/* Header: title + readiness score + recalibrate button */}
                 <div className="flex items-start justify-between mb-4 md:mb-6 relative z-10 w-full gap-4">
                     <div className="flex flex-col">
-                        <h2 className="font-headline text-3xl md:text-4xl font-black uppercase italic tracking-tight">
+                        <h2 className="font-headline text-3xl md:text-4xl font-black uppercase tracking-tight">
                             {t('analysis.recoveryAnalysis')}
                         </h2>
                         <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed mb-6 md:mb-12">
@@ -451,12 +451,12 @@ export const ReadinessAnalysisWidget = () => {
                                 </span>
                                 <div className="flex items-baseline gap-2">
                                     <span className={cn(
-                                        'text-5xl md:text-7xl lg:text-8xl font-black italic tracking-tighter leading-none',
+                                        'text-5xl md:text-7xl lg:text-8xl font-black  tracking-tighter leading-none',
                                         readinessScore !== null ? statusColor : 'text-zinc-600'
                                     )}>
                                         {readinessScore !== null ? readinessScore : '–'}
                                     </span>
-                                    {readinessScore !== null && <span className="text-xl md:text-2xl font-black italic text-zinc-600"> %</span>}
+                                    {readinessScore !== null && <span className="text-xl md:text-2xl font-black text-zinc-600"> %</span>}
                                 </div>
                             </div>
 
@@ -469,7 +469,7 @@ export const ReadinessAnalysisWidget = () => {
                                 {acwrData ? (
                                     <div className="flex flex-col h-full items-start">
                                         <div className="flex items-baseline gap-2 mb-2">
-                                            <span className="text-3xl md:text-4xl font-black italic tracking-tighter leading-none text-white">
+                                            <span className="text-3xl md:text-4xl font-black tracking-tighter leading-none text-white">
                                                 {acwrData.ratio.toFixed(2)}
                                             </span>
                                         </div>
@@ -482,7 +482,7 @@ export const ReadinessAnalysisWidget = () => {
                                     </div>
                                 ) : (
                                     <div className="flex items-baseline gap-2 mb-2">
-                                        <span className="text-3xl md:text-4xl font-black italic tracking-tighter leading-none text-zinc-600">–</span>
+                                        <span className="text-3xl md:text-4xl font-black tracking-tighter leading-none text-zinc-600">–</span>
                                     </div>
                                 )}
                             </div>
@@ -552,10 +552,10 @@ export const ReadinessAnalysisWidget = () => {
                             <InfoTooltip term="Volume" />
                         </span>
                         <div className="flex items-baseline gap-2 mb-2 justify-start w-full">
-                            <span className="text-3xl md:text-4xl font-black italic tracking-tighter leading-none text-white">
+                            <span className="text-3xl md:text-4xl font-black tracking-tighter leading-none text-white">
                                 {hasHistory ? orderedVolumeData.reduce((a, d) => a + d.displayVal, 0).toLocaleString() : '–'}
                             </span>
-                            {hasHistory && <span className="text-lg font-black italic text-zinc-600 mb-0.5">{unit === 'metric' ? 'kg' : 'lbs'}</span>}
+                            {hasHistory && <span className="text-lg font-black text-zinc-600 mb-0.5">{unit === 'metric' ? 'kg' : 'lbs'}</span>}
                         </div>
                         <span className="font-headline text-[10px] font-black uppercase tracking-widest border-l-2 pl-3 block mb-4 text-zinc-600 border-zinc-800">
                             {hasHistory ? t('analysis.7dayLoad') : t('analysis.awaitingData')}
@@ -622,8 +622,8 @@ export const RecoveryWidget = () => {
                     )}
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-3xl xl:text-4xl font-black italic text-white leading-none">{score}</span>
-                    {hasHistory && <span className="text-sm font-black italic text-zinc-500 mb-1">%</span>}
+                    <span className="text-3xl xl:text-4xl font-black text-white leading-none">{score}</span>
+                    {hasHistory && <span className="text-sm font-black text-zinc-500 mb-1">%</span>}
                 </div>
             </div>
 
@@ -703,7 +703,7 @@ const PRWidget = () => {
                         </div>
                         <span className="text-[8px] font-black uppercase tracking-widest text-white bg-white/10 px-1.5 py-0.5 border border-white/20">EXP</span>
                     </div>
-                    <h2 className="font-headline text-3xl font-black uppercase italic tracking-tight">
+                    <h2 className="font-headline text-3xl font-black uppercase tracking-tight">
                         {hasHistory ? (
                             <>
                                 {bestLift.name}: <br />
@@ -819,7 +819,7 @@ const VolumeWidget = () => {
                 ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center border border-dashed border-white/5 bg-void/20">
                         <span className="text-4xl font-black text-zinc-800 mb-2">–</span>
-                        <p className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-600 italic">
+                        <p className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-600">
                             {t('analysis.awaitingData')}
                         </p>
                     </div>
@@ -844,7 +844,7 @@ const MacrosWidget = () => {
         <div className="glass-panel px-4 py-6 md:p-8 border-none space-y-4 xl:space-y-8 h-full flex flex-col">
             <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-volt drop-shadow-[0_0_8px_rgba(215,255,0,0.4)]">{t('analysis.macroDistribution')}</span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-volt drop-shadow-[0_0_8px_var(--primary-glow)]">{t('analysis.macroDistribution')}</span>
                     <span className="text-[8px] font-black uppercase tracking-widest text-volt bg-volt/10 px-1.5 py-0.5 border border-volt/20">EXP</span>
                 </div>
             </div>
@@ -874,7 +874,7 @@ const MacrosWidget = () => {
                 ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center border border-dashed border-white/5 bg-void/20 py-8">
                         <span className="text-2xl font-black text-zinc-800 mb-1">–</span>
-                        <p className="text-[8px] font-black uppercase tracking-[0.2em] text-zinc-600 italic">
+                        <p className="text-[8px] font-black uppercase tracking-[0.2em] text-zinc-600">
                             {t('analysis.awaitingData')}
                         </p>
                     </div>
@@ -883,7 +883,7 @@ const MacrosWidget = () => {
 
             <div className="pt-2 xl:pt-4 border-t border-white/5 flex justify-between items-center">
                 <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('analysis.totalCalories')}</span>
-                <span className="text-xs xl:text-sm font-black italic">{hasHistory ? '2,815 Kcal' : '–'}</span>
+                <span className="text-xs xl:text-sm font-black">{hasHistory ? '2,815 Kcal' : '–'}</span>
             </div>
         </div>
     );
@@ -931,7 +931,7 @@ export const ExternalActivityWidget = () => {
 
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4 relative z-10 w-full">
                 <div>
-                    <h2 className="font-headline text-2xl font-black uppercase italic tracking-tight">{t('analysis.tacticalIntegration')}</h2>
+                    <h2 className="font-headline text-2xl font-black uppercase tracking-tight">{t('analysis.tacticalIntegration')}</h2>
                 </div>
 
                 <div className="flex gap-1 bg-void p-1 border border-white/5 flex-wrap md:flex-nowrap shrink-0">
@@ -958,14 +958,14 @@ export const ExternalActivityWidget = () => {
                                 timeFrame === '6M' ? '6 MONTHS' : 'TOTAL'} HOURS
                     </span>
                     <div className="flex items-end gap-1">
-                        <span className="text-2xl sm:text-3xl lg:text-4xl font-black italic">{totalHours.toFixed(1)}</span>
+                        <span className="text-2xl sm:text-3xl lg:text-4xl font-black">{totalHours.toFixed(1)}</span>
                         <span className="text-xs font-bold text-zinc-600 mb-1">hrs</span>
                     </div>
                 </div>
                 <div className="flex flex-col">
                     <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2">AVG RPE</span>
                     <div className="flex items-end gap-1">
-                        <span className="text-2xl sm:text-3xl lg:text-4xl font-black italic text-volt">{avgRpe > 0 ? avgRpe.toFixed(1) : '–'}</span>
+                        <span className="text-2xl sm:text-3xl lg:text-4xl font-black text-volt">{avgRpe > 0 ? avgRpe.toFixed(1) : '–'}</span>
                     </div>
                 </div>
                 <div className="flex flex-col col-span-2 pt-4 border-t border-white/5">
@@ -989,7 +989,7 @@ export const ExternalActivityWidget = () => {
                 <div className="flex items-start gap-3">
                     <Zap className="text-volt shrink-0 mt-0.5" size={16} />
                     <div>
-                        <span className="block text-[10px] font-black uppercase tracking-widest text-volt mb-1">Volt Arena AI Tip</span>
+                        <span className="block text-[10px] font-black uppercase tracking-widest text-volt mb-1">Vanguard AI Tip</span>
                         <p className="text-xs text-zinc-400">
                             {calibration.hasAerobicInterference
                                 ? "You're accumulating too much systemic fatigue from extracurricular activities. Consider lowering the RPE of your tactical missions or reducing duration to preserve force production for the barbell."

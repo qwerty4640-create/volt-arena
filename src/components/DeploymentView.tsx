@@ -2,15 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Zap,
-  Dumbbell,
-  CheckCircle2,
-  Info,
   Loader2,
-  Calendar,
-  Activity,
-  ArrowRight,
   Settings,
-  X
+  CheckCircle2
 } from 'lucide-react';
 import { useSettings, TrainingGoal, MissionPeriod, CustomBlock } from '../contexts/SettingsContext';
 import { useWorkout } from '../contexts/WorkoutContext';
@@ -26,6 +20,28 @@ import { BlockWidget } from './BlockWidget';
 
 import { MissionBriefingModal } from './MissionBriefingModal';
 import { WorkoutSession } from '../contexts/WorkoutContext';
+
+// Helper to get max objectives based on period
+const getMaxObjectives = (period: MissionPeriod) => {
+  switch (period) {
+    case '3M': return 1;
+    case '6M': return 2;
+    case '9M': return 3;
+    case '12M': return 4;
+    default: return 1;
+  }
+};
+
+// Helper to get default blocks for a goal
+const getDefaultBlocks = (goals: TrainingGoal[], period: MissionPeriod): CustomBlock[] => {
+  const weeks = (parseInt(period) || 3) * 4;
+  const plan = getPlanForDuration(weeks, goals);
+  return plan.map(b => ({
+    id: Math.random().toString(36).substr(2, 9),
+    type: b.type,
+    durationWeeks: b.durationWeeks
+  }));
+};
 
 export const DeploymentView = () => {
   const { profile, updateProfile, t } = useSettings();
@@ -53,42 +69,19 @@ export const DeploymentView = () => {
   const [adjustingCustomProgramBlocks, setAdjustingCustomProgramBlocks] = useState<CustomBlock[]>(
     profile?.customProgramBlocks && profile.customProgramBlocks.length > 0
       ? profile.customProgramBlocks
-      : []
-  );
-
-  const [isCustomizingProgram, setIsCustomizingProgram] = useState<boolean>(
-    profile?.customProgramBlocks && profile.customProgramBlocks.length > 0 ? true : false
+      : getDefaultBlocks(
+          profile?.trainingObjectives || (profile?.trainingGoal ? [profile.trainingGoal] : ['powerbuilding']),
+          profile?.missionPeriod || '3M'
+        )
   );
 
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
-
-  // Helper to get max objectives based on period
-  const getMaxObjectives = (period: MissionPeriod) => {
-    switch (period) {
-      case '3M': return 1;
-      case '6M': return 2;
-      case '9M': return 3;
-      case '12M': return 4;
-      default: return 1;
-    }
-  };
 
   const currentMaxObjectives = getMaxObjectives(adjustingMissionPeriod);
 
   const getRankLabel = (index: number) => {
     const labels = ['Primary', 'Secondary', 'Tertiary', 'Quaternary'];
     return labels[index] || `${index + 1}th`;
-  };
-
-  // Helper to get default blocks for a goal
-  const getDefaultBlocks = (goals: TrainingGoal[], period: MissionPeriod): CustomBlock[] => {
-    const weeks = (parseInt(period) || 3) * 4;
-    const plan = getPlanForDuration(weeks, goals);
-    return plan.map(b => ({
-      id: Math.random().toString(36).substr(2, 9),
-      type: b.type,
-      durationWeeks: b.durationWeeks
-    }));
   };
 
   // Sync states if profile changes
@@ -101,12 +94,10 @@ export const DeploymentView = () => {
 
       if (profile.customProgramBlocks && profile.customProgramBlocks.length > 0) {
         setAdjustingCustomProgramBlocks(profile.customProgramBlocks);
-        setIsCustomizingProgram(true);
       } else {
         // Pre-populate with defaults based on current goal
         const goals = profile.trainingObjectives || (profile.trainingGoal ? [profile.trainingGoal] : ['powerbuilding']);
         setAdjustingCustomProgramBlocks(getDefaultBlocks(goals, profile.missionPeriod || '3M'));
-        setIsCustomizingProgram(false);
       }
     }
   }, [profile]);
@@ -132,7 +123,7 @@ export const DeploymentView = () => {
       await updateProfile({
         trainingDurationMonths: adjustingDuration,
         missionPeriod: adjustingMissionPeriod,
-        customProgramBlocks: isCustomizingProgram ? adjustingCustomProgramBlocks : [],
+        customProgramBlocks: adjustingCustomProgramBlocks,
         trainingFrequency: adjustingFrequency,
         trainingGoal: adjustingObjectives[0] || 'powerbuilding',
         trainingObjectives: adjustingObjectives,
@@ -150,14 +141,10 @@ export const DeploymentView = () => {
     }
   };
 
-  const currentWeek = history ? Math.floor(history.length / (profile?.trainingFrequency || 3)) : 0;
-  const currentBlock = profile ? getBlockForWeek(currentWeek, profile.missionPeriod || '3M', profile.trainingGoal || 'powerbuilding', profile.customProgramBlocks || []) : null;
-
   const hasChanges = profile && (
     adjustingMissionPeriod !== (profile.missionPeriod || '3M') ||
     adjustingFrequency !== (profile.trainingFrequency || 3) ||
-    isCustomizingProgram !== (!!profile.customProgramBlocks && profile.customProgramBlocks.length > 0) ||
-    (isCustomizingProgram && JSON.stringify(adjustingCustomProgramBlocks) !== JSON.stringify(profile.customProgramBlocks || [])) ||
+    JSON.stringify(adjustingCustomProgramBlocks) !== JSON.stringify(profile.customProgramBlocks || []) ||
     JSON.stringify(adjustingObjectives) !== JSON.stringify(profile.trainingObjectives || (profile.trainingGoal ? [profile.trainingGoal] : ['powerbuilding']))
   );
 
@@ -166,67 +153,7 @@ export const DeploymentView = () => {
 
 
       <div className="w-full">
-        <BlockWidget />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Widget 1: Deployment Status */}
-        <div className="glass-panel px-4 py-4 md:p-4 border-white/5 bg-zinc-900/40 flex flex-col justify-between md:col-span-2">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 divide-x-0 md:divide-x divide-white/5">
-            <div>
-              <h2 className="font-sans text-2xl font-black uppercase italic tracking-tight text-white mb-2">
-                Deployment Status
-              </h2>
-              <p className="text-xs text-zinc-500 mb-8 font-medium">
-                See your deployment details and progression over time.
-              </p>
-
-              <div className="space-y-6">
-                <div className="flex flex-col items-start py-3 border-b border-white/5 gap-1">
-                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest leading-none">Deployment Plan</span>
-                  <span className="text-xs font-black uppercase tracking-widest text-white mt-0.5">
-                    {(profile?.trainingObjectives && profile.trainingObjectives.length > 0)
-                      ? profile.trainingObjectives.map(g => t(`goal.${g}`)).join(' + ')
-                      : t(`goal.${profile?.trainingGoal || 'powerbuilding'}`)}
-                  </span>
-                </div>
-                <div className="flex flex-col items-start py-3 border-b border-white/5 gap-1">
-                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest leading-none">Block in progress</span>
-                  <span className="text-xs font-black uppercase tracking-widest text-volt mt-0.5">{currentBlock?.block.label || 'Loading...'}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="md:pl-8 flex flex-col justify-between">
-              <div className="space-y-6 mb-8 mt-8 md:mt-0">
-                <div className="flex flex-col items-start py-3 border-b border-white/5 gap-1">
-                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest leading-none">Mission Frequency</span>
-                  <span className="text-xs font-black uppercase tracking-widest text-white mt-0.5">{profile?.trainingFrequency || 3}x Sessions / Week</span>
-                </div>
-                <div className="flex flex-col items-start py-3 border-b border-white/5 gap-1">
-                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest leading-none">Mission Period</span>
-                  <span className="text-xs font-black uppercase tracking-widest text-white mt-0.5">{profile?.missionPeriod || '3 Month'}</span>
-                </div>
-              </div>
-
-              <div className="flex gap-4">
-                <button
-                  onClick={() => setShowSettingsModal(true)}
-                  className="flex-1 px-6 py-4 bg-volt btn-primary"
-                >
-                  <Settings size={16} />
-                  <span>Recalibrate Deployment</span>
-                </button>
-                <button
-                  onClick={() => setShowProgramDetail(true)}
-                  className="flex-1 btn-secondary px-6 py-4"
-                >
-                  <span>View Full Details</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <BlockWidget onRecalibrate={() => setShowSettingsModal(true)} />
       </div>
 
       {/* Deployment Settings Modal */}
@@ -254,7 +181,7 @@ export const DeploymentView = () => {
                       <Settings size={20} />
                     </div>
                     <div>
-                      <h2 className="font-sans text-xl font-black uppercase italic tracking-tight text-white">Deployment Settings</h2>
+                      <h2 className="font-sans text-xl font-black uppercase tracking-tight text-white">Deployment Settings</h2>
                       <p className="text-[8px] font-black uppercase tracking-widest text-zinc-500">Recalibrate Program Architecture</p>
                     </div>
                   </div>
@@ -390,48 +317,22 @@ export const DeploymentView = () => {
                           <h3 className="font-sans text-[10px] font-black uppercase tracking-widest text-zinc-500 flex items-center gap-2">
                             Strategic Timeline Designer
                           </h3>
-                          <span className="text-[10px] font-medium text-white/50">Press the toggle below to enable complete program customization.</span>
                           <div className="flex items-center gap-4">
                             <button
-                              onClick={() => {
-                                setIsCustomizingProgram(!isCustomizingProgram);
-                                if (!isCustomizingProgram) {
-                                  // When turning ON, populate with current default or existing
-                                  if (adjustingCustomProgramBlocks.length === 0) {
-                                    setAdjustingCustomProgramBlocks(getDefaultBlocks(adjustingObjectives, adjustingMissionPeriod));
-                                  }
-                                }
-                              }}
-                              className={cn(
-                                "btn-secondadry text-[8px] font-black uppercase tracking-widest transition-colors flex items-center gap-1.5 px-3 py-1.5 border",
-                                isCustomizingProgram
-                                  ? "bg-volt/10 text-volt border-volt/30"
-                                  : "bg-void hover:bg-white/5 text-zinc-500 border-white/10"
-                              )}
+                              onClick={() => setAdjustingCustomProgramBlocks(getDefaultBlocks(adjustingObjectives, adjustingMissionPeriod))}
+                              className="text-[8px] font-black uppercase tracking-widest text-zinc-500 hover:text-white transition-colors flex items-center gap-1.5"
                             >
-                              <div className={cn("w-1.5 h-1.5 rounded-full", isCustomizingProgram ? "bg-volt shadow-[0_0_8px_var(--primary-glow)]" : "bg-zinc-600")} />
-                              {isCustomizingProgram ? "Disable Customization" : "Enable Customization"}
+                              <Loader2 size={10} className={loading ? "animate-spin" : ""} />
+                              Reset to Default
                             </button>
-                            {isCustomizingProgram && (
-                              <button
-                                onClick={() => setAdjustingCustomProgramBlocks(getDefaultBlocks(adjustingObjectives, adjustingMissionPeriod))}
-                                className="text-[8px] font-black uppercase tracking-widest text-zinc-500 hover:text-white transition-colors flex items-center gap-1.5"
-                              >
-                                <Loader2 size={10} className={loading ? "animate-spin" : ""} />
-                                Reset
-                              </button>
-                            )}
                           </div>
                         </div>
 
-                        <div className={cn(
-                          "bg-void/50 rounded-none transition-all duration-500",
-                          !isCustomizingProgram && "opacity-75 pointer-events-none select-none"
-                        )}>
+                        <div className="bg-void/50 rounded-none transition-all duration-500">
                           <ProgramDesigner
                             missionPeriod={adjustingMissionPeriod}
                             onUpdate={setAdjustingCustomProgramBlocks}
-                            initialBlocks={isCustomizingProgram ? adjustingCustomProgramBlocks : getDefaultBlocks(adjustingObjectives, adjustingMissionPeriod)}
+                            initialBlocks={adjustingCustomProgramBlocks}
                           />
                         </div>
                       </div>
@@ -488,7 +389,13 @@ export const DeploymentView = () => {
         <ConfirmationModal
           isOpen={showConfirmationModal}
           title="Recalibrate Protocol"
-          message="Adjusting your protocol will recalibrate your training cycle. History and PRs are always preserved. Changing duration or objectives will restart your cycle from week 1."
+          message={
+            <span className="block">
+              Changing training duration or objectives <strong className="text-white">will restart your deployment cycle from week 1</strong>. 
+              If only updating frequency and period, it will maintain current deployment progress. 
+              At any time, your current mission history and PRs are always preserved.
+            </span>
+          }
           confirmLabel="Recalibrate"
           cancelLabel="Cancel"
           onConfirm={commitAdjustProtocol}

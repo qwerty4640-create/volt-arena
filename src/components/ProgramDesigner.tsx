@@ -122,7 +122,7 @@ const SortableBlock: React.FC<{
             <ChevronLeft size={12} />
           </button>
           <div className="text-center px-2">
-            <span className="font-headline text-lg font-black italic text-white leading-none">{block.durationWeeks}</span>
+            <span className="font-headline text-lg font-black text-white leading-none">{block.durationWeeks}</span>
             <span className="text-[7px] font-black uppercase tracking-widest text-zinc-500 block">WEEKS</span>
           </div>
           <button
@@ -364,7 +364,7 @@ export const ProgramDesigner: React.FC<ProgramDesignerProps> = ({
         <div className="absolute top-4 left-6 flex items-center gap-2">
           <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-500">INTENSITY CURVE</h4>
           <div className="inline-flex items-center justify-center w-4 h-4 border border-volt/40">
-            <span className="text-[8px] font-black italic text-volt transform translate-y-[0.5px]">i</span>
+            <span className="text-[8px] font-black text-volt transform translate-y-[0.5px]">i</span>
           </div>
         </div>
         
@@ -520,7 +520,7 @@ export const ProgramDesigner: React.FC<ProgramDesignerProps> = ({
                       className="inline-flex items-center justify-center w-4 h-4 border border-orange-400/40 hover:border-orange-400 hover:bg-orange-400/10 transition-colors cursor-pointer pointer-events-auto"
                       title="View Analysis"
                     >
-                      <span className="text-[8px] font-black italic text-orange-400 transform translate-y-[0.5px]">i</span>
+                      <span className="text-[8px] font-black text-orange-400 transform translate-y-[0.5px]">i</span>
                     </button>
                   </div>
                   <p className="text-[8px] font-black text-zinc-500">
@@ -553,7 +553,7 @@ export const ProgramDesigner: React.FC<ProgramDesignerProps> = ({
               >
                 <div className="flex items-center gap-3">
                   <div className="w-1.5 h-6 bg-volt" />
-                  <h3 className="font-black italic text-2xl uppercase tracking-tighter text-white">ADVISORY</h3>
+                  <h3 className="font-black text-2xl uppercase tracking-tighter text-white">ADVISORY</h3>
                 </div>
 
                 <div className="space-y-4">
@@ -593,9 +593,9 @@ export const ProgramDesigner: React.FC<ProgramDesignerProps> = ({
             <CheckCircle2 size={24} />
           </div>
           <div>
-            <p className="text-sm font-black italic uppercase text-[#06d6a0]">SEQUENCE INTEGRITY: OPTIMAL</p>
+            <p className="text-sm font-black uppercase text-[#06d6a0]">SEQUENCE INTEGRITY: OPTIMAL</p>
             <p className="text-[10px] font-medium text-zinc-500 mt-1 leading-relaxed max-w-lg">
-              Volt Arena has verified your phase redistribution. Periodization logic adheres to standard force production models.
+              Vanguard has verified your phase redistribution. Periodization logic adheres to standard force production models.
             </p>
           </div>
         </motion.div>

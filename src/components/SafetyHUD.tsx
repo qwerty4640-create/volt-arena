@@ -24,7 +24,7 @@ export const SafetyHUD = ({ onDismiss }: SafetyHUDProps) => {
           <motion.h1 
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="font-headline text-4xl sm:text-6xl font-black italic tracking-tighter uppercase leading-none"
+            className="font-headline text-4xl sm:text-6xl font-black tracking-tighter uppercase leading-none"
           >
             READINESS FAILURE <br /> <span className="text-crimson text-glow-crimson">DETECTED</span>
           </motion.h1>
@@ -38,7 +38,7 @@ export const SafetyHUD = ({ onDismiss }: SafetyHUDProps) => {
         >
           <div className="absolute -inset-4 bg-crimson/20 blur-[80px] animate-pulse" />
           <div className="relative glass-panel bg-surface-variant/60 backdrop-blur-[60px] p-8 sm:p-12 flex flex-col items-center text-center shadow-2xl">
-            <h2 className="font-headline text-2xl sm:text-3xl font-black mb-3 tracking-tight uppercase italic text-crimson">NEURAL DRAIN LIMIT REACHED</h2>
+            <h2 className="font-headline text-2xl sm:text-3xl font-black mb-3 tracking-tight uppercase text-crimson">NEURAL DRAIN LIMIT REACHED</h2>
             <p className="text-zinc-300 max-w-sm text-sm sm:text-base leading-relaxed font-medium">
               System readiness has dropped below the safety threshold of 20%. Cognitive and physical output is restricted to prevent structural degradation. 
             </p>
@@ -54,7 +54,7 @@ export const SafetyHUD = ({ onDismiss }: SafetyHUDProps) => {
           >
             <Biohazard size={32} />
             <div className="text-center">
-              <span className="block font-headline text-xl font-black uppercase italic tracking-wider">ACKNOWLEDGE MANUAL OVERRIDE</span>
+              <span className="block font-headline text-xl font-black uppercase tracking-wider">ACKNOWLEDGE MANUAL OVERRIDE</span>
               <span className="block font-headline text-[9px] opacity-70 tracking-widest font-black uppercase mt-1">RESTORE SYSTEM ACCESS</span>
             </div>
           </motion.button>

@@ -131,20 +131,20 @@ export const JointStressWidget = () => {
           <div className="space-y-4">
             <div>
               <p className="text-[8px] font-black uppercase tracking-[0.3em] text-zinc-500 mb-1">{t('analysis.jointStressTelemetry').toUpperCase()}</p>
-              <p className="text-xs font-black italic uppercase text-white">{t('analysis.weekOf')} {data.week}</p>
+              <p className="text-xs font-black uppercase text-white">{t('analysis.weekOf')} {data.week}</p>
             </div>
             <div className="pt-3 border-t border-white/5 space-y-2">
               <div className="flex items-center justify-between gap-4">
                 <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">{t('analysis.highImpact')}</span>
-                <span className="text-sm font-black italic text-crimson">{Math.round(data.highImpact).toLocaleString()}</span>
+                <span className="text-sm font-black text-crimson">{Math.round(data.highImpact).toLocaleString()}</span>
               </div>
               <div className="flex items-center justify-between gap-4">
                 <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">{t('analysis.lowImpact')}</span>
-                <span className="text-sm font-black italic text-emerald-500">{Math.round(data.lowImpact).toLocaleString()}</span>
+                <span className="text-sm font-black text-emerald-500">{Math.round(data.lowImpact).toLocaleString()}</span>
               </div>
               <div className="pt-2 border-t border-white/5 flex justify-between items-center">
                 <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('analysis.jointStressRatio')}</span>
-                <span className="text-sm font-black italic text-volt">{data.ratio.toFixed(1)}%</span>
+                <span className="text-sm font-black text-volt">{data.ratio.toFixed(1)}%</span>
               </div>
             </div>
           </div>
@@ -166,7 +166,7 @@ export const JointStressWidget = () => {
             <ShieldCheck className="text-volt" size={16} />
             <span className="text-[10px] font-black uppercase tracking-widest text-volt">{t('analysis.longevityProtocol')}</span>
           </div>
-          <h2 className="font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tight mb-2">{t('analysis.jointStress')}</h2>
+          <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight mb-2">{t('analysis.jointStress')}</h2>
           <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed">
             {t('analysis.jointStressDesc')}
           </p>
@@ -174,7 +174,7 @@ export const JointStressWidget = () => {
 
         <div className="flex flex-col items-start">
           <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">{t('workout.status')}</span>
-          <span className={cn("font-headline text-xl md:text-2xl font-black italic uppercase", latestStats.color)}>
+          <span className={cn("font-headline text-xl md:text-2xl font-black  uppercase", latestStats.color)}>
             {latestStats.status.toUpperCase()}
           </span>
         </div>
@@ -218,7 +218,7 @@ export const JointStressWidget = () => {
             <InfoTooltip term="jointStress" className="ml-0" />
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="font-headline text-2xl font-black italic text-white">{latestStats.ratio.toFixed(1)}</span>
+            <span className="font-headline text-2xl font-black text-white">{latestStats.ratio.toFixed(1)}</span>
             <span className="text-[10px] font-black text-zinc-600 uppercase">%</span>
           </div>
         </div>

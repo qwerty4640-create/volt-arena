@@ -70,7 +70,7 @@ export const MovementExclusionModal: React.FC<MovementExclusionModalProps> = ({
               <div className="w-12 h-12 bg-volt/10 flex items-center justify-center text-volt border border-volt/20">
                 <Activity size={24} />
               </div>
-              <h2 className="font-sans text-xl md:text-2xl font-black uppercase italic tracking-tight text-white">
+              <h2 className="font-sans text-xl md:text-2xl font-black uppercase tracking-tight text-white">
                 {t('settings.movementRestrictions')}
               </h2>
             </div>
@@ -97,7 +97,7 @@ export const MovementExclusionModal: React.FC<MovementExclusionModalProps> = ({
                 >
                   <div className="flex flex-col">
                     <span className={cn(
-                      "font-sans text-sm font-black uppercase italic tracking-tight transition-colors",
+                      "font-sans text-sm font-black uppercase  tracking-tight transition-colors",
                       profile?.excludedMovements?.includes(mvmt.name) ? "text-volt" : "text-zinc-200 group-hover:text-white"
                     )}>
                       {getExerciseName(mvmt, t)}
@@ -117,7 +117,7 @@ export const MovementExclusionModal: React.FC<MovementExclusionModalProps> = ({
               {filteredExercises.length === 0 && (
                 <div className="text-center py-12 border border-dashed border-white/5 bg-void/20">
                   <Activity size={24} className="text-zinc-800 mx-auto mb-2 opacity-20" />
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-700 italic">
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-700">
                     {t('workout.noAltsFound') || "NO MOVEMENTS FOUND"}
                   </p>
                 </div>

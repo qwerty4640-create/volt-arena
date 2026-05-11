@@ -38,7 +38,7 @@ export const MobilityMatrixWidget: React.FC<MobilityMatrixWidgetProps> = ({ work
           </h3>
           <div className="flex items-center gap-2">
             <div className="w-1.5 h-1.5 bg-emerald-500 shadow-[0_0_8px_#10b981]" />
-            <span className="font-headline text-lg font-black uppercase italic tracking-tight text-white">
+            <span className="font-headline text-lg font-black uppercase tracking-tight text-white">
               Mobility Matrix
             </span>
           </div>

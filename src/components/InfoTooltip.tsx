@@ -40,7 +40,7 @@ export const InfoTooltip = ({ term, className }: InfoTooltipProps) => {
             "w-4 h-4 flex items-center justify-center rounded-full border border-volt/30 text-volt hover:bg-volt hover:text-void transition-all duration-300"
           )}
         >
-          <span className="text-[9px] font-black italic">i</span>
+          <span className="text-[9px] font-black">i</span>
         </button>
       </div>
 
@@ -67,7 +67,7 @@ export const InfoTooltip = ({ term, className }: InfoTooltipProps) => {
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-3">
                     <div className="w-1.5 h-6 bg-volt" />
-                    <h2 className="text-xl font-black uppercase italic tracking-tight text-white">
+                    <h2 className="text-xl font-black uppercase tracking-tight text-white">
                       {t(`tooltip.${term}.title`)}
                     </h2>
                   </div>

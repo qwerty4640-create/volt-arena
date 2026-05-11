@@ -48,7 +48,7 @@ export const BerserkerHUD = ({ onComplete, onAddActivity, viewType = 'training' 
             className="glass-panel p-8 border-l-8 border-crimson shadow-[0_0_40px_rgba(255,113,98,0.2)]"
           >
             <span className="font-sans text-[10px] tracking-[0.2em] text-zinc-500 uppercase font-bold mb-2 block">{t('berserker.state')}</span>
-            <h2 className="font-sans text-5xl font-black italic text-crimson text-glow-crimson uppercase tracking-tighter">
+            <h2 className="font-sans text-5xl font-black text-crimson text-glow-crimson uppercase tracking-tighter">
               {isRedline ? 'CRITICAL RECOVERY' : t('berserker.active')}
             </h2>
           </motion.div>
@@ -61,7 +61,7 @@ export const BerserkerHUD = ({ onComplete, onAddActivity, viewType = 'training' 
           >
             <span className="font-sans text-[10px] tracking-[0.2em] text-zinc-500 uppercase font-bold mb-2 block">{t('berserker.heartRate')}</span>
             <div className="flex items-baseline gap-3">
-              <span className="font-sans text-7xl font-black italic leading-none">188</span>
+              <span className="font-sans text-7xl font-black leading-none">188</span>
               <span className="font-sans text-xl font-bold text-volt">{t('berserker.bpm')}</span>
             </div>
             <div className="mt-6 h-2 w-full bg-zinc-900 overflow-hidden">
@@ -80,8 +80,8 @@ export const BerserkerHUD = ({ onComplete, onAddActivity, viewType = 'training' 
             animate={{ scale: 1, opacity: 1 }}
             className="mb-12"
           >
-            <h1 className="font-sans text-7xl font-black italic text-white tracking-tighter leading-none">{t('berserker.kineticSurge')}</h1>
-            <h2 className="font-sans text-9xl font-black italic text-transparent bg-clip-text bg-gradient-to-b from-white to-volt -mt-4 tracking-tighter">{t('berserker.mode')}</h2>
+            <h1 className="font-sans text-7xl font-black text-white tracking-tighter leading-none">{t('berserker.kineticSurge')}</h1>
+            <h2 className="font-sans text-9xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-volt -mt-4 tracking-tighter">{t('berserker.mode')}</h2>
           </motion.div>
 
           <div className="relative w-64 h-64 flex items-center justify-center mb-12">
@@ -104,7 +104,7 @@ export const BerserkerHUD = ({ onComplete, onAddActivity, viewType = 'training' 
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={onComplete}
-              className="group relative px-12 py-4 bg-void border-2 border-volt text-volt font-sans font-black uppercase italic tracking-[0.3em] hover:bg-volt hover:text-void transition-all shadow-[0_0_30px_var(--primary-glow)]"
+              className="group relative px-12 py-4 bg-void border-2 border-volt text-volt font-sans font-black uppercase tracking-[0.3em] hover:bg-volt hover:text-void transition-all shadow-[0_0_30px_var(--primary-glow)]"
             >
               <span className="relative z-10">{t('berserker.completeLift')}</span>
               <div className="absolute inset-0 bg-volt opacity-0 group-hover:opacity-100 transition-opacity blur-xl -z-10" />
@@ -153,7 +153,7 @@ export const BerserkerHUD = ({ onComplete, onAddActivity, viewType = 'training' 
           >
             <span className="font-sans text-[10px] tracking-[0.2em] text-zinc-500 uppercase font-bold mb-2 block">{t('berserker.peakPower')}</span>
             <div className="flex items-baseline justify-end gap-3">
-              <span className="font-sans text-7xl font-black italic leading-none">2,800</span>
+              <span className="font-sans text-7xl font-black leading-none">2,800</span>
               <span className="font-sans text-xl font-bold text-volt">{t('berserker.watts')}</span>
             </div>
           </motion.div>

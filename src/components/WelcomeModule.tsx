@@ -61,7 +61,7 @@ export const WelcomeModule = ({ onStart, onViewBriefing }: WelcomeModuleProps) =
           {/*}<Play size={240} className="fill-volt" />{*/}
         </div>
 
-        <h1 className="text-3xl font-black italic uppercase leading-none">
+        <h1 className="text-3xl font-black uppercase leading-none">
           {greeting}, <span className="text-volt">{tacticalName}</span>
         </h1>
         <p

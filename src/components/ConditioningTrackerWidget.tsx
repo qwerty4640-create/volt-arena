@@ -41,7 +41,7 @@ export const ConditioningTrackerWidget: React.FC<ConditioningTrackerWidgetProps>
           </h3>
           <div className="flex items-center gap-2">
             <div className="w-1.5 h-1.5 bg-volt animate-pulse" />
-            <span className="font-headline text-lg font-black uppercase italic tracking-tight text-white">
+            <span className="font-headline text-lg font-black uppercase tracking-tight text-white">
               Aerobic Capacity
             </span>
           </div>

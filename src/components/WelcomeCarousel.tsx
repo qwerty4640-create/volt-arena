@@ -21,17 +21,17 @@ const CAROUSEL_STEPS = [
   },
   {
     title: "Recovery like a champ",
-    body: "Volt Arena’s advanced recovery & readiness engines will prime you for the next stage.",
+    body: "Vanguard’s advanced recovery & readiness engines will prime you for the next stage.",
     image: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?q=80&w=800&auto=format&fit=crop"
   },
   {
     title: "Unlockable contents as you level up",
-    body: "Hit more PRs in Volt Arena. Unlock new content as you level up in the gym.",
+    body: "Hit more PRs in Vanguard. Unlock new content as you level up in the gym.",
     image: "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=800&auto=format&fit=crop"
   },
   {
     title: "Fully off-grid system",
-    body: "Are you traveling? No access to the internet? Volt Arena doesn’t require internet connectivity.",
+    body: "Are you traveling? No access to the internet? Vanguard doesn’t require internet connectivity.",
     image: "https://images.unsplash.com/photo-1639069422496-03416b5daa28?q=80&w=2728&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
   },
   {
@@ -74,8 +74,8 @@ export const WelcomeCarousel: React.FC<WelcomeCarouselProps> = ({ onSkip, onSign
     <div className="fixed inset-0 z-50 bg-void flex flex-col items-center p-6 text-white text-center">
       {/* Branding Header */}
       <div className="flex flex-col items-center mb-6">
-        <h1 className="font-headline text-3xl font-black tracking-tighter uppercase italic text-volt mb-1 drop-shadow-[0_0_10px_rgba(0,182,255,0.3)]">
-          Volt Arena
+        <h1 className="font-headline text-3xl font-black tracking-tighter uppercase text-volt mb-1 drop-shadow-[0_0_10px_var(--primary-glow)]">
+          Vanguard
         </h1>
         <div className="flex items-center gap-3 w-full justify-center">
           <div className="h-[1px] flex-1 bg-zinc-800" />
@@ -120,7 +120,7 @@ export const WelcomeCarousel: React.FC<WelcomeCarouselProps> = ({ onSkip, onSign
             </div>
 
             <div className="space-y-2 text-center">
-              <h1 className="font-headline text-xl sm:text-2xl font-black uppercase italic tracking-tight text-white leading-tight break-words hyphens-auto w-full text-center">
+              <h1 className="font-headline text-xl sm:text-2xl font-black uppercase tracking-tight text-white leading-tight break-words hyphens-auto w-full text-center">
                 {CAROUSEL_STEPS[currentStep].title}
               </h1>
               <p className="text-zinc-400 text-[10px] sm:text-xs font-medium leading-relaxed max-w-[260px] mx-auto text-center">

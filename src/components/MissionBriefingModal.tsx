@@ -54,7 +54,7 @@ export const MissionBriefingModal: React.FC<MissionBriefingModalProps> = ({
                     <ListOrdered size={24} />
                   </div>
                   <div>
-                    <h2 className="text-xl md:text-2xl font-black uppercase italic tracking-tight text-white">Mission Details</h2>
+                    <h2 className="text-xl md:text-2xl font-black uppercase tracking-tight text-white">Mission Details</h2>
                     <p className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest mt-0.5">{session.title}</p>
                   </div>
                 </div>
@@ -72,7 +72,7 @@ export const MissionBriefingModal: React.FC<MissionBriefingModalProps> = ({
                   {session.exercises?.[0] && (
                     <div className="space-y-6">
                       <div className="flex items-baseline gap-3 border-b border-white/10 pb-2">
-                        <h3 className="font-headline text-lg font-black uppercase italic tracking-tight text-volt">
+                        <h3 className="font-headline text-lg font-black uppercase tracking-tight text-volt">
                           0. Warm-Up: {getWarmupForLift(session.exercises[0].name).title}
                         </h3>
                       </div>
@@ -84,7 +84,7 @@ export const MissionBriefingModal: React.FC<MissionBriefingModalProps> = ({
                               <div className="flex items-center justify-between mb-4">
                                 <div className="flex items-center gap-3">
                                   <div className="w-1 h-6 bg-volt" />
-                                  <h4 className="text-lg font-black uppercase italic tracking-tighter text-white">
+                                  <h4 className="text-lg font-black uppercase tracking-tighter text-white">
                                     {item.name}
                                   </h4>
                                 </div>
@@ -116,7 +116,7 @@ export const MissionBriefingModal: React.FC<MissionBriefingModalProps> = ({
                           <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-3">
                               <div className="w-1 h-6 bg-volt" />
-                              <h4 className="text-lg font-black uppercase italic tracking-tighter text-white">
+                              <h4 className="text-lg font-black uppercase tracking-tighter text-white">
                                 {getExerciseName(ex, t)}
                               </h4>
                             </div>
@@ -160,7 +160,7 @@ export const MissionBriefingModal: React.FC<MissionBriefingModalProps> = ({
                   {/* Cool-down Section */}
                   <div className="space-y-6">
                     <div className="flex items-baseline gap-3 border-b border-white/10 pb-2">
-                      <h3 className="font-headline text-lg font-black uppercase italic tracking-tight text-zinc-500">
+                      <h3 className="font-headline text-lg font-black uppercase tracking-tight text-zinc-500">
                         {(session.exercises?.length || 0) + 1}. Cool-Down Protocol
                       </h3>
                     </div>
@@ -172,7 +172,7 @@ export const MissionBriefingModal: React.FC<MissionBriefingModalProps> = ({
                             <div className="flex items-center justify-between mb-4">
                               <div className="flex items-center gap-3">
                                 <div className="w-1 h-6 bg-zinc-500" />
-                                <h4 className="text-lg font-black uppercase italic tracking-tighter text-white">
+                                <h4 className="text-lg font-black uppercase tracking-tighter text-white">
                                   {item.name}
                                 </h4>
                               </div>

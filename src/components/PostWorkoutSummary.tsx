@@ -80,7 +80,7 @@ export const PostWorkoutSummary = ({ initialRpe, onFinish }: PostWorkoutSummaryP
 
         {/* Header Group */}
         <div className="text-center">
-          <h2 className="text-4xl font-black italic tracking-tighter uppercase text-[var(--primary-color)] drop-shadow-[0_0_15px_var(--primary-color-glow)] px-4 text-center leading-tight">
+          <h2 className="text-4xl font-black tracking-tighter uppercase text-[var(--primary-color)] drop-shadow-[0_0_15px_var(--primary-glow)] px-4 text-center leading-tight">
             {missionHeading}, {userFirstName}.
           </h2>
         </div>
@@ -101,12 +101,12 @@ export const PostWorkoutSummary = ({ initialRpe, onFinish }: PostWorkoutSummaryP
               {currentSession?.targetRpe && (
                 <div className="text-right">
                   <span className="block text-[8px] font-black text-zinc-600 uppercase tracking-widest">Target</span>
-                  <span className="text-lg font-black italic text-zinc-400">{currentSession.targetRpe}</span>
+                  <span className="text-lg font-black text-zinc-400">{currentSession.targetRpe}</span>
                 </div>
               )}
               <div className="text-right">
                 <span className="block text-[8px] font-black text-zinc-600 uppercase tracking-widest">Actual</span>
-                <span className="text-2xl md:text-3xl font-black italic text-volt">{rpe}</span>
+                <span className="text-2xl md:text-3xl font-black text-volt">{rpe}</span>
               </div>
             </div>
           </div>

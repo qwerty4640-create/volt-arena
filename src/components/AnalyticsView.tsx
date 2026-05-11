@@ -153,19 +153,19 @@ export const AnalyticsView = () => {
           <div className="space-y-4">
             <div>
               <p className="text-[8px] font-black uppercase tracking-[0.3em] text-zinc-500 mb-1">{t('analysis.volumeTelemetry')}</p>
-              <p className="text-xs font-black italic uppercase text-white">{t('analysis.weekOf')} {data.week}</p>
+              <p className="text-xs font-black uppercase text-white">{t('analysis.weekOf')} {data.week}</p>
             </div>
             <div className="pt-3 border-t border-white/5 space-y-2">
               <div className="flex items-center justify-between gap-4">
                 <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">{t('analysis.totalVolume')}</span>
-                <span className="text-sm font-black italic text-white">
-                  {data.volume.toLocaleString()} <span className="text-[8px] uppercase not-italic text-zinc-500">{weightUnit}</span>
+                <span className="text-sm font-black text-white">
+                  {data.volume.toLocaleString()} <span className="text-[8px] uppercase not- text-zinc-500">{weightUnit}</span>
                 </span>
               </div>
               {data.avgRpe !== null && data.avgRpe !== undefined && (
                 <div className="flex items-center justify-between gap-4">
                   <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Avg RPE</span>
-                  <span className="text-sm font-black italic text-[#FF7162]">
+                  <span className="text-sm font-black text-[#FF7162]">
                     {data.avgRpe}
                   </span>
                 </div>
@@ -189,7 +189,7 @@ export const AnalyticsView = () => {
           <div className="space-y-4">
             <div>
               <p className="text-[8px] font-black uppercase tracking-[0.3em] text-zinc-500 mb-1">{t('analysis.telemetryLog')}</p>
-              <p className="text-xs font-black italic uppercase text-white">{data.fullDate}</p>
+              <p className="text-xs font-black uppercase text-white">{data.fullDate}</p>
               <p className="text-[10px] font-black uppercase tracking-tight text-volt mt-1">{data.title}</p>
             </div>
 
@@ -200,14 +200,14 @@ export const AnalyticsView = () => {
                     <div className="w-1.5 h-1.5" style={{ backgroundColor: entry.color }} />
                     <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">{entry.name}</span>
                   </div>
-                  <span className="text-sm font-black italic text-white">
-                    {entry.value} <span className="text-[8px] uppercase not-italic text-zinc-500">{weightUnit}</span>
+                  <span className="text-sm font-black text-white">
+                    {entry.value} <span className="text-[8px] uppercase not- text-zinc-500">{weightUnit}</span>
                   </span>
                 </div>
               ))}
               <div className="pt-2 mt-2 border-t border-white/5 flex justify-between items-center">
                 <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Mission RPE</span>
-                <span className="text-sm font-black italic text-volt">{data.rpe ? (data.rpe as number).toFixed(1) : 'N/A'}</span>
+                <span className="text-sm font-black text-volt">{data.rpe ? (data.rpe as number).toFixed(1) : 'N/A'}</span>
               </div>
             </div>
           </div>
@@ -243,7 +243,7 @@ export const AnalyticsView = () => {
                 >
                   <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6">
                     <div>
-                      <h2 className="font-headline text-3xl md:text-5xl font-black uppercase italic tracking-tight mb-2">{t('analysis.strengthTrend')}</h2>
+                      <h2 className="font-headline text-3xl md:text-5xl font-black uppercase tracking-tight mb-2">{t('analysis.strengthTrend')}</h2>
                       <p className="text-zinc-400 text-xs font-medium max-w-md mb-8 leading-relaxed">
                         {t('analysis.strengthTrendDesc')}
                       </p>
@@ -342,7 +342,7 @@ export const AnalyticsView = () => {
                 >
                   <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6">
                     <div>
-                      <h2 className="font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tight mb-2">{t('analysis.weeklyVolumeTrend')}</h2>
+                      <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight mb-2">{t('analysis.weeklyVolumeTrend')}</h2>
                       <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed">
                         {t('analysis.weeklyVolumeTrendDesc')}
                       </p>
@@ -426,7 +426,7 @@ export const AnalyticsView = () => {
                   transition={{ delay: 0.3 }}
                   className="glass-panel px-4 py-6 md:p-8 relative overflow-hidden min-w-0"
                 >
-                  <h3 className="font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tight mb-2">
+                  <h3 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight mb-2">
                     {t('Estimated 1rm')}
                   </h3>
 
@@ -465,7 +465,7 @@ export const AnalyticsView = () => {
                         <div key={i} className="flex flex-col">
                           <span className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-2">{lift.label}</span>
                           <div className="flex items-baseline gap-2">
-                            <span className="font-headline text-2xl md:text-3xl font-black italic text-white">{maxE1RM > 0 ? maxE1RM : '–'}</span>
+                            <span className="font-headline text-2xl md:text-3xl font-black text-white">{maxE1RM > 0 ? maxE1RM : '–'}</span>
                             <span className="font-headline text-xs font-black text-zinc-500">{weightUnit}</span>
                           </div>
                           <span className="text-[8px] font-bold text-volt tracking-widest mt-1 uppercase">
@@ -505,7 +505,7 @@ export const AnalyticsView = () => {
                         <div className="flex flex-col">
                           <span className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-2">{t('analysis.sbd_total')}</span>
                           <div className="flex items-baseline gap-2">
-                            <span className="font-headline text-2xl md:text-3xl font-black italic text-white">{total > 0 ? total : '–'}</span>
+                            <span className="font-headline text-2xl md:text-3xl font-black text-white">{total > 0 ? total : '–'}</span>
                             <span className="font-headline text-xs font-black text-zinc-500">{weightUnit}</span>
                           </div>
                           <span className="text-[8px] font-bold text-volt tracking-widest mt-1 uppercase">

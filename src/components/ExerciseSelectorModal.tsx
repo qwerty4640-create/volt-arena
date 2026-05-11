@@ -15,13 +15,13 @@ import { EXERCISE_DATABASE } from '../constants/exercises';
 interface ExerciseSelectorModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelect: (exerciseNames: string[], groupTitle?: string) => void;
+  onSelect: (exercises: { id: string, name: string }[], groupTitle?: string) => void;
 }
 
 export const ExerciseSelectorModal = ({ isOpen, onClose, onSelect }: ExerciseSelectorModalProps) => {
   const { t } = useSettings();
   const [isCircuitMode, setIsCircuitMode] = useState(false);
-  const [selectedCircuitExercises, setSelectedCircuitExercises] = useState<string[]>([]);
+  const [selectedCircuitExercises, setSelectedCircuitExercises] = useState<{ id: string, name: string }[]>([]);
   const [circuitTitle, setCircuitTitle] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [mounted, setMounted] = useState(false);
@@ -52,7 +52,7 @@ export const ExerciseSelectorModal = ({ isOpen, onClose, onSelect }: ExerciseSel
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 {/*}<PlusCircle className="text-volt" size={24} />{*/}
-                <h2 className="font-sans text-2xl font-black uppercase italic tracking-tight">
+                <h2 className="font-sans text-2xl font-black uppercase tracking-tight">
                   {isCircuitMode ? t('workout.createCircuit') : t('workout.addExercise')}
                 </h2>
               </div>
@@ -104,19 +104,19 @@ export const ExerciseSelectorModal = ({ isOpen, onClose, onSelect }: ExerciseSel
                 return (
                   <>
                     {filtered.map((ex) => {
-                      const isSelected = selectedCircuitExercises.includes(ex.name);
+                      const isSelected = selectedCircuitExercises.some(s => s.id === (ex.id || ex.name));
                       return (
                         <button
-                          key={ex.name}
+                          key={ex.id || ex.name}
                           onClick={() => {
                             if (isCircuitMode) {
                               setSelectedCircuitExercises(prev =>
-                                prev.includes(ex.name)
-                                  ? prev.filter(n => n !== ex.name)
-                                  : [...prev, ex.name]
+                                prev.some(s => s.id === (ex.id || ex.name))
+                                  ? prev.filter(s => s.id !== (ex.id || ex.name))
+                                  : [...prev, { id: ex.id || ex.name, name: ex.name }]
                               );
                             } else {
-                              onSelect([ex.name]);
+                              onSelect([{ id: ex.id || ex.name, name: ex.name }]);
                             }
                           }}
                           className={cn(
@@ -126,7 +126,7 @@ export const ExerciseSelectorModal = ({ isOpen, onClose, onSelect }: ExerciseSel
                         >
                           <div>
                             <div className={cn(
-                              "font-headline text-lg font-black uppercase italic tracking-tight transition-colors",
+                              "font-headline text-lg font-black uppercase  tracking-tight transition-colors",
                               isSelected ? "text-volt" : "group-hover:text-volt"
                             )}>
                               {ex.name}
@@ -152,10 +152,11 @@ export const ExerciseSelectorModal = ({ isOpen, onClose, onSelect }: ExerciseSel
                     {searchQuery && !filtered.some(ex => ex.name.toLowerCase() === searchQuery.toLowerCase()) && (
                       <button
                         onClick={() => {
+                          const customEx = { id: searchQuery, name: searchQuery };
                           if (isCircuitMode) {
-                            setSelectedCircuitExercises(prev => [...prev, searchQuery]);
+                            setSelectedCircuitExercises(prev => [...prev, customEx]);
                           } else {
-                            onSelect([searchQuery]);
+                            onSelect([customEx]);
                           }
                           setSearchQuery('');
                         }}
@@ -164,13 +165,13 @@ export const ExerciseSelectorModal = ({ isOpen, onClose, onSelect }: ExerciseSel
                         <PlusCircle size={24} className="text-volt" />
                         <div className="text-center">
                           <div className="text-[10px] font-black uppercase tracking-widest text-volt">{t('workout.createCustom')}</div>
-                          <div className="text-lg font-black uppercase italic text-white">"{searchQuery}"</div>
+                          <div className="text-lg font-black uppercase text-white">"{searchQuery}"</div>
                         </div>
                       </button>
                     )}
 
                     {filtered.length === 0 && !searchQuery && (
-                      <div className="text-center py-8 text-zinc-600 italic text-sm">
+                      <div className="text-center py-8 text-zinc-600 text-sm">
                         {t('workout.searchEmpty')}
                       </div>
                     )}
@@ -183,7 +184,7 @@ export const ExerciseSelectorModal = ({ isOpen, onClose, onSelect }: ExerciseSel
               <div className="mt-6 pt-6 border-t border-white/5">
                 <button
                   onClick={() => onSelect(selectedCircuitExercises, circuitTitle || t('workout.tacticalCircuit'))}
-                  className="w-full py-4 bg-volt text-void font-headline text-sm font-black uppercase italic tracking-widest hover:bg-white transition-all flex items-center justify-center gap-3"
+                  className="w-full py-4 bg-volt text-void font-headline text-sm font-black uppercase tracking-widest hover:bg-white transition-all flex items-center justify-center gap-3"
                 >
                   <PlusCircle size={20} />
                   <span>Add Circuit ({selectedCircuitExercises.length} Exercises)</span>

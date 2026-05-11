@@ -8,7 +8,11 @@ import { useSettings } from '../contexts/SettingsContext';
 import { useWorkout } from '../contexts/WorkoutContext';
 import { BlockType, getPlanForDuration, getPlanFromCustomBlocks, expandPlan } from '../constants/periodization';
 
-export const BlockWidget = () => {
+interface BlockWidgetProps {
+    onRecalibrate?: () => void;
+}
+
+export const BlockWidget = ({ onRecalibrate }: BlockWidgetProps) => {
     const { t, profile } = useSettings();
     const { history, getNextWorkoutTemplate } = useWorkout();
     const nextWorkout = getNextWorkoutTemplate();
@@ -84,9 +88,24 @@ export const BlockWidget = () => {
         <div className="glass-panel px-4 py-6 md:p-8 border-none flex flex-col justify-between h-full relative overflow-hidden min-w-0">
             <div className="absolute top-0 right-0 w-24 h-24 bg-volt/5 blur-[40px] -z-10" />
 
-            <div className="flex items-center justify-between mb-6 md:mb-8 relative z-10">
-                <div className="flex items-center gap-3">
-                    <h3 className="font-headline text-3xl md:text-3xl font-black uppercase italic tracking-tight mb-2">{t('Deployment Progress')}</h3>
+            <div className="flex flex-col mb-6 md:mb-8 relative z-10">
+                <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-headline text-3xl md:text-3xl font-black uppercase tracking-tight">{t('Deployment Progress')}</h3>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-white/5 pt-4">
+                    <div className="flex flex-col">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">Deployment Plan</span>
+                        <span className="text-sm font-black uppercase tracking-widest text-white">
+                            {(profile?.trainingObjectives && profile.trainingObjectives.length > 0)
+                                ? profile.trainingObjectives.map(g => t(`goal.${g}`)).join(' + ')
+                                : t(`goal.${profile?.trainingGoal || 'powerbuilding'}`)}
+                        </span>
+                    </div>
+                    <div className="flex flex-col">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">Mission Frequency</span>
+                        <span className="text-sm font-black uppercase tracking-widest text-white">{profile?.trainingFrequency || 3}x Sessions / Week</span>
+                    </div>
                 </div>
             </div>
 
@@ -131,7 +150,7 @@ export const BlockWidget = () => {
                                                 Weeks {startWeek}-{endWeek}
                                             </span>
                                             {isCurrent && (
-                                                <span className="text-[10px] font-black italic text-white">
+                                                <span className="text-[10px] font-black text-white">
                                                     WK {weekInBlock} / {block.durationWeeks}
                                                 </span>
                                             )}
@@ -226,6 +245,18 @@ export const BlockWidget = () => {
                     </div>
                 </div>
             </div>
+
+            {onRecalibrate && (
+                <div className="mt-2 relative z-10">
+                    <button
+                        onClick={onRecalibrate}
+                        className="w-full px-6 py-4 btn-primary flex items-center justify-center gap-2"
+                    >
+                        <Zap size={16} />
+                        <span>Recalibrate Deployment</span>
+                    </button>
+                </div>
+            )}
         </div>
     );
 };

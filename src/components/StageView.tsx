@@ -231,7 +231,7 @@ export const StageView = ({ immersionMode = 'immersive', isVoiceActive = false, 
                 >
                   <div>
                     <span className="font-sans text-[8px] font-bold text-zinc-600 uppercase tracking-widest block mb-1">{t('stage.lift')} {index + 1}</span>
-                    <span className="font-sans text-lg md:text-xl font-black italic uppercase text-white leading-none">{t(lift.name)}</span>
+                    <span className="font-sans text-lg md:text-xl font-black uppercase text-white leading-none">{t(lift.name)}</span>
                   </div>
                   
                   <div className="flex items-center justify-between sm:justify-end gap-4">
@@ -242,8 +242,8 @@ export const StageView = ({ immersionMode = 'immersive', isVoiceActive = false, 
                       -
                     </button>
                     <div className="text-center min-w-[80px] md:min-w-[100px]">
-                      <span className="text-2xl md:text-3xl font-black italic text-volt leading-none">{lift.weight.toFixed(1)}</span>
-                      <span className="text-[10px] font-black text-zinc-500 ml-1 uppercase italic">{t('stage.kg')}</span>
+                      <span className="text-2xl md:text-3xl font-black text-volt leading-none">{lift.weight.toFixed(1)}</span>
+                      <span className="text-[10px] font-black text-zinc-500 ml-1 uppercase">{t('stage.kg')}</span>
                     </div>
                     <button 
                       onClick={() => updateWeight(index, 2.5)}
@@ -330,7 +330,7 @@ export const StageView = ({ immersionMode = 'immersive', isVoiceActive = false, 
                 )}
                 <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 relative z-10">
                   <div className={cn(
-                    "px-2 md:px-3 py-1 font-sans text-[10px] font-bold italic flex items-center gap-2",
+                    "px-2 md:px-3 py-1 font-sans text-[10px] font-bold  flex items-center gap-2",
                     isSetupComplete ? "bg-void/20 text-void" : "bg-white/5 text-zinc-500"
                   )}>
                     <span className="text-xs md:text-sm">{checkedItems.length}/{CHECKLIST_ITEMS.length}</span>
@@ -367,7 +367,7 @@ export const StageView = ({ immersionMode = 'immersive', isVoiceActive = false, 
             <div className="flex flex-col gap-4 md:gap-6">
               <div>
                 <p className="font-sans text-[8px] md:text-[10px] tracking-[0.2em] text-volt uppercase font-bold mb-2">{t('stage.currentPhase')}</p>
-                <h2 className="font-sans text-2xl md:text-4xl font-black italic tracking-tight text-white uppercase">{t(currentLift.name)}</h2>
+                <h2 className="font-sans text-2xl md:text-4xl font-black tracking-tight text-white uppercase">{t(currentLift.name)}</h2>
               </div>
 
               <div>
@@ -385,7 +385,7 @@ export const StageView = ({ immersionMode = 'immersive', isVoiceActive = false, 
 
               <div className="flex justify-between items-center pt-2">
                 <p className="font-sans text-[8px] md:text-[10px] tracking-[0.2em] text-zinc-500 uppercase font-bold">{t('stage.gripTension')}</p>
-                <span className="font-sans text-[8px] md:text-[10px] font-bold text-volt uppercase tracking-widest italic">{t('stage.active')}</span>
+                <span className="font-sans text-[8px] md:text-[10px] font-bold text-volt uppercase tracking-widest">{t('stage.active')}</span>
               </div>
             </div>
           </div>
@@ -418,7 +418,7 @@ export const StageView = ({ immersionMode = 'immersive', isVoiceActive = false, 
               }}
               className="px-8 md:px-16 py-4 md:py-6 border-2 border-volt/40 bg-volt/5 backdrop-blur-xl"
             >
-              <h1 className="font-sans text-3xl md:text-6xl font-black italic tracking-[0.2em] md:tracking-[0.4em] text-volt text-glow-volt text-center translate-x-[0.1em] md:translate-x-[0.2em]">
+              <h1 className="font-sans text-3xl md:text-6xl font-black tracking-[0.2em] md:tracking-[0.4em] text-volt text-glow-volt text-center translate-x-[0.1em] md:translate-x-[0.2em]">
                 {t('stage.ready')}
               </h1>
             </motion.div>
@@ -426,8 +426,8 @@ export const StageView = ({ immersionMode = 'immersive', isVoiceActive = false, 
             <div className="flex flex-col items-center gap-1 md:gap-2">
               <span className="font-sans text-zinc-500 text-[8px] md:text-[10px] tracking-[0.2em] font-bold uppercase">{t('stage.targetLoad')}</span>
               <div className="flex items-baseline gap-2 md:gap-3">
-                <span className="font-sans text-4xl md:text-7xl font-black italic tracking-tighter text-white">{currentLift.weight.toFixed(1)}</span>
-                <span className="font-sans text-lg md:text-2xl font-bold text-volt italic">{t('stage.kg')}</span>
+                <span className="font-sans text-4xl md:text-7xl font-black tracking-tighter text-white">{currentLift.weight.toFixed(1)}</span>
+                <span className="font-sans text-lg md:text-2xl font-bold text-volt">{t('stage.kg')}</span>
               </div>
             </div>
 
@@ -460,7 +460,7 @@ export const StageView = ({ immersionMode = 'immersive', isVoiceActive = false, 
             <div className="glass-panel p-4 md:p-6 w-full md:w-40 shadow-xl border-white/5">
               <p className="font-sans text-[7px] md:text-[8px] tracking-[0.2em] text-zinc-500 uppercase font-bold mb-2 md:mb-3">{t('stage.heartRate')}</p>
               <div className="flex items-baseline gap-2">
-                <span className="font-sans text-xl md:text-3xl font-black italic text-white">142</span>
+                <span className="font-sans text-xl md:text-3xl font-black text-white">142</span>
                 <span className="font-sans text-[8px] md:text-[10px] font-bold text-zinc-500 uppercase">{t('stage.bpm')}</span>
               </div>
               <div className="mt-2 h-1 w-full bg-zinc-900 overflow-hidden">
@@ -471,8 +471,8 @@ export const StageView = ({ immersionMode = 'immersive', isVoiceActive = false, 
             <div className="glass-panel p-4 md:p-6 w-full md:w-40 shadow-xl border-white/5">
               <p className="font-sans text-[7px] md:text-[8px] tracking-[0.2em] text-zinc-500 uppercase font-bold mb-2 md:mb-3">{t('stage.vo2Max')}</p>
               <div className="flex items-baseline gap-2">
-                <span className="font-sans text-xl md:text-3xl font-black italic text-white">58.2</span>
-                <span className="font-sans text-[8px] md:text-[10px] font-bold text-zinc-500 uppercase italic">{t('stage.peak')}</span>
+                <span className="font-sans text-xl md:text-3xl font-black text-white">58.2</span>
+                <span className="font-sans text-[8px] md:text-[10px] font-bold text-zinc-500 uppercase">{t('stage.peak')}</span>
               </div>
               <div className="mt-2 h-1 w-full bg-zinc-900 overflow-hidden">
                 <div className="h-full bg-volt w-4/5 shadow-[0_0_10px_var(--primary-glow)]" />
@@ -482,7 +482,7 @@ export const StageView = ({ immersionMode = 'immersive', isVoiceActive = false, 
             <div className="glass-panel p-4 md:p-6 w-full md:w-40 shadow-xl border-white/5">
               <p className="font-sans text-[7px] md:text-[8px] tracking-[0.2em] text-zinc-500 uppercase font-bold mb-2 md:mb-3">{t('stage.bodyTemp')}</p>
               <div className="flex items-baseline gap-2">
-                <span className="font-sans text-xl md:text-3xl font-black italic text-white">37.2</span>
+                <span className="font-sans text-xl md:text-3xl font-black text-white">37.2</span>
                 <span className="font-sans text-[8px] md:text-[10px] font-bold text-zinc-500 uppercase">{t('stage.celsius')}</span>
               </div>
               <div className="mt-2 h-1 w-full bg-zinc-900 overflow-hidden">
@@ -493,7 +493,7 @@ export const StageView = ({ immersionMode = 'immersive', isVoiceActive = false, 
             <div className="glass-panel p-4 md:p-6 w-full md:w-40 shadow-xl border-white/5">
               <p className="font-sans text-[7px] md:text-[8px] tracking-[0.2em] text-zinc-500 uppercase font-bold mb-2 md:mb-3">{t('stage.bloodOxygen')}</p>
               <div className="flex items-baseline gap-2">
-                <span className="font-sans text-xl md:text-3xl font-black italic text-white">99</span>
+                <span className="font-sans text-xl md:text-3xl font-black text-white">99</span>
                 <span className="font-sans text-[8px] md:text-[10px] font-bold text-zinc-500 uppercase">%</span>
               </div>
               <div className="mt-2 h-1 w-full bg-zinc-900 overflow-hidden">
@@ -596,7 +596,7 @@ export const StageView = ({ immersionMode = 'immersive', isVoiceActive = false, 
                     <ListChecks size={20} className="md:w-7 md:h-7" />
                   </div>
                   <div>
-                    <h3 className="text-xl md:text-3xl font-black italic uppercase tracking-tighter leading-none text-white">{t('stage.termsSafety')}</h3>
+                    <h3 className="text-xl md:text-3xl font-black uppercase tracking-tighter leading-none text-white">{t('stage.termsSafety')}</h3>
                     <p className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-zinc-500 mt-1 md:mt-2">{t('stage.mandatoryReview')}</p>
                   </div>
                 </div>
@@ -700,7 +700,7 @@ export const StageView = ({ immersionMode = 'immersive', isVoiceActive = false, 
                   <AlertTriangle size={24} className="md:w-8 md:h-8" />
                 </div>
                 
-                <h3 className="text-xl md:text-2xl font-black italic uppercase tracking-tighter leading-none text-white mb-3 md:mb-4">{t('stage.confirmWithdraw')}</h3>
+                <h3 className="text-xl md:text-2xl font-black uppercase tracking-tighter leading-none text-white mb-3 md:mb-4">{t('stage.confirmWithdraw')}</h3>
                 <p className="text-zinc-400 text-xs md:text-sm leading-relaxed mb-6 md:mb-8">
                   {t('stage.withdrawWarning')}
                 </p>

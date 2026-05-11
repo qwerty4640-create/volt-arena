@@ -213,7 +213,7 @@ export const ReadinessCheck = ({ onComplete, onCancel }: ReadinessCheckProps) =>
         <div className="p-3 md:p-8 border-b border-white/5 shrink-0 relative">
           <div className="flex items-center gap-6">
             <div className="space-y-1">
-              <h2 className="font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tight text-white">{t('readiness.title')}</h2>
+              <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight text-white">{t('readiness.title')}</h2>
               <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('readiness.scale')}</p>
             </div>
           </div>
@@ -284,7 +284,7 @@ export const ReadinessCheck = ({ onComplete, onCancel }: ReadinessCheckProps) =>
                         <scenario.icon size={16} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className={cn("font-headline text-base md:text-lg font-black uppercase italic tracking-tight leading-tight", isRedline ? "text-crimson" : scenario.color)}>
+                        <h3 className={cn("font-headline text-base md:text-lg font-black uppercase  tracking-tight leading-tight", isRedline ? "text-crimson" : scenario.color)}>
                           {t('readiness.score_result', { score: calibration.readiness })}
                         </h3>
                         <p className="text-xs text-zinc-400 mt-2">
@@ -306,11 +306,11 @@ export const ReadinessCheck = ({ onComplete, onCancel }: ReadinessCheckProps) =>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="p-3 bg-white/5 flex flex-col gap-1">
                       <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">System Modifier</span>
-                      <span className="text-xl font-black italic text-volt">{Math.round(calibration.readinessModifier * 100)}%</span>
+                      <span className="text-xl font-black text-volt">{Math.round(calibration.readinessModifier * 100)}%</span>
                     </div>
                     <div className="p-3 bg-white/5 flex flex-col gap-1">
                       <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Target RPE</span>
-                      <span className="text-xl font-black italic text-volt">{baselineRecommendedRpe}</span>
+                      <span className="text-xl font-black text-volt">{baselineRecommendedRpe}</span>
                     </div>
                   </div>
 

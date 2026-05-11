@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
+import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Info } from 'lucide-react';
+import { X } from 'lucide-react';
 import { ExerciseDefinition } from '../constants/exercises';
-import { cn } from '../lib/utils';
 import { haptics } from '../lib/haptics';
+import { Portal } from './Portal';
 
 interface ExerciseInfoModalProps {
   exercise: ExerciseDefinition;
@@ -13,18 +12,11 @@ interface ExerciseInfoModalProps {
 }
 
 export const ExerciseInfoModal = ({ exercise, isOpen, onClose }: ExerciseInfoModalProps) => {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) return null;
-
-  return createPortal(
-    <AnimatePresence>
-      {isOpen && (
-      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-6">
+  return (
+    <Portal>
+      <AnimatePresence>
+        {isOpen && (
+        <div className="fixed inset-0 z-[20000] flex items-center justify-center p-6">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -43,7 +35,7 @@ export const ExerciseInfoModal = ({ exercise, isOpen, onClose }: ExerciseInfoMod
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <div className="w-1.5 h-6 bg-volt" />
-              <h2 className="text-xl font-black uppercase italic tracking-tight text-white">
+              <h2 className="text-xl font-black uppercase tracking-tight text-white">
                 {exercise.name}
               </h2>
             </div>
@@ -52,7 +44,7 @@ export const ExerciseInfoModal = ({ exercise, isOpen, onClose }: ExerciseInfoMod
             </button>
           </div>
           
-          <div className="space-y-4">
+          <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
             <div className="p-4 bg-zinc-900/50 border border-white/5">
               <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-1">Description</p>
               <p className="text-sm text-zinc-200 leading-relaxed">
@@ -68,6 +60,17 @@ export const ExerciseInfoModal = ({ exercise, isOpen, onClose }: ExerciseInfoMod
                         <span key={i} className="text-xs text-white bg-volt/20 px-2 py-1 rounded">{muscle}</span>
                     ))}
                 </div>
+              </div>
+            )}
+
+            {exercise.instructions && exercise.instructions.length > 0 && (
+              <div className="p-4 bg-zinc-900/50 border border-white/5">
+                <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-1">How To Perform</p>
+                <ul className="list-decimal list-inside space-y-1">
+                    {exercise.instructions.map((step, i) => (
+                        <li key={i} className="text-sm text-zinc-400 leading-relaxed">{step}</li>
+                    ))}
+                </ul>
               </div>
             )}
 
@@ -92,7 +95,7 @@ export const ExerciseInfoModal = ({ exercise, isOpen, onClose }: ExerciseInfoMod
         </motion.div>
       </div>
       )}
-    </AnimatePresence>,
-    document.body
+      </AnimatePresence>
+    </Portal>
   );
 };

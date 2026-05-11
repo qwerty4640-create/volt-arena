@@ -124,7 +124,7 @@ export const ActiveRecoveryModal = ({ isOpen, onClose, initialData }: ActiveReco
                   <Activity size={24} />
                 </div>
                 <div>
-                  <h3 className="font-headline text-xl font-black uppercase italic tracking-tighter text-white">{t('Non-Program Activity')}</h3>
+                  <h3 className="font-headline text-xl font-black uppercase tracking-tighter text-white">{t('Non-Program Activity')}</h3>
                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-volt/70">{t('Tactical Integration Log')}</p>
                 </div>
               </div>
@@ -184,7 +184,7 @@ export const ActiveRecoveryModal = ({ isOpen, onClose, initialData }: ActiveReco
               <div className="space-y-4">
                 <div className="flex justify-between items-end">
                   <label htmlFor="intensity-range" className="block text-[10px] font-black uppercase tracking-widest text-zinc-500">Intensity (RPE)</label>
-                  <span className="text-3xl font-black italic text-volt">{rpe}</span>
+                  <span className="text-3xl font-black text-volt">{rpe}</span>
                 </div>
                 <input
                   id="intensity-range"
@@ -206,7 +206,7 @@ export const ActiveRecoveryModal = ({ isOpen, onClose, initialData }: ActiveReco
               <div className="space-y-4">
                 <div className="flex justify-between items-end">
                   <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500">Duration (Minutes)</label>
-                  <span className="text-2xl font-black italic">{duration}</span>
+                  <span className="text-2xl font-black">{duration}</span>
                 </div>
                 <div className="flex gap-2">
                   {[15, 30, 45, 60, 90].map((d) => (

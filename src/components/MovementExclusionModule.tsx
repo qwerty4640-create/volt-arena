@@ -54,7 +54,7 @@ export const MovementExclusionModule = () => {
               />
             </label>
           ))}
-          <p className="text-[8px] text-zinc-600 uppercase font-black tracking-widest mt-4 leading-relaxed italic">
+          <p className="text-[8px] text-zinc-600 uppercase font-black tracking-widest mt-4 leading-relaxed">
             {t('settings.deselectToEnable')}
           </p>
         </div>

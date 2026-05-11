@@ -202,8 +202,8 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
               email: user.email || '',
               displayName: user.displayName || '',
               photoURL: user.photoURL || '',
-              language: language,
-              unit: unit,
+              language: 'en', // Default to 'en' for new profiles
+              unit: 'imperial', // Default to 'imperial' for new profiles
               isVoiceActive: false,
               immersionMode: 'immersive',
               showExperimentalMenus: false,
@@ -244,8 +244,8 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
             uid: 'guest',
             email: 'guest@example.com',
             displayName: 'Guest Athlete',
-            language: language,
-            unit: unit,
+            language: 'en',
+            unit: 'imperial',
             isVoiceActive: false,
             immersionMode: 'immersive',
             showExperimentalMenus: false,
@@ -255,7 +255,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
             onboardingCompleted: false,
             level: initialLevel,
             trainingGoal: 'powerbuilding',
-            weight: unit === 'imperial' ? 175 : 80,
+            weight: 175,
             createdAt: Date.now(),
             role: 'user'
           };
@@ -283,9 +283,9 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
       unsubscribeAuth();
       if (unsubscribeFirestore) unsubscribeFirestore();
     };
-  }, [language]); // Removed 'unit'
+  }, []); // Removed 'language' dependency
 
-  // Background sync for strength level
+  // Background sync for strength level - ONLY auto-elevate
   useEffect(() => {
     if (profile && auth.currentUser) {
       const calculatedLevel = calculateTier(
@@ -296,9 +296,13 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
         profile.gender || 'male'
       );
 
-      if (calculatedLevel !== profile.level) {
-        console.log(`Sync: Updating level from ${profile.level} to ${calculatedLevel}`);
-        updateProfile({ level: calculatedLevel });
+      const tierOrder = ['untrained', 'novice', 'intermediate', 'advanced', 'elite'];
+      const currentIdx = tierOrder.indexOf(profile.level);
+      const calcIdx = tierOrder.indexOf(calculatedLevel);
+
+      if (calcIdx > currentIdx) {
+        console.log(`Sync: Auto-elevating level from ${profile.level} to ${calculatedLevel}`);
+        updateProfile({ level: calculatedLevel as any });
       }
     }
   }, [profile?.squatPR, profile?.benchPR, profile?.deadliftPR, profile?.weight, profile?.gender, profile?.level]);
@@ -339,42 +343,44 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
       }
 
       try {
-        const batch = writeBatch(db);
-        
         // Update profile document
         const profileRef = doc(db, userDocPath);
-        if (profile) {
-          batch.set(profileRef, {
-            unit: u,
-            squatPR: profile.squatPR ? Math.round(profile.squatPR * weightFactor) : 0,
-            benchPR: profile.benchPR ? Math.round(profile.benchPR * weightFactor) : 0,
-            deadliftPR: profile.deadliftPR ? Math.round(profile.deadliftPR * weightFactor) : 0,
-            weight: profile.weight ? Math.round(profile.weight * weightFactor) : 0,
-            height: profile.height ? Math.round(profile.height * heightFactor) : 0,
-          }, { merge: true });
-        } else {
-          batch.set(profileRef, { unit: u }, { merge: true });
-        }
+        const profileUpdate = profile ? {
+          unit: u,
+          squatPR: profile.squatPR ? Math.round(profile.squatPR * weightFactor) : 0,
+          benchPR: profile.benchPR ? Math.round(profile.benchPR * weightFactor) : 0,
+          deadliftPR: profile.deadliftPR ? Math.round(profile.deadliftPR * weightFactor) : 0,
+          weight: profile.weight ? Math.round(profile.weight * weightFactor) : 0,
+          height: profile.height ? Math.round(profile.height * heightFactor) : 0,
+        } : { unit: u };
+        
+        await setDoc(profileRef, profileUpdate, { merge: true });
 
-        // Update all workout history documents
+        // Update all workout history documents in batches of 500
         const workoutsRef = collection(db, `${userDocPath}/workouts`);
         const workoutsSnap = await getDocs(workoutsRef);
         
-        workoutsSnap.forEach(workoutDoc => {
-          const data = workoutDoc.data();
-          if (data.exercises) {
-            const updatedExercises = data.exercises.map((ex: any) => ({
-              ...ex,
-              sets: ex.sets.map((set: any) => ({
-                ...set,
-                weight: set.weight ? String(Math.round(parseFloat(set.weight) * weightFactor)) : ''
-              }))
-            }));
-            batch.update(workoutDoc.ref, { exercises: updatedExercises });
-          }
-        });
-
-        await batch.commit();
+        const docs = workoutsSnap.docs;
+        for (let i = 0; i < docs.length; i += 500) {
+          const batch = writeBatch(db);
+          const chunk = docs.slice(i, i + 500);
+          
+          chunk.forEach(workoutDoc => {
+            const data = workoutDoc.data();
+            if (data.exercises) {
+              const updatedExercises = data.exercises.map((ex: any) => ({
+                ...ex,
+                sets: ex.sets.map((set: any) => ({
+                  ...set,
+                  weight: set.weight ? String(Math.round(parseFloat(set.weight) * weightFactor)) : ''
+                }))
+              }));
+              batch.update(workoutDoc.ref, { exercises: updatedExercises });
+            }
+          });
+          
+          await batch.commit();
+        }
       } catch (error) {
         handleFirestoreError(error, OperationType.UPDATE, userDocPath);
       }

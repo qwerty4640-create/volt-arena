@@ -32,7 +32,7 @@ export const ActiveRecoveryMenu: React.FC<ActiveRecoveryMenuProps> = ({ onExecut
     )}>
       <div className="flex justify-between items-end mb-4">
         <div>
-          <h3 className="text-white text-2xl md:text-3xl text-volt font-black tracking-tight uppercase italic">
+          <h3 className="text-white text-2xl md:text-3xl text-volt font-black tracking-tight uppercase">
             Recovery Protocol
           </h3>
           <p className="text-[10px] md:text-xs text-zinc-500 font-bold uppercase tracking-wider mt-1">
@@ -54,7 +54,7 @@ export const ActiveRecoveryMenu: React.FC<ActiveRecoveryMenuProps> = ({ onExecut
             <span className="text-[8px] md:text-[9px] text-zinc-600 font-bold uppercase tracking-[0.2em] mb-1">
               {getAcceleratorLabel(act.id)}
             </span>
-            <h4 className="text-white text-base md:text-lg font-black italic uppercase tracking-tight group-hover:text-volt transition-colors">
+            <h4 className="text-white text-base md:text-lg font-black uppercase tracking-tight group-hover:text-volt transition-colors">
               {act.label}
             </h4>
             <p className="text-[10px] md:text-xs text-zinc-500 mt-2 line-clamp-2 uppercase font-medium leading-relaxed">

@@ -123,7 +123,7 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
             <ChevronLeft size={20} className="md:w-6 md:h-6" />
           </button>
           <div>
-            <h1 className="text-2xl md:text-4xl font-black italic uppercase tracking-tighter">Mission Logs</h1>
+            <h1 className="text-2xl md:text-4xl font-black uppercase tracking-tighter">Mission History</h1>
             <p className="text-[8px] md:text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500">{t('analysis.reviewPerformance')}</p>
           </div>
         </div>
@@ -211,7 +211,7 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
                     onChange={(e) => setMinRpe(parseFloat(e.target.value))}
                     className="flex-1 accent-volt bg-white/10"
                   />
-                  <span className="text-sm font-black italic text-volt w-8 text-right">{minRpe.toFixed(1)}</span>
+                  <span className="text-sm font-black text-volt w-8 text-right">{minRpe.toFixed(1)}</span>
                 </div>
               </div>
 
@@ -288,7 +288,7 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
                             {!isWorkout && ` • ${new Date(log.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`}
                           </span>
                         </div>
-                        <h3 className="text-lg font-black italic uppercase tracking-tight group-hover:text-volt transition-colors">
+                        <h3 className="text-xs md:text-sm font-bold uppercase tracking-tight group-hover:text-volt transition-colors">
                           {isWorkout ? log.title : log.type}
                         </h3>
                         {isWorkout ? (
@@ -340,7 +340,7 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
                           )}
                         </>
                       ) : (
-                        <span className="text-[9px] font-sans italic text-zinc-500 leading-relaxed">
+                        <span className="text-[9px] font-sans text-zinc-500 leading-relaxed">
                           {log.note || 'No mission notes recorded.'}
                         </span>
                       )}
@@ -361,7 +361,7 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
                 <Dumbbell size={40} strokeWidth={1} />
               </div>
               <div className="space-y-2">
-                <h3 className="text-2xl font-black italic uppercase tracking-tight text-zinc-400">{t('analysis.noHistoryYet')}</h3>
+                <h3 className="text-2xl font-black uppercase tracking-tight text-zinc-400">{t('analysis.noHistoryYet')}</h3>
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600 max-w-[240px] leading-relaxed">
                   {t('analysis.completeFirstWorkoutToTrack')}
                 </p>
@@ -405,7 +405,7 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
                           <span>{t('analysis.backToList')}</span>
                         </button>
                       </div>
-                      <h2 className="text-lg md:text-2xl font-black italic uppercase tracking-tighter text-white leading-tight">
+                      <h2 className="text-lg md:text-2xl font-black uppercase tracking-tighter text-white leading-tight">
                         {selectedWorkout.logType === 'workout' ? selectedWorkout.title : selectedWorkout.type}
                       </h2>
                       <div className="flex items-center gap-4 text-zinc-500">
@@ -477,22 +477,22 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
                       <div className="col-span-2 md:col-span-3 bg-volt/5 p-3 md:p-4 border-none flex justify-between items-center">
                         <div>
                           <span className="block text-[7px] md:text-[8px] font-black uppercase tracking-widest text-volt/60 mb-1">{t('analysis.periodizationBlock')}</span>
-                          <span className="text-xs md:text-sm font-black italic text-volt uppercase">{selectedWorkout.blockLabel || selectedWorkout.blockType}</span>
+                          <span className="text-xs md:text-sm font-black text-volt uppercase">{selectedWorkout.blockLabel || selectedWorkout.blockType}</span>
                         </div>
                         <div className="text-right">
                           <span className="block text-[7px] md:text-[8px] font-black uppercase tracking-widest text-volt/60 mb-1">{t('analysis.progression')}</span>
-                          <span className="text-xs md:text-sm font-black italic text-white uppercase tracking-tight">W{selectedWorkout.weekInBlock}</span>
+                          <span className="text-xs md:text-sm font-black text-white uppercase tracking-tight">W{selectedWorkout.weekInBlock}</span>
                         </div>
                       </div>
                     ) : selectedWorkout.logType === 'recovery' ? (
                       <div className="col-span-2 md:col-span-3 bg-zinc-500/10 p-3 md:p-4 border-none flex justify-between items-center">
                         <div>
                           <span className="block text-[7px] md:text-[8px] font-black uppercase tracking-widest text-zinc-500 mb-1">{t('analysis.missionType')}</span>
-                          <span className="text-xs md:text-sm font-black italic text-zinc-400 uppercase">{t('analysis.nonProgramRecovery')}</span>
+                          <span className="text-xs md:text-sm font-black text-zinc-400 uppercase">{t('analysis.nonProgramRecovery')}</span>
                         </div>
                         <div className="text-right">
                           <span className="block text-[7px] md:text-[8px] font-black uppercase tracking-widest text-zinc-500 mb-1">{t('analysis.impactScore')}</span>
-                          <span className="text-xs md:text-sm font-black italic text-white uppercase tracking-tight">{((selectedWorkout.durationMinutes * selectedWorkout.rpe) / 100).toFixed(1)}x</span>
+                          <span className="text-xs md:text-sm font-black text-white uppercase tracking-tight">{((selectedWorkout.durationMinutes * selectedWorkout.rpe) / 100).toFixed(1)}x</span>
                         </div>
                       </div>
                     ) : null}
@@ -510,10 +510,10 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
                             <div key={idx} className="p-4 bg-white/5 border-none">
                               <div className="flex justify-between items-center mb-3">
                                 <div className="flex items-center gap-3">
-                                  <div className="w-8 h-8 bg-zinc-900 flex items-center justify-center text-[10px] font-black text-zinc-600 italic">
+                                  <div className="w-8 h-8 bg-zinc-900 flex items-center justify-center text-[10px] font-black text-zinc-600">
                                     {idx + 1}
                                   </div>
-                                  <span className="text-sm font-black uppercase italic">{getExerciseName(ex.name, ex.isSquat, ex.isBench, ex.isDeadlift)}</span>
+                                  <span className="text-sm font-black uppercase">{getExerciseName(ex.name, ex.isSquat, ex.isBench, ex.isDeadlift)}</span>
                                 </div>
                                 <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{ex.sets?.length || 0} {t('analysis.sets')}</span>
                               </div>
@@ -547,14 +547,14 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
                           {/*}<TrendingUp size={16} />{*/}
                           <span className="text-[10px] font-black uppercase tracking-widest">{t('analysis.sessionNotes')}</span>
                         </div>
-                        <div className="p-6 bg-void/40 border-none text-sm text-zinc-400 italic font-sans leading-relaxed">
+                        <div className="p-6 bg-void/40 border-none text-sm text-zinc-400 font-sans leading-relaxed">
                           "{selectedWorkout.note}"
                         </div>
                       </div>
                     )}
                   </div>
                   {/*}
-                  <button className="w-full py-4 bg-volt text-void font-black uppercase italic tracking-widest hover:bg-white transition-all flex items-center justify-center gap-2">
+                  <button className="w-full py-4 bg-volt text-void font-black uppercase tracking-widest hover:bg-white transition-all flex items-center justify-center gap-2">
                     <Zap size={16} />
                     <span>{t('analysis.repeatWorkout')}</span>
                   </button>
@@ -602,7 +602,7 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
                       <Edit2 size={24} />
                     </div>
                     <div>
-                      <h2 className="text-2xl font-black italic uppercase tracking-tight text-white">{t('analysis.editWorkout')}</h2>
+                      <h2 className="text-2xl font-black uppercase tracking-tight text-white">{t('analysis.editWorkout')}</h2>
                       <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{editWorkout.date} • {editWorkout.time}</p>
                     </div>
                   </div>
@@ -625,7 +625,7 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
                       type="text"
                       value={editWorkout.title}
                       onChange={(e) => setEditWorkout({ ...editWorkout, title: e.target.value })}
-                      className="w-full bg-surface-container-lowest border-b-2 border-white/5 py-4 px-4 text-lg font-black italic uppercase tracking-tight text-volt focus:border-volt outline-none transition-all"
+                      className="w-full bg-surface-container-lowest border-b-2 border-white/5 py-4 px-4 text-lg font-black uppercase tracking-tight text-volt focus:border-volt outline-none transition-all"
                     />
                   </div>
 
@@ -646,7 +646,7 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
                           <div className="flex justify-between items-center">
                             <div className="flex items-center gap-4">
                               {/*}
-                            <div className="w-10 h-10 bg-surface-container-high flex items-center justify-center text-xs font-black text-zinc-500 italic">
+                            <div className="w-10 h-10 bg-surface-container-high flex items-center justify-center text-xs font-black text-zinc-500">
                               {exIdx + 1}
                             </div>
                             {*/}
@@ -658,7 +658,7 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
                                   newExercises[exIdx].name = e.target.value;
                                   setEditWorkout({ ...editWorkout, exercises: newExercises });
                                 }}
-                                className="bg-transparent border-none text-lg font-black uppercase italic text-white focus:text-volt outline-none transition-all"
+                                className="bg-transparent border-none text-lg font-black uppercase text-white focus:text-volt outline-none transition-all"
                               />
                             </div>
                             <button
@@ -767,7 +767,7 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
                     <textarea
                       value={editWorkout.note || ''}
                       onChange={(e) => setEditWorkout({ ...editWorkout, note: e.target.value })}
-                      className="w-full bg-surface-container-lowest border border-white/5 p-6 text-sm text-zinc-400 italic font-sans leading-relaxed focus:border-volt outline-none transition-all min-h-[120px] resize-none"
+                      className="w-full bg-surface-container-lowest border border-white/5 p-6 text-sm text-zinc-400 font-sans leading-relaxed focus:border-volt outline-none transition-all min-h-[120px] resize-none"
                       placeholder={t('analysis.notesPlaceholder')}
                     />
                   </div>
@@ -803,13 +803,14 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
               <ExerciseSelectorModal
                 isOpen={isAddExerciseOpen}
                 onClose={() => setIsAddExerciseOpen(false)}
-                onSelect={(exerciseNames, groupTitle) => {
+                onSelect={(selectedExercises, groupTitle) => {
                   if (!editWorkout) return;
 
                   const groupId = groupTitle ? Math.random().toString(36).substr(2, 9) : undefined;
-                  const newExercises: Exercise[] = exerciseNames.map(name => ({
+                  const newExercises: Exercise[] = selectedExercises.map(ex => ({
                     id: Math.random().toString(36).substr(2, 9),
-                    name,
+                    exerciseId: ex.id,
+                    name: ex.name,
                     groupId,
                     groupTitle,
                     sets: [

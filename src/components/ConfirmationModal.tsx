@@ -7,7 +7,7 @@ import { cn } from '../lib/utils';
 interface ConfirmationModalProps {
   isOpen: boolean;
   title: string;
-  message: string;
+  message: string | React.ReactNode;
   confirmLabel?: string;
   cancelLabel?: string;
   onConfirm: () => void;
@@ -46,17 +46,15 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
           >
             {/* Background Glow */}
             <div className={`absolute -top-24 -right-24 w-48 h-48 blur-[80px] opacity-20 ${
-              variant === 'danger' ? 'bg-crimson' : variant === 'warning' ? 'bg-volt' : 'bg-white'
-            }`} />
+ variant === 'danger' ? 'bg-crimson' : variant === 'warning' ? 'bg-volt' : 'bg-white' }`} />
 
              <div className="relative z-10 flex flex-col items-center text-center">
               <div className={`w-16 h-16 flex items-center justify-center mb-6 border ${
-                variant === 'danger' ? 'bg-crimson/10 border-crimson/20 text-crimson' : variant === 'warning' ? 'bg-volt/10 border-volt/20 text-volt' : 'bg-white/10 border-white/20 text-white'
-              }`}>
+ variant === 'danger' ? 'bg-crimson/10 border-crimson/20 text-crimson' : variant === 'warning' ? 'bg-volt/10 border-volt/20 text-volt' : 'bg-white/10 border-white/20 text-white' }`}>
                 <AlertTriangle size={32} />
               </div>
               
-              <h3 className="text-2xl font-black italic uppercase tracking-tighter mb-4 text-white">{title}</h3>
+              <h3 className="text-2xl font-black uppercase tracking-tighter mb-4 text-white">{title}</h3>
               
               {message && (
                 <p className="text-zinc-400 text-sm font-medium leading-relaxed mb-8">

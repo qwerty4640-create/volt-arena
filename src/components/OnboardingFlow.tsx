@@ -355,13 +355,20 @@ export const OnboardingFlow = ({
   const recommendedGoal = getRecommendedGoal();
   const rationale = getRecommendationRationale(recommendedGoal);
 
-  // Auto-select recommended goal when relevant data changes
+  // Auto-select recommended goal only if not already selected or if goal hasn't been manually set
   useEffect(() => {
-    setFormData(prev => ({ 
-      ...prev, 
-      trainingGoal: recommendedGoal,
-      trainingObjectives: [recommendedGoal]
-    }));
+    // Only auto-update if trainingObjectives is empty or only contains the previously recommended goal
+    // This allows the user to change training age/frequency without losing their manually selected goal
+    const isDefaultOrEmpty = formData.trainingObjectives.length === 0 || 
+                             (formData.trainingObjectives.length === 1 && formData.trainingObjectives[0] === getRecommendedGoal());
+    
+    if (isDefaultOrEmpty) {
+      setFormData(prev => ({ 
+        ...prev, 
+        trainingGoal: recommendedGoal,
+        trainingObjectives: [recommendedGoal]
+      }));
+    }
   }, [formData.trainingAge, formData.trainingFrequency, formData.age, formData.weight, formData.height, formData.heightFeet, formData.heightInches]);
 
   // Scroll to top when step changes
@@ -395,7 +402,7 @@ export const OnboardingFlow = ({
                   <ArrowLeft size={24} />
                 </button>
                 <div className="flex-1 space-y-1">
-                  <h2 className="font-headline text-2xl md:text-3xl font-black uppercase italic tracking-tight text-white">{t('onboarding.title')}</h2>
+                  <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight text-white">{t('onboarding.title')}</h2>
                   <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">{t('onboarding.step2')}</p>
                 </div>
               </div>
@@ -584,7 +591,7 @@ export const OnboardingFlow = ({
                   <ArrowLeft size={24} />
                 </button>
                 <div className="space-y-1">
-                  <h2 className="font-headline text-3xl font-black uppercase italic tracking-tight text-white">{t('onboarding.title')}</h2>
+                  <h2 className="font-headline text-3xl font-black uppercase tracking-tight text-white">{t('onboarding.title')}</h2>
                   <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">{t('onboarding.step3')}</p>
                 </div>
               </div>
@@ -749,7 +756,7 @@ export const OnboardingFlow = ({
                       </button>
                     ))}
                   </div>
-                  <p className="text-[9px] text-zinc-600 font-black uppercase tracking-widest italic">
+                  <p className="text-[9px] text-zinc-600 font-black uppercase tracking-widest">
                     {t('onboarding.periodDescription')}
                   </p>
                 </div>
@@ -757,7 +764,7 @@ export const OnboardingFlow = ({
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('onboarding.frequency')}</label>
-                    <span className="text-volt font-headline text-xs font-black italic">{formData.trainingFrequency} {t('onboarding.daysPerWeek')}</span>
+                    <span className="text-volt font-headline text-xs font-black">{formData.trainingFrequency} {t('onboarding.daysPerWeek')}</span>
                   </div>
                   <input
                     type="range"
@@ -801,7 +808,7 @@ export const OnboardingFlow = ({
                   <ArrowLeft size={24} />
                 </button>
                 <div className="space-y-1">
-                  <h2 className="font-headline text-3xl font-black uppercase italic tracking-tight text-white">{t('onboarding.title')}</h2>
+                  <h2 className="font-headline text-3xl font-black uppercase tracking-tight text-white">{t('onboarding.title')}</h2>
                   <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">{t('onboarding.step4')}</p>
                 </div>
               </div>
@@ -846,7 +853,7 @@ export const OnboardingFlow = ({
                       >
                         {recommendedGoal === goal && (
                           <div className="absolute top-0 right-0 flex items-center">
-                            <div className="bg-volt text-void text-[7px] font-black uppercase px-2 py-0.5 italic tracking-tighter">
+                            <div className="bg-volt text-void text-[7px] font-black uppercase px-2 py-0.5 tracking-tighter">
                               {t('onboarding.recommended')}
                             </div>
                             <div className="bg-white/10 p-0.5 text-volt">
@@ -869,7 +876,7 @@ export const OnboardingFlow = ({
                             )}
                           </div>
                           {isSelected && (
-                            <span className="text-[7px] font-black text-volt italic border border-volt/30 px-1.5 py-0.5">
+                            <span className="text-[7px] font-black text-volt border border-volt/30 px-1.5 py-0.5">
                               {priorityLabel}
                             </span>
                           )}
@@ -909,7 +916,7 @@ export const OnboardingFlow = ({
                   <ArrowLeft size={24} />
                 </button>
                 <div className="space-y-1">
-                  <h2 className="font-headline text-3xl font-black uppercase italic tracking-tight text-white">Environment & Experience</h2>
+                  <h2 className="font-headline text-3xl font-black uppercase tracking-tight text-white">Environment & Experience</h2>
                   <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">ADVANCED OBJECTIVES SETUP</p>
                 </div>
               </div>
@@ -929,7 +936,7 @@ export const OnboardingFlow = ({
                         formData.hasFullGymAccess ? "bg-volt/10 border-volt" : "bg-surface-variant border-white/5"
                       )}
                     >
-                      <span className="font-headline font-black italic tracking-widest uppercase">YES</span>
+                      <span className="font-headline font-black tracking-widest uppercase">YES</span>
                     </button>
                     <button
                       onClick={() => setFormData({ ...formData, hasFullGymAccess: false })}
@@ -938,7 +945,7 @@ export const OnboardingFlow = ({
                         !formData.hasFullGymAccess ? "bg-volt/10 border-volt" : "bg-surface-variant border-white/5"
                       )}
                     >
-                      <span className="font-headline font-black italic tracking-widest uppercase">NO</span>
+                      <span className="font-headline font-black tracking-widest uppercase">NO</span>
                     </button>
                   </div>
                 </div>
@@ -961,7 +968,7 @@ export const OnboardingFlow = ({
                         formData.hasMedicalConditions ? "bg-volt/10 border-volt" : "bg-surface-variant border-white/5"
                       )}
                     >
-                      <span className="font-headline font-black italic tracking-widest uppercase">YES</span>
+                      <span className="font-headline font-black tracking-widest uppercase">YES</span>
                     </button>
                     <button
                       onClick={() => {
@@ -976,7 +983,7 @@ export const OnboardingFlow = ({
                         !formData.hasMedicalConditions ? "bg-volt/10 border-volt" : "bg-surface-variant border-white/5"
                       )}
                     >
-                      <span className="font-headline font-black italic tracking-widest uppercase">NO</span>
+                      <span className="font-headline font-black tracking-widest uppercase">NO</span>
                     </button>
                   </div>
                   
@@ -1009,7 +1016,7 @@ export const OnboardingFlow = ({
                         formData.isExperiencedAthlete ? "bg-volt/10 border-volt" : "bg-surface-variant border-white/5"
                       )}
                     >
-                      <span className="font-headline font-black italic tracking-widest uppercase">YES</span>
+                      <span className="font-headline font-black tracking-widest uppercase">YES</span>
                     </button>
                     <button
                       onClick={() => setFormData({ ...formData, isExperiencedAthlete: false })}
@@ -1018,7 +1025,7 @@ export const OnboardingFlow = ({
                         !formData.isExperiencedAthlete ? "bg-volt/10 border-volt" : "bg-surface-variant border-white/5"
                       )}
                     >
-                      <span className="font-headline font-black italic tracking-widest uppercase">NO</span>
+                      <span className="font-headline font-black tracking-widest uppercase">NO</span>
                     </button>
                   </div>
                 </div>
@@ -1050,7 +1057,7 @@ export const OnboardingFlow = ({
                   <ArrowLeft size={24} />
                 </button>
                 <div className="space-y-1">
-                  <h2 className="font-headline text-3xl font-black uppercase italic tracking-tight text-white">{t('onboarding.periodSetup')}</h2>
+                  <h2 className="font-headline text-3xl font-black uppercase tracking-tight text-white">{t('onboarding.periodSetup')}</h2>
                   <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">{t('onboarding.step5')}</p>
                 </div>
               </div>
@@ -1097,7 +1104,7 @@ export const OnboardingFlow = ({
                   <ArrowLeft size={24} />
                 </button>
                 <div className="space-y-1">
-                  <h2 className="font-headline text-3xl font-black uppercase italic tracking-tight text-white">{t('onboarding.protocolFinalized')}</h2>
+                  <h2 className="font-headline text-3xl font-black uppercase tracking-tight text-white">{t('onboarding.protocolFinalized')}</h2>
                   <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">{t('onboarding.step6')}</p>
                 </div>
               </div>
@@ -1108,7 +1115,7 @@ export const OnboardingFlow = ({
                 transition={{ delay: 0.3, type: "spring", stiffness: 200 }}
                 className="w-24 h-24 bg-volt/10 flex items-center justify-center text-volt mx-auto border border-volt/20"
               >
-                <CheckCircle2 size={48} className="drop-shadow-[0_0_15px_rgba(0,182,255,0.5)]" />
+                <CheckCircle2 size={48} className="drop-shadow-[0_0_15px_var(--primary-glow)]" />
               </motion.div>
 
               <div className="space-y-6">
@@ -1118,7 +1125,7 @@ export const OnboardingFlow = ({
                   transition={{ delay: 0.5 }}
                   className="space-y-2"
                 >
-                  <h2 className="font-headline text-3xl md:text-4xl font-black uppercase italic tracking-tighter text-white text-glow-volt">
+                  <h2 className="font-headline text-3xl md:text-4xl font-black uppercase tracking-tighter text-white text-glow-volt">
                     {t('onboarding.systemsOnline')}
                   </h2>
                 </motion.div>
