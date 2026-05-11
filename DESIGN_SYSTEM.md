@@ -6,7 +6,6 @@
 - **Key Traits**: 
   - Zero border-radius (Hard edges only).
   - High contrast (Neon on Void).
-  - Heavy usage of skewed/italic transformations.
 
 ## 2. Color Palette
 | Token | Hex | Usage |
@@ -21,7 +20,7 @@
 ## 3. Typography
 - **Primary Font**: `Inter` (sans-serif).
 - **Styling Rules**:
-  - **Headlines**: `font-black italic uppercase tracking-tighter`.
+  - **Headlines**: `font-black uppercase tracking-tighter`.
   - **Data/Technical**: `font-mono uppercase tracking-widest`.
   - **Captions**: `text-[10px] font-bold text-zinc-500 uppercase tracking-widest`.
 - **Text Shadows**: Usage of `text-glow-volt` for high-importance metrics.
@@ -44,7 +43,7 @@
 ### Button Styles
 | Tier | Context | Tailwind Classes |
 |------|---------|------------------|
-| **Primary** | Major actions (Start Mission, Commit) | `bg-volt text-void font-black uppercase italic tracking-[0.2em] hover:bg-white shadow-[0_0_20px_rgba(0,182,255,0.4)] transition-all` |
+| **Primary** | Major actions (Start Mission, Commit) | `bg-volt text-void font-black uppercase tracking-[0.2em] hover:bg-white shadow-[0_0_20px_rgba(0,182,255,0.4)] transition-all` |
 | **Secondary** | Supportive actions (Log Activity) | `bg-void/40 border border-white/10 text-white text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-white/5 transition-all` |
 | **Tertiary** | View logs, details | `bg-white/10 text-zinc-400 text-[10px] font-black uppercase tracking-widest hover:bg-volt hover:text-void transition-all px-6 py-3 backdrop-blur-sm` |
 
