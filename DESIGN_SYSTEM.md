@@ -1,4 +1,4 @@
-# Design System Documentation: Volt Arena
+# Design System Documentation: Vanguard
 
 ## 1. Visual Identity & Mood
 - **Core Aesthetic**: Tactical, Brutalist, Rigorous Sports Science.

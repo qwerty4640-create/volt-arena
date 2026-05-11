@@ -4,7 +4,7 @@
 - **Aesthetic**: Tactical.
 - **Rules**:
   - NEVER use rounded corners (`border-radius: 0 !important`).
-  - ALWAYS use `Inter` with heavy italic/uppercase styling for primary headings.
+  - ALWAYS use `Inter` with heavy /uppercase styling for primary headings.
   - USE `volt` (#00b6ff) for primary cyan highlights.
   - REFER to `DESIGN_SYSTEM.md` and `design-system.json` for detailed tokens and patterns.
   - **Button Hierarchy**:

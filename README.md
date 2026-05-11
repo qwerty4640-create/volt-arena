@@ -1,1 +1,1 @@
-Welcome to Volt Arena
+Welcome to Vanguard
