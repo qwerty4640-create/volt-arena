@@ -14,6 +14,10 @@ export function useWakeLock() {
         });
       }
     } catch (err) {
+      if (err instanceof Error && (err.name === 'NotAllowedError' || err.name === 'SecurityError')) {
+        // Silently fail for permission issues as this is a non-critical feature
+        return;
+      }
       console.error('Wake Lock request failed:', err);
     }
   }, []);

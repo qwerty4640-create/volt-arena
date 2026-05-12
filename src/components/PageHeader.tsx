@@ -1,15 +1,16 @@
 import React from 'react';
 import { ViewType } from '../types';
 import { useSettings } from '../contexts/SettingsContext';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Settings2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 interface PageHeaderProps {
   activeView: ViewType;
+  onBack?: () => void;
 }
 
-export function PageHeader({ activeView }: PageHeaderProps) {
-  const { t } = useSettings();
+export function PageHeader({ activeView, onBack }: PageHeaderProps) {
+  const { t, isCustomizeModalOpen, setIsCustomizeModalOpen } = useSettings();
 
   const getBreadcrumbs = (view: ViewType): string | null => {
     switch (view) {
@@ -45,18 +46,43 @@ export function PageHeader({ activeView }: PageHeaderProps) {
 
   const breadcrumb = getBreadcrumbs(activeView);
   const title = getPageTitle(activeView);
+  const isMissionLog = title === t('workout.log');
 
   return (
-    <header className="w-full min-h-[50px] opacity-100 flex flex-col justify-end pb-4 pt-2 shrink-0 z-10">
-      {breadcrumb && (
-        <div className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">
-          <span>{breadcrumb}</span>
-          <ChevronRight size={10} className="text-volt" />
+    <header className="w-full min-h-[100px] flex flex-col justify-center shrink-0 z-10 px-4 md:px-0 py-4 md:py-0">
+      <div className="flex items-center justify-between w-full">
+        <div className="flex flex-col">
+          {/* Breadcrumb Area - Reserved space on desktop */}
+          <div className={cn(
+            "flex items-center gap-1 text-[10px] font-black uppercase tracking-widest mb-2 transition-all h-[14px]",
+            breadcrumb ? "text-zinc-500" : "md:opacity-0 md:flex hidden",
+            isMissionLog && "md:hidden"
+          )}>
+            {breadcrumb && (
+              <>
+                <span>{breadcrumb}</span>
+                <ChevronRight size={10} className="text-volt" />
+              </>
+            )}
+          </div>
+
+          <div className="flex items-center gap-3">
+            <h1 className="font-headline text-3xl sm:text-5xl font-black uppercase tracking-tight text-white m-0 leading-none">
+              {title}
+            </h1>
+          </div>
         </div>
-      )}
-      <h1 className="font-headline text-3xl sm:text-4xl font-black uppercase tracking-tight text-white m-0 leading-none">
-        {title}
-      </h1>
+
+        {activeView === 'analytics' && (
+          <button 
+            onClick={() => setIsCustomizeModalOpen(true)}
+            className="hidden md:flex items-center gap-2 px-6 py-3 bg-void border border-white/10 text-white font-headline text-[10px] font-black uppercase tracking-widest hover:bg-white/10 hover:border-volt/50 transition-all group"
+          >
+            <Settings2 size={14} className="text-zinc-400 group-hover:text-volt" />
+            {t('analysis.customizeDashboard')}
+          </button>
+        )}
+      </div>
     </header>
   );
 }

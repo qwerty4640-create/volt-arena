@@ -829,6 +829,20 @@ function AppContent() {
     }
   };
 
+  const handlePageBack = () => {
+    switch (activeView) {
+      case 'profile': setActiveView('settings'); break;
+      case 'workout-history': {
+        setSelectedHistoryWorkoutId(null);
+        setActiveView(lastView);
+        break;
+      }
+      case 'upcoming-missions': setActiveView('training'); break;
+      case 'workout-log': setActiveView('training'); break;
+      default: break;
+    }
+  };
+
   return (
     <div className={cn(
       "relative h-screen w-screen bg-void text-white font-sans overflow-hidden flex transition-colors duration-1000",
@@ -886,7 +900,7 @@ function AppContent() {
         (activeView === 'berserker') ? "opacity-0 -translate-x-full pointer-events-none" : "opacity-100 translate-x-0"
       )}>
         {/* Navigation Content Pane */}
-        <div className="w-[260px] h-full flex flex-col justify-between py-8 px-6 border-r border-white/5 bg-void/90 backdrop-blur-3xl shadow-2xl overflow-hidden">
+        <div className="w-[260px] h-full flex flex-col justify-between py-8 px-6 border-r border-white/5 bg-void/90 backdrop-blur-3xl shadow-2xl overflow-y-auto custom-scrollbar">
           <div className="flex flex-col gap-8">
             <div 
               onClick={() => setActiveView('analysis')}
@@ -932,10 +946,18 @@ function AppContent() {
                       isActive ? "bg-white/[0.05] text-white border-white/5" : "text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.02]"
                     )}
                   >
-                    <div className={cn(
-                      "p-1.5 rounded-lg transition-colors",
-                      isActive ? "bg-volt/10 text-volt" : "text-zinc-600 group-hover:text-zinc-300"
-                    )}>
+                    <div 
+                      className={cn(
+                        "p-1.5 transition-colors flex items-center justify-center",
+                        item.id === 'training' ? "" : "rounded-lg",
+                        isActive ? "bg-volt/10 text-volt" : "text-zinc-600 group-hover:text-zinc-300"
+                      )}
+                      style={item.id === 'training' ? {
+                        clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)",
+                        minWidth: '28px',
+                        minHeight: '28px'
+                      } : {}}
+                    >
                       <Icon size={18} strokeWidth={isActive ? 3 : 2} />
                     </div>
                     <span className={cn(
@@ -986,14 +1008,6 @@ function AppContent() {
             </div>
 
             <div className="px-1 space-y-1">
-              <div className="flex justify-between items-center text-[7px] font-black uppercase tracking-widest text-zinc-600 border-b border-white/5 pb-1.5">
-                <span>ACTIVE SINCE</span>
-                <span className="text-zinc-400">{profile?.createdAt ? new Date(profile.createdAt).getFullYear() : '2024'}</span>
-              </div>
-              <div className="flex justify-between items-center text-[7px] font-black uppercase tracking-widest text-zinc-600 border-b border-white/5 pb-1.5 pt-1.5">
-                <span>SYSTEM STATUS</span>
-                <span className="text-volt animate-pulse">OPTIMAL</span>
-              </div>
             </div>
           </div>
         </div>
@@ -1126,10 +1140,13 @@ function AppContent() {
       {/* Main Content Area */}
       <main 
         ref={mainRef}
-        className="flex-1 w-full md:w-[calc(100%-260px)] max-w-none ml-0 md:ml-[260px] px-4 md:px-[var(--app-gutter)] relative h-full flex flex-col items-center pt-[calc(6rem+env(safe-area-inset-top))] md:pt-[100px] pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-12 overflow-x-hidden overflow-y-auto custom-scrollbar hud-widget-grid"
+        className="flex-1 w-full md:w-[calc(100%-260px)] max-w-none ml-0 md:ml-[260px] px-4 md:px-[var(--app-gutter)] relative h-full flex flex-col items-center pt-[calc(6rem+env(safe-area-inset-top))] md:pt-0 pb-24 md:pb-12 overflow-x-hidden overflow-y-auto custom-scrollbar hud-widget-grid"
       >
-        <div className="hidden md:flex flex-col w-full mb-4">
-          <PageHeader activeView={activeView} />
+        <div className={cn(
+          "hidden md:flex flex-col w-full md:sticky md:top-0 md:z-30 bg-void border-b border-white/5 md:mb-8 md:-mx-[var(--app-gutter)] md:px-[var(--app-gutter)] md:w-[calc(100%+2*var(--app-gutter))]",
+          (activeView === 'post-workout' || activeView === 'berserker') && "md:hidden"
+        )}>
+          <PageHeader activeView={activeView} onBack={handlePageBack} />
         </div>
         <AnimatePresence mode="wait">
           <motion.div

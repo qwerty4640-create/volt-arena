@@ -58,6 +58,156 @@ export const calculateRecoveryImpact = (
   return Math.min(100, Math.max(0, currentScore + boost));
 };
 
+export const calculateSystemReadiness = (
+  history: any[],
+  recoveryHistory: any[],
+  subjectiveReadiness: any | null,
+  profileProgramResetAt: number | undefined,
+  unit: 'metric' | 'imperial'
+) => {
+  let systemReadiness = 100;
+
+  const filteredHistory = profileProgramResetAt
+    ? history.filter(s => (s.completedAt || 0) > profileProgramResetAt)
+    : history;
+
+  let cumulativeFatigueScore = 0;
+  const last24hTotalHistory = recoveryHistory.filter(r =>
+    (Date.now() - r.timestamp) / 3600000 < 24
+  );
+  cumulativeFatigueScore = last24hTotalHistory.reduce((sum, r) => sum + r.rpe, 0);
+
+  let k_fatigue = 0.04;
+  let k_stress = 0.04;
+
+  const last72hRecovery = recoveryHistory.filter(r =>
+    (Date.now() - r.timestamp) / 3600000 < 72
+  );
+
+  last72hRecovery.forEach(recovery => {
+    const activityDef = RECOVERY_MAP.find(a => a.id === recovery.activityId);
+    if (activityDef) {
+      const avgBoost = (activityDef.boostRange[0] + activityDef.boostRange[1]) / 2;
+      const multiplier = 1 + (avgBoost / 10);
+      if (activityDef.targets.includes('fatigue')) k_fatigue *= multiplier;
+      if (activityDef.targets.includes('stress')) k_stress *= multiplier;
+    }
+  });
+
+  let currentFatigue = 0;
+  const recentSessions = filteredHistory.slice(0, 5);
+  
+  recentSessions.forEach(session => {
+    if (session.completedAt) {
+      const t = Math.max(0, (Date.now() - session.completedAt) / 3600000);
+      
+      let volumeVal = 0;
+      let rpeSum = 0;
+      let rpeCount = 0;
+
+      session.exercises?.forEach((ex: any) => {
+        ex.sets?.forEach((s: any) => {
+          if (s.isCompleted && !s.isWarmup) {
+            const weight = parseFloat(s.weight) || 0;
+            const reps = parseInt(s.reps) || 0;
+            volumeVal += weight * reps;
+            const sRpe = parseFloat(s.rpe) || 0;
+            if (sRpe > 0) {
+              rpeSum += sRpe;
+              rpeCount += 1;
+            }
+          }
+        });
+      });
+
+      const avgRpe = rpeCount > 0 ? rpeSum / rpeCount : (session.actualRpe || session.rpe || 7);
+      const intensityScale = unit === 'imperial' ? 4400 : 2000;
+      const normalizedIntensity = (volumeVal * avgRpe) / intensityScale;
+      
+      currentFatigue += normalizedIntensity * Math.exp(-k_fatigue * t);
+    }
+  });
+
+  currentFatigue = Math.min(70, currentFatigue);
+  const fatiguePenalty = 1.0 + currentFatigue;
+
+  let stressPenalty = 1.0;
+  let sleepDeficit = 0;
+
+  if (subjectiveReadiness) {
+    const t_stress = Math.max(0, (Date.now() - subjectiveReadiness.timestamp) / 3600000);
+    const subjectiveStressDeficit = (5 - (subjectiveReadiness.stress || 5)) * 4;
+    stressPenalty = 1.0 + subjectiveStressDeficit * Math.exp(-k_stress * t_stress);
+    sleepDeficit = (5 - (subjectiveReadiness.sleep || 5)) * 5;
+  }
+
+  systemReadiness = 100 - sleepDeficit - fatiguePenalty - stressPenalty;
+  const currentReadiness = Math.round(Math.max(0, Math.min(100, systemReadiness)));
+
+  let readinessModifier = 1.0;
+  if (currentReadiness >= 90) readinessModifier = 1.05;
+  else if (currentReadiness < 70 && currentReadiness >= 50) readinessModifier = 0.90;
+  else if (currentReadiness < 50) readinessModifier = 0.80;
+
+  const isRedline = cumulativeFatigueScore >= 18;
+  let recommendedRpe = 7.5;
+  
+  if (currentReadiness >= 95) recommendedRpe = 9.5;
+  else if (currentReadiness >= 90) recommendedRpe = 9.0;
+  else if (currentReadiness >= 80) recommendedRpe = 8.5;
+  else if (currentReadiness >= 70) recommendedRpe = 8.0;
+  else if (currentReadiness >= 60) recommendedRpe = 7.5;
+  else if (currentReadiness >= 50) recommendedRpe = 7.0;
+  else recommendedRpe = 6.0;
+
+  if (isRedline) {
+    readinessModifier = 0.75;
+    recommendedRpe = Math.min(recommendedRpe, 5);
+  }
+
+  let overtrainingRisk: 'none' | 'warning' | 'critical' = 'none';
+  const last14Days = history.filter(s => (Date.now() - (s.completedAt || 0)) / 86400000 < 14);
+
+  if (last14Days.length >= 4) {
+    const acuteSessions = last14Days.filter(s => (Date.now() - (s.completedAt || 0)) / 86400000 < 7);
+    const chronicSessions = last14Days;
+
+    const getLoad = (sessions: any[]) => {
+      return sessions.reduce((acc, s) => {
+        let vol = 0;
+        s.exercises?.forEach((e: any) => e.sets?.forEach((st: any) => {
+          if (st.isCompleted && !st.isWarmup) {
+            vol += (parseFloat(st.weight) || 0) * (parseInt(st.reps) || 0);
+          }
+        }));
+        const intensity = unit === 'imperial' ? 8000 : 3600;
+        return acc + (vol * (s.rpe || 7)) / intensity;
+      }, 0) / (sessions.length || 1);
+    };
+
+    const acuteLoad = getLoad(acuteSessions);
+    const chronicLoad = getLoad(chronicSessions);
+    const acRatio = chronicLoad > 0 ? acuteLoad / chronicLoad : 0;
+
+    if (acRatio > 1.6 || currentReadiness < 20) overtrainingRisk = 'critical';
+    else if (acRatio > 1.3 || currentReadiness < 40) overtrainingRisk = 'warning';
+  }
+
+  return {
+    readinessScore: currentReadiness,
+    readinessModifier,
+    recommendedRpe,
+    overtrainingRisk,
+    isRedline,
+    sleepDeficit,
+    fatiguePenalty,
+    stressPenalty,
+    k_fatigue,
+    k_stress,
+    cumulativeFatigueScore
+  };
+};
+
 export const getSuggestedActivities = (readinessScore: number) => {
   return RECOVERY_MAP
     .filter(act => readinessScore >= act.minReadiness && readinessScore <= act.maxReadiness + 20)

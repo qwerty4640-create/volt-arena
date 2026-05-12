@@ -90,7 +90,7 @@ export const UpcomingMissionsView: React.FC<UpcomingMissionsViewProps> = ({ onBa
         </button>
         <div className="flex flex-col mb-2">
           <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600 mb-2">{getBreadcrumbs()}</span>
-          <h1 className="font-headline text-2xl font-black uppercase tracking-tighter text-white">
+          <h1 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tighter text-white">
             {viewState.level === 'blocks' && <>Current <span className="text-volt">Strategy</span></>}
             {viewState.level === 'phases' && <>Operational <span className="text-volt">Phases</span></>}
             {viewState.level === 'missions' && <>Mission <span className="text-volt">Deployment</span></>}

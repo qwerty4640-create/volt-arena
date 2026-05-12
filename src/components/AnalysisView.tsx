@@ -437,7 +437,7 @@ export const ReadinessAnalysisWidget = () => {
                 {/* Header: title + readiness score + recalibrate button */}
                 <div className="flex items-start justify-between mb-4 md:mb-6 relative z-10 w-full gap-4">
                     <div className="flex flex-col">
-                        <h2 className="font-headline text-3xl md:text-4xl font-black uppercase tracking-tight">
+                        <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight">
                             {t('analysis.recoveryAnalysis')}
                         </h2>
                         <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed mb-6 md:mb-12">
@@ -931,7 +931,7 @@ export const ExternalActivityWidget = () => {
 
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4 relative z-10 w-full">
                 <div>
-                    <h2 className="font-headline text-2xl font-black uppercase tracking-tight">{t('analysis.tacticalIntegration')}</h2>
+                    <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight">{t('analysis.tacticalIntegration')}</h2>
                 </div>
 
                 <div className="flex gap-1 bg-void p-1 border border-white/5 flex-wrap md:flex-nowrap shrink-0">
@@ -1081,10 +1081,9 @@ interface AnalysisViewProps {
 }
 
 export const AnalysisView = ({ onContinueSession, onViewBriefing, onViewHistory, isLifting }: AnalysisViewProps) => {
-    const { t, experimentalFeatures, dashboardWidgets, setDashboardWidgets } = useSettings();
+    const { t, experimentalFeatures, dashboardWidgets, setDashboardWidgets, isCustomizeModalOpen, setIsCustomizeModalOpen } = useSettings();
     const [activeId, setActiveId] = useState<WidgetId | null>(null);
     const [isLibraryOpen, setIsLibraryOpen] = useState(false);
-    const [isCustomizeModalOpen, setIsCustomizeModalOpen] = useState(false);
     const [widgetToRemove, setWidgetToRemove] = useState<WidgetId | null>(null);
 
     const widgets = dashboardWidgets;

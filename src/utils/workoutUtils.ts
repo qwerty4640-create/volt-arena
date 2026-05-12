@@ -59,6 +59,26 @@ export function calculateWorkCapacity(volume: number, duration_minutes: number):
   return volume / duration_minutes; // e.g. Tonnage per minute
 }
 
+export function calculateVolume(workout: any, countAllSets: boolean = false, unit: 'metric' | 'imperial' | 'none' = 'none', redlineScale: boolean = false): number | string {
+  if (!workout || !workout.exercises) return unit === 'none' ? 0 : `0 ${unit === 'imperial' ? 'LBS' : 'kg'}`;
+  let total = 0;
+  workout.exercises.forEach((ex: any) => {
+    if (!ex.sets) return;
+    ex.sets.forEach((s: any) => {
+      // If countAllSets is true (like in TrainingView), bypass completed/warmup check
+      if (countAllSets || (s.isCompleted && !s.isWarmup)) {
+        let w = parseFloat(s.weight) || 0;
+        if (redlineScale) {
+          w = Math.round((w * 0.75) / 5) * 5;
+        }
+        total += w * (parseInt(s.reps) || 0);
+      }
+    });
+  });
+  if (unit === 'none') return total.toLocaleString();
+  return `${total.toLocaleString()} ${unit === 'imperial' ? 'LBS' : 'kg'}`;
+}
+
 export function calculateMobilityIntegrity(sets: any[]): number {
   if (!sets || sets.length === 0) return 100;
   let totalScore = 0;

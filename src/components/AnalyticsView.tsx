@@ -28,13 +28,12 @@ import { cn } from '../lib/utils';
 type TimeFrame = '1M' | '3M' | '6M' | 'ALL';
 
 export const AnalyticsView = () => {
-  const { t, unit, profile, performanceWidgets, setPerformanceWidgets } = useSettings();
+  const { t, unit, profile, performanceWidgets, setPerformanceWidgets, isCustomizeModalOpen, setIsCustomizeModalOpen } = useSettings();
   const { history } = useWorkout();
   const weightUnit = unit === 'metric' ? t('workout.kg') : t('workout.lbs');
 
   const [timeFrame, setTimeFrame] = useState<TimeFrame>('6M');
   const [selectedLifts, setSelectedLifts] = useState<string[]>(['Squat', 'Bench Press', 'Deadlift']);
-  const [isCustomizeModalOpen, setIsCustomizeModalOpen] = useState(false);
 
   const liftOptions = [
     { id: 'Squat', label: t('analytics.squat'), color: 'var(--primary-color)' },
@@ -219,7 +218,7 @@ export const AnalyticsView = () => {
 
   return (
     <div className="w-full space-y-12">
-      <div className="w-full mb-4">
+      <div className="md:hidden w-full mb-4">
         <button
           onClick={() => setIsCustomizeModalOpen(true)}
           className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-void border border-white/10 text-white font-headline text-[10px] font-black uppercase tracking-widest hover:bg-white/10 hover:border-volt/50 transition-all group"
@@ -243,7 +242,7 @@ export const AnalyticsView = () => {
                 >
                   <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6">
                     <div>
-                      <h2 className="font-headline text-3xl md:text-5xl font-black uppercase tracking-tight mb-2">{t('analysis.strengthTrend')}</h2>
+                      <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight mb-2">{t('analysis.strengthTrend')}</h2>
                       <p className="text-zinc-400 text-xs font-medium max-w-md mb-8 leading-relaxed">
                         {t('analysis.strengthTrendDesc')}
                       </p>

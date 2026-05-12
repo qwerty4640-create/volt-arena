@@ -230,7 +230,7 @@ export const NonProgramActivityModal = ({ isOpen, onClose, initialData }: NonPro
                         )}
                       >
                         <ActivityIcon size={14} className="shrink-0" />
-                        <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest break-words leading-tight">{t(`activity.${activity.id}` as any) || activity.label}</span>
+                        <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest leading-tight">{t(`activity.${activity.id}` as any) || activity.label}</span>
                       </button>
                     );
                   })}

@@ -81,7 +81,7 @@ export const ExerciseSwapModal: React.FC<ExerciseSwapModalProps> = ({
                     >
                       <div className="absolute inset-0 bg-volt/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                       <div className="flex items-center gap-2 flex-wrap">
-                        <div className="relative font-headline text-lg font-black uppercase tracking-tight group-hover:text-volt transition-colors text-white break-words whitespace-normal break-all sm:break-normal">
+                        <div className="relative font-headline text-lg font-black uppercase tracking-tight group-hover:text-volt transition-colors text-white">
                           {alt.name}
                         </div>
                         <div className="relative z-20 shrink-0">

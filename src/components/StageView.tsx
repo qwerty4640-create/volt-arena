@@ -518,7 +518,7 @@ export const StageView = ({ immersionMode = 'immersive', isVoiceActive = false, 
   return (
     <div 
       ref={scrollContainerRef}
-      className="relative w-full h-full flex flex-col items-center overflow-y-auto custom-scrollbar pt-safe pb-safe"
+      className="relative w-full h-full flex flex-col items-center overflow-y-auto custom-scrollbar pt-safe"
     >
       <div className="w-full flex-1 flex flex-col items-center justify-center min-h-full py-20 px-3 md:px-12">
         {/* Immersive Arena Background */}

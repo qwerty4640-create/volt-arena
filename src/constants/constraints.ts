@@ -67,6 +67,18 @@ export const TRAINING_CONSTRAINTS: TrainingConstraint[] = [
     message: 'Pre-Hab/Longevity protocol active: high axial fatigue movements restricted'
   },
   {
+    id: 'connective_tissue_stress_management',
+    condition: (goals) => true, // Apply globally based on exercise property
+    apply: (exercise) => {
+      if (exercise.connectiveTissueStressScore && exercise.connectiveTissueStressScore >= 8) {
+        // Redline constraint for very high joint stress movements
+        exercise.targetRPE = Math.min(exercise.targetRPE || 10, 8.0);
+        exercise.restPeriod = Math.max(exercise.restPeriod || 120, 180); // Ensure adequate ATP/PCr recovery
+      }
+    },
+    message: 'High connective tissue stress detected: managing RPE and rest'
+  },
+  {
     id: 'endurance_interference',
     condition: (goals) => goals.includes('endurance') && goals.includes('pure_strength'),
     apply: (exercise) => {

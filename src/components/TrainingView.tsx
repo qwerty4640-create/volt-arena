@@ -24,7 +24,7 @@ import {
 import { cn } from '../lib/utils';
 import { useSettings } from '../contexts/SettingsContext';
 import { useWorkout, WorkoutSession, Exercise } from '../contexts/WorkoutContext';
-import { getExerciseName, isMainLiftMatch, isTimedExercise } from '../utils/workoutUtils';
+import { getExerciseName, isMainLiftMatch, isTimedExercise, calculateVolume } from '../utils/workoutUtils';
 import { calculateTier } from '../lib/strength';
 import { MissionBriefingModal } from './MissionBriefingModal';
 import { ExerciseSwapModal } from './ExerciseSwapModal';
@@ -144,32 +144,50 @@ export const TrainingView = ({
     return () => clearInterval(interval);
   }, [isActiveSession, currentSession?.startTime]);
 
-  // Calculate volume for the workout to show in the module
-  const calculateVolume = (workout: any) => {
-    if (!workout || !workout.exercises) return '0';
-    let total = 0;
-    workout.exercises.forEach((ex: any) => {
-      if (!ex.sets) return;
-      ex.sets.forEach((s: any) => {
-        let w = parseFloat(s.weight) || 0;
-        // Preview scaling for Redline
-        if (!isActiveSession && calibration.isRedline) {
-          w = Math.round((w * 0.75) / 5) * 5;
-        }
-        total += w * (parseInt(s.reps) || 0);
-      });
-    });
-    return total.toLocaleString();
-  };
+  // Volume calculation moved to workoutUtils
 
   const displayTitle = activeOrNext.title;
-  const getFocusText = (workout: any) => {
-    if (workout.title.includes('Foundation')) return t('analysis.focusFoundation');
-    if (workout.title.includes('Power')) return t('analysis.focusPower');
-    if (workout.title.includes('Hypertrophy')) return t('analysis.focusHypertrophy');
+  const focusText = React.useMemo(() => {
+    const workout = activeOrNext;
+    if (!workout) return t('analysis.focusingOn');
+
+    // Use explicit blockType if available (from WorkoutSession)
+    const bType = (workout as any).blockType;
+    
+    if (bType) {
+      switch (bType) {
+        case 'Foundation': return t('analysis.focusFoundation');
+        case 'Power': return t('analysis.focusPower');
+        case 'Hypertrophy': return t('analysis.focusHypertrophy');
+        case 'Strength': return t('analysis.focusStrength');
+        case 'Peaking': return t('analysis.focusPeaking');
+        case 'Deload': return t('analysis.focusDeload');
+        case 'Aerobic Base': return t('analysis.focusAerobicBase');
+        case 'Threshold': return t('analysis.focusThreshold');
+        case 'VO2 Max': return t('analysis.focusVO2Max');
+        case 'Capacity': return t('analysis.focusCapacity');
+        case 'Resiliency': return t('analysis.focusResiliency');
+        case 'Regeneration': return t('analysis.focusRegeneration');
+        case 'Max Effort': return t('analysis.focusMaxEffort');
+        case 'Overreach': return t('analysis.focusOverreach');
+        case 'Competition / Taper': return t('analysis.focusCompetition');
+      }
+    }
+
+    // Fallback to title matching
+    const title = workout.title || '';
+    if (title.includes('Foundation')) return t('analysis.focusFoundation');
+    if (title.includes('Power')) return t('analysis.focusPower');
+    if (title.includes('Hypertrophy')) return t('analysis.focusHypertrophy');
+    if (title.includes('Strength')) return t('analysis.focusStrength');
+    if (title.includes('Peaking')) return t('analysis.focusPeaking');
+    if (title.includes('Deload')) return t('analysis.focusDeload');
+    if (title.includes('Aerobic Base')) return t('analysis.focusAerobicBase');
+    if (title.includes('Threshold')) return t('analysis.focusThreshold');
+    if (title.includes('VO2 Max')) return t('analysis.focusVO2Max');
+
     return t('analysis.focusingOn');
-  };
-  const focusText = getFocusText(activeOrNext);
+  }, [activeOrNext, t]);
 
   // Dynamic Exercise & Set Tracking
   const currentExIdx = isActiveSession && currentSession ? (currentSession.currentExerciseIndex || 0) : 0;
@@ -233,12 +251,14 @@ export const TrainingView = ({
   const displayTargetReps = (isActiveSession ? mainLift?.sets?.[0]?.reps : currentReps);
 
   const hasHistory = (history?.length || 0) > 0;
+  const hasSubjective = !!calibration.subjectiveScores;
+  const showReadiness = hasHistory || hasSubjective;
 
   // Use current session readiness if available, otherwise use dynamic calibration readiness
   const readinessScoreValue = currentSession?.readiness || calibration.readiness;
-  const readinessScore = hasHistory || currentSession?.readiness ? readinessScoreValue : '–';
+  const readinessScore = showReadiness || currentSession?.readiness ? readinessScoreValue : '–';
   const readinessY = 40 - (readinessScoreValue / 100) * 35;
-  const totalLoad = calculateVolume(activeOrNext);
+  const totalLoad = calculateVolume(activeOrNext, true, 'none', !isActiveSession && calibration.isRedline);
   const weightUnit = unit === 'metric' ? t('workout.kg') : t('workout.lbs');
 
   // Estimate duration: 12 mins per exercise + 15 mins warmup/cool
@@ -249,7 +269,7 @@ export const TrainingView = ({
   const sessionRpe = isActiveSession ? (currentSession?.targetRpe || 7) : (calibration.recommendedRpe || 7);
 
   // For total volume calculation, if it's 0 (nothing completed yet), use predicted volume for consistency with WelcomeModule
-  let totalVolumeNum = parseFloat(totalLoad.replace(/,/g, '')) || 0;
+  let totalVolumeNum = parseFloat(totalLoad.toString().replace(/,/g, '')) || 0;
   if (totalVolumeNum === 0 && activeOrNext?.exercises) {
     totalVolumeNum = activeOrNext.exercises.reduce((acc, ex) => {
       if (!ex.sets) return acc;
@@ -358,12 +378,12 @@ export const TrainingView = ({
                   )}>
                     {calibration.isRedline
                       ? t('analysis.overriddenByRedline')
-                      : `${calibration.readiness >= 90 ? t('analysis.primeCondition') : t('analysis.readiness')}: ${hasHistory ? `${calibration.readiness}%` : '–'}`}
+                      : `${calibration.readiness >= 90 ? t('analysis.primeCondition') : t('analysis.readiness')}: ${showReadiness ? `${calibration.readiness}%` : '–'}`}
                   </span>
                 </div>
               )}
             </div>
-            <h1 className="font-headline text-3xl md:text-3xl font-black uppercase tracking-tight mb-2">{displayTitle}</h1>
+            <h1 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight mb-2">{displayTitle}</h1>
             <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed">
               {focusText}
             </p>
@@ -506,7 +526,7 @@ export const TrainingView = ({
             )}>
               {t('analysis.mainLift')}
             </span>
-            <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tighter break-words line-clamp-none">{exName}</h2>
+            <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tighter line-clamp-none">{exName}</h2>
             <span aria-live="polite" className="text-zinc-400 text-[10px] md:text-xs font-medium uppercase tracking-widest block mt-1">
               {isActiveSession
                 ? <span aria-live="assertive">{t('analysis.setOfPattern', { current: currentSetIdx + 1, total: displayTotalSets, weight: displayTargetWeight, unit: weightUnit })}</span>

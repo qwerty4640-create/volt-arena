@@ -90,7 +90,7 @@ export const BlockWidget = ({ onRecalibrate }: BlockWidgetProps) => {
 
             <div className="flex flex-col mb-6 md:mb-8 relative z-10">
                 <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-headline text-3xl md:text-3xl font-black uppercase tracking-tight">{t('Deployment Progress')}</h3>
+                    <h3 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight">{t('Deployment Progress')}</h3>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-white/5 pt-4">

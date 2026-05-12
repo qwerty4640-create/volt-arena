@@ -123,7 +123,7 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
             <ChevronLeft size={20} className="md:w-6 md:h-6" />
           </button>
           <div>
-            <h1 className="text-2xl md:text-4xl font-black uppercase tracking-tighter">Mission History</h1>
+            <h1 className="text-2xl md:text-3xl font-black uppercase tracking-tighter">Mission History</h1>
             <p className="text-[8px] md:text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500">{t('analysis.reviewPerformance')}</p>
           </div>
         </div>

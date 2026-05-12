@@ -10,33 +10,33 @@ interface WelcomeCarouselProps {
 
 const CAROUSEL_STEPS = [
   {
-    title: "Robust programming engine",
-    body: "The advanced programming engines are robust enough that it doesn’t require any AI models to fit in. No more AI, back to blood and sweat.",
+    title: "Tactical training architecture",
+    body: "Hardened programming engine built for results, not metrics. No AI, just raw, intent-based progression.",
     image: "https://images.unsplash.com/photo-1558494949-ef010cbdcc48?q=80&w=800&auto=format&fit=crop"
   },
   {
-    title: "Comprehensive performance analytics",
-    body: "Track all your progress, even joint health.",
+    title: "Operational ready state",
+    body: "Real-time readiness tracking, fatigue decomposition, and joint health monitoring.",
     image: "https://images.unsplash.com/photo-1551288049-bbda4833effb?q=80&w=800&auto=format&fit=crop"
   },
   {
-    title: "Recovery like a champ",
-    body: "Vanguard’s advanced recovery & readiness engines will prime you for the next stage.",
+    title: "Decomposition & Recomposition",
+    body: "Strategic fatigue decay modeling to ensure you are primed for the next mission.",
     image: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?q=80&w=800&auto=format&fit=crop"
   },
   {
-    title: "Unlockable contents as you level up",
-    body: "Hit more PRs in Vanguard. Unlock new content as you level up in the gym.",
+    title: "Progressive mission echelons",
+    body: "Advance through tactical echelons as you crush PRs. Earn your rank.",
     image: "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=800&auto=format&fit=crop"
   },
   {
-    title: "Fully off-grid system",
-    body: "Are you traveling? No access to the internet? Vanguard doesn’t require internet connectivity.",
+    title: "Hardened offline utility",
+    body: "No signal? No problem. Full system accessibility in theater, no internet required.",
     image: "https://images.unsplash.com/photo-1639069422496-03416b5daa28?q=80&w=2728&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
   },
   {
     title: "Ready to roll out?",
-    body: "Start now with tactical optimization questionnaire.",
+    body: "Begin your tactical assessment.",
     image: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=800&auto=format&fit=crop"
   }
 ];
@@ -73,62 +73,55 @@ export const WelcomeCarousel: React.FC<WelcomeCarouselProps> = ({ onSkip, onSign
   return (
     <div className="fixed inset-0 z-50 bg-void flex flex-col items-center px-6 pb-6 text-white text-center pt-safe">
       {/* Branding Header */}
-      <div className="flex flex-col items-center mb-6">
-        <h1 className="font-headline text-3xl font-black tracking-tighter uppercase text-volt mb-1 drop-shadow-[0_0_10px_var(--primary-glow)]">
-          Vanguard
-        </h1>
-        <div className="flex items-center gap-3 w-full justify-center">
-          <div className="h-[1px] flex-1 bg-zinc-800" />
-          <p className="font-sans font-bold text-[8px] tracking-[0.3em] uppercase text-zinc-500 whitespace-nowrap">
-            {t('auth.trainingSystem')}
-          </p>
-          <div className="h-[1px] flex-1 bg-zinc-800" />
+      <header className="w-full pt-8 pb-4 flex items-center justify-center">
+        <img src="/vanguard-logo.svg" alt="Vanguard Logo" className="h-auto w-[40vw] drop-shadow-[0_0_10px_var(--primary-glow)]" />
+      </header>
+
+      <div className="flex-1 flex flex-col justify-center w-full">
+        <div className="w-full max-w-sm mx-auto flex flex-col items-center h-[400px] justify-center relative text-center">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentStep}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.05 }}
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={0.2}
+              onDragEnd={(e, { offset, velocity }) => {
+                const swipe = offset.x;
+                if (swipe < -50) {
+                  handleNext();
+                } else if (swipe > 50) {
+                  handlePrev();
+                }
+              }}
+              className="flex flex-col items-center gap-4 w-full cursor-grab active:cursor-grabbing text-center"
+            >
+              <div className="w-full aspect-square bg-surface-variant border border-white/5 overflow-hidden relative group max-w-[280px]">
+                <div className="absolute inset-0 bg-gradient-to-t from-void via-transparent to-transparent z-10" />
+                <img 
+                  src={CAROUSEL_STEPS[currentStep].image} 
+                  alt="" 
+                  className="w-full h-full object-cover opacity-100" 
+                  referrerPolicy="no-referrer"
+                />
+                <div className="absolute top-0 left-0 w-full h-full border-[15px] border-void/30 pointer-events-none" />
+                <div className="absolute top-4 left-4 h-3 w-3 border-t-2 border-l-2 border-volt z-20" />
+                <div className="absolute bottom-4 right-4 h-3 w-3 border-b-2 border-r-2 border-volt z-20" />
+              </div>
+
+              <div className="space-y-2 text-center">
+                <h1 className="font-headline text-xl sm:text-2xl font-black uppercase tracking-tight text-white leading-tight w-full text-center">
+                  {CAROUSEL_STEPS[currentStep].title}
+                </h1>
+                <p className="text-zinc-400 text-[10px] sm:text-xs font-medium leading-relaxed max-w-[260px] mx-auto text-center">
+                  {CAROUSEL_STEPS[currentStep].body}
+                </p>
+              </div>
+            </motion.div>
+          </AnimatePresence>
         </div>
-      </div>
-
-      <div className="w-full max-w-sm flex flex-col items-center h-[400px] justify-center relative px-4 text-center">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentStep}
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 1.05 }}
-            drag="x"
-            dragConstraints={{ left: 0, right: 0 }}
-            dragElastic={0.2}
-            onDragEnd={(e, { offset, velocity }) => {
-              const swipe = offset.x;
-              if (swipe < -50) {
-                handleNext();
-              } else if (swipe > 50) {
-                handlePrev();
-              }
-            }}
-            className="flex flex-col items-center gap-4 w-full cursor-grab active:cursor-grabbing text-center"
-          >
-            <div className="w-full aspect-square bg-surface-variant border border-white/5 overflow-hidden relative group max-w-[280px]">
-              <div className="absolute inset-0 bg-gradient-to-t from-void via-transparent to-transparent z-10" />
-              <img 
-                src={CAROUSEL_STEPS[currentStep].image} 
-                alt="" 
-                className="w-full h-full object-cover opacity-100" 
-                referrerPolicy="no-referrer"
-              />
-              <div className="absolute top-0 left-0 w-full h-full border-[15px] border-void/30 pointer-events-none" />
-              <div className="absolute top-4 left-4 h-3 w-3 border-t-2 border-l-2 border-volt z-20" />
-              <div className="absolute bottom-4 right-4 h-3 w-3 border-b-2 border-r-2 border-volt z-20" />
-            </div>
-
-            <div className="space-y-2 text-center">
-              <h1 className="font-headline text-xl sm:text-2xl font-black uppercase tracking-tight text-white leading-tight break-words hyphens-auto w-full text-center">
-                {CAROUSEL_STEPS[currentStep].title}
-              </h1>
-              <p className="text-zinc-400 text-[10px] sm:text-xs font-medium leading-relaxed max-w-[260px] mx-auto text-center">
-                {CAROUSEL_STEPS[currentStep].body}
-              </p>
-            </div>
-          </motion.div>
-        </AnimatePresence>
       </div>
 
       <div className="w-full max-w-sm mt-auto flex flex-col gap-3">

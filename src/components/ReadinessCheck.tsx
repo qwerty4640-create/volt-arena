@@ -164,8 +164,8 @@ export const ReadinessCheck = ({ onComplete, onCancel }: ReadinessCheckProps) =>
 
   const scenario = getScenario();
 
-  const handleComplete = async () => {
-    // Log the HMS data for AI context and persistence
+  const handleAnalyze = async () => {
+    // Log the HMS data for AI context and persistence immediately so that context calibration updates
     const biometrics = {
       sleep: scores.sleep,
       stress: scores.stress,
@@ -179,7 +179,11 @@ export const ReadinessCheck = ({ onComplete, onCancel }: ReadinessCheckProps) =>
     } catch (e) {
       console.error("Failed to log daily health check:", e);
     }
+    
+    setShowResult(true);
+  };
 
+  const handleComplete = () => {
     onComplete(calibration.readiness, calibration.readinessModifier, baselineRecommendedRpe, {
       sleep: scores.sleep,
       stress: scores.stress,
@@ -299,11 +303,34 @@ export const ReadinessCheck = ({ onComplete, onCancel }: ReadinessCheckProps) =>
                   <div className="flex items-center gap-2 mb-2">
                     <Info size={14} className="text-zinc-500" />
                     <span className="text-[10px] font-black uppercase tracking-widest text-white">
-                      Prescribed Training Load
+                      System Readiness Formula
                     </span>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-2">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-zinc-400">Baseline Capacity</span>
+                      <span className="font-mono text-white">100.0</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-zinc-400">Sleep Deficit</span>
+                      <span className="font-mono text-crimson">-{calibration.sleepDeficit?.toFixed(1) || '0.0'}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-zinc-400">Axial Fatigue Drain</span>
+                      <span className="font-mono text-crimson">-{calibration.fatiguePenalty?.toFixed(1) || '0.0'}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm border-b border-white/10 pb-2">
+                      <span className="text-zinc-400">Systemic Stress</span>
+                      <span className="font-mono text-crimson">-{calibration.stressPenalty?.toFixed(1) || '0.0'}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm pt-1">
+                      <span className="text-white font-bold uppercase tracking-widest text-[10px]">Net Readiness</span>
+                      <span className="font-mono text-volt font-bold">{calibration.readiness}</span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-white/5">
                     <div className="p-3 bg-white/5 flex flex-col gap-1">
                       <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">System Modifier</span>
                       <span className="text-xl font-black text-volt">{Math.round(calibration.readinessModifier * 100)}%</span>
@@ -315,7 +342,7 @@ export const ReadinessCheck = ({ onComplete, onCancel }: ReadinessCheckProps) =>
                   </div>
 
                   <p className="text-[10px] text-zinc-500 uppercase font-bold mt-2 leading-relaxed">
-                    The system automatically calculates decay factors based on your last logged session ({calibration.readiness}% objective readiness). Manual override has been disabled to ensure autonomous progressive overload.
+                    The system automatically calculates exponential decay factors based on your last logged sessions. Manual override has been disabled to ensure autonomous progressive overload.
                   </p>
                 </div>
               </motion.div>
@@ -333,7 +360,7 @@ export const ReadinessCheck = ({ onComplete, onCancel }: ReadinessCheckProps) =>
             </button>
             {!showResult ? (
               <button
-                onClick={() => setShowResult(true)}
+                onClick={handleAnalyze}
                 disabled={!isComplete}
                 className="flex-[2] btn-primary py-4 disabled:opacity-50"
               >

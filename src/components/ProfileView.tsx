@@ -279,24 +279,34 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
           <div className="flex-1 text-center md:text-left space-y-4 pt-1">
             <div className="space-y-1">
               <div className="flex flex-col md:flex-row items-center justify-start gap-3">
-                <h2 className="font-sans text-3xl md:text-4xl font-black uppercase tracking-tighter text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.1)]">
-                  {profile.firstName} {profile.lastName}
-                </h2>
-                <div className={cn(
-                  "flex items-center gap-1.5 px-2.5 py-0.5 border text-[9px] font-black uppercase tracking-widest",
-                  profile.level === 'elite' ? "bg-[#9333EA]/10 border-[#9333EA]/50 text-[#9333EA] shadow-[0_0_10px_rgba(147,51,234,0.2)]" :
-                    profile.level === 'advanced' ? "bg-[#FFD700]/10 border-[#FFD700]/50 text-[#FFD700]" :
-                      profile.level === 'intermediate' ? "bg-white/10 border-white/50 text-white" :
-                        "bg-volt/10 border-volt/50 text-volt shadow-[0_0_10px_rgba(204,255,0,0.1)]"
-                )}>
-                  <tierStyle.icon size={10} className={cn(tierStyle.glow, "mb-px")} />
-                  {profile.level}
-                  <button
-                    onClick={() => setShowTierInfo(true)}
-                    className="ml-1 p-0.5 hover:bg-white/10 transition-colors opacity-80 hover:opacity-100"
-                  >
-                    <Info size={10} />
-                  </button>
+                <div className="flex flex-col md:items-start items-center gap-1">
+                  <h2 className="font-sans text-3xl md:text-4xl font-black uppercase tracking-tighter text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.1)]">
+                    {profile.firstName} {profile.lastName}
+                  </h2>
+                  <div className="flex flex-col md:items-start items-center gap-2">
+                    <div className={cn(
+                      "flex items-center gap-1.5 px-2.5 py-0.5 border text-[9px] font-black uppercase tracking-widest",
+                      profile.level === 'elite' ? "bg-[#9333EA]/10 border-[#9333EA]/50 text-[#9333EA] shadow-[0_0_10px_rgba(147,51,234,0.2)]" :
+                        profile.level === 'advanced' ? "bg-[#FFD700]/10 border-[#FFD700]/50 text-[#FFD700]" :
+                          profile.level === 'intermediate' ? "bg-white/10 border-white/50 text-white" :
+                            "bg-volt/10 border-volt/50 text-volt shadow-[0_0_10px_rgba(204,255,0,0.1)]"
+                    )}>
+                      <tierStyle.icon size={10} className={cn(tierStyle.glow, "mb-px")} />
+                      {profile.level}
+                      <button
+                        onClick={() => setShowTierInfo(true)}
+                        className="ml-1 p-0.5 hover:bg-white/10 transition-colors opacity-80 hover:opacity-100"
+                      >
+                        <Info size={10} />
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-1 px-1 opacity-60">
+                      <Calendar size={8} className="text-volt" />
+                      <span className="text-[8px] font-bold uppercase tracking-widest text-zinc-500">
+                        Active since {profile?.createdAt ? new Date(profile.createdAt).getFullYear() : '2026'}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -323,16 +333,6 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
                 <span className="text-xs font-bold uppercase tracking-wider text-white">
                   {formatHeight(profile.height || 0)} / {profile.weight || 0} {unit === 'metric' ? 'kg' : 'LBS'}
                 </span>
-              </div>
-
-              <div className="hidden md:block w-px h-6 bg-white/10" />
-
-              <div className="flex flex-col gap-1 items-center md:items-start text-zinc-500">
-                <span className="text-xs font-black uppercase tracking-widest mb-0.5 opacity-60">Active Since</span>
-                <div className="flex items-center gap-2">
-                  <Calendar size={12} className="text-volt" />
-                  <span className="text-xs font-bold uppercase tracking-wider text-white">{new Date(profile.createdAt).toLocaleDateString()}</span>
-                </div>
               </div>
             </div>
           </div>

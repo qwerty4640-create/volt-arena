@@ -725,7 +725,8 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
         return ex;
       });
 
-      const newlyCompletedSet = updatedExercises.find(ex => ex.id === exerciseId)?.sets.find(s => s.id === setId);
+      const exAfterCompletion = updatedExercises.find(ex => ex.id === exerciseId);
+      const newlyCompletedSet = exAfterCompletion?.sets.find(s => s.id === setId);
       
       if (newlyCompletedSet?.isCompleted) {
         haptics.success();
@@ -738,8 +739,8 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
         }
 
         // Auto-scroll logic
-        const exAfterCompletion = nextExercises.find(e => e.id === exerciseId);
-        if (exAfterCompletion && exAfterCompletion.sets.every(s => s.isCompleted)) {
+        const targetExAfterReg = nextExercises.find(e => e.id === exerciseId);
+        if (targetExAfterReg && targetExAfterReg.sets.every(s => s.isCompleted)) {
             const idx = nextExercises.findIndex(e => e.id === exerciseId);
             const nextEx = nextExercises[idx + 1];
             if (nextEx) {
@@ -749,12 +750,6 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
                 }, 500);
             }
         }
-
-        const totalSets = nextExercises.reduce((acc, ex) => acc + (ex.sets?.length || 0), 0);
-        const completedSetsCount = nextExercises.flatMap(ex => ex.sets || []).filter(s => s.isCompleted).length;
-        const remainingSets = totalSets - completedSetsCount;
-
-        showToast(t('toast.setCompleted', { remaining: remainingSets }), 3000, 'success');
 
         const ex = nextExercises.find(e => e.id === exerciseId);
         if (ex) {
@@ -908,13 +903,14 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
         className="w-full max-w-5xl mx-auto h-full flex flex-col pt-4 md:pt-8 pb-12 md:px-8"
       >
         {/* Header */}
-        <div className="flex flex-col md:mb-12 gap-6">
-          <div className="flex items-center gap-4 md:gap-6">
+        <div className="flex flex-col md:mb-12 gap-4 md:gap-6">
+          {/* Mobile Header (Stored as is) */}
+          <div className="flex md:hidden items-center gap-4 md:gap-6">
             <button
               onClick={onBack}
-              className="p-2.5 md:p-3 bg-surface-container-low hover:bg-surface-container-high text-zinc-400 hover:text-white transition-all"
+              className="p-2.5 bg-surface-container-low hover:bg-surface-container-high text-zinc-400 hover:text-white transition-all flex items-center justify-center shrink-0"
             >
-              <ChevronLeft size={20} className="md:w-6 md:h-6" />
+              <ChevronLeft size={20} />
             </button>
             <div className="flex items-center gap-3">
               <ClipboardList className="text-volt" size={16} />
@@ -922,8 +918,12 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
             </div>
           </div>
 
-          <div>
-            <h1 className="font-sans text-3xl md:text-4xl font-black uppercase tracking-tight">{currentSession.title}</h1>
+          {/* Desktop Unified Header - Hidden because global PageHeader matches this now */}
+          {/* We keep the state metrics below */}
+
+          {/* Mobile Title (Original currentSession.title) */}
+          <div className="flex md:hidden">
+            <h1 className="font-sans text-3xl font-black uppercase tracking-tight leading-none">{currentSession.title}</h1>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 font-mono text-[10px] md:text-xs font-bold uppercase tracking-widest text-zinc-500 p-4 y-4 bg-surface-container-low">

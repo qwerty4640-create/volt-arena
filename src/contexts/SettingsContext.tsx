@@ -119,6 +119,8 @@ interface SettingsContextType {
   profile: UserProfile | null;
   updateProfile: (data: Partial<UserProfile>) => Promise<void>;
   isProfileLoading: boolean;
+  isCustomizeModalOpen: boolean;
+  setIsCustomizeModalOpen: (open: boolean) => void;
   t: (key: string, params?: Record<string, string | number>) => string;
 }
 
@@ -145,6 +147,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [dashboardWidgets, setDashboardWidgetsState] = useState<WidgetId[]>(['recovery-analysis', 'pr', 'macros']);
   const [performanceWidgets, setPerformanceWidgetsState] = useState<PerformanceWidgetId[]>(['progression', 'volume-trend', 'growth', 'tactical']);
   const [lastVoiceCommand, setLastVoiceCommand] = useState<{ text: string; timestamp: number } | null>(null);
+  const [isCustomizeModalOpen, setIsCustomizeModalOpen] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isProfileLoading, setIsProfileLoading] = useState(true);
 
@@ -541,6 +544,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
       dashboardWidgets, setDashboardWidgets,
       performanceWidgets, setPerformanceWidgets,
       lastVoiceCommand, setLastVoiceCommand,
+      isCustomizeModalOpen, setIsCustomizeModalOpen,
       profile, updateProfile,
       isProfileLoading,
       t 
