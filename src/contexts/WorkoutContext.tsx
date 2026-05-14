@@ -28,7 +28,7 @@ import {
 } from '../constants/constraints';
 import { calculateTier } from '../lib/strength';
 import { ACTIVITY_LIBRARY } from '../data/activityLibrary';
-import { isMainLiftMatch, isUnilateral } from '../utils/workoutUtils';
+import { isMainLiftMatch, isUnilateral, calculateE1RM } from '../utils/workoutUtils';
 import { calculateSystemReadiness } from '../logic/recoveryEngine';
 import { RECOVERY_ACTIVITIES } from '../data/recoveryLibrary';
 
@@ -403,7 +403,8 @@ const createSessionFromTemplate = (
   currentUnit: 'imperial' | 'metric',
   lastSession: WorkoutSession | null,
   currentReadiness: number,
-  hasAerobicInterference?: boolean
+  hasAerobicInterference?: boolean,
+  history: WorkoutSession[] = []
 ): WorkoutSession => {
   const goals = profile?.trainingObjectives || (profile?.trainingGoal ? [profile.trainingGoal] : ['powerbuilding']);
   const primaryGoal = goals[0] || 'powerbuilding';
@@ -618,10 +619,24 @@ const createSessionFromTemplate = (
       if (constraintExercise.intensityBoost) adjustedIntensity += constraintExercise.intensityBoost;
 
       if (profile && isMainLift) {
-        let pr = 0;
-        if (isSquat) pr = profile.squatPR || 0;
-        if (isBench) pr = profile.benchPR || 0;
-        if (isDeadlift) pr = profile.deadliftPR || 0;
+        let liftType = isSquat ? 'Squat' : isBench ? 'Bench Press' : 'Deadlift';
+        
+        let profilePR = 0;
+        if (isSquat) profilePR = profile.squatPR || 0;
+        if (isBench) profilePR = profile.benchPR || 0;
+        if (isDeadlift) profilePR = profile.deadliftPR || 0;
+
+        // Auto-regulation: Dynamic E1RM extraction (Phase 1)
+        let dynamicPR = 0;
+        if (history && history.length > 0) {
+           const recentHistory = history.filter(s => (Date.now() - (s.completedAt || 0)) < 90 * 24 * 60 * 60 * 1000); // Last 90 days
+           const e1rms = recentHistory.flatMap(s => s.exercises.find(ex => isMainLiftMatch(ex.name, liftType))?.sets.map(set => calculateE1RM(parseFloat(set.weight) || 0, parseInt(set.reps) || 0)) || []);
+           if (e1rms.length > 0) {
+              dynamicPR = Math.max(...e1rms);
+           }
+        }
+        
+        let pr = Math.max(profilePR, dynamicPR);
 
         if (pr > 0) {
           let normalizedPR = pr;
@@ -646,8 +661,19 @@ const createSessionFromTemplate = (
       }
 
       // Adjust reps and sets
-      let reps = isMainLift ? block.baseReps : slot.reps;
-      let sets = isMainLift ? block.baseSets : slot.sets;
+      // Phase 2: Autoregulatory Set & Rep Generation (Undulating Periodization)
+      let dynamicReps = block.baseReps;
+      let dynamicSets = block.baseSets;
+      if (isMainLift) {
+        if (adjustedIntensity < 0.65) { dynamicReps = '10-12'; dynamicSets = 3; }
+        else if (adjustedIntensity < 0.75) { dynamicReps = '8-10'; dynamicSets = 4; }
+        else if (adjustedIntensity < 0.85) { dynamicReps = '5-8'; dynamicSets = 5; }
+        else if (adjustedIntensity < 0.92) { dynamicReps = '3-5'; dynamicSets = 4; }
+        else { dynamicReps = '1-3'; dynamicSets = 3; }
+      }
+
+      let reps = isMainLift ? dynamicReps : slot.reps;
+      let sets = isMainLift ? dynamicSets : slot.sets;
       let exerciseName = selectedExercise.name;
 
       const unilateral = selectedExercise.isUnilateral || (slot as any).isUnilateral;
@@ -1223,7 +1249,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     if (filteredHistory.length === 0) {
       const startWeek = 1 + (profile?.trainingWeekOffset || 0);
-      return createSessionFromTemplate(startWeek, 1, profile, unit, null, currentReadiness, hasAerobicInterference);
+      return createSessionFromTemplate(startWeek, 1, profile, unit, null, currentReadiness, hasAerobicInterference, history);
     }
 
     const lastWorkout = filteredHistory[0];
@@ -1247,7 +1273,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
 
     const finalWeek = nextWeek + (profile?.trainingWeekOffset || 0);
-    const session = createSessionFromTemplate(finalWeek, nextDay, profile, unit, lastSession, currentReadiness, hasAerobicInterference);
+    const session = createSessionFromTemplate(finalWeek, nextDay, profile, unit, lastSession, currentReadiness, hasAerobicInterference, history);
 
     if (nextWorkoutOverrides) {
       session.exercises = nextWorkoutOverrides;
@@ -1266,7 +1292,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const currentReadiness = calibration.readiness;
     const hasAerobicInterference = calibration.hasAerobicInterference;
 
-    return createSessionFromTemplate(week, day, profile, unit, lastSession, currentReadiness, hasAerobicInterference);
+    return createSessionFromTemplate(week, day, profile, unit, lastSession, currentReadiness, hasAerobicInterference, history);
   }, [history, profile, unit]);
 
   const startNewSession = (template?: WorkoutSession, readinessScore?: number, readinessModifier?: number, targetRpe?: number, biometrics?: { sleep: number; stress: number; fatigue: number }) => {
