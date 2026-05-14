@@ -37,6 +37,7 @@
   "onboarding.height": "Altura",
   "onboarding.weight": "Peso",
   "onboarding.objective": "Objetivos de Entrenamiento",
+  "onboarding.next": "Siguiente",
   "onboarding.nextProtocol": "Siguiente Protocolo",
   "onboarding.experience": "Nivel de Experiencia (Big 3)",
   "onboarding.current1rm": "1RM Actual (o Estimado)",
@@ -600,5 +601,19 @@
   "readiness.enter": "Entrar a la misión",
   "common.cancel": "Cancelar",
   "analysis.recalibrate": "Recalibrar",
-  "analysis.recalibrateReadiness": "Recalibrar preparación"
+  "analysis.recalibrateReadiness": "Recalibrar preparación",
+  "stage.terms.1.title": "Reconocimiento de Riesgos Físicos",
+  "stage.terms.1.content": "Las pruebas de aptitud física implican esfuerzos máximos que ejercen presión sobre los sistemas musculoesquelético y cardiovascular. Reconoces que realizas estos movimientos bajo tu propio riesgo.",
+  "stage.terms.2.title": "Integridad del Equipamiento",
+  "stage.terms.2.content": "Verificas que todo el equipo de prueba y tu entorno sean seguros, estén en buen estado de funcionamiento y sean adecuados para los requisitos de la prueba.",
+  "stage.terms.3.title": "Monitoreo Biométrico",
+  "stage.terms.3.content": "Estas métricas son solo para fines informativos y no deben reemplazar el consejo médico profesional ni tu propia percepción interna de seguridad.",
+  "stage.terms.4.title": "Protocolo de Seguridad",
+  "stage.terms.4.content": "En caso de esfuerzo o fallo en el movimiento, detén la actividad de forma segura inmediatamente. Prioriza tu seguridad física por encima de completar la repetición del ejercicio.",
+  "stage.terms.5.title": "Gestión de la Fatiga",
+  "stage.terms.5.content": "Las pruebas de alta intensidad causan una demanda física y neural significativa. Si el sistema detecta una degradación del rendimiento por debajo del umbral de seguridad, puede recomendar abortar la evaluación.",
+  "stage.terms.6.title": "Privacidad de Datos",
+  "stage.terms.6.content": "Tus datos de rendimiento están encriptados y almacenados localmente. Los datos agregados y anonimizados pueden utilizarse para mejorar los algoritmos predictivos de Vanguard.",
+  "stage.terms.7.title": "Autorización Final",
+  "stage.terms.7.content": "Al hacer clic en 'Aceptar y Comenzar', autorizas el inicio de la evaluación de aptitud física y confirmas que te encuentras en un estado físico capaz de realizar este esfuerzo."
 }

@@ -40,10 +40,10 @@ export const TRAINING_TERMS = {
     short: "Non-training stressors impacting recovery.",
     long: "Life stress (work, psychological) competes for the same adaptive resources as training. High allostatic load reduces your recovery ceiling and increases injury risk.",
   },
-  ACWR: {
-    title: "Acute:Chronic Workload Ratio",
-    short: "Ratio of current training load to chronic average.",
-    long: "Tracks training intensity trends. A ratio between 0.8 and 1.3 is generally 'optimal'. Higher values may indicate elevated injury risk, lower values may indicate detraining.",
+  EWMA: {
+    title: "Exponentially Weighted Moving Average",
+    short: "Ratio of acute (7-day) to chronic (28-day) training load.",
+    long: "Calculates the training load ratio, prioritizing recent workloads. A ratio between 0.8 and 1.3 is optimal. Higher values indicate elevated risk.",
   },
   Percentile: {
     title: "Population Percentile",

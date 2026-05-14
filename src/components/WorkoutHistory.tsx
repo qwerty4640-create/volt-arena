@@ -93,9 +93,17 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
   const filteredLogs = allLogs.filter(log => {
     const isWorkout = log.logType === 'workout';
 
+    const searchTerms = searchQuery.toLowerCase().split(/\s+/).filter(Boolean);
     const title = isWorkout ? log.title : log.type;
-    const matchesSearch = title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (isWorkout && log.exercises?.some(e => e.name.toLowerCase().includes(searchQuery.toLowerCase())));
+    
+    // Create a searchable string for this log
+    let searchableString = [
+      title.toLowerCase(),
+      (log.note || '').toLowerCase(),
+      ...(isWorkout && log.exercises ? log.exercises.map(e => e.name.toLowerCase()) : [])
+    ].join(' ');
+
+    const matchesSearch = searchTerms.length === 0 || searchTerms.every(term => searchableString.includes(term));
 
     const now = Date.now();
     const logTime = isWorkout ? (log.completedAt || 0) : log.timestamp;

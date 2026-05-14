@@ -165,32 +165,77 @@ export const calculateSystemReadiness = (
     recommendedRpe = Math.min(recommendedRpe, 5);
   }
 
+  // Engineering Update: Proximity Penalty
+  // High intensity (RPE >= 9) is prohibited if the last session was within 36 hours 
+  // to prevent neural burnout in high-frequency tactical athletes.
+  const mostRecent = filteredHistory[0];
+  if (mostRecent && mostRecent.completedAt) {
+    const hoursSinceLast = (Date.now() - mostRecent.completedAt) / 3600000;
+    if (hoursSinceLast < 36) {
+      recommendedRpe = Math.min(recommendedRpe, 8.5);
+    }
+    // Severe proximity penalty for double-days
+    if (hoursSinceLast < 12) {
+      recommendedRpe = Math.min(recommendedRpe, 7.5);
+    }
+  }
+
   let overtrainingRisk: 'none' | 'warning' | 'critical' = 'none';
-  const last14Days = history.filter(s => (Date.now() - (s.completedAt || 0)) / 86400000 < 14);
+  let ewmaRatio: number | null = null;
+  
+  if (history.length > 0) {
+    const dailyVolume: Record<string, number> = {};
+    let minDate = Infinity;
+    let maxDate = 0;
 
-  if (last14Days.length >= 4) {
-    const acuteSessions = last14Days.filter(s => (Date.now() - (s.completedAt || 0)) / 86400000 < 7);
-    const chronicSessions = last14Days;
+    history.forEach(session => {
+        const date = session.completedAt ? new Date(session.completedAt) : new Date(session.date);
+        date.setHours(0, 0, 0, 0);
+        const time = date.getTime();
+        
+        if (time < minDate) minDate = time;
+        if (time > maxDate) maxDate = time;
 
-    const getLoad = (sessions: any[]) => {
-      return sessions.reduce((acc, s) => {
-        let vol = 0;
-        s.exercises?.forEach((e: any) => e.sets?.forEach((st: any) => {
-          if (st.isCompleted && !st.isWarmup) {
-            vol += (parseFloat(st.weight) || 0) * (parseInt(st.reps) || 0);
-          }
-        }));
+        let sessionVolume = 0;
+        session.exercises?.forEach((ex: any) => {
+            ex.sets?.forEach((s: any) => {
+                if (s.isCompleted && !s.isWarmup) {
+                    sessionVolume += (parseFloat(s.weight) || 0) * (parseInt(s.reps) || 0);
+                }
+            });
+        });
+
         const intensity = unit === 'imperial' ? 8000 : 3600;
-        return acc + (vol * (s.rpe || 7)) / intensity;
-      }, 0) / (sessions.length || 1);
-    };
+        const load = (sessionVolume * (session.rpe || 7)) / intensity;
 
-    const acuteLoad = getLoad(acuteSessions);
-    const chronicLoad = getLoad(chronicSessions);
-    const acRatio = chronicLoad > 0 ? acuteLoad / chronicLoad : 0;
+        dailyVolume[time] = (dailyVolume[time] || 0) + load;
+    });
 
-    if (acRatio > 1.6 || currentReadiness < 20) overtrainingRisk = 'critical';
-    else if (acRatio > 1.3 || currentReadiness < 40) overtrainingRisk = 'warning';
+    if (minDate !== Infinity) {
+        const lambdaAcute = 2 / (7 + 1);
+        const lambdaChronic = 2 / (28 + 1);
+
+        let ewmaAcute = 0;
+        let ewmaChronic = 0;
+
+        for (let time = minDate; time <= maxDate; time += 86400000) {
+            const loadToday = dailyVolume[time] || 0;
+            
+            if (time === minDate) {
+                ewmaAcute = loadToday;
+                ewmaChronic = loadToday;
+            } else {
+                ewmaAcute = loadToday * lambdaAcute + ewmaAcute * (1 - lambdaAcute);
+                ewmaChronic = loadToday * lambdaChronic + ewmaChronic * (1 - lambdaChronic);
+            }
+        }
+
+        ewmaRatio = ewmaChronic > 0 ? (ewmaAcute / ewmaChronic) : 1.0;
+        ewmaRatio = Number(ewmaRatio.toFixed(2));
+
+        if (ewmaRatio > 1.6 || currentReadiness < 20) overtrainingRisk = 'critical';
+        else if (ewmaRatio > 1.3 || currentReadiness < 40) overtrainingRisk = 'warning';
+    }
   }
 
   return {
@@ -204,7 +249,8 @@ export const calculateSystemReadiness = (
     stressPenalty,
     k_fatigue,
     k_stress,
-    cumulativeFatigueScore
+    cumulativeFatigueScore,
+    ewmaRatio
   };
 };
 

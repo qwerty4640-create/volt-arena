@@ -7,14 +7,16 @@ import { cn } from '../lib/utils';
 interface PageHeaderProps {
   activeView: ViewType;
   onBack?: () => void;
+  subtitle?: string;
 }
 
-export function PageHeader({ activeView, onBack }: PageHeaderProps) {
+export function PageHeader({ activeView, onBack, subtitle }: PageHeaderProps) {
   const { t, isCustomizeModalOpen, setIsCustomizeModalOpen } = useSettings();
 
   const getBreadcrumbs = (view: ViewType): string | null => {
     switch (view) {
       case 'workout-log':
+        return t('workout.missionLog');
       case 'post-workout':
       case 'workout-history':
       case 'upcoming-missions':
@@ -35,7 +37,7 @@ export function PageHeader({ activeView, onBack }: PageHeaderProps) {
       case 'deployment': return t('nav.deployment');
       case 'settings': return t('nav.settings');
       case 'profile': return t('nav.profile');
-      case 'workout-log': return t('workout.log');
+      case 'workout-log': return subtitle || t('workout.log');
       case 'post-workout': return t('workout.postWorkout');
       case 'workout-history': return t('analysis.workoutHistory');
       case 'upcoming-missions': return t('analysis.upcomingMissions');
@@ -46,17 +48,16 @@ export function PageHeader({ activeView, onBack }: PageHeaderProps) {
 
   const breadcrumb = getBreadcrumbs(activeView);
   const title = getPageTitle(activeView);
-  const isMissionLog = title === t('workout.log');
+  const isMissionLog = activeView === 'workout-log';
 
   return (
-    <header className="w-full min-h-[100px] flex flex-col justify-center shrink-0 z-10 px-4 md:px-0 py-4 md:py-0">
+    <header className="w-full min-h-[100px] flex flex-row items-center shrink-0 z-10 px-4 md:px-0 py-4 md:py-0">
       <div className="flex items-center justify-between w-full">
         <div className="flex flex-col">
           {/* Breadcrumb Area - Reserved space on desktop */}
           <div className={cn(
             "flex items-center gap-1 text-[10px] font-black uppercase tracking-widest mb-2 transition-all h-[14px]",
-            breadcrumb ? "text-zinc-500" : "md:opacity-0 md:flex hidden",
-            isMissionLog && "md:hidden"
+            breadcrumb ? "text-zinc-500" : "md:opacity-0 md:flex hidden"
           )}>
             {breadcrumb && (
               <>

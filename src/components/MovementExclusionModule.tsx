@@ -41,7 +41,7 @@ export const MovementExclusionModule = () => {
 
       {isExpanded && (
         <div className="p-4 pt-0 grid grid-cols-1 gap-2 animate-in slide-in-from-top-2 duration-300">
-          {EXERCISE_DATABASE.map(mvmt => (
+          {[...EXERCISE_DATABASE].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })).map(mvmt => (
             <label key={mvmt.name} className="flex items-center justify-between p-3 bg-void/40 border border-white/5 hover:border-volt/30 transition-all cursor-pointer group">
               <span className="text-[10px] text-zinc-300 uppercase font-black tracking-widest group-hover:text-white transition-colors">
                 {getExerciseName(mvmt, t)}

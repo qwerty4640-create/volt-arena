@@ -61,6 +61,7 @@ export interface UserProfile {
   dashboardWidgets?: WidgetId[];
   performanceWidgets?: PerformanceWidgetId[];
   programResetAt?: number;
+  devOverrideFitnessTest?: boolean;
   createdAt: number;
   role?: 'user' | 'admin' | 'engineer';
 }

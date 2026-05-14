@@ -17,7 +17,7 @@ describe('Analytics Engine', () => {
     // Running (1.2) -> 1 * 5 * 1.2 = 6
     // Boxing (2.0) -> 0.5 * 8 * 2.0 = 8
     // Total = 14
-    const result = getTacticalImpact(logs);
+    const result = getTacticalImpact(logs as any);
     expect(result.weeklyCumulativeScore).toBeCloseTo(14);
     expect(result.chartData.length).toBe(1);
     expect(result.chartData[0].cumulativeImpact).toBeCloseTo(14);

@@ -6,11 +6,17 @@ import {
   Search,
   Check,
   Plus,
-  X
+  X,
+  Info
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useSettings } from '../contexts/SettingsContext';
-import { EXERCISE_DATABASE } from '../constants/exercises';
+import { EXERCISE_DATABASE, ExerciseDefinition } from '../constants/exercises';
+import { ExerciseInfoModal } from './ExerciseInfoModal';
+import { haptics } from '../lib/haptics';
+import { InfoTooltip } from './InfoTooltip';
+
+import { useWorkout } from '../contexts/WorkoutContext';
 
 interface ExerciseSelectorModalProps {
   isOpen: boolean;
@@ -19,18 +25,36 @@ interface ExerciseSelectorModalProps {
 }
 
 export const ExerciseSelectorModal = ({ isOpen, onClose, onSelect }: ExerciseSelectorModalProps) => {
-  const { t } = useSettings();
+  const { t, profile } = useSettings();
+  const { currentSession } = useWorkout();
+  const [selectedInfoExercise, setSelectedInfoExercise] = useState<ExerciseDefinition | null>(null);
+  const [lastInfoExercise, setLastInfoExercise] = useState<ExerciseDefinition | null>(null);
   const [isCircuitMode, setIsCircuitMode] = useState(false);
   const [selectedCircuitExercises, setSelectedCircuitExercises] = useState<{ id: string, name: string }[]>([]);
   const [circuitTitle, setCircuitTitle] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [mounted, setMounted] = useState(false);
 
+  const additionalCount = currentSession?.exercises.filter(ex => ex.isAdditional).length || 0;
+  const level = profile?.level || 'untrained';
+
+  let limit = Infinity;
+  if (level === 'untrained' || level === 'novice') limit = 3;
+  else if (level === 'intermediate') limit = 4;
+
+  const remainingSlots = limit === Infinity ? Infinity : Math.max(0, limit - additionalCount);
+
   React.useEffect(() => {
     setMounted(true);
   }, []);
 
   if (!mounted) return null;
+
+  const openInfo = (ex: ExerciseDefinition) => {
+    haptics.button();
+    setLastInfoExercise(ex);
+    setSelectedInfoExercise(ex);
+  };
 
   return createPortal(
     <AnimatePresence>
@@ -50,11 +74,15 @@ export const ExerciseSelectorModal = ({ isOpen, onClose, onSelect }: ExerciseSel
             className="relative w-full max-w-md glass-panel p-4 md:p-8 border-volt/20 shadow-[0_0_50px_var(--primary-glow)] flex flex-col max-h-[80vh]"
           >
             <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                {/*}<PlusCircle className="text-volt" size={24} />{*/}
+              <div className="flex flex-col">
                 <h2 className="font-sans text-2xl font-black uppercase tracking-tight">
                   {isCircuitMode ? t('workout.createCircuit') : t('workout.addExercise')}
                 </h2>
+                {isCircuitMode && limit !== Infinity && (
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-volt/80 mt-1">
+                    Select up to {remainingSlots} exercises
+                  </p>
+                )}
               </div>
               <button
                 onClick={() => {
@@ -96,56 +124,100 @@ export const ExerciseSelectorModal = ({ isOpen, onClose, onSelect }: ExerciseSel
 
             <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-2">
               {(() => {
-                const filtered = EXERCISE_DATABASE.filter(ex =>
-                  ex.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                  ex.category.toLowerCase().includes(searchQuery.toLowerCase())
-                );
+                const searchTerms = searchQuery.toLowerCase().split(/\s+/).filter(Boolean);
+                
+                const filtered = EXERCISE_DATABASE.filter(ex => {
+                  if (searchTerms.length === 0) return true;
+                  
+                  const searchableString = [
+                    ex.name.toLowerCase(),
+                    ex.category.toLowerCase(),
+                    ex.pattern.toLowerCase(),
+                    ...(ex.muscles?.map(m => m.toLowerCase()) || []),
+                    ...(ex.description ? [ex.description.toLowerCase()] : [])
+                  ].join(' ');
+
+                  return searchTerms.every(term => searchableString.includes(term));
+                }).sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
 
                 return (
                   <>
                     {filtered.map((ex) => {
                       const isSelected = selectedCircuitExercises.some(s => s.id === (ex.id || ex.name));
                       return (
-                        <button
-                          key={ex.id || ex.name}
-                          onClick={() => {
-                            if (isCircuitMode) {
-                              setSelectedCircuitExercises(prev =>
-                                prev.some(s => s.id === (ex.id || ex.name))
-                                  ? prev.filter(s => s.id !== (ex.id || ex.name))
-                                  : [...prev, { id: ex.id || ex.name, name: ex.name }]
-                              );
-                            } else {
-                              onSelect([{ id: ex.id || ex.name, name: ex.name }]);
-                            }
-                          }}
-                          className={cn(
-                            "w-full p-4 border-none text-left transition-all group flex justify-between items-center",
-                            isSelected ? "bg-volt/20 border-l-2 border-volt" : "bg-surface-container-low hover:bg-surface-container-high"
-                          )}
-                        >
-                          <div>
-                            <div className={cn(
-                              "font-headline text-lg font-black uppercase  tracking-tight transition-colors",
-                              isSelected ? "text-volt" : "group-hover:text-volt"
-                            )}>
-                              {ex.name}
+                        <div key={ex.id || ex.name} className="relative group">
+                          <button
+                            onClick={() => {
+                              if (isCircuitMode) {
+                                setSelectedCircuitExercises(prev => {
+                                  const alreadySelected = prev.some(s => s.id === (ex.id || ex.name));
+                                  if (alreadySelected) {
+                                    return prev.filter(s => s.id !== (ex.id || ex.name));
+                                  }
+                                  if (prev.length < remainingSlots) {
+                                    return [...prev, { id: ex.id || ex.name, name: ex.name }];
+                                  }
+                                  return prev;
+                                });
+                              } else {
+                                onSelect([{ id: ex.id || ex.name, name: ex.name }]);
+                              }
+                            }}
+                            className={cn(
+                              "w-full p-4 pr-14 border-none text-left transition-all flex justify-between items-center relative overflow-hidden",
+                              isSelected ? "bg-volt/20 border-l-2 border-volt" : "bg-surface-container-low hover:bg-surface-container-high",
+                              isCircuitMode && !isSelected && selectedCircuitExercises.length >= remainingSlots && "opacity-50 grayscale cursor-not-allowed"
+                            )}
+                          >
+                            <div className="absolute inset-0 bg-volt/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <div className="relative z-10 w-full">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <div className={cn(
+                                  "font-headline text-lg font-black uppercase tracking-tight transition-colors",
+                                  isSelected ? "text-volt" : "group-hover:text-volt text-white"
+                                )}>
+                                  {ex.name}
+                                </div>
+                                <div className="relative z-20 shrink-0">
+                                   <InfoTooltip term={ex.name as any} />
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 mt-1">
+                                <div className="text-[8px] font-black uppercase tracking-widest text-zinc-500">
+                                  {ex.category}
+                                </div>
+                                {ex.pattern && (
+                                  <>
+                                    <div className="w-1 h-1 rounded-full bg-zinc-700" />
+                                    <div className="text-[8px] font-black uppercase tracking-[0.2em] text-volt/60">
+                                      {ex.pattern.replace('_', ' ')}
+                                    </div>
+                                  </>
+                                )}
+                              </div>
                             </div>
-                            <div className="text-[8px] font-black uppercase tracking-widest text-zinc-500">
-                              {ex.category}
+                            <div className="relative z-10">
+                              {isCircuitMode && (
+                                <div className={cn(
+                                  "w-5 h-5 border-2 flex items-center justify-center transition-all",
+                                  isSelected ? "border-volt bg-volt text-void" : "border-zinc-700",
+                                  !isSelected && selectedCircuitExercises.length >= remainingSlots && "border-zinc-800 bg-zinc-900"
+                                )}>
+                                  {isSelected && <Check size={14} strokeWidth={4} />}
+                                </div>
+                              )}
                             </div>
-                          </div>
-                          {isCircuitMode ? (
-                            <div className={cn(
-                              "w-5 h-5 border-2 flex items-center justify-center transition-all",
-                              isSelected ? "border-volt bg-volt text-void" : "border-zinc-700"
-                            )}>
-                              {isSelected && <Check size={14} strokeWidth={4} />}
-                            </div>
-                          ) : (
-                            <Plus size={16} className="text-zinc-500 group-hover:text-volt transition-colors" />
-                          )}
-                        </button>
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openInfo(ex);
+                            }}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full bg-white/5 border border-white/10 text-zinc-400 hover:text-volt hover:border-volt/50 transition-all z-20"
+                          >
+                            <Info size={14} />
+                          </button>
+                        </div>
                       );
                     })}
 
@@ -198,6 +270,11 @@ export const ExerciseSelectorModal = ({ isOpen, onClose, onSelect }: ExerciseSel
             >
               Close
             </button>
+            <ExerciseInfoModal 
+              exercise={selectedInfoExercise || lastInfoExercise!}
+              isOpen={!!selectedInfoExercise}
+              onClose={() => setSelectedInfoExercise(null)}
+            />
           </motion.div>
         </div>
       )}

@@ -30,7 +30,7 @@ describe('Performance Testing', () => {
     }));
 
     const start = performance.now();
-    getTacticalImpact(massiveLogs);
+    getTacticalImpact(massiveLogs as any);
     const end = performance.now();
 
     expect(end - start).toBeLessThan(50);

@@ -22,7 +22,13 @@ import {
   LogIn,
   LogOut,
   Search,
-  Loader2
+  Loader2,
+  Lock,
+  Mail,
+  UserPlus,
+  ChevronLeft,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { DeploymentIcon } from './components/DeploymentIcon';
 import { MissionIcon } from './components/MissionIcon';
@@ -30,7 +36,9 @@ import { ViewType, NavItem, ImmersionMode } from './types';
 import { AnalysisView } from './components/AnalysisView';
 import { SafetyHUD } from './components/SafetyHUD';
 import { AnalyticsView } from './components/AnalyticsView';
-import { StageView } from './components/StageView';
+import { FitnessTestView } from './components/FitnessTestView';
+import { getFitnessTestInfo } from './utils/fitnessTestUtils';
+import { SportShoeIcon } from './components/SportShoeIcon';
 import { TrainingView } from './components/TrainingView';
 import { BerserkerHUD } from './components/BerserkerHUD';
 import { ConfirmationModal } from './components/ConfirmationModal';
@@ -46,12 +54,13 @@ import { WorkoutHistory } from './components/WorkoutHistory';
 import { NonProgramActivityModal } from './components/NonProgramActivityModal';
 import { cn } from './lib/utils';
 
-import { useSettings } from './contexts/SettingsContext';
+import { 
+  useSettings 
+} from './contexts/SettingsContext';
 import { WorkoutProvider, useWorkout } from './contexts/WorkoutContext';
 import { auth, signInWithGoogle, logout, signInWithEmail, signUpWithEmail } from './firebase';
 import { calculateTier } from './lib/strength';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { Mail, Lock, UserPlus, ChevronLeft } from 'lucide-react';
 
 import { ReadinessCheck } from './components/ReadinessCheck';
 import { ReflectionModal } from './components/ReflectionModal';
@@ -90,6 +99,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'analytics', label: 'nav.analytics', icon: BarChart3 },
   { id: 'training', label: 'nav.training', icon: DeploymentIcon },
   { id: 'deployment', label: 'nav.deployment', icon: MissionIcon },
+  { id: 'fitness-test', label: 'nav.fitnessTest', icon: SportShoeIcon, isExperimental: true },
   { id: 'settings', label: 'nav.settings', icon: Settings },
 ];
 
@@ -185,7 +195,8 @@ function AppContent() {
     isLoading: isWorkoutLoading,
     pendingReflection,
     setPendingReflection,
-    saveReflection
+    saveReflection,
+    getNextWorkoutTemplate
   } = useWorkout();
   
   const calibration = getCalibrationStatus();
@@ -197,6 +208,7 @@ function AppContent() {
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [isSafetyActive, setIsSafetyActive] = useState(false);
   const [preAuthStep, setPreAuthStep] = useState<'carousel' | 'questionnaire' | 'auth'>('carousel');
+  const [showPassword, setShowPassword] = useState(false);
   
   // Lock orientation to portrait
   useEffect(() => {
@@ -232,7 +244,7 @@ function AppContent() {
   const [activeView, setActiveView] = useState<ViewType>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('volt_active_view');
-      const validViews: ViewType[] = ['analysis', 'training', 'analytics', 'settings', 'profile', 'workout-log', 'post-workout', 'berserker', 'workout-history', 'upcoming-missions'];
+      const validViews: ViewType[] = ['analysis', 'training', 'analytics', 'settings', 'profile', 'workout-log', 'post-workout', 'berserker', 'workout-history', 'upcoming-missions', 'fitness-test'];
       if (saved && validViews.includes(saved as ViewType)) {
         return saved as ViewType;
       }
@@ -243,7 +255,7 @@ function AppContent() {
   const [lastView, setLastView] = useState<ViewType>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('volt_last_main_view');
-      const mainViews: ViewType[] = ['analysis', 'training', 'analytics', 'settings', 'profile', 'deployment'];
+      const mainViews: ViewType[] = ['analysis', 'training', 'analytics', 'settings', 'profile', 'deployment', 'fitness-test'];
       if (saved && mainViews.includes(saved as ViewType)) {
         return saved as ViewType;
       }
@@ -256,7 +268,7 @@ function AppContent() {
     localStorage.setItem('volt_last_main_view', lastView);
     
     // Track the last "main" view to support intelligent back-navigation from sub-views like History
-    const mainViews: ViewType[] = ['analysis', 'training', 'analytics', 'settings', 'profile', 'deployment'];
+    const mainViews: ViewType[] = ['analysis', 'training', 'analytics', 'settings', 'profile', 'deployment', 'fitness-test'];
     if (mainViews.includes(activeView)) {
       setLastView(activeView);
     }
@@ -268,10 +280,15 @@ function AppContent() {
 
   // Search logic: check if query matches main labels or known subpages
   const getFilteredNavItems = () => {
-    if (!searchQuery.trim()) return NAV_ITEMS;
+    let items = NAV_ITEMS;
+    if (!showExperimentalMenus) {
+       items = items.filter(item => !item.isExperimental);
+    }
+    
+    if (!searchQuery.trim()) return items;
     const query = searchQuery.toLowerCase();
     
-    return NAV_ITEMS.filter(item => {
+    return items.filter(item => {
       const label = t(item.label).toLowerCase();
       if (label.includes(query)) return true;
       
@@ -454,14 +471,14 @@ function AppContent() {
       // Global Navigation Commands
       if (transcript.includes('go to dashboard') || transcript.includes('show dashboard')) {
         setActiveView('analysis');
-      } else if (transcript.includes('go to competition') || transcript.includes('show competition') || transcript.includes('arena')) {
-        setActiveView('stage');
+      } else if (transcript.includes('go to fitness test') || transcript.includes('show fitness test') || transcript.includes('test')) {
+        setActiveView('fitness-test');
       } else if (transcript.includes('go to analytics') || transcript.includes('show analytics')) {
         setActiveView('analytics');
       } else if (transcript.includes('go to training') || transcript.includes('show training') || transcript.includes('workout')) {
         setActiveView('training');
-      } else if (transcript.includes('arnold') || transcript.includes('classic') || transcript.includes('gym') || transcript.includes('uspl') || transcript.includes('nationals') || transcript.includes('competition') || transcript.includes('desert') || transcript.includes('dust bowl') || transcript.includes('dust') || transcript.includes('space') || transcript.includes('lunar') || transcript.includes('station')) {
-        setActiveView('stage');
+      } else if (transcript.includes('arnold') || transcript.includes('classic') || transcript.includes('gym') || transcript.includes('uspl') || transcript.includes('nationals') || transcript.includes('fitness test') || transcript.includes('desert') || transcript.includes('dust bowl') || transcript.includes('dust') || transcript.includes('space') || transcript.includes('lunar') || transcript.includes('station')) {
+        setActiveView('fitness-test');
       } else if (transcript.includes('detect lift') || transcript.includes('berserker')) {
         setIsLifting(true);
         setActiveView('berserker');
@@ -594,7 +611,7 @@ function AppContent() {
           }}
           onSignUp={() => {
             setIsSigningUp(true);
-            setPreAuthStep('auth');
+            setPreAuthStep('questionnaire');
           }}
           onSignIn={() => {
             setIsSigningUp(false);
@@ -626,105 +643,157 @@ function AppContent() {
           className="relative z-10 max-w-md w-full glass-panel px-4 py-10 md:p-10 border border-white/10 flex flex-col items-center text-center my-auto"
         >
 
-          <h1 className="font-sans font-black tracking-tighter uppercase text-4xl text-white mb-1">
-            {t('app.title')}
-          </h1>
-          <p className="font-sans font-bold text-[10px] tracking-[0.2em] uppercase text-zinc-500 mb-8">
-            {t('auth.trainingSystem')}
-          </p>
+          <VanguardLogo className="mb-8" />
 
-          <form onSubmit={handleAuth} className="w-full space-y-4 mb-6">
-            <div className="relative">
-              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
-              <input 
-                type="email"
-                placeholder={t('auth.email')}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full bg-surface-container-lowest border-b-2 border-white/5 py-4 pl-12 pr-4 text-sm text-white placeholder:text-zinc-600 focus:border-volt outline-none transition-all"
-              />
-            </div>
-            <div className="relative">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
-              <input 
-                type="password"
-                placeholder={t('auth.password')}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="w-full bg-surface-container-lowest border-b-2 border-white/5 py-4 pl-12 pr-4 text-sm text-white placeholder:text-zinc-600 focus:border-volt outline-none transition-all"
-              />
-            </div>
+          <div className="w-full space-y-6">
+            <form onSubmit={handleAuth} className="w-full space-y-4">
+              <div className="space-y-4">
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-zinc-500 group-focus-within:text-volt transition-colors">
+                    <Mail size={16} />
+                  </div>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder={t('auth.emailPlaceholder') || "EMAIL ADDRESS"}
+                    required
+                    className="w-full bg-zinc-900/50 border border-white/10 py-4 pl-12 pr-4 text-[10px] sm:text-xs font-bold uppercase tracking-widest text-white placeholder:text-zinc-600 focus:outline-none focus:border-volt/50 transition-all"
+                  />
+                </div>
 
-            {isSigningUp && (
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
-                <input 
-                  type="password"
-                  placeholder={t('auth.confirmPassword')}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  className="w-full bg-surface-container-lowest border-b-2 border-white/5 py-4 pl-12 pr-4 text-sm text-white placeholder:text-zinc-600 focus:border-volt outline-none transition-all"
-                />
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-zinc-500 group-focus-within:text-volt transition-colors">
+                    <Lock size={16} />
+                  </div>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder={t('auth.passwordPlaceholder') || "PASSWORD"}
+                    required
+                    className="w-full bg-zinc-900/50 border border-white/10 py-4 pl-12 pr-12 text-[10px] sm:text-xs font-bold uppercase tracking-widest text-white placeholder:text-zinc-600 focus:outline-none focus:border-volt/50 transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-3 flex items-center text-zinc-500 hover:text-volt transition-colors"
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+
+                {isSigningUp && (
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-zinc-500 group-focus-within:text-volt transition-colors">
+                      <Lock size={16} />
+                    </div>
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder={t('auth.confirmPasswordPlaceholder') || "CONFIRM PASSWORD"}
+                      required
+                      className="w-full bg-zinc-900/50 border border-white/10 py-4 pl-12 pr-4 text-[10px] sm:text-xs font-bold uppercase tracking-widest text-white placeholder:text-zinc-600 focus:outline-none focus:border-volt/50 transition-all"
+                    />
+                  </div>
+                )}
               </div>
-            )}
-            
+
+              <button
+                type="submit"
+                disabled={isEmailAuthLoading || isGoogleAuthLoading}
+                className="w-full btn-primary py-4 text-xs uppercase font-black tracking-widest disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {isEmailAuthLoading ? (
+                  <Loader2 className="animate-spin" size={18} />
+                ) : (
+                  <>
+                    <img 
+                      src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLXNoaWVsZC1jaGVjay1pY29uIGx1Y2lkZS1zaGllbGQtY2hlY2siPjxwYXRoIGQ9Ik0yMCAxM2MwIDUtMy41IDcuNS03LjY2IDguOTVhMSAxIDAgMCAxLS42Ny0uMDFDNy41IDIwLjUgNCAxOCA0IDEzVjZhMSAxIDAgMCAxIDEtMWMyIDAgNC41LTEuMiA2LjI0LTIuNzJhMS4xNyAxLjE3IDAgMCAxIDEuNTIgMEMxNC41MSAzLjgxIDE3IDUgMTkgNWExIDEgMCAwIDEgMSAxeiIvPjxwYXRoIGQ9Im05IDEyIDIgMiA0LTQiLz48L3N2Zz4=" 
+                      alt="Secure" 
+                      className="size-4" 
+                    />
+                    {isSigningUp ? t('auth.signUp') || "INITIALIZE DEPLOYMENT" : t('auth.signIn') || "AUTHORIZE LOGIN"}
+                  </>
+                )}
+              </button>
+            </form>
+
+            <div className="relative py-4">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-white/5"></div>
+              </div>
+              <div className="relative flex justify-center text-[8px] font-black uppercase tracking-[0.3em]">
+                <span className="bg-void px-4 text-zinc-600 font-sans">{t('auth.orSecureSso') || "OR SECURE SSO"}</span>
+              </div>
+            </div>
+
+            <button 
+              type="button"
+              onClick={handleGoogleSignIn}
+              disabled={isGoogleAuthLoading || isEmailAuthLoading}
+              className="w-full flex items-center justify-center gap-4 bg-white/5 text-white border border-white/10 py-4 font-sans font-black uppercase tracking-widest hover:bg-white hover:text-void transition-all duration-300 disabled:opacity-50"
+            >
+              {isGoogleAuthLoading ? (
+                <Loader2 className="animate-spin text-white" size={18} />
+              ) : (
+                <div className="flex items-center gap-3">
+                  <svg className="w-5 h-5" viewBox="0 0 24 24">
+                    <path
+                      fill="currentColor"
+                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                    />
+                    <path
+                      fill="currentColor"
+                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                    />
+                    <path
+                      fill="currentColor"
+                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"
+                    />
+                    <path
+                      fill="currentColor"
+                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                    />
+                  </svg>
+                  <span>{t('auth.signInWithGoogle')}</span>
+                </div>
+              )}
+            </button>
+
             {authError && (
               <p className="text-crimson text-[10px] font-bold uppercase tracking-widest animate-shake">
                 {authError}
               </p>
             )}
 
-            <button 
-              type="submit"
-              disabled={isEmailAuthLoading || isGoogleAuthLoading}
-              className="w-full bg-volt text-void py-4 font-sans font-bold uppercase tracking-widest hover:bg-white transition-all duration-300 shadow-xl disabled:opacity-50"
-            >
-              {isEmailAuthLoading ? (
-                <Loader2 className="animate-spin mx-auto" size={18} />
-              ) : (
-                isSigningUp ? t('auth.next') : t('auth.signIn')
-              )}
-            </button>
-          </form>
+            <div className="flex flex-col items-center gap-6">
+              <button
+                type="button"
+                onClick={() => setIsSigningUp(!isSigningUp)}
+                className="text-[10px] font-bold uppercase tracking-widest text-volt hover:underline"
+              >
+                {isSigningUp ? t('auth.alreadyHaveAccount') || "ALREADY REGISTERED? LOG IN" : t('auth.noAccount') || "NO DEPLOYMENT ID? REGISTER"}
+              </button>
 
-          <div className="w-full flex items-center gap-4 mb-6">
-            <div className="h-px flex-1 bg-white/5" />
-            <span className="text-[8px] font-bold text-zinc-600 uppercase tracking-widest">{t('auth.or')}</span>
-            <div className="h-px flex-1 bg-white/5" />
+              <button 
+                type="button"
+                onClick={() => setPreAuthStep('carousel')}
+                className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-zinc-500 hover:text-white transition-colors"
+              >
+                <ChevronLeft size={12} /> {t('auth.backToBriefing') || "BACK TO BRIEFING"}
+              </button>
+            </div>
           </div>
 
-          <button 
-            type="button"
-            onClick={handleGoogleSignIn}
-            disabled={isEmailAuthLoading || isGoogleAuthLoading}
-            className="w-full flex items-center justify-center gap-3 bg-white/5 border border-white/10 text-white py-4 font-sans text-[10px] font-bold uppercase tracking-widest hover:bg-white/10 transition-all duration-300 disabled:opacity-50"
-          >
-            {isGoogleAuthLoading ? (
-              <Loader2 className="animate-spin" size={16} />
-            ) : (
-              <LogIn size={16} />
-            )}
-            {t('auth.signInWithGoogle')}
-          </button>
-
-          <button 
-            type="button"
-            onClick={() => setPreAuthStep('carousel')}
-            className="w-full mt-4 flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-widest text-zinc-500 hover:text-white transition-colors"
-          >
-            <ChevronLeft size={12} /> Back to onboarding
-          </button>
-
-          <p className="mt-8 text-[8px] text-zinc-600 font-medium leading-relaxed max-w-[280px]">
+          <p className="mt-12 text-[8px] text-zinc-600 font-medium leading-relaxed max-w-[280px] uppercase tracking-[0.2em]">
             {t('auth.privacyNotice')}
           </p>
         </motion.div>
 
         {/* Background Ambience */}
-        <div className="fixed bottom-0 left-0 w-[600px] h-[600px] bg-crimson/5 blur-[120px] pointer-events-none -z-10" />
+        <div className="fixed bottom-0 left-0 w-[600px] h-[600px] bg-volt/5 blur-[120px] pointer-events-none -z-10" />
       </div>
     );
   }
@@ -783,6 +852,11 @@ function AppContent() {
       case 'deployment': return <DeploymentView />;
       case 'upcoming-missions': return <UpcomingMissionsView onBack={() => setActiveView('training')} />;
       case 'settings': return <SettingsView onExit={() => setIsExitModalOpen(true)} onNavigateToProfile={() => setActiveView('profile')} />;
+      case 'fitness-test': return <FitnessTestView 
+        immersionMode={immersionMode}
+        isVoiceActive={isVoiceActive}
+        lastVoiceCommand={lastVoiceCommand}
+      />;
       case 'profile': return <ProfileView onBack={() => setActiveView('settings')} />;
       case 'workout-log': return <WorkoutLog 
         onBack={() => setActiveView('training')}
@@ -888,11 +962,25 @@ function AppContent() {
 
       {/* Top App Bar Shell - Hidden on Desktop/Tablet */}
       <header className={cn(
-        "fixed top-0 left-0 right-0 z-50 flex md:hidden justify-center items-center px-4 md:px-10 pb-4 md:pb-8 bg-void/50 backdrop-blur-md md:bg-transparent pointer-events-none pt-safe"
+        "fixed top-0 left-0 right-0 z-50 flex md:hidden items-center justify-between px-6 bg-void/60 backdrop-blur-lg pt-safe pb-4 h-24"
       )}>
-        <div className="flex flex-col items-center justify-center w-[40vw] mt-2 sm:mt-4 md:mt-8">
+        <div className="w-10" />
+        <div className="flex items-center justify-center w-[40vw]">
           <VanguardLogo className="drop-shadow-[0_0_10px_var(--primary-glow)]" />
         </div>
+        <button 
+          onClick={() => setActiveView('settings')}
+          className={cn(
+            "p-2 pointer-events-auto transition-all",
+            activeView === 'settings' ? "text-volt" : "text-zinc-500"
+          )}
+        >
+          <Settings 
+            size={20} 
+            className={cn("transition-all", activeView === 'settings' && "drop-shadow-[0_0_8px_var(--primary-glow)]")} 
+            strokeWidth={activeView === 'settings' ? 3 : 2} 
+          />
+        </button>
       </header>
 
       <aside className={cn(
@@ -961,10 +1049,16 @@ function AppContent() {
                       <Icon size={18} strokeWidth={isActive ? 3 : 2} />
                     </div>
                     <span className={cn(
-                      "font-sans text-[10px] uppercase tracking-[0.2em] transition-colors",
+                      "font-sans text-[10px] uppercase tracking-[0.2em] transition-colors flex",
+                      item.id === 'fitness-test' ? "flex-col items-start leading-none gap-1" : "items-center gap-2",
                       isActive ? "text-white font-black" : "text-zinc-500 font-bold group-hover:text-zinc-300"
                     )}>
-                      {t(item.label)}
+                      <span>{t(item.label)}</span>
+                      {item.id === 'fitness-test' && (
+                        <span className="text-[8px] opacity-70 text-zinc-500 font-bold">
+                          D-{getFitnessTestInfo(profile).daysRemaining}
+                        </span>
+                      )}
                     </span>
                     {isActive && (
                       <motion.div 
@@ -1124,16 +1218,19 @@ function AppContent() {
             />
             <span className="text-[8px] font-black uppercase tracking-widest">{t('nav.deployment').split(' ')[0]}</span>
           </button>
-          <button
-            onClick={() => setActiveView('settings')}
-            className={cn(
-              "flex flex-col items-center gap-1 transition-all",
-              activeView === 'settings' ? "text-volt" : "text-zinc-500"
-            )}
-          >
-            <Settings size={20} strokeWidth={activeView === 'settings' ? 3 : 2} />
-            <span className="text-[8px] font-black uppercase tracking-widest">{t('nav.settings').split(' ')[0] || 'SETTINGS'}</span>
-          </button>
+          
+          {showExperimentalMenus && (
+            <button
+              onClick={() => setActiveView('fitness-test')}
+              className={cn(
+                "flex flex-col items-center gap-1 transition-all relative",
+                activeView === 'fitness-test' ? "text-volt" : "text-zinc-500"
+              )}
+            >
+              <SportShoeIcon size={20} strokeWidth={activeView === 'fitness-test' ? 3 : 2} />
+              <span className="text-[8px] font-black uppercase tracking-widest">{t('nav.fitnessTest').split(' ')[0] || "TEST"}</span>
+            </button>
+          )}
         </div>
       </nav>
 
@@ -1146,7 +1243,11 @@ function AppContent() {
           "hidden md:flex flex-col w-full md:sticky md:top-0 md:z-30 bg-void border-b border-white/5 md:mb-8 md:-mx-[var(--app-gutter)] md:px-[var(--app-gutter)] md:w-[calc(100%+2*var(--app-gutter))]",
           (activeView === 'post-workout' || activeView === 'berserker') && "md:hidden"
         )}>
-          <PageHeader activeView={activeView} onBack={handlePageBack} />
+          <PageHeader 
+            activeView={activeView} 
+            onBack={handlePageBack} 
+            subtitle={activeView === 'training' ? (currentSession?.title || getNextWorkoutTemplate()?.title) : currentSession?.title} 
+          />
         </div>
         <AnimatePresence mode="wait">
           <motion.div

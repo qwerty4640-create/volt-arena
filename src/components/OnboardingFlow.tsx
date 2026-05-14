@@ -2,11 +2,72 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { User, Scale, Ruler, Dumbbell, ChevronRight, CheckCircle2, Trophy, ArrowLeft, Medal, Skull, Zap, Loader2, Info, ChevronDown } from 'lucide-react';
 import { useSettings, UserProfile, TrainingGoal, MissionPeriod, CustomBlock } from '../contexts/SettingsContext';
+import { BlockType } from '../constants/periodization';
 import { ProgramDesigner } from './ProgramDesigner';
 import { cn } from '../lib/utils';
 import { auth, logout } from '../firebase';
 
 type OnboardingStep = 'biometrics' | 'goals' | 'objective' | 'advanced' | 'period_setup' | 'complete';
+
+const EXPERIENCE_DESCRIPTIONS = {
+  untrained: {
+    title: 'Untrained',
+    description: 'Starting from zero. Basic motor patterns are still being established. Focus on form and baseline conditioning.',
+    qualifies: 'Individuals with less than 3 months of consistent training or those returning from a multi-year hiatus.'
+  },
+  novice: {
+    title: 'Novice',
+    description: 'Consistent training for 3-9 months. Linear progression is common. Solid understanding of basic compound lifts.',
+    qualifies: 'Typically 3-12 months of consistent training. Can still make session-to-session progress.'
+  },
+  intermediate: {
+    title: 'Intermediate',
+    description: 'Consistent training for 1-2 years. Progress requires more complex programming and periodization.',
+    qualifies: '1-3 years of consistent training. Requires weekly or monthly progression models.'
+  },
+  advanced: {
+    title: 'Advanced',
+    description: 'Consistent training for 3-5 years. Highly developed technique and high work capacity. Requires specific peak phases.',
+    qualifies: '3-5+ years of dedicated training. Competition-level intensity and technical proficiency.'
+  },
+  elite: {
+    title: 'Elite',
+    description: '5+ years of dedicated training. Near genetic limit. Competing at local or national levels.',
+    qualifies: 'Professional or high-level competitive athletes. Marginal gains require extreme specialization.'
+  }
+};
+
+const getProficiencyData = (level: string, gender: string, age: number, weight: number) => {
+  const strengthRatios: Record<string, Record<string, number>> = {
+    male: { untrained: 1.0, novice: 1.8, intermediate: 3.2, advanced: 4.8, elite: 6.5 },
+    female: { untrained: 0.6, novice: 1.1, intermediate: 1.9, advanced: 2.9, elite: 4.0 },
+    other: { untrained: 0.8, novice: 1.4, intermediate: 2.5, advanced: 3.8, elite: 5.2 }
+  };
+
+  const enduranceTimes: Record<string, Record<string, string>> = {
+    male: { untrained: '12:00', novice: '9:00', intermediate: '7:00', advanced: '5:30', elite: '4:30' },
+    female: { untrained: '14:00', novice: '11:00', intermediate: '8:30', advanced: '7:00', elite: '5:30' },
+    other: { untrained: '13:00', novice: '10:00', intermediate: '7:45', advanced: '6:15', elite: '5:00' }
+  };
+
+  const g = gender === 'male' || gender === 'female' || gender === 'other' ? gender : 'male';
+  let strengthRatio = strengthRatios[g]?.[level] || strengthRatios.male[level];
+  
+  // Age adjustment: -0.5% per year after 35
+  if (age > 35) {
+    const yearsAbove = age - 35;
+    const reduction = Math.min(0.4, yearsAbove * 0.005);
+    strengthRatio *= (1 - reduction);
+  }
+
+  const enduranceTime = enduranceTimes[g]?.[level] || enduranceTimes.male[level];
+
+  return {
+    strengthRatio: parseFloat(strengthRatio.toFixed(2)),
+    enduranceTime,
+    totalWeight: Math.round(weight * strengthRatio)
+  };
+};
 
 export const OnboardingFlow = ({ 
   onCompleteHandler,
@@ -160,21 +221,88 @@ export const OnboardingFlow = ({
       const totalWeeks = (parseInt(formData.missionPeriod) || 3) * 4;
       
       // Determine default block types based on goal
-      let defaultType = 'PURE_STRENGTH';
-      if (formData.trainingGoal === 'hypertrophy') defaultType = 'HYPERTROPHY';
-      if (formData.trainingGoal === 'powerbuilding') defaultType = 'POWERBUILDING';
-      if (formData.trainingGoal === 'tactical') defaultType = 'TACTICAL';
-      if (formData.trainingGoal === 'endurance') defaultType = 'ENDURANCE';
+      let defaultType: string = BlockType.PURE_STRENGTH;
+      if (formData.trainingGoal === 'hypertrophy') defaultType = BlockType.HYPERTROPHY;
+      if (formData.trainingGoal === 'powerbuilding') defaultType = BlockType.POWERBUILDING;
+      if (formData.trainingGoal === 'tactical') defaultType = BlockType.TACTICAL;
+      if (formData.trainingGoal === 'endurance') defaultType = BlockType.ENDURANCE;
       
+      const activeWeeks = totalWeeks - 1; // Reserve 1 week for deload
+      const block1Weeks = Math.floor(activeWeeks / 2);
+      const block2Weeks = activeWeeks - block1Weeks;
+
       const defaultBlocks = [
-        { id: 'def-1', type: defaultType, durationWeeks: Math.floor(totalWeeks / 3) },
-        { id: 'def-2', type: defaultType, durationWeeks: Math.floor(totalWeeks / 3) },
-        { id: 'def-3', type: defaultType, durationWeeks: totalWeeks - (Math.floor(totalWeeks / 3) * 2) }
+        { id: 'def-1', type: defaultType, durationWeeks: block1Weeks },
+        { id: 'def-2', type: defaultType, durationWeeks: block2Weeks },
+        { id: 'def-3', type: BlockType.DELOAD, durationWeeks: 1 }
       ];
       
       setFormData(prev => ({ ...prev, customProgramBlocks: defaultBlocks }));
     }
   }, [step, formData.missionPeriod, formData.trainingGoal]);
+
+  const finalizeProfile = async () => {
+    setLoading(true);
+    try {
+      const heightVal = unit === 'metric'
+        ? (parseFloat(formData.height) || 0)
+        : ((parseFloat(formData.heightFeet) || 0) * 12) + (parseFloat(formData.heightInches) || 0);
+
+      // Ensure blocks are initialized if they haven't been yet (e.g. when skipping period_setup)
+      let finalBlocks = formData.customProgramBlocks;
+      if (!finalBlocks || finalBlocks.length === 0) {
+        const totalWeeks = (parseInt(formData.missionPeriod) || 3) * 4;
+        let defaultType: string = BlockType.PURE_STRENGTH;
+        if (formData.trainingGoal === 'hypertrophy') defaultType = BlockType.HYPERTROPHY;
+        if (formData.trainingGoal === 'powerbuilding') defaultType = BlockType.POWERBUILDING;
+        if (formData.trainingGoal === 'tactical') defaultType = BlockType.TACTICAL;
+        if (formData.trainingGoal === 'endurance') defaultType = BlockType.ENDURANCE;
+        
+        const activeWeeks = totalWeeks - 1;
+        const block1Weeks = Math.floor(activeWeeks / 2);
+        const block2Weeks = activeWeeks - block1Weeks;
+
+        finalBlocks = [
+          { id: 'def-1', type: defaultType, durationWeeks: block1Weeks },
+          { id: 'def-2', type: defaultType, durationWeeks: block2Weeks },
+          { id: 'def-3', type: BlockType.DELOAD, durationWeeks: 1 }
+        ];
+      }
+
+      await updateProfile({
+        uid: auth.currentUser?.uid || '',
+        email: auth.currentUser?.email || '',
+        unit: unit,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        gender: formData.gender,
+        age: parseInt(formData.age) || 0,
+        height: heightVal,
+        weight: parseFloat(formData.weight) || 0,
+        trainingGoal: formData.trainingGoal,
+        trainingObjectives: formData.trainingObjectives,
+        trainingDurationMonths: formData.trainingDurationMonths,
+        missionPeriod: formData.missionPeriod,
+        customProgramBlocks: finalBlocks,
+        isCustomProgram: true,
+        trainingFrequency: formData.trainingFrequency,
+        level: formData.trainingAge,
+        squatPR: parseFloat(formData.squat1RM) || 0,
+        benchPR: parseFloat(formData.bench1RM) || 0,
+        deadliftPR: parseFloat(formData.deadlift1RM) || 0,
+        gymProfile: formData.gymProfile,
+        injuryNoGoList: formData.injuryNoGoList,
+        hasFullGymAccess: formData.hasFullGymAccess,
+        hasMedicalConditions: formData.hasMedicalConditions,
+        medicalConditionDetails: formData.medicalConditionDetails,
+        isExperiencedAthlete: formData.isExperiencedAthlete,
+        onboardingCompleted: false,
+      });
+      setStep('complete');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleNext = async () => {
     if (step === 'biometrics') {
@@ -187,51 +315,19 @@ export const OnboardingFlow = ({
 
       if (needsAdvancedSetup) {
         setStep('advanced');
+      } else if (formData.trainingObjectives.length === 1) {
+        await finalizeProfile();
       } else {
         setStep('period_setup');
       }
     } else if (step === 'advanced') {
-      setStep('period_setup');
-    } else if (step === 'period_setup') {
-      setLoading(true);
-      try {
-        const heightVal = unit === 'metric'
-          ? (parseFloat(formData.height) || 0)
-          : ((parseFloat(formData.heightFeet) || 0) * 12) + (parseFloat(formData.heightInches) || 0);
-
-        await updateProfile({
-          uid: auth.currentUser?.uid || '',
-          email: auth.currentUser?.email || '',
-          unit: unit,
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          gender: formData.gender,
-          age: parseInt(formData.age) || 0,
-          height: heightVal,
-          weight: parseFloat(formData.weight) || 0,
-          trainingGoal: formData.trainingGoal,
-          trainingObjectives: formData.trainingObjectives,
-          trainingDurationMonths: formData.trainingDurationMonths,
-          missionPeriod: formData.missionPeriod,
-          customProgramBlocks: formData.customProgramBlocks,
-          isCustomProgram: true,
-          trainingFrequency: formData.trainingFrequency,
-          level: formData.trainingAge,
-          squatPR: parseFloat(formData.squat1RM) || 0,
-          benchPR: parseFloat(formData.bench1RM) || 0,
-          deadliftPR: parseFloat(formData.deadlift1RM) || 0,
-          gymProfile: formData.gymProfile,
-          injuryNoGoList: formData.injuryNoGoList,
-          hasFullGymAccess: formData.hasFullGymAccess,
-          hasMedicalConditions: formData.hasMedicalConditions,
-          medicalConditionDetails: formData.medicalConditionDetails,
-          isExperiencedAthlete: formData.isExperiencedAthlete,
-          onboardingCompleted: false,
-        });
-        setStep('complete');
-      } finally {
-        setLoading(false);
+      if (formData.trainingObjectives.length === 1) {
+        await finalizeProfile();
+      } else {
+        setStep('period_setup');
       }
+    } else if (step === 'period_setup') {
+      await finalizeProfile();
     }
   };
 
@@ -305,72 +401,6 @@ export const OnboardingFlow = ({
     }
   };
 
-  const getRecommendedGoal = (): TrainingGoal => {
-    const age = parseInt(formData.age) || 30;
-    const weight = parseFloat(formData.weight) || 80;
-    const height = unit === 'metric'
-      ? (parseFloat(formData.height) || 175)
-      : ((parseFloat(formData.heightFeet) || 5) * 30.48 + (parseFloat(formData.heightInches) || 9) * 2.54);
-
-    const heightM = height / 100;
-    const weightKg = unit === 'metric' ? weight : weight / 2.20462;
-    const bmi = weightKg / (heightM * heightM);
-
-    if (age > 55 || bmi > 35) return 'longevity';
-    if (formData.trainingAge === 'untrained' || formData.trainingAge === 'novice') return 'hypertrophy';
-    if (formData.trainingAge === 'intermediate') return 'powerbuilding';
-    if ((formData.trainingAge === 'advanced' || formData.trainingAge === 'elite') && formData.trainingFrequency >= 5) return 'pure_strength';
-
-    return 'powerbuilding';
-  };
-
-  const getRecommendationRationale = (goal: TrainingGoal): string => {
-    const age = parseInt(formData.age) || 30;
-    const weight = parseFloat(formData.weight) || 80;
-    const height = unit === 'metric'
-      ? (parseFloat(formData.height) || 175)
-      : ((parseFloat(formData.heightFeet) || 5) * 30.48 + (parseFloat(formData.heightInches) || 9) * 2.54);
-
-    const heightM = height / 100;
-    const weightKg = unit === 'metric' ? weight : weight / 2.20462;
-    const bmi = weightKg / (heightM * heightM);
-
-    if (goal === 'longevity') {
-      if (age > 55) return t('onboarding.rationale.longevity.age');
-      if (bmi > 35) return t('onboarding.rationale.longevity.bmi');
-      return t('onboarding.rationale.longevity.default');
-    }
-    if (goal === 'hypertrophy') {
-      return t('onboarding.rationale.hypertrophy');
-    }
-    if (goal === 'powerbuilding') {
-      return t('onboarding.rationale.powerbuilding');
-    }
-    if (goal === 'pure_strength') {
-      return t('onboarding.rationale.pure_strength');
-    }
-    return "";
-  };
-
-  const recommendedGoal = getRecommendedGoal();
-  const rationale = getRecommendationRationale(recommendedGoal);
-
-  // Auto-select recommended goal only if not already selected or if goal hasn't been manually set
-  useEffect(() => {
-    // Only auto-update if trainingObjectives is empty or only contains the previously recommended goal
-    // This allows the user to change training age/frequency without losing their manually selected goal
-    const isDefaultOrEmpty = formData.trainingObjectives.length === 0 || 
-                             (formData.trainingObjectives.length === 1 && formData.trainingObjectives[0] === getRecommendedGoal());
-    
-    if (isDefaultOrEmpty) {
-      setFormData(prev => ({ 
-        ...prev, 
-        trainingGoal: recommendedGoal,
-        trainingObjectives: [recommendedGoal]
-      }));
-    }
-  }, [formData.trainingAge, formData.trainingFrequency, formData.age, formData.weight, formData.height, formData.heightFeet, formData.heightInches]);
-
   // Scroll to top when step changes
   useEffect(() => {
     if (scrollContainerRef.current) {
@@ -382,19 +412,19 @@ export const OnboardingFlow = ({
   return (
     <div
       ref={scrollContainerRef}
-      className="fixed inset-0 z-[100] bg-void flex justify-center px-2 pb-2 md:p-6 overflow-y-auto custom-scrollbar pt-safe"
+      className="fixed inset-0 z-[100] bg-void overflow-y-auto custom-scrollbar pt-safe"
     >
-      <div className="w-full max-w-2xl my-auto py-4 md:py-8">
+      <div className="w-full min-h-full flex flex-col">
         <AnimatePresence mode="wait">
           {step === 'biometrics' && (
             <motion.div
               key="biometrics"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="glass-panel px-4 md:px-8 py-6 md:p-10 space-y-6 md:space-y-8"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex-1 w-full flex flex-col p-6 md:p-12 lg:p-16 max-w-4xl mx-auto space-y-8 md:space-y-12"
             >
-              <div className="flex items-center gap-6">
+              <div className="flex items-center gap-6 md:mt-0">
                 <button
                   onClick={() => onBack ? onBack() : logout()} // Back to Carousel if possible, else Step 1 (Signup) means logging out
                   className="w-12 h-12 shrink-0 bg-surface-container-lowest border border-white/5 flex items-center justify-center text-zinc-400 hover:text-white hover:border-volt transition-all"
@@ -547,13 +577,12 @@ export const OnboardingFlow = ({
                     {t('onboarding.weight')} ({unit === 'metric' ? 'kg' : 'LBS'})
                   </label>
                   <div className="relative">
-                    <Scale className={cn("absolute left-4 top-1/2 -translate-y-1/2 transition-colors", isWeightError ? "text-crimson" : "text-zinc-500")} size={18} />
                     <input
                       type="number"
                       value={formData.weight}
                       onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
                       className={cn(
-                        "w-full bg-surface-container-lowest border-b-2 p-2 md:p-4 pl-12 text-white outline-none transition-all",
+                        "w-full bg-surface-container-lowest border-b-2 p-2 md:p-4 text-white outline-none transition-all",
                         isWeightError ? "border-crimson" : "border-white/5 focus:border-volt"
                       )}
                       placeholder={unit === 'metric' ? "85" : "185"}
@@ -578,12 +607,12 @@ export const OnboardingFlow = ({
           {step === 'goals' && (
             <motion.div
               key="goals"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="glass-panel px-4 md:px-8 py-6 md:p-10 space-y-6 md:space-y-8"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex-1 w-full flex flex-col p-6 md:p-12 lg:p-16 max-w-4xl mx-auto space-y-8 md:space-y-12"
             >
-              <div className="flex items-center gap-6">
+              <div className="flex items-center gap-6 md:mt-0">
                 <button
                   onClick={() => setStep('biometrics')}
                   className="w-12 h-12 shrink-0 bg-surface-container-lowest border border-white/5 flex items-center justify-center text-zinc-400 hover:text-white hover:border-volt transition-all"
@@ -598,26 +627,97 @@ export const OnboardingFlow = ({
 
               <div className="space-y-6">
                 <div className="space-y-4">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('onboarding.experience')}</label>
-                  <div className="grid grid-cols-2 gap-3">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Experience Level</label>
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-1">
                     {(['untrained', 'novice', 'intermediate', 'advanced', 'elite'] as const).map((level) => (
                       <button
                         key={level}
-                        onClick={() => setFormData({ ...formData, trainingAge: level })}
+                        onClick={() => {
+                          const bw = weightVal || (unit === 'metric' ? 80 : 180);
+                          const age = parseInt(formData.age) || 30;
+                          const data = getProficiencyData(level, formData.gender, age, bw);
+                          
+                          // Set default 1RMs based on level if they are empty
+                          const total = data.totalWeight;
+                          const squat = total * 0.45;
+                          const bench = total * 0.25;
+                          const deadlift = total * 0.30;
+
+                          setFormData({ 
+                            ...formData, 
+                            trainingAge: level,
+                            squat1RM: formData.squat1RM && formData.squat1RM !== '0' ? formData.squat1RM : Math.round(squat).toString(),
+                            bench1RM: formData.bench1RM && formData.bench1RM !== '0' ? formData.bench1RM : Math.round(bench).toString(),
+                            deadlift1RM: formData.deadlift1RM && formData.deadlift1RM !== '0' ? formData.deadlift1RM : Math.round(deadlift).toString()
+                          });
+                        }}
                         className={cn(
-                          "p-3 border font-headline text-[10px] font-black uppercase tracking-widest transition-all",
+                          "py-3 border font-headline text-[8px] font-black uppercase tracking-widest transition-all",
                           formData.trainingAge === level ? "bg-volt/10 border-volt text-white" : "bg-surface-variant border-white/5 text-zinc-500"
                         )}
                       >
-                        {t(`onboarding.level.${level}`)}
+                        {level}
                       </button>
                     ))}
                   </div>
+
+                  {/* Description Box */}
+                  <div className="bg-surface-container-lowest border border-white/5 p-4 space-y-3">
+                    {(() => {
+                      const bw = weightVal || (unit === 'metric' ? 80 : 180);
+                      const age = parseInt(formData.age) || 30;
+                      const profData = getProficiencyData(formData.trainingAge, formData.gender, age, bw);
+                      return (
+                        <>
+                          <div className="flex justify-between items-center">
+                            <h3 className="font-headline text-sm font-black uppercase tracking-widest text-volt">
+                              {EXPERIENCE_DESCRIPTIONS[formData.trainingAge].title}
+                            </h3>
+                            <div className="flex gap-2">
+                              <div className="bg-volt/10 px-2 min-h-[20px] flex items-center justify-center border border-volt/20">
+                                <span className="text-[8px] font-black text-volt uppercase leading-none">Strength: {profData.strengthRatio}x BW</span>
+                              </div>
+                              <div className="bg-volt/10 px-2 min-h-[20px] flex items-center justify-center border border-volt/20">
+                                <span className="text-[8px] font-black text-volt uppercase leading-none">1 Mile: {profData.enduranceTime}</span>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <p className="text-zinc-400 text-xs leading-relaxed font-medium">
+                            {EXPERIENCE_DESCRIPTIONS[formData.trainingAge].description}
+                          </p>
+                          
+                          <div className="pt-2 border-t border-white/5">
+                            <p className="text-xs font-black uppercase tracking-widest text-zinc-500 mb-1">Target Proficiency</p>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="space-y-0.5">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Big 3 Total</p>
+                                <p className="text-sm text-volt font-black">
+                                  {profData.totalWeight} {unit === 'metric' ? 'kg' : 'lbs'}
+                                </p>
+                              </div>
+                              <div className="space-y-0.5">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Endurance Mark</p>
+                                <p className="text-sm text-volt font-black">{profData.enduranceTime} 1 Mile</p>
+                              </div>
+                            </div>
+                          </div>
+                        </>
+                      );
+                    })()}
+
+                    <div className="pt-2">
+                      <p className="text-zinc-400 text-xs leading-relaxed font-medium italic">
+                        {EXPERIENCE_DESCRIPTIONS[formData.trainingAge].qualifies}
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
+                {/* Optional Override for 1RMs */}
                 <div className="space-y-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('onboarding.current1rm')}</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Fine-Tune 1RM Protocol (Optional)</label>
                     <div className="flex items-center gap-2 bg-surface-container-lowest border border-white/5 p-1 w-fit">
                       <button
                         onClick={() => handleUnitChange('imperial')}
@@ -641,39 +741,39 @@ export const OnboardingFlow = ({
                   </div>
                   <div className="grid grid-cols-3 gap-3">
                     <div className="space-y-2">
-                      <label className={cn("text-[8px] font-black uppercase tracking-normal transition-colors", isSquatError ? "text-crimson" : "text-zinc-500")}>{t('onboarding.squat')}</label>
+                      <label className={cn("text-[8px] font-black uppercase tracking-normal transition-colors", isSquatError ? "text-crimson" : "text-zinc-500")}>Squat</label>
                       <input
                         type="number"
                         value={formData.squat1RM}
                         onChange={(e) => setFormData({ ...formData, squat1RM: e.target.value })}
                         className={cn(
-                          "w-full bg-surface-container-lowest border-b-2 p-3 text-white outline-none transition-all text-center",
+                          "w-full bg-surface-container-lowest border-b-2 p-3 text-white outline-none transition-all text-center text-xs font-black",
                           isSquatError ? "border-crimson" : "border-white/5 focus:border-volt"
                         )}
                         placeholder="0"
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className={cn("text-[8px] font-black uppercase tracking-normal transition-colors", isBenchError ? "text-crimson" : "text-zinc-500")}>{t('onboarding.bench')}</label>
+                      <label className={cn("text-[8px] font-black uppercase tracking-normal transition-colors", isBenchError ? "text-crimson" : "text-zinc-500")}>Bench</label>
                       <input
                         type="number"
                         value={formData.bench1RM}
                         onChange={(e) => setFormData({ ...formData, bench1RM: e.target.value })}
                         className={cn(
-                          "w-full bg-surface-container-lowest border-b-2 p-3 text-white outline-none transition-all text-center",
+                          "w-full bg-surface-container-lowest border-b-2 p-3 text-white outline-none transition-all text-center text-xs font-black",
                           isBenchError ? "border-crimson" : "border-white/5 focus:border-volt"
                         )}
                         placeholder="0"
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className={cn("text-[8px] font-black uppercase tracking-normal transition-colors", isDeadliftError ? "text-crimson" : "text-zinc-500")}>{t('onboarding.deadlift')}</label>
+                      <label className={cn("text-[8px] font-black uppercase tracking-normal transition-colors", isDeadliftError ? "text-crimson" : "text-zinc-500")}>Deadlift</label>
                       <input
                         type="number"
                         value={formData.deadlift1RM}
                         onChange={(e) => setFormData({ ...formData, deadlift1RM: e.target.value })}
                         className={cn(
-                          "w-full bg-surface-container-lowest border-b-2 p-3 text-white outline-none transition-all text-center",
+                          "w-full bg-surface-container-lowest border-b-2 p-3 text-white outline-none transition-all text-center text-xs font-black",
                           isDeadliftError ? "border-crimson" : "border-white/5 focus:border-volt"
                         )}
                         placeholder="0"
@@ -684,69 +784,58 @@ export const OnboardingFlow = ({
                     <p className="text-[8px] font-black uppercase tracking-widest text-crimson">{t('onboarding.invalid1rm')}</p>
                   )}
                 </div>
+              </div>
 
-                <div className="space-y-4">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('onboarding.gymAccess')}</label>
-                  <div className="grid grid-cols-1 gap-3">
-                    <button
-                      onClick={() => setFormData({ ...formData, gymProfile: 'powerlifting' })}
-                      className={cn(
-                        "p-3 border font-headline text-[10px] font-black uppercase tracking-widest transition-all text-left",
-                        formData.gymProfile === 'powerlifting' ? "bg-volt/10 border-volt text-white" : "bg-surface-variant border-white/5 text-zinc-500"
-                      )}
-                    >
-                      {t('onboarding.gymYes')}
-                    </button>
-                    <button
-                      onClick={() => setFormData({ ...formData, gymProfile: 'commercial' })}
-                      className={cn(
-                        "p-3 border font-headline text-[10px] font-black uppercase tracking-widest transition-all text-left",
-                        formData.gymProfile === 'commercial' ? "bg-volt/10 border-volt text-white" : "bg-surface-variant border-white/5 text-zinc-500"
-                      )}
-                    >
-                      {t('onboarding.gymNo')}
-                    </button>
-                  </div>
+              <button
+                onClick={handleNext}
+                disabled={loading || isSquatError || isBenchError || isDeadliftError}
+                className="w-full btn-primary p-5"
+              >
+                {loading ? t('onboarding.calibrating') : t('onboarding.next')} <ChevronRight size={20} />
+              </button>
+            </motion.div>
+          )}
+
+          {step === 'objective' && (
+            <motion.div
+              key="objective"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex-1 w-full flex flex-col p-6 md:p-12 lg:p-16 max-w-4xl mx-auto space-y-8 md:space-y-12"
+            >
+              <div className="flex items-center gap-6 md:mt-0">
+                <button
+                  onClick={() => setStep('goals')}
+                  className="w-12 h-12 shrink-0 bg-surface-container-lowest border border-white/5 flex items-center justify-center text-zinc-400 hover:text-white hover:border-volt transition-all"
+                >
+                  <ArrowLeft size={24} />
+                </button>
+                <div className="space-y-1">
+                  <h2 className="font-headline text-3xl font-black uppercase tracking-tight text-white">{t('onboarding.title')}</h2>
+                  <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">{t('onboarding.step4')}</p>
                 </div>
+              </div>
 
+              <div className="space-y-8">
                 <div className="space-y-4">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('onboarding.limitations')}</label>
-                  <div className="grid grid-cols-1 gap-2">
-                    {[
-                      { id: 'squat_conventional', label: t('onboarding.movement.squat') },
-                      { id: 'bench_flat', label: t('onboarding.movement.bench') },
-                      { id: 'deadlift_conventional', label: t('onboarding.movement.deadlift') }
-                    ].map((movement) => (
-                      <label key={movement.id} className="flex items-center gap-3 p-3 bg-surface-container-lowest border border-white/5 cursor-pointer hover:border-white/10 transition-all">
-                        <input
-                          type="checkbox"
-                          checked={formData.injuryNoGoList.includes(movement.id)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setFormData({ ...formData, injuryNoGoList: [...formData.injuryNoGoList, movement.id] });
-                            } else {
-                              setFormData({ ...formData, injuryNoGoList: formData.injuryNoGoList.filter(id => id !== movement.id) });
-                            }
-                          }}
-                          className="accent-volt w-4 h-4"
-                        />
-                        <span className="text-xs font-medium text-white">{movement.label}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('onboarding.missionPeriod')}</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Deployment period</label>
                   <div className="grid grid-cols-4 gap-2">
                     {(['3M', '6M', '9M', '12M'] as MissionPeriod[]).map((m) => (
                       <button
                         key={m}
-                        onClick={() => setFormData({ 
+                        onClick={() => {
+                          const durationMonths = parseInt(m);
+                          const maxObj = Math.floor(durationMonths / 3);
+                          const updatedObjectives = formData.trainingObjectives.slice(0, maxObj);
+                          
+                          setFormData({ 
                           ...formData, 
                           missionPeriod: m,
-                          trainingDurationMonths: parseInt(m)
-                        })}
+                          trainingDurationMonths: durationMonths,
+                          trainingObjectives: updatedObjectives.length > 0 ? updatedObjectives : formData.trainingObjectives.slice(0, 1),
+                          trainingGoal: updatedObjectives.length > 0 ? updatedObjectives[0] : formData.trainingGoal
+                        })}}
                         className={cn(
                           "py-3 border font-headline text-xs font-black uppercase tracking-widest transition-all",
                           formData.missionPeriod === m ? "bg-volt/10 border-volt text-white" : "bg-surface-variant border-white/5 text-zinc-500"
@@ -763,7 +852,7 @@ export const OnboardingFlow = ({
 
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('onboarding.frequency')}</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Mission frequency</label>
                     <span className="text-volt font-headline text-xs font-black">{formData.trainingFrequency} {t('onboarding.daysPerWeek')}</span>
                   </div>
                   <input
@@ -780,63 +869,36 @@ export const OnboardingFlow = ({
                     <span>7 {t('onboarding.days')}</span>
                   </div>
                 </div>
-              </div>
 
-              <button
-                onClick={handleNext}
-                disabled={loading || isSquatError || isBenchError || isDeadliftError}
-                className="w-full bg-volt text-void font-headline font-black uppercase tracking-widest p-5 flex items-center justify-center gap-2 rounded-none hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(0,182,255,0.3)] active:scale-[0.98] transition-all disabled:opacity-50"
-              >
-                {loading ? t('onboarding.calibrating') : t('onboarding.nextProtocol')} <ChevronRight size={20} />
-              </button>
-            </motion.div>
-          )}
-
-          {step === 'objective' && (
-            <motion.div
-              key="objective"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="glass-panel px-4 md:px-8 py-6 md:p-10 space-y-6 md:space-y-8"
-            >
-              <div className="flex items-center gap-6">
-                <button
-                  onClick={() => setStep('goals')}
-                  className="w-12 h-12 shrink-0 bg-surface-container-lowest border border-white/5 flex items-center justify-center text-zinc-400 hover:text-white hover:border-volt transition-all"
-                >
-                  <ArrowLeft size={24} />
-                </button>
-                <div className="space-y-1">
-                  <h2 className="font-headline text-3xl font-black uppercase tracking-tight text-white">{t('onboarding.title')}</h2>
-                  <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">{t('onboarding.step4')}</p>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex justify-between items-end">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('onboarding.objective')}</label>
-                  <span className="text-[8px] font-black uppercase tracking-widest text-zinc-600">
-                    {formData.trainingObjectives.length} / 2 SELECTED
-                  </span>
-                </div>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-end">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('onboarding.objective')}</label>
+                    <span className="text-[8px] font-black uppercase tracking-widest text-zinc-600">
+                      {formData.trainingObjectives.length} / {Math.floor(formData.trainingDurationMonths / 3)} SELECTED
+                    </span>
+                  </div>
                 <div className="grid grid-cols-1 gap-3">
                   {(['pure_strength', 'powerbuilding', 'hypertrophy', 'peaking', 'longevity', 'tactical', 'explosiveness', 'endurance', 'prehab'] as TrainingGoal[]).map((goal) => {
                     const goalIndex = formData.trainingObjectives.indexOf(goal);
                     const isSelected = goalIndex !== -1;
-                    const priorityLabel = goalIndex === 0 ? 'PRIMARY' : goalIndex === 1 ? 'SECONDARY' : '';
+                    const priorityLabel = 
+                      goalIndex === 0 ? 'PRIMARY' : 
+                      goalIndex === 1 ? 'SECONDARY' : 
+                      goalIndex === 2 ? 'TERTIARY' : 
+                      goalIndex === 3 ? 'QUATERNARY' : '';
                     
                     return (
                       <button
                         key={goal}
                         onClick={() => {
+                          const maxObjectives = Math.floor(formData.trainingDurationMonths / 3);
                           let newObjectives = [...formData.trainingObjectives];
                           if (isSelected) {
                             if (newObjectives.length > 1) {
                               newObjectives = newObjectives.filter(g => g !== goal);
                             }
                           } else {
-                            if (newObjectives.length < 2) {
+                            if (newObjectives.length < maxObjectives) {
                               newObjectives.push(goal);
                             }
                           }
@@ -851,16 +913,7 @@ export const OnboardingFlow = ({
                           isSelected ? "bg-volt/10 border-volt" : "bg-surface-variant border-white/5"
                         )}
                       >
-                        {recommendedGoal === goal && (
-                          <div className="absolute top-0 right-0 flex items-center">
-                            <div className="bg-volt text-void text-[7px] font-black uppercase px-2 py-0.5 tracking-tighter">
-                              {t('onboarding.recommended')}
-                            </div>
-                            <div className="bg-white/10 p-0.5 text-volt">
-                              <Info size={8} />
-                            </div>
-                          </div>
-                        )}
+                        {/* recommended goal badge removed */}
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex items-center gap-2">
                             <span className={cn(
@@ -889,8 +942,9 @@ export const OnboardingFlow = ({
                   })}
                 </div>
               </div>
+            </div>
 
-              <button
+            <button
                 onClick={handleNext}
                 disabled={loading}
                 className="w-full bg-volt text-void font-headline font-black uppercase tracking-widest p-5 flex items-center justify-center gap-2 rounded-none hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(0,182,255,0.3)] active:scale-[0.98] transition-all disabled:opacity-50"
@@ -903,12 +957,12 @@ export const OnboardingFlow = ({
           {step === 'advanced' && (
             <motion.div
               key="advanced"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="glass-panel px-4 md:px-8 py-6 md:p-10 space-y-6 md:space-y-8"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex-1 w-full flex flex-col p-6 md:p-12 lg:p-16 max-w-4xl mx-auto space-y-8 md:space-y-12"
             >
-              <div className="flex items-center gap-6">
+              <div className="flex items-center gap-6 md:mt-0">
                 <button
                   onClick={() => setStep('objective')}
                   className="w-12 h-12 shrink-0 bg-surface-container-lowest border border-white/5 flex items-center justify-center text-zinc-400 hover:text-white hover:border-volt transition-all"
@@ -1044,12 +1098,12 @@ export const OnboardingFlow = ({
           {step === 'period_setup' && (
             <motion.div
               key="period_setup"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="glass-panel px-4 md:px-8 py-6 md:p-10 space-y-6 md:space-y-8"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex-1 w-full flex flex-col p-6 md:p-12 lg:p-16 max-w-4xl mx-auto space-y-8 md:space-y-12"
             >
-              <div className="flex items-center gap-6">
+              <div className="flex items-center gap-6 md:mt-0">
                 <button
                   onClick={() => setStep('objective')}
                   className="w-12 h-12 shrink-0 bg-surface-container-lowest border border-white/5 flex items-center justify-center text-zinc-400 hover:text-white hover:border-volt transition-all"
@@ -1086,17 +1140,11 @@ export const OnboardingFlow = ({
           {step === 'complete' && (
             <motion.div
               key="complete"
-              initial={{ opacity: 0, scale: 0.9, y: 30 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              transition={{
-                type: "spring",
-                stiffness: 260,
-                damping: 20,
-                duration: 0.6
-              }}
-              className="glass-panel px-6 py-10 md:p-12 text-center space-y-6 md:space-y-8 relative overflow-hidden"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex-1 w-full flex flex-col items-center justify-center p-6 md:p-12 lg:p-16 max-w-4xl mx-auto space-y-8 md:space-y-12 text-center"
             >
-              <div className="flex items-center gap-6 text-left mb-4">
+              <div className="w-full flex items-center gap-6 text-left mb-4">
                 <button
                   onClick={() => setStep('period_setup')}
                   className="w-12 h-12 shrink-0 bg-surface-container-lowest border border-white/5 flex items-center justify-center text-zinc-400 hover:text-white hover:border-volt transition-all"

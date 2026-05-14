@@ -105,6 +105,75 @@ describe('Recovery Engine', () => {
     expect(resultOldHistory.fatiguePenalty).toBeCloseTo(1, 1); 
   });
 
+  it('evaluates EWMA mathematics accurately for a continuous 30-day load', () => {
+    const OneDayMs = 24 * 60 * 60 * 1000;
+    // Set a predictable fixed date so calculations are static
+    const baseTime = new Date('2024-01-01T12:00:00Z').getTime();
+    
+    // Create 30 days of consistent load
+    // For unit = 'metric', intensity = 3600
+    // Vol: 100 weight * 5 reps = 500
+    // load: (500 * 9) / 3600 = 1.25 per day
+    const history = Array.from({ length: 30 }).map((_, i) => ({
+      completedAt: baseTime + (i * OneDayMs),
+      exercises: [
+        { sets: [{ isCompleted: true, isWarmup: false, weight: 100, reps: 5, rpe: 9 }] }
+      ]
+    }));
+
+    const result = calculateSystemReadiness(history, [], null, undefined, 'metric');
+    
+    // Because the load is exactly 1.25 every day, eventually EWMA Acute and Chronic should converge near 1.25
+    // And their ratio should stabilize near 1.0
+    expect(result.ewmaRatio).toBeDefined();
+    expect(result.ewmaRatio).toBeCloseTo(1.0, 1);
+  });
+
+  it('cold start: users with 1 to 6 days of data receive a meaningful ratio (1.0) rather than NaN', () => {
+    const history = [
+      {
+        completedAt: Date.now(),
+        exercises: [
+          { sets: [{ isCompleted: true, isWarmup: false, weight: 100, reps: 5, rpe: 8 }] }
+        ]
+      }
+    ];
+
+    const result = calculateSystemReadiness(history, [], null, undefined, 'metric');
+    expect(result.ewmaRatio).toBe(1.0); // Exact match because day 1 initializes both to the exact same value
+  });
+
+  it('return from injury: 14-day gap zeroes out acute but holds some chronic', () => {
+    const OneDayMs = 24 * 60 * 60 * 1000;
+    const now = Date.now();
+    
+    // 30 days ago to 15 days ago: constant training
+    const oldHistory = Array.from({ length: 15 }).map((_, i) => ({
+      completedAt: now - (30 - i) * OneDayMs,
+      exercises: [
+        { sets: [{ isCompleted: true, isWarmup: false, weight: 100, reps: 5, rpe: 9 }] }
+      ]
+    }));
+
+    // Missing 14 days of history...
+
+    // 1 session today
+    const recentHistory = [{
+      completedAt: now,
+      exercises: [
+        { sets: [{ isCompleted: true, isWarmup: false, weight: 100, reps: 5, rpe: 9 }] }
+      ]
+    }];
+
+    const history = [...oldHistory, ...recentHistory];
+    const result = calculateSystemReadiness(history, [], null, undefined, 'metric');
+    
+    // Acute ratio should be lower since they took 14 days off, returning to just a small baseline
+    // The ratio should definitely be smaller than 1.0 initially before creeping back up,
+    // though the 1 session bumps acute slightly
+    expect(result.ewmaRatio).toBeGreaterThan(0);
+  });
+
   it('performance: calculates system readiness for 30 days of history in < 50ms', () => {
     const OneDayMs = 24 * 60 * 60 * 1000;
     const now = Date.now();

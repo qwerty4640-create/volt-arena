@@ -60,7 +60,8 @@ const AVAILABLE_BLOCKS = [
   { type: BlockType.EXPLOSIVENESS, color: 'text-orange-500', bg: 'bg-orange-500/20', borderColor: 'border-orange-500/30' },
   { type: BlockType.ENDURANCE, color: 'text-blue-500', bg: 'bg-blue-500/20', borderColor: 'border-blue-500/30' },
   { type: BlockType.PREHAB, color: 'text-purple-300', bg: 'bg-purple-300/20', borderColor: 'border-purple-300/30' },
-  { type: BlockType.RETENTION, color: 'text-rose-400', bg: 'bg-rose-400/20', borderColor: 'border-rose-400/30' }
+  { type: BlockType.RETENTION, color: 'text-rose-400', bg: 'bg-rose-400/20', borderColor: 'border-rose-400/30' },
+  { type: BlockType.DELOAD, color: 'text-amber-400', bg: 'bg-amber-400/20', borderColor: 'border-amber-400/30' }
 ];
 
 const SortableBlock: React.FC<{

@@ -41,10 +41,21 @@ export const MovementExclusionModal: React.FC<MovementExclusionModalProps> = ({
     }
   };
 
-  const filteredExercises = EXERCISE_DATABASE.filter(ex =>
-    ex.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    ex.category.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const searchTerms = searchQuery.toLowerCase().split(/\s+/).filter(Boolean);
+  
+  const filteredExercises = EXERCISE_DATABASE.filter(ex => {
+    if (searchTerms.length === 0) return true;
+    
+    const searchableString = [
+      ex.name.toLowerCase(),
+      ex.category.toLowerCase(),
+      ex.pattern.toLowerCase(),
+      ...(ex.muscles?.map(m => m.toLowerCase()) || []),
+      ...(ex.description ? [ex.description.toLowerCase()] : [])
+    ].join(' ');
+
+    return searchTerms.every(term => searchableString.includes(term));
+  }).sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
 
   if (!mounted) return null;
 
@@ -102,9 +113,19 @@ export const MovementExclusionModal: React.FC<MovementExclusionModalProps> = ({
                     )}>
                       {getExerciseName(mvmt, t)}
                     </span>
-                    <span className="text-[7px] text-zinc-600 font-bold uppercase tracking-widest mt-0.5">
-                      {mvmt.category}
-                    </span>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-[7px] text-zinc-600 font-bold uppercase tracking-widest">
+                        {mvmt.category}
+                      </span>
+                      {mvmt.pattern && (
+                        <>
+                          <div className="w-0.5 h-0.5 rounded-full bg-zinc-800" />
+                          <span className="text-[7px] text-volt/40 font-bold uppercase tracking-widest">
+                            {mvmt.pattern.replace('_', ' ')}
+                          </span>
+                        </>
+                      )}
+                    </div>
                   </div>
                   <input
                     type="checkbox"

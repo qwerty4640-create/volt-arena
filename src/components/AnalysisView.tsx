@@ -341,55 +341,7 @@ export const ReadinessAnalysisWidget = () => {
         return [...volumeData.slice(1), volumeData[0]];
     }, [volumeData]);
 
-    const acwrData = useMemo(() => {
-        if (!history || history.length === 0) return null;
-
-        const weeks: Record<string, number> = {};
-        const weekTimestamps: Record<string, number> = {};
-
-        history.forEach(session => {
-            const date = session.completedAt ? new Date(session.completedAt) : new Date(session.date);
-            const startOfWeek = new Date(date);
-            startOfWeek.setDate(date.getDate() - date.getDay());
-            startOfWeek.setHours(0, 0, 0, 0);
-            const weekKey = startOfWeek.getTime().toString();
-
-            let sessionVolume = 0;
-            session.exercises?.forEach(ex => {
-                ex.sets?.forEach(s => {
-                    if (s.isCompleted) {
-                        sessionVolume += (parseFloat(s.weight) || 0) * (parseInt(s.reps) || 0);
-                    }
-                });
-            });
-
-            if (!weeks[weekKey]) {
-                weeks[weekKey] = 0;
-                weekTimestamps[weekKey] = startOfWeek.getTime();
-            }
-            weeks[weekKey] += sessionVolume;
-        });
-
-        const sortedWeeks = Object.keys(weeks)
-            .map(k => ({ timestamp: weekTimestamps[k], volume: weeks[k] }))
-            .sort((a, b) => a.timestamp - b.timestamp);
-
-        if (sortedWeeks.length === 0) return null;
-
-        const acuteWorkload = sortedWeeks[sortedWeeks.length - 1].volume;
-
-        // Chronic workload: Average of the up to 4 weeks prior to the acute week
-        const chronicWeeks = sortedWeeks.slice(Math.max(0, sortedWeeks.length - 5), sortedWeeks.length - 1);
-
-        if (chronicWeeks.length === 0) {
-            return { ratio: 1.0, acute: acuteWorkload, chronic: acuteWorkload };
-        }
-
-        const chronicWorkload = chronicWeeks.reduce((acc, w) => acc + w.volume, 0) / chronicWeeks.length;
-        const ratio = chronicWorkload > 0 ? acuteWorkload / chronicWorkload : 1.0;
-
-        return { ratio: Number(ratio.toFixed(2)), acute: acuteWorkload, chronic: chronicWorkload };
-    }, [history]);
+    const ewmaRatio = calibration.ewmaRatio;
 
     // ── Single factor column ───────────────────────────────────────────────────
     const FactorColumn = ({
@@ -436,15 +388,15 @@ export const ReadinessAnalysisWidget = () => {
 
                 {/* Header: title + readiness score + recalibrate button */}
                 <div className="flex items-start justify-between mb-4 md:mb-6 relative z-10 w-full gap-4">
-                    <div className="flex flex-col">
+                    <div className="flex flex-col w-full">
                         <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight">
                             {t('analysis.recoveryAnalysis')}
                         </h2>
                         <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed mb-6 md:mb-12">
                             Bio-mechanical readiness is system-managed based on historical training volume.
                         </p>
-                        <div className="grid grid-cols-2 gap-4 mt-2 items-start">
-                            <div className="flex flex-col items-start">
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mt-2 items-start w-full">
+                            <div className="flex flex-col items-start lg:col-span-1">
                                 <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-4 block w-full">
                                     {t('analysis.readiness')}
                                     <InfoTooltip term="Readiness" />
@@ -460,24 +412,24 @@ export const ReadinessAnalysisWidget = () => {
                                 </div>
                             </div>
 
-                            {/* ACWR Widget */}
-                            <div className="flex flex-col items-start">
+                            {/* EWMA Widget */}
+                            <div className="flex flex-col items-start lg:col-span-1 lg:col-start-2">
                                 <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-4 block w-full">
-                                    ACWR
-                                    <InfoTooltip term="ACWR" />
+                                    EWMA
+                                    <InfoTooltip term="EWMA" />
                                 </span>
-                                {acwrData ? (
+                                {ewmaRatio !== null && ewmaRatio !== undefined ? (
                                     <div className="flex flex-col h-full items-start">
                                         <div className="flex items-baseline gap-2 mb-2">
                                             <span className="text-3xl md:text-4xl font-black tracking-tighter leading-none text-white">
-                                                {acwrData.ratio.toFixed(2)}
+                                                {ewmaRatio.toFixed(2)}
                                             </span>
                                         </div>
                                         <span className={cn(
                                             "font-headline text-[10px] font-black uppercase tracking-widest border-l-2 pl-3 block mb-4 text-zinc-600 border-zinc-800",
-                                            acwrData.ratio > 1.5 ? "text-crimson" : acwrData.ratio >= 0.8 && acwrData.ratio <= 1.3 ? "text-volt" : "text-zinc-400"
+                                            ewmaRatio > 1.5 ? "text-crimson" : ewmaRatio >= 0.8 && ewmaRatio <= 1.3 ? "text-volt" : "text-zinc-400"
                                         )}>
-                                            {acwrData.ratio > 1.5 ? "Elevated" : acwrData.ratio >= 0.8 && acwrData.ratio <= 1.3 ? "Optimal" : "Monitor"}
+                                            {ewmaRatio > 1.5 ? "Elevated" : ewmaRatio >= 0.8 && ewmaRatio <= 1.3 ? "Optimal" : "Monitor"}
                                         </span>
                                     </div>
                                 ) : (

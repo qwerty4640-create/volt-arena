@@ -1,6 +1,6 @@
 import { LucideIcon } from "lucide-react";
 
-export type ViewType = 'analysis' | 'safety' | 'analytics' | 'berserker' | 'training' | 'settings' | 'workout-log' | 'post-workout' | 'workout-history' | 'profile' | 'deployment' | 'upcoming-missions';
+export type ViewType = 'analysis' | 'safety' | 'analytics' | 'berserker' | 'training' | 'settings' | 'workout-log' | 'post-workout' | 'workout-history' | 'profile' | 'deployment' | 'upcoming-missions' | 'fitness-test';
 export type ImmersionMode = 'immersive' | 'ar';
 
 export type WidgetId = 'recovery-analysis' | 'pr' | 'macros';
@@ -10,6 +10,7 @@ export interface NavItem {
   id: ViewType;
   label: string;
   icon: LucideIcon;
+  isExperimental?: boolean;
 }
 
 export interface TelemetryData {

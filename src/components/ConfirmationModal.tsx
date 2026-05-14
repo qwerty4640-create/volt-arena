@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { AlertTriangle, X } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
@@ -26,7 +27,15 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   variant = 'danger'
 }) => {
   const { t } = useSettings();
-  return (
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-[10000] flex justify-center p-4 overflow-y-auto custom-scrollbar">
@@ -93,6 +102,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
           </motion.div>
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };

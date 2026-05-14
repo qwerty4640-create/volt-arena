@@ -521,7 +521,7 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
                         <input
                           type="number"
                           step="1"
-                          value={editData.age}
+                          value={editData.age === 0 ? '' : editData.age}
                           onChange={(e) => {
                             const val = parseFloat(e.target.value);
                             setEditData({ ...editData, age: isNaN(val) ? 0 : val });
@@ -550,7 +550,7 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
                           <div className="flex items-center gap-2">
                             <input
                               type="number"
-                              value={editData.height}
+                              value={editData.height === 0 ? '' : editData.height}
                               onChange={(e) => setEditData({ ...editData, height: parseFloat(e.target.value) || 0 })}
                               className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black focus:border-volt outline-none transition-all text-center"
                             />
@@ -561,7 +561,7 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
                             <div className="flex-1 space-y-1">
                               <input
                                 type="number"
-                                value={editData.heightFeet}
+                                value={editData.heightFeet === 0 ? '' : editData.heightFeet}
                                 onChange={(e) => setEditData({ ...editData, heightFeet: parseInt(e.target.value) || 0 })}
                                 className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black focus:border-volt outline-none transition-all text-center"
                               />
@@ -569,7 +569,7 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
                             <div className="flex-1 space-y-1">
                               <input
                                 type="number"
-                                value={editData.heightInches}
+                                value={editData.heightInches === 0 ? '' : editData.heightInches}
                                 onChange={(e) => setEditData({ ...editData, heightInches: parseInt(e.target.value) || 0 })}
                                 className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black focus:border-volt outline-none transition-all text-center"
                               />
@@ -589,7 +589,7 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
                         <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('settings.weight')} ({unit === 'metric' ? 'kg' : 'LBS'})</label>
                         <input
                           type="number"
-                          value={editData.weight}
+                          value={editData.weight === 0 ? '' : editData.weight}
                           onChange={(e) => setEditData({ ...editData, weight: parseFloat(e.target.value) || 0 })}
                           className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black focus:border-volt outline-none transition-all text-center"
                         />
@@ -657,7 +657,7 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
                       <label className="text-[10px] font-black uppercase tracking-widest text-white">Squat ({unit === 'metric' ? 'kg' : 'LBS'})</label>
                       <input
                         type="number"
-                        value={edit1RMData.squatPR || ''}
+                        value={edit1RMData.squatPR === 0 ? '' : edit1RMData.squatPR}
                         onChange={(e) => setEdit1RMData({ ...edit1RMData, squatPR: parseFloat(e.target.value) || 0 })}
                         className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black focus:border-volt outline-none transition-all text-center"
                       />
@@ -666,7 +666,7 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
                       <label className="text-[10px] font-black uppercase tracking-widest text-white">Bench ({unit === 'metric' ? 'kg' : 'LBS'})</label>
                       <input
                         type="number"
-                        value={edit1RMData.benchPR || ''}
+                        value={edit1RMData.benchPR === 0 ? '' : edit1RMData.benchPR}
                         onChange={(e) => setEdit1RMData({ ...edit1RMData, benchPR: parseFloat(e.target.value) || 0 })}
                         className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black focus:border-volt outline-none transition-all text-center"
                       />
@@ -675,7 +675,7 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
                       <label className="text-[10px] font-black uppercase tracking-widest text-white">Deadlift ({unit === 'metric' ? 'kg' : 'LBS'})</label>
                       <input
                         type="number"
-                        value={edit1RMData.deadliftPR || ''}
+                        value={edit1RMData.deadliftPR === 0 ? '' : edit1RMData.deadliftPR}
                         onChange={(e) => setEdit1RMData({ ...edit1RMData, deadliftPR: parseFloat(e.target.value) || 0 })}
                         className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-sans text-xl font-black focus:border-volt outline-none transition-all text-center"
                       />

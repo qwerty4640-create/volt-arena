@@ -547,6 +547,29 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
             <div className="pt-4 border-t border-white/5">
               <div className="flex items-center justify-between gap-4">
                 <div>
+                  <p className="text-white text-xs font-black uppercase tracking-widest">Override Fitness Test Lockdown</p>
+                  <p className="text-zinc-500 text-[8px] font-medium uppercase tracking-widest mt-1">
+                    Bypass the temporal lock on fitness testing protocols for validation.
+                  </p>
+                </div>
+                <button
+                  onClick={() => updateProfile({ devOverrideFitnessTest: !profile?.devOverrideFitnessTest })}
+                  className={cn(
+                    "w-12 h-6 shrink-0 relative transition-colors duration-300",
+                    profile?.devOverrideFitnessTest ? "bg-volt" : "bg-zinc-700"
+                  )}
+                >
+                  <div className={cn(
+                    "absolute top-1 w-4 h-4 bg-white transition-all duration-300",
+                    profile?.devOverrideFitnessTest ? "left-7" : "left-1"
+                  )} />
+                </button>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-white/5">
+              <div className="flex items-center justify-between gap-4">
+                <div>
                   <p className="text-white text-xs font-black uppercase tracking-widest">{t('settings.experimentalFeatures')}</p>
                   <p className="text-zinc-500 text-[8px] font-medium uppercase tracking-widest mt-1">
                     {t('settings.experimentalFeaturesDesc')}

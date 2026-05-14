@@ -1,4 +1,20 @@
+import { EXERCISE_DATABASE_TYPED } from "../constants/exercises";
 import { Exercise } from "../contexts/WorkoutContext";
+
+export function isUnilateral(exName: string): boolean {
+  if (!exName) return false;
+  const ex = EXERCISE_DATABASE_TYPED.find(e => e.name.toLowerCase() === exName.toLowerCase());
+  if (ex?.isUnilateral) return true;
+
+  // Fallback for custom names or missing tags
+  const lowerName = exName.toLowerCase();
+  return lowerName.includes('one arm') || 
+         lowerName.includes('single arm') || 
+         lowerName.includes('single leg') || 
+         lowerName.includes('pistol') || 
+         lowerName.includes('shrimp') || 
+         (lowerName.includes('archer') && !lowerName.includes('pull ups')); // Archer pull ups are already tagged but just in case
+}
 
 export function getExerciseName(ex: any, t?: any): string {
   const nameStr = typeof ex === "string" ? ex : ex?.name || "Unknown";

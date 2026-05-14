@@ -28,7 +28,7 @@ import { InfoTooltip } from './InfoTooltip';
 import { useSettings } from '../contexts/SettingsContext';
 import { cn, isDumbbell } from '../lib/utils';
 import { useWorkout, Exercise, Set as WorkoutSet, WorkoutSession } from '../contexts/WorkoutContext';
-import { getExerciseName, isTimedExercise } from '../utils/workoutUtils';
+import { getExerciseName, isTimedExercise, isUnilateral } from '../utils/workoutUtils';
 import { useToast } from '../contexts/ToastContext';
 import { ConfirmationModal } from './ConfirmationModal';
 import { getSwappableExercises, EXERCISE_DATABASE } from '../constants/exercises';
@@ -156,6 +156,10 @@ const ExerciseAccordion = ({
   const [isExpanded, setIsExpanded] = useState(true);
   const [showInfo, setShowInfo] = useState(false);
   const exerciseDefinition = EXERCISE_DATABASE.find(e => e.name === exercise.name);
+  const unilateral = isUnilateral(exercise.name);
+  const dumbbell = isDumbbell(exercise.name);
+  const showPerSide = unilateral || dumbbell;
+  const weightLabel = showPerSide ? `${weightUnit} PER SIDE` : weightUnit;
 
   useEffect(() => {
     if (exercise.sets.every(set => set.isCompleted)) {
@@ -237,21 +241,38 @@ const ExerciseAccordion = ({
                 {/* Headers */}
                 <div className="flex items-center gap-1 sm:gap-2 px-1 sm:px-2 text-[9px] sm:text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">
                   <div className="w-8 sm:w-10 text-center">SET</div>
-                  <div className="flex-1 min-w-0 text-center">LBS</div>
+                  <div className="flex-1 min-w-0 text-center">{weightLabel}</div>
                   <div className="flex-1 min-w-0 text-center">REPS</div>
                   <div className="w-10 sm:w-12 text-center">RPE</div>
                   <div className="w-20 sm:w-28 shrink-0 text-center">ACTIONS</div>
                 </div>
                 
-                {sortedSets.map((set: any) => {
+                {sortedSets.map((set: any, idx: number) => {
                   const isWarmup = set.isWarmup;
                   let setLabel = '';
-                  if (isWarmup) {
-                    const warmupIdx = sortedSets.filter((s:any) => s.isWarmup).findIndex((s:any) => s.id === set.id);
-                    setLabel = `${warmupIdx + 1}`;
+                  
+                  if (unilateral) {
+                    if (isWarmup) {
+                      const warmupSets = sortedSets.filter(s => s.isWarmup);
+                      const warmupIdx = warmupSets.findIndex(s => s.id === set.id);
+                      const side = warmupIdx % 2 === 0 ? 'L' : 'R';
+                      const setNum = Math.floor(warmupIdx / 2) + 1;
+                      setLabel = `${side}${setNum}`;
+                    } else {
+                      const workSets = sortedSets.filter(s => !s.isWarmup);
+                      const workIdx = workSets.findIndex(s => s.id === set.id);
+                      const side = workIdx % 2 === 0 ? 'L' : 'R';
+                      const setNum = Math.floor(workIdx / 2) + 1;
+                      setLabel = `${side}${setNum}`;
+                    }
                   } else {
-                    const workIdx = sortedSets.filter((s:any) => !s.isWarmup).findIndex((s:any) => s.id === set.id);
-                    setLabel = `${workIdx + 1}`;
+                    if (isWarmup) {
+                      const warmupIdx = sortedSets.filter((s:any) => s.isWarmup).findIndex((s:any) => s.id === set.id);
+                      setLabel = `${warmupIdx + 1}`;
+                    } else {
+                      const workIdx = sortedSets.filter((s:any) => !s.isWarmup).findIndex((s:any) => s.id === set.id);
+                      setLabel = `${workIdx + 1}`;
+                    }
                   }
 
                   return (
@@ -273,24 +294,27 @@ const ExerciseAccordion = ({
                       <input
                         type="number"
                         inputMode="decimal"
-                        value={set.weight}
+                        value={String(set.weight) === '0' || String(set.weight) === '0.0' ? '' : set.weight}
+                        placeholder="0"
                         onChange={(e) => updateSet(exercise.id, set.id, 'weight', e.target.value)}
                         className="flex-1 w-0 min-w-0 bg-transparent border-b border-white/10 text-center text-sm md:text-lg font-black text-white focus:outline-none focus:border-volt/50 [-moz-appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       />
                       <input
                         type="number"
                         inputMode="decimal"
-                        value={set.reps}
+                        value={String(set.reps) === '0' ? '' : set.reps}
+                        placeholder="0"
                         onChange={(e) => updateSet(exercise.id, set.id, 'reps', e.target.value)}
                         className="flex-1 w-0 min-w-0 bg-transparent border-b border-white/10 text-center text-sm md:text-lg font-black text-white focus:outline-none focus:border-volt/50 [-moz-appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       />
                       <input
                         type="number"
                         inputMode="decimal"
-                        value={set.rpe}
+                        value={String(set.rpe) === '0' || String(set.rpe) === '0.0' ? '' : set.rpe}
+                        placeholder="0"
                         onChange={(e) => {
                           const val = e.target.value;
-                          if (val === '' || /^\d+$/.test(val)) {
+                          if (val === '' || /^\d+(\.\d+)?$/.test(val)) {
                             updateSet(exercise.id, set.id, 'rpe', val);
                           }
                         }}
@@ -358,6 +382,7 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
   const [swappingExerciseId, setSwappingExerciseId] = useState<string | null>(null);
   const [isAddExerciseOpen, setIsAddExerciseOpen] = useState(false);
   const [exerciseToRemove, setExerciseToRemove] = useState<string | null>(null);
+  const [circuitToRemove, setCircuitToRemove] = useState<string | null>(null);
   const [isAICoachOpen, setIsAICoachOpen] = useState(false);
   const [showIntensityWarning, setShowIntensityWarning] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -643,21 +668,42 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
     showToast(t('toast.actionSuccessful'), 3000, 'success');
   };
 
+  const removeCircuit = (groupId: string) => {
+    setExercises(prev => prev.filter(ex => ex.groupId !== groupId));
+    setCircuitToRemove(null);
+    showToast(t('toast.actionSuccessful'), 3000, 'success');
+  };
+
   const addSet = (exerciseId: string) => {
     setExercises(prev => prev.map(ex => {
       if (ex.id === exerciseId) {
         const lastSet = ex.sets && ex.sets.length > 0 ? ex.sets[ex.sets.length - 1] : null;
+        const unilateral = isUnilateral(ex.name);
+        
+        const newSet = {
+          id: Math.random().toString(36).substr(2, 9),
+          weight: lastSet?.weight || '0',
+          reps: lastSet?.reps || '0',
+          rpe: lastSet?.rpe || '0',
+          isCompleted: false
+        };
+
+        if (unilateral) {
+          return {
+            ...ex,
+            sets: [
+              ...(ex.sets || []),
+              { ...newSet, id: Math.random().toString(36).substr(2, 9) },
+              { ...newSet, id: Math.random().toString(36).substr(2, 9) }
+            ]
+          };
+        }
+
         return {
           ...ex,
           sets: [
             ...(ex.sets || []),
-            {
-              id: Math.random().toString(36).substr(2, 9),
-              weight: lastSet?.weight || '0',
-              reps: lastSet?.reps || '0',
-              rpe: lastSet?.rpe || '0',
-              isCompleted: false
-            }
+            newSet
           ]
         };
       }
@@ -668,27 +714,31 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
   const addWarmupSet = (exerciseId: string) => {
     setExercises(prev => prev.map(ex => {
       if (ex.id === exerciseId) {
-        // If there are existing sets, find the last warmup set to copy from, otherwise default 0
+        const unilateral = isUnilateral(ex.name);
         const lastWarmup = ex.sets?.slice().reverse().find(s => s.isWarmup);
-        const newWarmupSet = {
-          id: Math.random().toString(36).substr(2, 9),
+        
+        const baseWarmupSet = {
           weight: lastWarmup?.weight || '0',
           reps: lastWarmup?.reps || '0',
           rpe: lastWarmup?.rpe || '0',
           isCompleted: false,
           isWarmup: true
         };
-        // Add warmup set before the first working set, or at the end if none
+
+        const newWarmupSets = unilateral 
+          ? [
+              { ...baseWarmupSet, id: Math.random().toString(36).substr(2, 9) },
+              { ...baseWarmupSet, id: Math.random().toString(36).substr(2, 9) }
+            ]
+          : [{ ...baseWarmupSet, id: Math.random().toString(36).substr(2, 9) }];
+
         const workingSetIndex = ex.sets?.findIndex(s => !s.isWarmup) ?? -1;
         
         let newSets = [...(ex.sets || [])];
         if (workingSetIndex !== -1) {
-          // Find the index of the first working set and insert before it
-          // Actually, inserting right before the first working set works well if it's the last warmup
-          const insertIndex = workingSetIndex;
-          newSets.splice(insertIndex, 0, newWarmupSet);
+          newSets.splice(workingSetIndex, 0, ...newWarmupSets);
         } else {
-          newSets.push(newWarmupSet);
+          newSets.push(...newWarmupSets);
         }
 
         return {
@@ -1004,12 +1054,15 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
         <div className="flex-1 overflow-y-auto custom-scrollbar space-y-8 md:space-y-12 pb-12">
           {(() => {
             const renderedGroups = new Set<string>();
+            const circuitIds = Array.from(new Set(exercises.map(ex => ex.groupId).filter(Boolean))) as string[];
 
             return exercises.map((exercise) => {
               if (exercise.groupId && renderedGroups.has(exercise.groupId)) return null;
 
               const isGrouped = !!exercise.groupId;
               if (isGrouped) renderedGroups.add(exercise.groupId!);
+
+              const circuitIndex = isGrouped ? circuitIds.indexOf(exercise.groupId!) + 1 : 0;
 
               const groupExercises = isGrouped
                 ? exercises.filter(ex => ex.groupId === exercise.groupId)
@@ -1021,11 +1074,20 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
                   isGrouped && "bg-volt/5 p-6 md:p-10 border border-volt/10"
                 )}>
                   {isGrouped && (
-                    <div className="flex items-center gap-3 mb-8">
-                      <RefreshCw className="text-volt animate-spin-slow" size={20} />
-                      <h2 className="font-sans text-2xl md:text-3xl font-black uppercase tracking-tight text-volt">
-                        {t('workout.circuit')}: {exercise.groupTitle || t('workout.tacticalGroup')}
-                      </h2>
+                    <div className="flex items-center justify-between gap-3 mb-8">
+                      <div className="flex items-center gap-3">
+                        <RefreshCw className="text-volt animate-spin-slow" size={20} />
+                        <h2 className="font-sans text-2xl md:text-3xl font-black uppercase tracking-tight text-volt">
+                          {exercise.groupTitle || `${t('workout.circuit')} ${circuitIndex}`}
+                        </h2>
+                      </div>
+                      <button
+                        onClick={() => { haptics.button(); setCircuitToRemove(exercise.groupId!); }}
+                        className="flex items-center gap-2 px-3 py-2 bg-crimson/10 text-crimson hover:bg-crimson hover:text-white transition-all border border-crimson/20 group"
+                      >
+                        <Trash2 size={14} className="group-hover:scale-110 transition-transform" />
+                        <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Remove Circuit</span>
+                      </button>
                     </div>
                   )}
 
@@ -1082,7 +1144,7 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
                 </button>
                 {isAtLimit && (
                   <p className="text-[8px] font-bold uppercase tracking-widest text-crimson animate-pulse">
-                    {t('workout.maxExercises').replace('{level}', t(`onboarding.level.${level}`))}
+                    {t('workout.maxExercises').replace('{level}', t(`nav.${level}`))}
                   </p>
                 )}
               </>
@@ -1182,6 +1244,17 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
         variant="danger"
       />
 
+      <ConfirmationModal
+        isOpen={!!circuitToRemove}
+        title="REMOVE CIRCUIT?"
+        message="Are you sure you want to remove the entire circuit and all its exercises?"
+        confirmLabel={t('workout.remove')}
+        cancelLabel={t('workout.keep')}
+        onConfirm={() => circuitToRemove && removeCircuit(circuitToRemove)}
+        onCancel={() => setCircuitToRemove(null)}
+        variant="danger"
+      />
+
       {/* AI Coach Floating Button */}
       {experimentalFeatures && (
         <>
@@ -1205,10 +1278,13 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
       <AnimatePresence>
         {restRemaining !== null && (
           <motion.div
+            drag
+            dragMomentum={false}
+            dragConstraints={{ left: -1000, right: 1000, top: -1000, bottom: 1000 }}
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="fixed bottom-24 right-6 md:right-10 z-[100]"
+            className="fixed bottom-24 right-6 md:right-10 z-[100] cursor-move touch-none"
           >
             <div className="bg-void/95 backdrop-blur-xl border border-volt/30 p-3 shadow-[0_0_40px_rgba(0,182,255,0.2)] flex items-center gap-4">
               <div className="flex flex-col">

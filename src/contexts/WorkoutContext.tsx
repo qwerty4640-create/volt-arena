@@ -28,7 +28,7 @@ import {
 } from '../constants/constraints';
 import { calculateTier } from '../lib/strength';
 import { ACTIVITY_LIBRARY } from '../data/activityLibrary';
-import { isMainLiftMatch } from '../utils/workoutUtils';
+import { isMainLiftMatch, isUnilateral } from '../utils/workoutUtils';
 import { calculateSystemReadiness } from '../logic/recoveryEngine';
 import { RECOVERY_ACTIVITIES } from '../data/recoveryLibrary';
 
@@ -153,6 +153,7 @@ interface WorkoutContextType {
       stressScore: number;
       fatigueScore: number;
     } | null;
+    ewmaRatio: number | null;
   };
   mockWorkoutCount: number | null;
   setMockWorkoutCount: (count: number | null) => void;
@@ -648,6 +649,11 @@ const createSessionFromTemplate = (
       let reps = isMainLift ? block.baseReps : slot.reps;
       let sets = isMainLift ? block.baseSets : slot.sets;
       let exerciseName = selectedExercise.name;
+
+      const unilateral = selectedExercise.isUnilateral || (slot as any).isUnilateral;
+      if (unilateral) {
+        sets = sets * 2;
+      }
 
       if (volumeModifier < 1.0) {
         sets = Math.round(sets * volumeModifier);
@@ -1150,6 +1156,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
         overtrainingRisk: 'critical' as const,
         cumulativeFatigueScore: 25,
         recommendedRpe: 5,
+        ewmaRatio: 1.8,
         subjectiveScores: {
           sleepScore: 1,
           stressScore: 1,
@@ -1175,7 +1182,8 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
       cumulativeFatigueScore,
       sleepDeficit,
       fatiguePenalty,
-      stressPenalty
+      stressPenalty,
+      ewmaRatio
     } = calculateSystemReadiness(history, activeRecoveryHistory, safeSubjectiveReadiness, profile?.programResetAt, unit);
 
     const hasSubjectiveData = subjectiveReadiness !== null;
@@ -1194,6 +1202,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
       sleepDeficit,
       fatiguePenalty,
       stressPenalty,
+      ewmaRatio,
       subjectiveScores: hasSubjectiveData ? {
         sleepScore: subjectiveReadiness?.sleep || 5,
         stressScore: subjectiveReadiness?.stress || 5,
