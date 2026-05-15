@@ -1,4 +1,4 @@
-import { Activity, Star, Utensils, ShieldCheck, LucideIcon, TrendingUp, BarChart3, Timer, Bone } from 'lucide-react';
+import { Activity, Star, Utensils, ShieldCheck, LucideIcon, TrendingUp, BarChart3, Timer, Bone, Zap } from 'lucide-react';
 import { WidgetId, PerformanceWidgetId } from '../types';
 
 export interface Widget {
@@ -10,8 +10,8 @@ export interface Widget {
 
 export const ALL_WIDGETS: Widget[] = [
     { id: 'recovery-analysis', label: 'analysis.recoveryAnalysis', icon: Activity, span: 'col-span-1 md:col-span-2 xl:col-span-3' },
-    { id: 'pr', label: 'analysis.personalRecord', icon: Star, span: 'col-span-1 md:col-span-2 xl:col-span-1' },
-    { id: 'macros', label: 'analysis.macroDistribution', icon: Utensils, span: 'col-span-1 md:col-span-2 xl:col-span-2' },
+    { id: 'active-recovery', label: 'recovery.title', icon: Zap, span: 'col-span-1 md:col-span-2 xl:col-span-3' },
+    { id: 'readiness-trend', label: 'analysis.readinessTrend', icon: TrendingUp, span: 'col-span-1 md:col-span-2 xl:col-span-3' },
 ];
 
 export interface PerformanceWidget {

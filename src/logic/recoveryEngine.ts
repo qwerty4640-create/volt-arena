@@ -108,7 +108,10 @@ export const calculateSystemReadiness = (
       session.exercises?.forEach((ex: any) => {
         ex.sets?.forEach((s: any) => {
           if (s.isCompleted && !s.isWarmup) {
-            const weight = parseFloat(s.weight) || 0;
+            let weight = parseFloat(s.weight) || 0;
+            // Handle bodyweight exercises: if weight is 0 or "0", use 1 for volume calculation 
+            // as it still represents physical effort, preventing 0-volume penalties for high-rep bodyweight work.
+            if (weight <= 0) weight = unit === 'imperial' ? 100 : 45; // Baseline displacement weight
             const reps = parseInt(s.reps) || 0;
             volumeVal += weight * reps;
             const sRpe = parseFloat(s.rpe) || 0;
@@ -133,15 +136,34 @@ export const calculateSystemReadiness = (
 
   let stressPenalty = 1.0;
   let sleepDeficit = 0;
+  let subjectiveFatigueDeficit = 0;
+  let sorenessMultiplier = 1.0;
+  let moodMultiplier = 1.0;
 
   if (subjectiveReadiness) {
-    const t_stress = Math.max(0, (Date.now() - subjectiveReadiness.timestamp) / 3600000);
+    const t_stress = Math.max(0, (Date.now() - (subjectiveReadiness.timestamp || Date.now())) / 3600000);
     const subjectiveStressDeficit = (5 - (subjectiveReadiness.stress || 5)) * 4;
     stressPenalty = 1.0 + subjectiveStressDeficit * Math.exp(-k_stress * t_stress);
     sleepDeficit = (5 - (subjectiveReadiness.sleep || 5)) * 5;
+    subjectiveFatigueDeficit = (5 - (subjectiveReadiness.fatigue || 5)) * 4;
+
+    const soreness = subjectiveReadiness.soreness !== undefined ? subjectiveReadiness.soreness : 5;
+    if (soreness <= 1) sorenessMultiplier = 0.85;
+    else if (soreness === 2) sorenessMultiplier = 0.90;
+    else if (soreness === 3) sorenessMultiplier = 0.95;
+    else if (soreness === 4) sorenessMultiplier = 1.00;
+    else if (soreness >= 5) sorenessMultiplier = 1.02;
+
+    const mood = subjectiveReadiness.mood !== undefined ? subjectiveReadiness.mood : 5;
+    if (mood <= 1) moodMultiplier = 0.90;
+    else if (mood === 2) moodMultiplier = 0.95;
+    else if (mood === 3) moodMultiplier = 1.00;
+    else if (mood === 4) moodMultiplier = 1.02;
+    else if (mood >= 5) moodMultiplier = 1.05;
   }
 
-  systemReadiness = 100 - sleepDeficit - fatiguePenalty - stressPenalty;
+  systemReadiness = 100 - sleepDeficit - fatiguePenalty - stressPenalty - subjectiveFatigueDeficit;
+  systemReadiness = systemReadiness * sorenessMultiplier * moodMultiplier;
   const currentReadiness = Math.round(Math.max(0, Math.min(100, systemReadiness)));
 
   let readinessModifier = 1.0;

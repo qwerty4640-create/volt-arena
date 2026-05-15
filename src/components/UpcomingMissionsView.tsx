@@ -8,9 +8,14 @@ import { MissionBriefingModal } from './MissionBriefingModal';
 
 interface UpcomingMissionsViewProps {
   onBack: () => void;
+  initialViewState?: {
+    level: 'blocks' | 'phases' | 'missions';
+    blockIndex: number | null;
+    phaseIndex: number | null;
+  };
 }
 
-export const UpcomingMissionsView: React.FC<UpcomingMissionsViewProps> = ({ onBack }) => {
+export const UpcomingMissionsView: React.FC<UpcomingMissionsViewProps> = ({ onBack, initialViewState }) => {
   const { history, getWorkoutTemplate } = useWorkout();
   const { t, profile } = useSettings();
   const [selectedMission, setSelectedMission] = useState<WorkoutSession | null>(null);
@@ -18,7 +23,7 @@ export const UpcomingMissionsView: React.FC<UpcomingMissionsViewProps> = ({ onBa
     level: 'blocks' | 'phases' | 'missions';
     blockIndex: number | null;
     phaseIndex: number | null;
-  }>({ level: 'blocks', blockIndex: null, phaseIndex: null });
+  }>(initialViewState || { level: 'blocks', blockIndex: null, phaseIndex: null });
 
   const missionsPerWeek = profile?.trainingFrequency || 3;
   const missionPeriod = profile?.missionPeriod || '3M';

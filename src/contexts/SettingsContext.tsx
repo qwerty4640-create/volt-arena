@@ -122,6 +122,8 @@ interface SettingsContextType {
   isProfileLoading: boolean;
   isCustomizeModalOpen: boolean;
   setIsCustomizeModalOpen: (open: boolean) => void;
+  isDeploymentModalOpen: boolean;
+  setIsDeploymentModalOpen: (open: boolean) => void;
   t: (key: string, params?: Record<string, string | number>) => string;
 }
 
@@ -145,10 +147,11 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [immersionMode, setImmersionModeState] = useState<ImmersionMode>('immersive');
   const [showExperimentalMenus, setShowExperimentalMenusState] = useState(false);
   const [experimentalFeatures, setExperimentalFeaturesState] = useState(false);
-  const [dashboardWidgets, setDashboardWidgetsState] = useState<WidgetId[]>(['recovery-analysis', 'pr', 'macros']);
+  const [dashboardWidgets, setDashboardWidgetsState] = useState<WidgetId[]>(['recovery-analysis', 'active-recovery', 'readiness-trend']);
   const [performanceWidgets, setPerformanceWidgetsState] = useState<PerformanceWidgetId[]>(['progression', 'volume-trend', 'growth', 'tactical']);
   const [lastVoiceCommand, setLastVoiceCommand] = useState<{ text: string; timestamp: number } | null>(null);
   const [isCustomizeModalOpen, setIsCustomizeModalOpen] = useState(false);
+  const [isDeploymentModalOpen, setIsDeploymentModalOpen] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isProfileLoading, setIsProfileLoading] = useState(true);
 
@@ -212,7 +215,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
               immersionMode: 'immersive',
               showExperimentalMenus: false,
               experimentalFeatures: false,
-              dashboardWidgets: ['recovery-analysis', 'pr', 'macros'],
+              dashboardWidgets: ['recovery-analysis', 'active-recovery', 'readiness-trend'],
               performanceWidgets: ['progression', 'volume-trend', 'growth', 'tactical'],
               onboardingCompleted: false, // fallback
               level: 'untrained',
@@ -254,7 +257,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
             immersionMode: 'immersive',
             showExperimentalMenus: false,
             experimentalFeatures: false,
-            dashboardWidgets: ['recovery-analysis', 'pr', 'macros'],
+            dashboardWidgets: ['recovery-analysis', 'active-recovery', 'readiness-trend'],
             performanceWidgets: ['progression', 'volume-trend', 'growth', 'tactical'],
             onboardingCompleted: false,
             level: initialLevel,
@@ -546,6 +549,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
       performanceWidgets, setPerformanceWidgets,
       lastVoiceCommand, setLastVoiceCommand,
       isCustomizeModalOpen, setIsCustomizeModalOpen,
+      isDeploymentModalOpen, setIsDeploymentModalOpen,
       profile, updateProfile,
       isProfileLoading,
       t 

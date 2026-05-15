@@ -1120,7 +1120,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
-  const [subjectiveReadiness, setSubjectiveReadiness] = useState<{ sleep: number; stress: number; fatigue: number; timestamp: number } | null>(() => {
+  const [subjectiveReadiness, setSubjectiveReadiness] = useState<{ sleep: number; stress: number; fatigue: number; soreness?: number; mood?: number; timestamp: number } | null>(() => {
     try {
       const raw = localStorage.getItem(READINESS_STORAGE_KEY);
       if (raw) {
@@ -1197,6 +1197,8 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
       sleep: isNaN(subjectiveReadiness.sleep) || subjectiveReadiness.sleep === null ? 5 : subjectiveReadiness.sleep,
       stress: isNaN(subjectiveReadiness.stress) || subjectiveReadiness.stress === null ? 5 : subjectiveReadiness.stress,
       fatigue: isNaN(subjectiveReadiness.fatigue) || subjectiveReadiness.fatigue === null ? 5 : subjectiveReadiness.fatigue,
+      soreness: subjectiveReadiness.soreness === undefined || isNaN(subjectiveReadiness.soreness) || subjectiveReadiness.soreness === null ? 5 : subjectiveReadiness.soreness,
+      mood: subjectiveReadiness.mood === undefined || isNaN(subjectiveReadiness.mood) || subjectiveReadiness.mood === null ? 5 : subjectiveReadiness.mood,
     } : null;
 
     const {

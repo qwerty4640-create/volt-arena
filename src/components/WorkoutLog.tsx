@@ -365,6 +365,8 @@ const ExerciseAccordion = ({
   );
 };
 
+import { MissionHeader } from './MissionHeader';
+
 interface WorkoutLogProps {
   onBack: () => void;
   onComplete: (avgRpe: number) => void;
@@ -950,65 +952,20 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: -20 }}
-        className="w-full max-w-5xl mx-auto h-full flex flex-col pt-4 md:pt-8 pb-12 md:px-8"
+        className="w-full h-full flex flex-col pt-0 md:pt-4 pb-12"
       >
-        {/* Header */}
-        <div className="flex flex-col md:mb-12 gap-4 md:gap-6">
-          {/* Mobile Header (Stored as is) */}
-          <div className="flex md:hidden items-center gap-4 md:gap-6">
-            <button
-              onClick={onBack}
-              className="p-2.5 bg-surface-container-low hover:bg-surface-container-high text-zinc-400 hover:text-white transition-all flex items-center justify-center shrink-0"
-            >
-              <ChevronLeft size={20} />
-            </button>
-            <div className="flex items-center gap-3">
-              <ClipboardList className="text-volt" size={16} />
-              <span className="text-volt font-sans text-[10px] font-black uppercase tracking-widest">{t('workout.missionLog')}</span>
-            </div>
-          </div>
+        <MissionHeader
+          title={currentSession.title}
+          breadcrumb={t('workout.missionLog')}
+          readiness={getCalibrationStatus().readiness}
+          targetRpe={currentSession.targetRpe || '–'}
+          time={formatDuration(elapsedMs)}
+          calories={estimatedCalories}
+          onBack={onBack}
+        />
 
-          {/* Desktop Unified Header - Hidden because global PageHeader matches this now */}
-          {/* We keep the state metrics below */}
-
-          {/* Mobile Title (Original currentSession.title) */}
-          <div className="flex md:hidden">
-            <h1 className="font-sans text-3xl font-black uppercase tracking-tight leading-none">{currentSession.title}</h1>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 font-mono text-[10px] md:text-xs font-bold uppercase tracking-widest text-zinc-500 p-4 y-4 bg-surface-container-low">
-            <div className="flex flex-col gap-2">
-              <span className="flex items-center gap-2">
-                {t('analysis.readiness')} <InfoTooltip term="Readiness" />
-              </span>
-              <span className={cn(
-                "font-black tracking-tighter text-white text-xl md:text-2xl ",
-                getCalibrationStatus().readiness >= 85 ? "text-emerald-500" :
-                  getCalibrationStatus().readiness >= 60 ? "text-amber-500" : "text-crimson"
-              )}>{getCalibrationStatus().readiness}%</span>
-            </div>
-            <div className="flex flex-col gap-2">
-              <span className="flex items-center gap-2">
-                {t('workout.targetRpe')} <InfoTooltip term="sRPE" />
-              </span>
-              <span className="font-black text-white text-xl md:text-2xl">{currentSession.targetRpe || '–'}</span>
-            </div>
-            <div className="flex flex-col gap-2">
-              <span className="flex items-center gap-2">
-                {t('workout.time')} <Clock size={12} className="md:w-3.5 md:h-3.5" />
-              </span>
-              <span className="font-black text-white text-xl md:text-2xl">{formatDuration(elapsedMs)}</span>
-            </div>
-            <div className="flex flex-col gap-2">
-              <span className="flex items-center gap-2">
-                {t('workout.estBurn')} <Flame size={12} className="md:w-3.5 md:h-3.5" />
-              </span>
-              <span className="font-black text-white text-xl md:text-2xl">{estimatedCalories} {t('workout.kcal')}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Intensity Warning Banner */}
+        <div className="w-full max-w-5xl mx-auto px-4 md:px-8">
+          {/* Intensity Warning Banner */}
         <AnimatePresence>
           {showIntensityWarning && (
             <motion.div
@@ -1218,8 +1175,9 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
             <span>{isCompleting ? t('workout.sessionComplete') : t('workout.completeSession')}</span>
           </motion.button>
         </div>
-      </motion.div>
-      <ConfirmationModal
+      </div>
+    </motion.div>
+    <ConfirmationModal
         isOpen={isEndConfirmOpen}
         title={t('workout.endSessionTitle')}
         message=""

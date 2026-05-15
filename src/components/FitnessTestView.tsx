@@ -14,7 +14,8 @@ import {
   MicOff,
   Volume2,
   AlertTriangle,
-  Timer
+  Timer,
+  Activity
 } from 'lucide-react';
 import { ImmersionMode } from '../types';
 import { cn } from '../lib/utils';
@@ -62,6 +63,7 @@ export const FitnessTestView = ({ immersionMode = 'immersive', isVoiceActive = f
   const { isUnlocked, daysRemaining, testLabel, testType } = getFitnessTestInfo(profile);
   
   const [isReady, setIsReady] = useState(false);
+  const [hasEntered, setHasEntered] = useState(false);
   const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
   const [setupStep, setSetupStep] = useState<1 | 2 | 3>(1);
@@ -547,29 +549,68 @@ export const FitnessTestView = ({ immersionMode = 'immersive', isVoiceActive = f
 
   const currentStageImage = STAGES.find(s => s.id === selectedStage)?.image || STAGES[0].image;
 
-  if (!isUnlocked) {
+  const getObjectiveDescription = () => {
+    const goal = profile?.trainingGoal?.toLowerCase() || 'powerbuilding';
+    switch (goal) {
+      case 'powerbuilding':
+        return "Because your current objective is powerbuilding, the system will test your Big 3 to ensure your strength gains are solidified and adapted.";
+      case 'pure_strength':
+      case 'strength':
+        return "Because your current objective is strength development, the system will test your maximal force production on the primary lifts.";
+      case 'hypertrophy':
+        return "Because your current objective is hypertrophy, the system will evaluate your capacity to handle high-intensity loads while maintaining metabolic peak.";
+      case 'tactical':
+        return "Because your current objective is tactical performance, the system will test your work capacity, explosiveness, and foundational power.";
+      case 'endurance':
+        return "Because your current objective is endurance, the system will evaluate your cardiovascular efficiency and sustainable force production.";
+      case 'longevity':
+        return "Because your current objective is longevity, the system will test your mobility, core stability, and resting metabolic markers.";
+      case 'explosiveness':
+      case 'power':
+        return "Because your current objective is explosiveness, the system will test your peak power output and vertical/horizontal displacement.";
+      default:
+        return "The system will evaluate your current physical state and performance markers to recalibrate your training deployment.";
+    }
+  };
+
+  if (!isUnlocked || !hasEntered) {
     return (
       <div className="relative w-full h-full flex flex-col items-center justify-center p-6 text-center pt-safe">
         <div className="absolute inset-0 bg-void/90 backdrop-blur-md z-0" />
         <div className="relative z-10 glass-panel p-8 md:p-12 max-w-lg border-white/5 flex flex-col items-center gap-6">
           <div className="w-16 h-16 bg-volt/10 text-volt flex items-center justify-center rounded-sm">
-            <Lock size={32} />
+            {isUnlocked ? <Activity size={32} /> : <Lock size={32} />}
           </div>
           <div>
-            <h2 className="font-sans text-2xl font-black uppercase tracking-widest text-white mb-2">{t('nav.fitnessTest') || 'TESTING BLOCKED'}</h2>
-            <p className="text-zinc-400 text-sm font-medium">Testing protocol is currently locked. Because your current objective is powerbuilding, the system will test your Big 3 to ensure your strength gains are solidified and adapted.</p>
+            <h2 className="font-sans text-2xl font-black uppercase tracking-widest text-white mb-2">
+              {isUnlocked ? "Ready to Level Up?" : (t('nav.fitnessTest') || 'TESTING BLOCKED')}
+            </h2>
+            <p className="text-zinc-400 text-sm font-medium leading-relaxed">
+              {getObjectiveDescription()}
+            </p>
           </div>
           
-          <div className="w-full bg-white/5 p-4 mt-2">
-            <span className="font-sans text-[10px] uppercase font-bold text-zinc-500 tracking-widest block mb-1">Time To Next Evaluation</span>
-            <span className="font-sans text-3xl font-black text-volt tracking-tighter">{daysRemaining}</span>
-            <span className="font-sans text-[10px] uppercase font-bold text-zinc-500 tracking-widest ml-1">DAYS</span>
-          </div>
+          {isUnlocked ? (
+            <button
+              onClick={() => setHasEntered(true)}
+              className="w-full py-4 btn-primary font-headline text-xs font-black uppercase tracking-widest"
+            >
+              Enter Test
+            </button>
+          ) : (
+            <>
+              <div className="w-full bg-white/5 p-4 mt-2">
+                <span className="font-sans text-[10px] uppercase font-bold text-zinc-500 tracking-widest block mb-1">Time To Next Evaluation</span>
+                <span className="font-sans text-3xl font-black text-volt tracking-tighter">{daysRemaining}</span>
+                <span className="font-sans text-[10px] uppercase font-bold text-zinc-500 tracking-widest ml-1">DAYS</span>
+              </div>
 
-          <div className="w-full bg-white/5 p-4 border border-volt/20">
-            <span className="font-sans text-[10px] uppercase font-bold text-volt tracking-widest block mb-1">Upcoming Protocol Requirements</span>
-            <span className="font-sans text-sm font-black text-white uppercase tracking-wider">{testLabel}</span>
-          </div>
+              <div className="w-full bg-white/5 p-4 border border-volt/20">
+                <span className="font-sans text-[10px] uppercase font-bold text-volt tracking-widest block mb-1">Upcoming Protocol Requirements</span>
+                <span className="font-sans text-sm font-black text-white uppercase tracking-wider">{testLabel}</span>
+              </div>
+            </>
+          )}
         </div>
       </div>
     );
@@ -777,6 +818,7 @@ export const FitnessTestView = ({ immersionMode = 'immersive', isVoiceActive = f
                       setCurrentTargetIndex(0);
                       setTestTargets(getInitialTargets());
                       setIsWithdrawModalOpen(false);
+                      setHasEntered(false);
                     }}
                     className="w-full py-5 btn-destructive font-sans text-sm font-bold uppercase tracking-widest transition-all shadow-lg"
                   >

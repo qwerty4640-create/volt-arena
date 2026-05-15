@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { InfoTooltip } from './InfoTooltip';
@@ -26,8 +26,8 @@ import {
     AlertTriangle
 } from 'lucide-react';
 import {
-    AreaChart,
-    Area,
+    BarChart,
+    Bar,
     Line,
     XAxis,
     YAxis,
@@ -35,7 +35,9 @@ import {
     Tooltip,
     ResponsiveContainer,
     ComposedChart,
-    ReferenceLine
+    ReferenceLine,
+    Cell,
+    Legend
 } from 'recharts';
 import { ActiveRecoveryWidget } from './ActiveRecoveryWidget';
 import { cn } from '../lib/utils';
@@ -62,7 +64,7 @@ import { DragOverlay, defaultDropAnimationSideEffects } from '@dnd-kit/core';
 import { ConfirmationModal } from './ConfirmationModal';
 import { NonProgramActivityModal } from './NonProgramActivityModal';
 import { TacticalChart } from './TacticalChart';
-import { getTacticalImpact } from '../utils/analyticsEngine';
+import { getTacticalImpact, filterDataByRange } from '../utils/analyticsEngine';
 import { getExerciseName } from '../utils/workoutUtils';
 
 import { ViewType, ImmersionMode, WidgetId } from '../types';
@@ -129,18 +131,8 @@ const ReadinessTrendWidget = () => {
     };
 
     const readinessTrendData = useMemo(() => {
-        if (!history || history.length === 0) return [];
-
-        const now = new Date();
-        let startDate = new Date(0);
-        if (timeFrame === '1M') startDate = new Date(now.setMonth(now.getMonth() - 1));
-        else if (timeFrame === '3M') startDate = new Date(now.setMonth(now.getMonth() - 3));
-        else if (timeFrame === '6M') startDate = new Date(now.setMonth(now.getMonth() - 6));
-
-        const timeFilteredHistory = history.filter(session => {
-            const sessionDate = session.completedAt ? new Date(session.completedAt) : new Date(session.date);
-            return sessionDate >= startDate;
-        }).sort((a, b) => (a.completedAt || 0) - (b.completedAt || 0));
+        const timeFilteredHistory = filterDataByRange(history || [], timeFrame)
+            .sort((a, b) => (a.completedAt || 0) - (b.completedAt || 0));
 
         return timeFilteredHistory.map(session => {
             return {
@@ -190,8 +182,10 @@ const ReadinessTrendWidget = () => {
     };
 
     return (
-        <div className="glass-panel px-4 py-6 md:p-8 flex flex-col min-w-0 overflow-hidden border-none bg-void/20">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6">
+        <div className="w-full glass-panel px-4 py-6 md:p-8 flex flex-col relative group/module overflow-hidden h-full">
+            <div className="absolute inset-0 opacity-[0.03] pointer-events-none group-hover/module:opacity-[0.05] transition-opacity duration-700"
+                style={{ backgroundImage: 'radial-gradient(var(--primary-color) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6 relative z-10">
                 <div>
                     <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight mb-2">{t('analysis.readinessTrend')}</h2>
                     <p className="text-zinc-400 text-xs font-medium max-w-md mb-8 leading-relaxed">
@@ -231,7 +225,7 @@ const ReadinessTrendWidget = () => {
                 </div>
             </div>
 
-            <div className="h-[250px] w-full mt-4 min-w-0">
+            <div className="h-[250px] w-full mt-4 min-w-0 relative z-10">
                 {readinessTrendData.length > 0 ? (
                     <ResponsiveContainer width="100%" height="100%">
                         <ComposedChart data={readinessTrendData} margin={{ top: 5, right: 5, left: -20, bottom: 25 }}>
@@ -277,6 +271,58 @@ const ReadinessTrendWidget = () => {
     );
 };
 
+// ── Custom Animated Bar Shape ──────────────────────────────────────────
+const AnimatedReadinessBar = (props: any) => {
+    const { x, y, width, height, fill } = props;
+    if (width <= 0) return null;
+
+    return (
+        <svg x={x} y={y} width={width} height={height} style={{ overflow: 'hidden' }}>
+            {/* Main segment base */}
+            <rect x={0} y={0} width={width} height={height} fill={fill} />
+            
+            {/* Indeterminate sweep 1 */}
+            <motion.rect
+                y={0}
+                width={width * 0.6}
+                height={height}
+                fill="white"
+                fillOpacity={0.15}
+                initial={{ x: -width * 0.6 }}
+                animate={{
+                    x: [-width * 0.6, width]
+                }}
+                transition={{
+                    duration: 1.8,
+                    repeat: Infinity,
+                    ease: [0.65, 0.815, 0.735, 0.395], // CSS indeterminate easing
+                    repeatDelay: 0.2
+                }}
+            />
+
+            {/* Indeterminate sweep 2 */}
+            <motion.rect
+                y={0}
+                width={width * 0.3}
+                height={height}
+                fill="white"
+                fillOpacity={0.1}
+                initial={{ x: -width * 0.3 }}
+                animate={{
+                    x: [-width * 0.3, width]
+                }}
+                transition={{
+                    duration: 1.2,
+                    repeat: Infinity,
+                    ease: [0.165, 0.84, 0.44, 1],
+                    delay: 0.4,
+                    repeatDelay: 0.5
+                }}
+            />
+        </svg>
+    );
+};
+
 export const ReadinessAnalysisWidget = () => {
     const { t, unit } = useSettings();
     const { history, getCalibrationStatus } = useWorkout();
@@ -292,8 +338,8 @@ export const ReadinessAnalysisWidget = () => {
     const hasSubjectiveData = calibration.subjectiveScores !== null;
 
     // ── Display values per factor (0-100% scale for bar) ──────────────────────
-    const sleepDisplay = Math.round((sleepScore / 5) * 100);
-    const stressDisplay = Math.round((5 - stressScore) * 20);
+    const sleepDisplay = Math.round((calibration.sleepDeficit || 0));
+    const stressDisplay = Math.round((calibration.stressPenalty || 0));
 
     // Fatigue: 0-18 scale. 0 is low fatigue, 18 is high fatigue.
     const rawFatigue = calibration.cumulativeFatigueScore || 0;
@@ -306,7 +352,65 @@ export const ReadinessAnalysisWidget = () => {
         return 'text-crimson'; // Low readiness = red
     };
 
+    const getStatusHex = (val: number) => {
+        if (val >= 75) return '#10b981'; // emerald-500
+        if (val >= 40) return '#f59e0b'; // amber-500
+        return '#ef4444'; // red-500 / crimson
+    };
+
+    const getPalette = (scoreHex: string) => {
+        switch (scoreHex) {
+            case '#10b981': // High (Emerald)
+                return {
+                    fatigue: '#3b82f6', // Blue
+                    sleep: '#6366f1',   // Indigo
+                    stress: '#f43f5e'    // Rose
+                };
+            case '#f59e0b': // Medium (Amber)
+                return {
+                    fatigue: '#10b981', // Emerald
+                    sleep: '#00b6ff',   // Volt/Cyan
+                    stress: '#8b5cf6'    // Violet
+                };
+            case '#ef4444': // Low (Red)
+                return {
+                    fatigue: '#10b981', // Emerald
+                    sleep: '#0ea5e9',   // Sky
+                    stress: '#f59e0b'    // Amber
+                };
+            default:
+                return {
+                    fatigue: '#71717a',
+                    sleep: '#3f3f46',
+                    stress: '#18181b'
+                };
+        }
+    };
+
     const statusColor = readinessScore !== null ? getStatusColorText(readinessScore) : 'text-zinc-500';
+    const statusHex = readinessScore !== null ? getStatusHex(readinessScore) : '#00b6ff';
+    const palette = useMemo(() => getPalette(statusHex), [statusHex]);
+
+    const impactData = useMemo(() => {
+        if (readinessScore === null) return [];
+        
+        // These are the deductions from the base 100 points
+        const sleep = calibration.sleepDeficit || 0;
+        const fatigue = calibration.fatiguePenalty || 0; 
+        const stress = calibration.stressPenalty || 0;  
+        
+        // Correcting the "Actual Readiness" for the chart to ensure it perfectly stacks to 100
+        // The engine does: readiness = 100 - sleep - fatigue - stress
+        // So readiness + sleep + fatigue + stress = 100
+        
+        return [{
+            name: 'Readiness State',
+            readiness: readinessScore,
+            fatigue: fatigue,
+            sleep: sleep,
+            stress: stress
+        }];
+    }, [readinessScore, calibration]);
 
     // ── Volume data (unchanged logic) ─────────────────────────────────────────
     const volumeData = React.useMemo(() => {
@@ -381,39 +485,126 @@ export const ReadinessAnalysisWidget = () => {
     };
 
     return (
-        <div className="flex flex-col gap-6">
-            <div className="w-full glass-panel px-4 py-4 md:p-6 flex flex-col relative group/module overflow-hidden">
-                <div className="absolute inset-0 opacity-[0.03] pointer-events-none group-hover/module:opacity-[0.05] transition-opacity duration-700"
-                    style={{ backgroundImage: 'radial-gradient(var(--primary-color) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
+        <div className="w-full glass-panel px-4 py-6 md:p-8 flex flex-col relative group/module overflow-hidden h-full">
+            <div className="absolute inset-0 opacity-[0.03] pointer-events-none group-hover/module:opacity-[0.05] transition-opacity duration-700"
+                style={{ backgroundImage: 'radial-gradient(var(--primary-color) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
 
-                {/* Header: title + readiness score + recalibrate button */}
-                <div className="flex items-start justify-between mb-4 md:mb-6 relative z-10 w-full gap-4">
+            {/* Header: title + readiness score + recalibrate button */}
+            <div className="flex items-start justify-between mb-4 md:mb-6 relative z-10 w-full gap-4">
                     <div className="flex flex-col w-full">
                         <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight">
                             {t('analysis.recoveryAnalysis')}
                         </h2>
-                        <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed mb-6 md:mb-12">
+                        <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed mb-8 md:mb-10">
                             Bio-mechanical readiness is system-managed based on historical training volume.
                         </p>
+
+                        {/* Bar Chart Visualization - Single Stacked Bar */}
+                        {readinessScore !== null && (
+                            <div className="w-full flex flex-col mb-16">
+                                <div className="h-12 w-full max-w-4xl -ml-2 relative group/barchart">
+                                    <ResponsiveContainer width="100%" height="100%" style={{ overflow: 'visible' }}>
+                                        <BarChart 
+                                            data={impactData} 
+                                            layout="vertical"
+                                            margin={{ top: 0, right: 30, left: 10, bottom: 0 }}
+                                        >
+                                            <XAxis type="number" domain={[0, 100]} hide />
+                                            <YAxis type="category" dataKey="name" hide />
+                                            <Tooltip 
+                                                trigger="axis"
+                                                shared={true}
+                                                allowEscapeViewBox={{ x: true, y: true }}
+                                                cursor={{ fill: 'transparent' }}
+                                                content={({ active, payload }) => {
+                                                    if (active && payload && payload.length) {
+                                                        // Using the underlying data object for guaranteed access to all values
+                                                        const data = payload[0].payload;
+                                                        const readinessValue = data.readiness;
+                                                        const fatigueValue = data.fatigue;
+                                                        const sleepValue = data.sleep;
+                                                        const stressValue = data.stress;
+
+                                                        return (
+                                                            <div className="bg-void/95 border border-white/10 p-3 shadow-2xl backdrop-blur-md">
+                                                                <div className="space-y-2 min-w-[140px]">
+                                                                    <div className="flex items-center justify-between gap-4 pb-2 border-b border-white/5">
+                                                                        <span className="text-[10px] font-black uppercase text-white tracking-widest">{t('analysis.readiness')}</span>
+                                                                        <span className="text-[10px] font-black" style={{ color: statusHex }}>{Number(readinessValue || 0).toFixed(1)}%</span>
+                                                                    </div>
+                                                                    {[
+                                                                        { value: fatigueValue, color: palette.fatigue, label: 'Volume Impact' },
+                                                                        { value: sleepValue, color: palette.sleep, label: t('analysis.sleep') },
+                                                                        { value: stressValue, color: palette.stress, label: t('analysis.stress') },
+                                                                    ].map((item, i) => (
+                                                                        <div key={i} className="flex items-center justify-between gap-4">
+                                                                            <div className="flex items-center gap-2">
+                                                                                <div className="w-1.5 h-1.5" style={{ backgroundColor: item.color }} />
+                                                                                <span className="text-[9px] font-black uppercase text-zinc-400">{item.label}</span>
+                                                                            </div>
+                                                                            <span className="text-[9px] font-black text-zinc-300">-{Number(item.value || 0).toFixed(1)}pts</span>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    }
+                                                    return null;
+                                                }}
+                                            />
+                                            <Bar 
+                                                dataKey="readiness" 
+                                                name={t('analysis.readiness')} 
+                                                stackId="readiness" 
+                                                fill={statusHex} 
+                                                barSize={32} 
+                                                shape={<AnimatedReadinessBar />}
+                                            />
+                                            <Bar dataKey="fatigue" name={t('analysis.fatigue')} stackId="readiness" fill={palette.fatigue} animationDuration={1000} animationEasing="ease-in-out" />
+                                            <Bar dataKey="sleep" name={t('analysis.sleep')} stackId="readiness" fill={palette.sleep} animationDuration={1000} animationEasing="ease-in-out" />
+                                            <Bar dataKey="stress" name={t('analysis.stress')} stackId="readiness" fill={palette.stress} animationDuration={1000} animationEasing="ease-in-out" />
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                </div>
+                                
+                                {/* Professional Legend */}
+                                <div className="flex flex-wrap gap-x-10 gap-y-3 mt-6 ml-2">
+                                    {[
+                                        { label: t('analysis.readiness'), color: statusHex },
+                                        { label: 'Volume Impact', color: palette.fatigue },
+                                        { label: t('analysis.sleep'), color: palette.sleep },
+                                        { label: t('analysis.stress'), color: palette.stress },
+                                    ].map((item, idx) => (
+                                        <div key={idx} className="flex items-center gap-3">
+                                            <div className="w-2 h-2" style={{ backgroundColor: item.color }} />
+                                            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500">{item.label}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mt-2 items-start w-full">
                             <div className="flex flex-col items-start lg:col-span-1">
                                 <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-4 block w-full">
                                     {t('analysis.readiness')}
                                     <InfoTooltip term="Readiness" />
                                 </span>
-                                <div className="flex items-baseline gap-2">
-                                    <span className={cn(
-                                        'text-5xl md:text-7xl lg:text-8xl font-black  tracking-tighter leading-none',
-                                        readinessScore !== null ? statusColor : 'text-zinc-600'
-                                    )}>
-                                        {readinessScore !== null ? readinessScore : '–'}
-                                    </span>
-                                    {readinessScore !== null && <span className="text-xl md:text-2xl font-black text-zinc-600"> %</span>}
+                                <div className="flex flex-col items-start gap-4">
+                                    <div className="flex items-baseline gap-2">
+                                        <span className={cn(
+                                            'text-5xl md:text-7xl lg:text-8xl font-black  tracking-tighter leading-none',
+                                            readinessScore !== null ? statusColor : 'text-zinc-600'
+                                        )}>
+                                            {readinessScore !== null ? readinessScore : '–'}
+                                        </span>
+                                        {readinessScore !== null && <span className="text-xl md:text-2xl font-black text-zinc-600"> %</span>}
+                                    </div>
                                 </div>
                             </div>
 
                             {/* EWMA Widget */}
-                            <div className="flex flex-col items-start lg:col-span-1 lg:col-start-2">
+                            <div className="flex flex-col items-start lg:col-span-1 lg:col-start-2 md:border-l md:border-white/5 pl-4 lg:pl-6">
                                 <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-4 block w-full">
                                     EWMA
                                     <InfoTooltip term="EWMA" />
@@ -477,28 +668,32 @@ export const ReadinessAnalysisWidget = () => {
                         noData={!hasSubjectiveData && !hasHistory}
                     />
 
-                    {/* Sleep */}
-                    <FactorColumn
-                        label={t('analysis.sleep')}
-                        displayVal={String(sleepDisplay)}
-                        fillVal={sleepDisplay}
-                        goodness={sleepDisplay}
-                        tooltip="Sleep"
-                        noData={!hasSubjectiveData}
-                    />
+                    {/* Sleep Deficit */}
+                    <div className="border-l border-white/5 pl-4 lg:pl-6">
+                        <FactorColumn
+                            label={t('analysis.sleep')}
+                            displayVal={String(sleepDisplay)}
+                            fillVal={sleepDisplay}
+                            goodness={100 - sleepDisplay}
+                            tooltip="Sleep"
+                            noData={!hasSubjectiveData}
+                        />
+                    </div>
 
                     {/* Stress */}
-                    <FactorColumn
-                        label={t('analysis.stress')}
-                        displayVal={String(stressDisplay)}
-                        fillVal={stressDisplay}
-                        goodness={100 - stressDisplay}
-                        tooltip="Stress"
-                        noData={!hasSubjectiveData}
-                    />
+                    <div className="lg:border-l lg:border-white/5 lg:pl-6">
+                        <FactorColumn
+                            label={t('analysis.stress')}
+                            displayVal={String(stressDisplay)}
+                            fillVal={stressDisplay}
+                            goodness={100 - stressDisplay}
+                            tooltip="Stress"
+                            noData={!hasSubjectiveData}
+                        />
+                    </div>
 
                     {/* Volume */}
-                    <div className="flex flex-col h-full text-left justify-start items-start">
+                    <div className="flex flex-col h-full text-left justify-start items-start border-l border-white/5 pl-4 lg:pl-6">
                         <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-4 block w-full">
                             {t('Volume')}
                             <InfoTooltip term="Volume" />
@@ -515,12 +710,7 @@ export const ReadinessAnalysisWidget = () => {
                     </div>
                 </div>
 
-
             </div>
-
-            <ActiveRecoveryWidget />
-            <ReadinessTrendWidget />
-        </div>
     );
 };
 
@@ -842,23 +1032,24 @@ const MacrosWidget = () => {
 };
 
 
-export const ExternalActivityWidget = () => {
+export interface ExternalActivityWidgetProps {
+    externalTimeFrame?: '1M' | '3M' | '6M' | 'ALL';
+    onTimeFrameChange?: (tf: '1M' | '3M' | '6M' | 'ALL') => void;
+}
+
+export const ExternalActivityWidget = ({ externalTimeFrame, onTimeFrameChange }: ExternalActivityWidgetProps) => {
     const { t } = useSettings();
     const { recoveryHistory, getCalibrationStatus } = useWorkout();
     const calibration = getCalibrationStatus();
-    const [timeFrame, setTimeFrame] = useState<'1M' | '3M' | '6M' | 'ALL'>('1M');
+    const [localTimeFrame, setLocalTimeFrame] = useState<'1M' | '3M' | '6M' | 'ALL'>('6M');
 
-    const filteredData = useMemo(() => {
-        if (!recoveryHistory || recoveryHistory.length === 0) return [];
+    const timeFrame = externalTimeFrame || localTimeFrame;
+    const handleTimeFrameChange = onTimeFrameChange || setLocalTimeFrame;
 
-        const now = new Date();
-        let startDate = new Date(0);
-        if (timeFrame === '1M') startDate = new Date(now.setMonth(now.getMonth() - 1));
-        else if (timeFrame === '3M') startDate = new Date(now.setMonth(now.getMonth() - 3));
-        else if (timeFrame === '6M') startDate = new Date(now.setMonth(now.getMonth() - 6));
-
-        return recoveryHistory.filter(r => r.timestamp > startDate.getTime());
-    }, [recoveryHistory, timeFrame]);
+     const filteredData = useMemo(() => {
+         console.log(`Filtering data for range: ${timeFrame}`); // Diagnostic check
+         return filterDataByRange(recoveryHistory || [], timeFrame);
+     }, [recoveryHistory, timeFrame]);
 
     const totalHours = filteredData.reduce((acc, curr) => acc + (curr.durationMinutes || 0), 0) / 60;
     const avgRpe = filteredData.length > 0 ? (filteredData.reduce((acc, curr) => acc + curr.rpe, 0) / filteredData.length) : 0;
@@ -876,11 +1067,9 @@ export const ExternalActivityWidget = () => {
     }
 
     return (
-        <div className="glass-panel px-4 py-6 md:p-8 border-none h-full flex flex-col relative overflow-hidden group/module w-full min-w-0">
-            {/* Tactical Grid Background overlay */}
+        <div className="glass-panel px-4 py-6 md:p-8 h-full flex flex-col relative overflow-hidden group/module w-full min-w-0">
             <div className="absolute inset-0 opacity-[0.03] pointer-events-none group-hover/module:opacity-[0.05] transition-opacity duration-700"
                 style={{ backgroundImage: 'radial-gradient(var(--primary-color) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
-
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4 relative z-10 w-full">
                 <div>
                     <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight">{t('analysis.tacticalIntegration')}</h2>
@@ -890,7 +1079,7 @@ export const ExternalActivityWidget = () => {
                     {(['1M', '3M', '6M', 'ALL'] as const).map((tf) => (
                         <button
                             key={tf}
-                            onClick={() => setTimeFrame(tf)}
+                            onClick={() => handleTimeFrameChange(tf)}
                             className={cn(
                                 "px-3 py-1.5 md:px-4 md:py-2 font-headline text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all",
                                 timeFrame === tf ? "bg-volt text-void" : "text-zinc-500 hover:text-white"
@@ -956,8 +1145,8 @@ export const ExternalActivityWidget = () => {
 
 const WIDGET_COMPONENTS: Record<WidgetId, React.FC<any>> = {
     'recovery-analysis': ReadinessAnalysisWidget,
-    pr: PRWidget,
-    macros: MacrosWidget,
+    'active-recovery': ActiveRecoveryWidget,
+    'readiness-trend': ReadinessTrendWidget,
 };
 
 interface SortableWidgetProps {
@@ -1102,12 +1291,7 @@ export const AnalysisView = ({ onContinueSession, onViewBriefing, onViewHistory,
     };
 
     const availableWidgets = ALL_WIDGETS.filter(w => !widgets.includes(w.id));
-    const visibleWidgets = widgets.filter(id => {
-        if (id === 'macros' || id === 'pr') {
-            return experimentalFeatures;
-        }
-        return true;
-    });
+    const visibleWidgets = widgets;
 
     return (
         <>

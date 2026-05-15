@@ -278,42 +278,70 @@ function AppContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isLifting, setIsLifting] = useState(false);
 
-  // Search logic: check if query matches main labels or known subpages
-  const getFilteredNavItems = () => {
-    let items = NAV_ITEMS;
-    if (!showExperimentalMenus) {
-       items = items.filter(item => !item.isExperimental);
+  const [viewStateOverride, setViewStateOverride] = useState<{view: ViewType, state: any} | null>(null);
+
+  const navigateTo = (view: ViewType, state?: any) => {
+    if (state) {
+      setViewStateOverride({ view, state });
+    } else {
+      setViewStateOverride(null);
     }
-    
-    if (!searchQuery.trim()) return items;
-    const query = searchQuery.toLowerCase();
-    
-    return items.filter(item => {
-      const label = t(item.label).toLowerCase();
-      if (label.includes(query)) return true;
-      
-      // Check subpages for highlighting parent
-      if (item.id === 'training') {
-        const subpages = ['workout', 'log', 'history', 'mission', 'berserker', 'upcoming'];
-        return subpages.some(sub => sub.includes(query));
-      }
-      if (item.id === 'settings') {
-        const subpages = ['profile', 'account', 'language', 'reset'];
-        return subpages.some(sub => sub.includes(query));
-      }
-      if (item.id === 'analytics') {
-        const subpages = ['performance', 'charts', 'data', 'metrics'];
-        return subpages.some(sub => sub.includes(query));
-      }
-      if (item.id === 'analysis') {
-        const subpages = ['recovery', 'readiness', 'dashboard', 'status'];
-        return subpages.some(sub => sub.includes(query));
-      }
-      return false;
-    });
+    setActiveView(view);
+    setSearchQuery('');
   };
 
-  const filteredNavItems = getFilteredNavItems();
+  const getSearchResults = () => {
+    const query = searchQuery.toLowerCase().trim();
+    if (!query) return [];
+
+    const results: any[] = [];
+
+    // 1. Check NAV_ITEMS
+    NAV_ITEMS.forEach(item => {
+      const label = t(item.label).toLowerCase();
+      if (label.includes(query)) {
+        results.push({ 
+          id: item.id, 
+          type: 'navigation', 
+          label: t(item.label), 
+          icon: item.icon,
+          onSelect: () => navigateTo(item.id)
+        });
+      }
+    });
+
+    // 2. Check Deep Features
+    const deepFeatures = [
+      { id: 'phases', label: 'Operational Phases', alias: ['phases', 'blocks', 'upcoming', 'strategy'], view: 'upcoming-missions', state: { level: 'phases', blockIndex: 0, phaseIndex: null }, icon: MissionIcon },
+      { id: 'missions', label: 'Mission Deployment', alias: ['missions', 'upcoming', 'deployment'], view: 'upcoming-missions', state: { level: 'blocks', blockIndex: null, phaseIndex: null }, icon: DeploymentIcon },
+      { id: 'history', label: 'Mission History', alias: ['history', 'logs', 'past'], view: 'workout-history', icon: History },
+      { id: 'test', label: 'Physical Assessment', alias: ['test', 'fitness test', 'assessment'], view: 'fitness-test', icon: SportShoeIcon },
+      { id: 'profile', label: 'Operator Profile', alias: ['profile', 'biometrics', 'stats'], view: 'profile', icon: User },
+      { id: 'recovery', label: 'Active Recovery', alias: ['recovery', 'cardio', 'supplementary'], action: 'recovery', icon: Activity },
+      { id: 'settings', label: 'System Settings', alias: ['settings', 'config', 'language'], view: 'settings', icon: Settings },
+    ];
+
+    deepFeatures.forEach(feature => {
+      const match = feature.label.toLowerCase().includes(query) || 
+                    feature.alias.some(a => a.toLowerCase().includes(query));
+      
+      if (match && !results.find(r => r.id === feature.id)) {
+        results.push({
+          id: feature.id,
+          type: 'feature',
+          label: feature.label,
+          icon: feature.icon,
+          onSelect: () => {
+            if (feature.action === 'recovery') setIsRecoveryModalOpen(true);
+            else if (feature.view) navigateTo(feature.view as any, feature.state);
+            setSearchQuery('');
+          }
+        });
+      }
+    });
+
+    return results;
+  };
   const [isRecoveryModalOpen, setIsRecoveryModalOpen] = useState(false);
   const [voiceFeedback, setVoiceFeedback] = useState<string | null>(null);
   const [isExitModalOpen, setIsExitModalOpen] = useState(false);
@@ -850,7 +878,13 @@ function AppContent() {
       />;
       case 'analytics': return <AnalyticsView />;
       case 'deployment': return <DeploymentView />;
-      case 'upcoming-missions': return <UpcomingMissionsView onBack={() => setActiveView('training')} />;
+      case 'upcoming-missions': return <UpcomingMissionsView 
+        onBack={() => {
+          setViewStateOverride(null);
+          setActiveView('training');
+        }} 
+        initialViewState={viewStateOverride?.view === 'upcoming-missions' ? viewStateOverride.state : undefined}
+      />;
       case 'settings': return <SettingsView onExit={() => setIsExitModalOpen(true)} onNavigateToProfile={() => setActiveView('profile')} />;
       case 'fitness-test': return <FitnessTestView 
         immersionMode={immersionMode}
@@ -1020,55 +1054,84 @@ function AppContent() {
             </div>
 
             <div className="flex flex-col gap-2">
-              {filteredNavItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = activeView === item.id || 
-                  (item.id === 'training' && ['workout-log', 'post-workout', 'berserker', 'workout-history', 'upcoming-missions'].includes(activeView));
-                
-                return (
-                  <button
-                    key={`pane-${item.id}`}
-                    onClick={() => setActiveView(item.id)}
-                    className={cn(
-                      "flex items-center gap-3 group transition-all duration-300 px-3 py-3 rounded-xl border border-transparent",
-                      isActive ? "bg-white/[0.05] text-white border-white/5" : "text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.02]"
-                    )}
-                  >
-                    <div 
+              {searchQuery ? (
+                getSearchResults().length > 0 ? (
+                  getSearchResults().map((result) => {
+                    const Icon = result.icon;
+                    return (
+                      <button
+                        key={`search-${result.id}`}
+                        onClick={result.onSelect}
+                        className="flex items-center gap-3 group transition-all duration-300 px-3 py-3 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] text-zinc-400 hover:text-white"
+                      >
+                        <div className="p-1.5 bg-volt/10 text-volt rounded-lg">
+                          <Icon size={18} />
+                        </div>
+                        <div className="flex flex-col items-start leading-tight">
+                          <span className="font-sans text-[10px] uppercase font-black tracking-[0.2em]">{result.label}</span>
+                          <span className="text-[8px] opacity-60 uppercase font-bold tracking-widest">{result.type}</span>
+                        </div>
+                      </button>
+                    );
+                  })
+                ) : (
+                  <div className="py-8 text-center">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-zinc-600">No signals detected</p>
+                  </div>
+                )
+              ) : (
+                NAV_ITEMS.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = activeView === item.id || 
+                    (item.id === 'training' && ['workout-log', 'post-workout', 'berserker', 'workout-history', 'upcoming-missions'].includes(activeView));
+                  
+                  if (!showExperimentalMenus && item.isExperimental) return null;
+
+                  return (
+                    <button
+                      key={`pane-${item.id}`}
+                      onClick={() => setActiveView(item.id)}
                       className={cn(
-                        "p-1.5 transition-colors flex items-center justify-center",
-                        item.id === 'training' ? "" : "rounded-lg",
-                        isActive ? "bg-volt/10 text-volt" : "text-zinc-600 group-hover:text-zinc-300"
+                        "flex items-center gap-3 group transition-all duration-300 px-3 py-3 rounded-xl border border-transparent",
+                        isActive ? "bg-white/[0.05] text-white border-white/5" : "text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.02]"
                       )}
-                      style={item.id === 'training' ? {
-                        clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)",
-                        minWidth: '28px',
-                        minHeight: '28px'
-                      } : {}}
                     >
-                      <Icon size={18} strokeWidth={isActive ? 3 : 2} />
-                    </div>
-                    <span className={cn(
-                      "font-sans text-[10px] uppercase tracking-[0.2em] transition-colors flex",
-                      item.id === 'fitness-test' ? "flex-col items-start leading-none gap-1" : "items-center gap-2",
-                      isActive ? "text-white font-black" : "text-zinc-500 font-bold group-hover:text-zinc-300"
-                    )}>
-                      <span>{t(item.label)}</span>
-                      {item.id === 'fitness-test' && (
-                        <span className="text-[8px] opacity-70 text-zinc-500 font-bold">
-                          D-{getFitnessTestInfo(profile).daysRemaining}
-                        </span>
+                      <div 
+                        className={cn(
+                          "p-1.5 transition-colors flex items-center justify-center",
+                          item.id === 'training' ? "" : "rounded-lg",
+                          isActive ? "bg-volt/10 text-volt" : "text-zinc-600 group-hover:text-zinc-300"
+                        )}
+                        style={item.id === 'training' ? {
+                          clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)",
+                          minWidth: '28px',
+                          minHeight: '28px'
+                        } : {}}
+                      >
+                        <Icon size={18} strokeWidth={isActive ? 3 : 2} />
+                      </div>
+                      <span className={cn(
+                        "font-sans text-[10px] uppercase tracking-[0.2em] transition-colors flex",
+                        item.id === 'fitness-test' ? "flex-col items-start leading-none gap-1" : "items-center gap-2",
+                        isActive ? "text-white font-black" : "text-zinc-500 font-bold group-hover:text-zinc-300"
+                      )}>
+                        <span>{t(item.label)}</span>
+                        {item.id === 'fitness-test' && (
+                          <span className="text-[8px] opacity-70 text-zinc-500 font-bold">
+                            D-{getFitnessTestInfo(profile).daysRemaining}
+                          </span>
+                        )}
+                      </span>
+                      {isActive && (
+                        <motion.div 
+                          layoutId="pane-active-indicator" 
+                          className="ml-auto w-1 h-3 rounded-full bg-volt shadow-[0_0_8px_var(--primary-glow)]" 
+                        />
                       )}
-                    </span>
-                    {isActive && (
-                      <motion.div 
-                        layoutId="pane-active-indicator" 
-                        className="ml-auto w-1 h-3 rounded-full bg-volt shadow-[0_0_8px_var(--primary-glow)]" 
-                      />
-                    )}
-                  </button>
-                );
-              })}
+                    </button>
+                  );
+                })
+              )}
             </div>
           </div>
 
@@ -1241,7 +1304,7 @@ function AppContent() {
       >
         <div className={cn(
           "hidden md:flex flex-col w-full md:sticky md:top-0 md:z-30 bg-void border-b border-white/5 md:mb-8 md:-mx-[var(--app-gutter)] md:px-[var(--app-gutter)] md:w-[calc(100%+2*var(--app-gutter))]",
-          (activeView === 'post-workout' || activeView === 'berserker') && "md:hidden"
+          (activeView === 'post-workout' || activeView === 'berserker' || activeView === 'workout-log') && "md:hidden"
         )}>
           <PageHeader 
             activeView={activeView} 

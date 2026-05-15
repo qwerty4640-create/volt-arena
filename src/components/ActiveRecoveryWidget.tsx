@@ -117,8 +117,10 @@ export const ActiveRecoveryWidget = () => {
   const resetStack = () => setCurrentIndex(0);
 
   return (
-    <div className="w-full mt-6 flex flex-col gap-6 overflow-hidden">
-      <div className="flex items-center justify-between px-4">
+    <div className="w-full glass-panel px-4 py-6 md:p-8 flex flex-col relative group/module overflow-hidden h-full">
+      <div className="absolute inset-0 opacity-[0.03] pointer-events-none group-hover/module:opacity-[0.05] transition-opacity duration-700"
+        style={{ backgroundImage: 'radial-gradient(var(--primary-color) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
+      <div className="flex items-center justify-between relative z-10 mb-6">
         <div className="flex flex-col">
           <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight">
             {t('recovery.title')}
@@ -138,7 +140,7 @@ export const ActiveRecoveryWidget = () => {
         {*/}
       </div>
 
-      <div className="relative w-full h-[420px] sm:h-[480px] perspective-1000 mb-8">
+      <div className="relative z-10 w-full h-[420px] sm:h-[480px] perspective-1000 mb-8">
         <AnimatePresence mode="popLayout">
           {activities.map((activity, index) => {
             if (index < currentIndex || index > currentIndex + 2) return null;
@@ -181,7 +183,7 @@ export const ActiveRecoveryWidget = () => {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="absolute inset-0 flex flex-col items-center justify-center text-center p-8 glass-panel border-dashed border-white/10"
+            className="absolute inset-0 z-20 flex flex-col items-center justify-center text-center p-8 glass-panel border-dashed border-white/10"
           >
             <div className="w-16 h-16 bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 flex items-center justify-center rounded-full mb-4">
               <Check size={32} />

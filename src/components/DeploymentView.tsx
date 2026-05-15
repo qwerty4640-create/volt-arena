@@ -44,13 +44,12 @@ const getDefaultBlocks = (goals: TrainingGoal[], period: MissionPeriod): CustomB
 };
 
 export const DeploymentView = () => {
-  const { profile, updateProfile, t } = useSettings();
+  const { profile, updateProfile, t, isDeploymentModalOpen, setIsDeploymentModalOpen } = useSettings();
   const { history, resetProgram, getWorkoutTemplate } = useWorkout();
   const { showToast } = useToast();
 
   const [loading, setLoading] = useState(false);
   const [showProgramDetail, setShowProgramDetail] = useState(false);
-  const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [selectedMission, setSelectedMission] = useState<WorkoutSession | null>(null);
 
   // States for adjustment
@@ -132,7 +131,7 @@ export const DeploymentView = () => {
       });
       showToast(t('toast.actionSuccessful'), 3000, 'success');
       setShowConfirmationModal(false);
-      setShowSettingsModal(false);
+      setIsDeploymentModalOpen(false);
     } catch (error) {
       console.error("Failed to adjust protocol:", error);
       showToast(t('common.error'), 3000, 'error');
@@ -153,19 +152,19 @@ export const DeploymentView = () => {
 
 
       <div className="w-full">
-        <BlockWidget onRecalibrate={() => setShowSettingsModal(true)} />
+        <BlockWidget />
       </div>
 
       {/* Deployment Settings Modal */}
       <AnimatePresence>
-        {showSettingsModal && (
+        {isDeploymentModalOpen && (
           <Portal>
             <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                onClick={() => setShowSettingsModal(false)}
+                onClick={() => setIsDeploymentModalOpen(false)}
                 className="absolute inset-0 bg-void/90 backdrop-blur-md"
               />
               <motion.div
@@ -248,13 +247,14 @@ export const DeploymentView = () => {
 
                       {/* Objectives Selection */}
                       <section className="space-y-4">
-                        <div className="flex justify-between items-end">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 flex items-center gap-2">Deployment Objectives <InfoTooltip term="DeploymentObjectives" /></label>
+                        <div className="flex flex-wrap justify-between items-end gap-2 mb-2">
+                          <div className="flex items-center gap-2">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Deployment Objectives</label>
+                            <InfoTooltip term="DeploymentObjectives" />
+                          </div>
                           <span className="text-[8px] font-black uppercase tracking-widest text-zinc-600">
                             {adjustingObjectives.length} / {currentMaxObjectives} SELECTED
                           </span>
-
-
                         </div>
                         <div className="grid grid-cols-2 gap-2">
                           {(['pure_strength', 'powerbuilding', 'hypertrophy', 'longevity', 'tactical', 'explosiveness', 'endurance', 'prehab'] as TrainingGoal[]).map(goal => {
@@ -344,7 +344,7 @@ export const DeploymentView = () => {
                 <div className="p-4 md:p-8 border-t border-white/5 bg-void/50">
                   <div className="flex gap-4 w-full">
                     <button
-                      onClick={() => setShowSettingsModal(false)}
+                      onClick={() => setIsDeploymentModalOpen(false)}
                       className="flex-1 btn-secondary py-4"
                     >
                       Close

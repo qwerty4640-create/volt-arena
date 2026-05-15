@@ -158,8 +158,10 @@ export const JointStressWidget = () => {
     <motion.div
       initial={{ y: 20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      className="glass-panel px-4 py-6 md:p-8 flex flex-col relative overflow-hidden min-w-0"
+      className="glass-panel px-4 py-6 md:p-8 flex flex-col relative overflow-hidden min-w-0 group/module"
     >
+      <div className="absolute inset-0 opacity-[0.03] pointer-events-none group-hover/module:opacity-[0.05] transition-opacity duration-700"
+        style={{ backgroundImage: 'radial-gradient(var(--primary-color) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6">
         <div>
           <div className="flex items-center gap-2 mb-4">

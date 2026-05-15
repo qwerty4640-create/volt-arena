@@ -1,9 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Trophy, Target, TrendingUp, BarChart3, Calendar, Filter, ChevronDown, Plus, Settings2 } from 'lucide-react';
+import { Trophy, Target, TrendingUp, BarChart3, Calendar, Filter, ChevronDown, Plus, Settings2, Zap } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
 import { useWorkout } from '../contexts/WorkoutContext';
-import { ExternalActivityWidget } from './AnalysisView';
+import { filterDataByRange, getTacticalImpact } from '../utils/analyticsEngine';
 import { isMainLiftMatch, calculateE1RM } from '../utils/workoutUtils';
 import { calculateExrxPercentile } from '../lib/strength';
 import { InfoTooltip } from './InfoTooltip';
@@ -11,6 +11,7 @@ import { JointStressWidget } from './JointStressWidget';
 import { CustomizeDashboardModal } from './CustomizeDashboardModal';
 import { ConditioningTrackerWidget } from './ConditioningTrackerWidget';
 import { MobilityMatrixWidget } from './MobilityMatrixWidget';
+import { TacticalChart } from './TacticalChart';
 import { PerformanceWidgetId } from '../types';
 import {
   LineChart,
@@ -27,6 +28,120 @@ import { cn } from '../lib/utils';
 
 type TimeFrame = '1M' | '3M' | '6M' | 'ALL';
 
+const TacticalIntegration = ({ activeRange, onRangeChange }: { activeRange: string, onRangeChange: (tf: any) => void }) => {
+  const { t } = useSettings();
+  const { recoveryHistory, getCalibrationStatus } = useWorkout();
+  const calibration = getCalibrationStatus();
+  
+  // Force a re-calculation when activeRange changes
+  const filteredData = useMemo(() => {
+    return filterDataByRange(recoveryHistory || [], activeRange);
+  }, [activeRange, recoveryHistory]);
+
+  const avgHours = useMemo(() => {
+    if (filteredData.length === 0) return '0';
+    // Using durationMinutes from ActiveRecovery, user snippet used .duration
+    const total = filteredData.reduce((acc, curr) => acc + (curr.durationMinutes || 0), 0);
+    return (total / 60 / filteredData.length).toFixed(1);
+  }, [filteredData]);
+
+  const totalHours = useMemo(() => {
+    return (filteredData.reduce((acc, curr) => acc + (curr.durationMinutes || 0), 0) / 60).toFixed(1);
+  }, [filteredData]);
+
+  const avgRpe = useMemo(() => {
+    if (filteredData.length === 0) return 0;
+    return (filteredData.reduce((acc, curr) => acc + curr.rpe, 0) / filteredData.length);
+  }, [filteredData]);
+
+  const { weeklyCumulativeScore, chartData } = getTacticalImpact(filteredData);
+
+  let impactColor = "text-volt";
+  let impactLabel = "Optimal";
+  if (weeklyCumulativeScore > 5 && weeklyCumulativeScore <= 12) {
+    impactColor = "text-zinc-400";
+    impactLabel = "Moderate";
+  } else if (weeklyCumulativeScore > 12) {
+    impactColor = "text-crimson";
+    impactLabel = "High Interference";
+  }
+
+  return (
+    <div className="h-full flex flex-col w-full">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4 w-full relative">
+        <div>
+          <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight">{t('analysis.tacticalIntegration')}</h2>
+        </div>
+
+        <div className="flex gap-1 bg-void p-1 border border-white/5 flex-wrap md:flex-nowrap shrink-0">
+          {(['1M', '3M', '6M', 'ALL'] as const).map((tf) => (
+            <button
+              key={tf}
+              onClick={() => onRangeChange(tf)}
+              className={cn(
+                "px-3 py-1.5 md:px-4 md:py-2 font-headline text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all",
+                activeRange === tf ? "bg-volt text-void" : "text-zinc-500 hover:text-white"
+              )}
+            >
+              {tf}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 mb-6 relative z-10 w-full gap-4">
+        <div className="flex flex-col">
+          <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2">
+            {activeRange === '1M' ? t('analysis.monthly') :
+              activeRange === '3M' ? '3 MONTHS' :
+                activeRange === '6M' ? '6 MONTHS' : 'TOTAL'} HOURS
+          </span>
+          <div className="flex items-end gap-1">
+            <span className="text-2xl sm:text-3xl lg:text-4xl font-black">{totalHours}</span>
+            <span className="text-xs font-bold text-zinc-600 mb-1">hrs</span>
+          </div>
+          <p className="text-[8px] font-bold text-zinc-500 uppercase mt-1">Avg {avgHours}h / Session</p>
+        </div>
+        <div className="flex flex-col">
+          <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2">AVG RPE</span>
+          <div className="flex items-end gap-1">
+            <span className="text-2xl sm:text-3xl lg:text-4xl font-black text-volt">{avgRpe > 0 ? avgRpe.toFixed(1) : '–'}</span>
+          </div>
+        </div>
+        <div className="flex flex-col col-span-2 pt-4 border-t border-white/5">
+          <div className="flex items-center gap-1 mb-2">
+            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 block relative">
+              Program Impact
+            </span>
+            <InfoTooltip term="ProgramImpact" />
+          </div>
+          <span className={`text-xl sm:text-2xl lg:text-3xl font-black uppercase ${impactColor}`}>
+            {impactLabel} <span className="text-white text-lg sm:text-xl lg:text-2xl ml-1">({weeklyCumulativeScore.toFixed(1)})</span>
+          </span>
+        </div>
+      </div>
+
+      <div className="h-[200px] w-full relative z-10 mb-6 min-w-0">
+        <TacticalChart data={chartData} />
+      </div>
+
+      <div className="mt-auto border-t border-volt/20 pt-4 relative z-10">
+        <div className="flex items-start gap-3">
+          <Zap className="text-volt shrink-0 mt-0.5" size={16} />
+          <div>
+            <span className="block text-[10px] font-black uppercase tracking-widest text-volt mb-1">Vanguard AI Tip</span>
+            <p className="text-xs text-zinc-400">
+              {calibration.hasAerobicInterference
+                ? "You're accumulating too much systemic fatigue from extracurricular activities. Consider lowering the RPE of your tactical missions or reducing duration to preserve force production for the barbell."
+                : "Keep tactical missions at an RPE of 7 or lower on days prior to lower-body training to prevent central nervous system fatigue."}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const AnalyticsView = () => {
   const { t, unit, profile, performanceWidgets, setPerformanceWidgets, isCustomizeModalOpen, setIsCustomizeModalOpen } = useSettings();
   const { history } = useWorkout();
@@ -42,20 +157,8 @@ export const AnalyticsView = () => {
   ];
 
   const filteredData = useMemo(() => {
-    if (!history || history.length === 0) return [];
-
-    // 1. Filter by TimeFrame
-    const now = new Date();
-    let startDate = new Date(0); // ALL
-
-    if (timeFrame === '1M') startDate = new Date(now.setMonth(now.getMonth() - 1));
-    else if (timeFrame === '3M') startDate = new Date(now.setMonth(now.getMonth() - 3));
-    else if (timeFrame === '6M') startDate = new Date(now.setMonth(now.getMonth() - 6));
-
-    const timeFilteredHistory = history.filter(session => {
-      const sessionDate = session.completedAt ? new Date(session.completedAt) : new Date(session.date);
-      return sessionDate >= startDate;
-    }).sort((a, b) => (a.completedAt || 0) - (b.completedAt || 0));
+    const timeFilteredHistory = filterDataByRange(history || [], timeFrame)
+      .sort((a, b) => (a.completedAt || 0) - (b.completedAt || 0));
 
     // 2. Extract Max Weights for Selected Lifts
     return timeFilteredHistory.map(session => {
@@ -81,19 +184,12 @@ export const AnalyticsView = () => {
   }, [history, timeFrame, selectedLifts]);
 
   const volumeTrendData = useMemo(() => {
-    if (!history || history.length === 0) return [];
-
-    const now = new Date();
-    let startDate = new Date(0);
-    if (timeFrame === '1M') startDate = new Date(now.setMonth(now.getMonth() - 1));
-    else if (timeFrame === '3M') startDate = new Date(now.setMonth(now.getMonth() - 3));
-    else if (timeFrame === '6M') startDate = new Date(now.setMonth(now.getMonth() - 6));
+    const timeFilteredHistory = filterDataByRange(history || [], timeFrame);
 
     const weeks: Record<string, { volume: number, rpeSum: number, rpeCount: number, timestamp: number }> = {};
 
-    history.forEach(session => {
+    timeFilteredHistory.forEach(session => {
       const date = session.completedAt ? new Date(session.completedAt) : new Date(session.date);
-      if (date < startDate) return;
 
       const startOfWeek = new Date(date);
       startOfWeek.setDate(date.getDate() - date.getDay());
@@ -425,11 +521,15 @@ export const AnalyticsView = () => {
                   transition={{ delay: 0.3 }}
                   className="glass-panel px-4 py-6 md:p-8 relative overflow-hidden min-w-0"
                 >
-                  <h3 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight mb-2">
-                    {t('Estimated 1rm')}
-                  </h3>
+                  <div className="absolute inset-0 opacity-[0.03] pointer-events-none group-hover/module:opacity-[0.05] transition-opacity duration-700"
+                    style={{ backgroundImage: 'radial-gradient(var(--primary-color) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
+                  
+                  <div className="relative z-10">
+                    <h3 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight mb-2">
+                      {t('Estimated 1rm')}
+                    </h3>
 
-                  {(() => {
+                    {(() => {
                     const latestE1RMs = liftOptions.map(lift => {
                       const liftHistory = history.filter(s => s.exercises.some(ex => isMainLiftMatch(ex.name, lift.id)));
                       const e1rms = liftHistory.flatMap(s => s.exercises.find(ex => isMainLiftMatch(ex.name, lift.id))?.sets.map(set => calculateE1RM(parseFloat(set.weight) || 0, parseInt(set.reps) || 0)) || []);
@@ -518,8 +618,9 @@ export const AnalyticsView = () => {
                       );
                     })()}
                   </div>
-                </motion.div>
-              );
+                </div>
+              </motion.div>
+            );
 
             case 'tactical':
               return (
@@ -528,9 +629,17 @@ export const AnalyticsView = () => {
                   initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.4 }}
-                  className="glass-panel p-0 overflow-hidden border-none min-w-0"
+                  className="glass-panel px-4 py-6 md:p-8 relative overflow-hidden min-w-0 group/module"
                 >
-                  <ExternalActivityWidget />
+                  <div className="absolute inset-0 opacity-[0.03] pointer-events-none group-hover/module:opacity-[0.05] transition-opacity duration-700"
+                    style={{ backgroundImage: 'radial-gradient(var(--primary-color) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
+                  
+                  <div className="relative z-10 h-full flex flex-col">
+                    <TacticalIntegration 
+                      activeRange={timeFrame} 
+                      onRangeChange={(tf) => setTimeFrame(tf)} 
+                    />
+                  </div>
                 </motion.div>
               );
 

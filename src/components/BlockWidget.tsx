@@ -9,10 +9,9 @@ import { useWorkout } from '../contexts/WorkoutContext';
 import { BlockType, getPlanForDuration, getPlanFromCustomBlocks, expandPlan } from '../constants/periodization';
 
 interface BlockWidgetProps {
-    onRecalibrate?: () => void;
 }
 
-export const BlockWidget = ({ onRecalibrate }: BlockWidgetProps) => {
+export const BlockWidget = ({ }: BlockWidgetProps) => {
     const { t, profile } = useSettings();
     const { history, getNextWorkoutTemplate } = useWorkout();
     const nextWorkout = getNextWorkoutTemplate();
@@ -56,6 +55,44 @@ export const BlockWidget = ({ onRecalibrate }: BlockWidgetProps) => {
         }
         return data;
     }, [currentCycleWeek, plan]);
+
+    const actualIntensityData = useMemo(() => {
+        if (!history || history.length === 0) return [];
+
+        const weekMap: { [week: number]: { rpeSum: number, targetRpeSum: number, count: number } } = {};
+
+        history.forEach(session => {
+            if (session.totalWeek && session.completedAt) {
+                const week = ((session.totalWeek - 1) % cycleLength) + 1;
+                const rpe = session.actualRpe || session.rpe || 0;
+                const targetRpe = session.targetRpe || 8.0;
+
+                if (!weekMap[week]) {
+                    weekMap[week] = { rpeSum: 0, targetRpeSum: 0, count: 0 };
+                }
+                weekMap[week].rpeSum += rpe;
+                weekMap[week].targetRpeSum += targetRpe;
+                weekMap[week].count += 1;
+            }
+        });
+
+        return graphData.map(d => {
+            const stats = weekMap[d.week];
+            if (!stats) return { ...d, intensity: null };
+
+            const avgActual = stats.rpeSum / stats.count;
+            const avgTarget = stats.targetRpeSum / stats.count;
+            const ratio = avgTarget > 0 ? avgActual / avgTarget : 1;
+            
+            let actualIntensity = Math.round(d.intensity * ratio);
+            actualIntensity = Math.max(0, Math.min(100, actualIntensity));
+
+            return {
+                ...d,
+                intensity: actualIntensity
+            };
+        });
+    }, [history, graphData, cycleLength]);
 
     const intensityCurveTicks = useMemo(() => {
         if (!graphData.length) return [];
@@ -239,24 +276,64 @@ export const BlockWidget = ({ onRecalibrate }: BlockWidgetProps) => {
                                     fill="url(#intensity-grad)"
                                     animationDuration={1500}
                                 />
-                                <ReferenceLine x={currentCycleWeek} stroke="var(--primary-color)" strokeDasharray="3 3" label={{ position: 'top', value: 'NOW', fill: 'var(--primary-color)', fontSize: 8, fontWeight: 900 }} />
+                                <ReferenceLine x={currentCycleWeek} stroke="var(--primary-color)" strokeDasharray="3 3" label={{ position: 'top', value: t('analysis.now').toUpperCase(), fill: 'var(--primary-color)', fontSize: 8, fontWeight: 900 }} />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+
+                {/* Actual Intensity Graph */}
+                <div className="flex flex-col">
+                    <div className="flex justify-between items-end mb-4">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                            {t('analysis.actualIntensity')}
+                        </span>
+                    </div>
+
+                    <div className="h-[120px] md:h-[150px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart
+                                data={actualIntensityData}
+                                margin={{ top: 10, right: 10, left: -20, bottom: 25 }}
+                            >
+                                <defs>
+                                    <linearGradient id="actual-intensity-grad" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#FF7162" stopOpacity={0.3} />
+                                        <stop offset="95%" stopColor="#FF7162" stopOpacity={0} />
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
+                                <XAxis
+                                    dataKey="week"
+                                    axisLine={false}
+                                    tickLine={false}
+                                    tick={{ fill: '#71717a', fontSize: 9, fontWeight: 900, fontFamily: 'Inter' }}
+                                    ticks={intensityCurveTicks}
+                                    tickFormatter={(val) => `${t('workout.week').toUpperCase()} ${val}`}
+                                />
+                                <YAxis
+                                    axisLine={false}
+                                    tickLine={false}
+                                    tick={{ fill: '#71717a', fontSize: 10, fontWeight: 900, fontFamily: 'Inter' }}
+                                    domain={[40, 100]}
+                                />
+                                <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#FF7162', strokeWidth: 1, strokeDasharray: '4 4' }} />
+                                <Area
+                                    type="linear"
+                                    dataKey="intensity"
+                                    stroke="#FF7162"
+                                    strokeWidth={3}
+                                    fillOpacity={1}
+                                    fill="url(#actual-intensity-grad)"
+                                    animationDuration={1500}
+                                    connectNulls={false}
+                                />
+                                <ReferenceLine x={currentCycleWeek} stroke="#FF7162" strokeDasharray="3 3" label={{ position: 'top', value: t('analysis.now').toUpperCase(), fill: '#FF7162', fontSize: 8, fontWeight: 900 }} />
                             </AreaChart>
                         </ResponsiveContainer>
                     </div>
                 </div>
             </div>
-
-            {onRecalibrate && (
-                <div className="mt-2 relative z-10">
-                    <button
-                        onClick={onRecalibrate}
-                        className="w-full px-6 py-4 btn-primary flex items-center justify-center gap-2"
-                    >
-                        <Zap size={16} />
-                        <span>Recalibrate Deployment</span>
-                    </button>
-                </div>
-            )}
         </div>
     );
 };

@@ -1,7 +1,7 @@
 import React from 'react';
 import { ViewType } from '../types';
 import { useSettings } from '../contexts/SettingsContext';
-import { ChevronRight, ChevronLeft, Settings2 } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Settings2, Zap } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 interface PageHeaderProps {
@@ -11,7 +11,7 @@ interface PageHeaderProps {
 }
 
 export function PageHeader({ activeView, onBack, subtitle }: PageHeaderProps) {
-  const { t, isCustomizeModalOpen, setIsCustomizeModalOpen } = useSettings();
+  const { t, isCustomizeModalOpen, setIsCustomizeModalOpen, isDeploymentModalOpen, setIsDeploymentModalOpen } = useSettings();
 
   const getBreadcrumbs = (view: ViewType): string | null => {
     switch (view) {
@@ -42,6 +42,7 @@ export function PageHeader({ activeView, onBack, subtitle }: PageHeaderProps) {
       case 'workout-history': return t('analysis.workoutHistory');
       case 'upcoming-missions': return t('analysis.upcomingMissions');
       case 'berserker': return t('hud.berserkerState').replace('_', ' ');
+      case 'fitness-test': return t('nav.fitnessTest');
       default: return view;
     }
   };
@@ -51,8 +52,8 @@ export function PageHeader({ activeView, onBack, subtitle }: PageHeaderProps) {
   const isMissionLog = activeView === 'workout-log';
 
   return (
-    <header className="w-full min-h-[100px] flex flex-row items-center shrink-0 z-10 px-4 md:px-0 py-4 md:py-0">
-      <div className="flex items-center justify-between w-full">
+    <header className="w-full min-h-[100px] flex flex-row items-end shrink-0 z-10 px-4 md:px-0 py-4 md:py-6">
+      <div className="flex items-end justify-between w-full">
         <div className="flex flex-col">
           {/* Breadcrumb Area - Reserved space on desktop */}
           <div className={cn(
@@ -74,13 +75,23 @@ export function PageHeader({ activeView, onBack, subtitle }: PageHeaderProps) {
           </div>
         </div>
 
-        {activeView === 'analytics' && (
+        {(activeView === 'analysis' || activeView === 'analytics') && (
           <button 
             onClick={() => setIsCustomizeModalOpen(true)}
-            className="hidden md:flex items-center gap-2 px-6 py-3 bg-void border border-white/10 text-white font-headline text-[10px] font-black uppercase tracking-widest hover:bg-white/10 hover:border-volt/50 transition-all group"
+            className="hidden md:flex items-center gap-2 px-6 py-3 btn-primary font-headline text-[10px] font-black uppercase tracking-widest transition-all group"
           >
-            <Settings2 size={14} className="text-zinc-400 group-hover:text-volt" />
+            <Settings2 size={14} />
             {t('analysis.customizeDashboard')}
+          </button>
+        )}
+
+        {activeView === 'deployment' && (
+          <button 
+            onClick={() => setIsDeploymentModalOpen(true)}
+            className="hidden md:flex items-center gap-2 px-6 py-3 btn-primary font-headline text-[10px] font-black uppercase tracking-widest transition-all group"
+          >
+            <Zap size={14} />
+            <span>Recalibrate Deployment</span>
           </button>
         )}
       </div>
