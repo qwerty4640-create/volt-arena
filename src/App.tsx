@@ -314,7 +314,7 @@ function AppContent() {
     const deepFeatures = [
       { id: 'phases', label: 'Operational Phases', alias: ['phases', 'blocks', 'upcoming', 'strategy'], view: 'upcoming-missions', state: { level: 'phases', blockIndex: 0, phaseIndex: null }, icon: MissionIcon },
       { id: 'missions', label: 'Mission Deployment', alias: ['missions', 'upcoming', 'deployment'], view: 'upcoming-missions', state: { level: 'blocks', blockIndex: null, phaseIndex: null }, icon: DeploymentIcon },
-      { id: 'history', label: 'Mission History', alias: ['history', 'logs', 'past'], view: 'workout-history', icon: History },
+      { id: 'history', label: 'Past Missions', alias: ['history', 'logs', 'past'], view: 'workout-history', icon: History },
       { id: 'test', label: 'Physical Assessment', alias: ['test', 'fitness test', 'assessment'], view: 'fitness-test', icon: SportShoeIcon },
       { id: 'profile', label: 'Operator Profile', alias: ['profile', 'biometrics', 'stats'], view: 'profile', icon: User },
       { id: 'recovery', label: 'Active Recovery', alias: ['recovery', 'cardio', 'supplementary'], action: 'recovery', icon: Activity },
@@ -1026,7 +1026,7 @@ function AppContent() {
           <div className="flex flex-col gap-8">
             <div 
               onClick={() => setActiveView('analysis')}
-              className="flex flex-col gap-1 mb-4 cursor-pointer group"
+              className="flex flex-col gap-1 mt-6 mb-4 cursor-pointer group"
             >
               <VanguardLogo className="drop-shadow-[0_0_15px_var(--primary-glow)] group-hover:scale-105 transition-transform origin-left" />
             </div>

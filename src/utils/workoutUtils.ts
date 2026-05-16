@@ -75,15 +75,17 @@ export function calculateWorkCapacity(volume: number, duration_minutes: number):
   return volume / duration_minutes; // e.g. Tonnage per minute
 }
 
-export function calculateVolume(workout: any, countAllSets: boolean = false, unit: 'metric' | 'imperial' | 'none' = 'none', redlineScale: boolean = false): number | string {
+export function calculateVolume(workout: any, countAllSets: boolean = false, unit: 'metric' | 'imperial' | 'none' = 'none', redlineScale: boolean = false, userWeight: number = 0): number | string {
   if (!workout || !workout.exercises) return unit === 'none' ? 0 : `0 ${unit === 'imperial' ? 'LBS' : 'kg'}`;
   let total = 0;
   workout.exercises.forEach((ex: any) => {
     if (!ex.sets) return;
+    const isCalis = EXERCISE_DATABASE_TYPED.find(e => e.id === ex.exerciseId || e.name === ex.name)?.isCalisthenics;
     ex.sets.forEach((s: any) => {
       // If countAllSets is true (like in TrainingView), bypass completed/warmup check
       if (countAllSets || (s.isCompleted && !s.isWarmup)) {
         let w = parseFloat(s.weight) || 0;
+        if (isCalis) w += userWeight;
         if (redlineScale) {
           w = Math.round((w * 0.75) / 5) * 5;
         }
@@ -91,7 +93,7 @@ export function calculateVolume(workout: any, countAllSets: boolean = false, uni
       }
     });
   });
-  if (unit === 'none') return total.toLocaleString();
+  if (unit === 'none') return total; // Return number directly if none
   return `${total.toLocaleString()} ${unit === 'imperial' ? 'LBS' : 'kg'}`;
 }
 

@@ -393,7 +393,7 @@ export const DeploymentView = () => {
             <span className="block">
               Changing training duration or objectives <strong className="text-white">will restart your deployment cycle from week 1</strong>. 
               If only updating frequency and period, it will maintain current deployment progress. 
-              At any time, your current mission history and PRs are always preserved.
+              At any time, your past missions and PRs are always preserved.
             </span>
           }
           confirmLabel="Recalibrate"

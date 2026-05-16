@@ -1,4 +1,5 @@
 import { RecoveryActivity, RECOVERY_MAP } from '../data/recoveryActivities';
+import { EXERCISE_DATABASE } from '../constants/exercises';
 
 export const calculateRecoveryBoost = (
   activity: RecoveryActivity, 
@@ -63,7 +64,8 @@ export const calculateSystemReadiness = (
   recoveryHistory: any[],
   subjectiveReadiness: any | null,
   profileProgramResetAt: number | undefined,
-  unit: 'metric' | 'imperial'
+  unit: 'metric' | 'imperial',
+  userWeight?: number
 ) => {
   let systemReadiness = 100;
 
@@ -106,12 +108,16 @@ export const calculateSystemReadiness = (
       let rpeCount = 0;
 
       session.exercises?.forEach((ex: any) => {
+        const isCalisthenics = EXERCISE_DATABASE.find(e => e.id === ex.exerciseId)?.isCalisthenics;
         ex.sets?.forEach((s: any) => {
           if (s.isCompleted && !s.isWarmup) {
             let weight = parseFloat(s.weight) || 0;
-            // Handle bodyweight exercises: if weight is 0 or "0", use 1 for volume calculation 
-            // as it still represents physical effort, preventing 0-volume penalties for high-rep bodyweight work.
-            if (weight <= 0) weight = unit === 'imperial' ? 100 : 45; // Baseline displacement weight
+            if (isCalisthenics) {
+              const bw = userWeight || (unit === 'imperial' ? 100 : 45);
+              weight = weight + bw;
+            } else if (weight <= 0) {
+              weight = 0; // If they did 0 weight for a non-calisthenics, it shouldn't magically get bulk volume
+            }
             const reps = parseInt(s.reps) || 0;
             volumeVal += weight * reps;
             const sRpe = parseFloat(s.rpe) || 0;

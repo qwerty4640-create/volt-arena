@@ -153,6 +153,7 @@ const ExerciseAccordion = ({
   t,
   isDumbbell
 }: any) => {
+  const { profile } = useSettings();
   const [isExpanded, setIsExpanded] = useState(true);
   const [showInfo, setShowInfo] = useState(false);
   const exerciseDefinition = EXERCISE_DATABASE.find(e => e.name === exercise.name);
@@ -160,6 +161,8 @@ const ExerciseAccordion = ({
   const dumbbell = isDumbbell(exercise.name);
   const showPerSide = unilateral || dumbbell;
   const weightLabel = showPerSide ? `${weightUnit} PER SIDE` : weightUnit;
+  // Apply calisthenics label specifically if isCalisthenics is true
+  const displayWeightLabel = exerciseDefinition?.isCalisthenics ? `${weightUnit} + Bodyweight` : weightLabel;
 
   useEffect(() => {
     if (exercise.sets.every(set => set.isCompleted)) {
@@ -201,14 +204,14 @@ const ExerciseAccordion = ({
               <div className="flex gap-2 items-center">
                 <button
                   onClick={() => { haptics.button(); setSwappingExerciseId(exercise.id); }}
-                  className="flex-1 p-2 bg-surface-container-low hover:bg-volt/10 text-volt transition-all flex items-center justify-center gap-2 group"
+                  className="flex-1 py-3 bg-surface-container-low hover:bg-volt/10 text-volt transition-all flex items-center justify-center gap-2 group"
                 >
                   <RefreshCw size={12} className="group-hover:rotate-180 transition-transform duration-500" />
                   <span className="text-[10px] font-bold uppercase tracking-widest">{t('workout.swap')}</span>
                 </button>
                 <button
                   onClick={() => { haptics.button(); setExerciseToRemove(exercise.id); }}
-                  className="flex-1 p-2 bg-surface-container-low hover:bg-crimson/10 text-crimson transition-all flex items-center justify-center gap-2 group"
+                  className="flex-1 py-3 bg-surface-container-low hover:bg-crimson/10 text-crimson transition-all flex items-center justify-center gap-2 group"
                 >
                   <Trash2 size={12} />
                   <span className="text-[10px] font-bold uppercase tracking-widest">{t('workout.remove')}</span>
@@ -239,10 +242,10 @@ const ExerciseAccordion = ({
 
               <div className="space-y-2 mt-4">
                 {/* Headers */}
-                <div className="flex items-center gap-1 sm:gap-2 px-1 sm:px-2 text-[9px] sm:text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">
+                <div className="flex items-center gap-1 sm:gap-2 px-1 sm:px-2 text-[9px] sm:text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1 text-center">
                   <div className="w-8 sm:w-10 text-center">SET</div>
-                  <div className="flex-1 min-w-0 text-center">{weightLabel}</div>
-                  <div className="flex-1 min-w-0 text-center">REPS</div>
+                  <div className="flex-1 min-w-0 flex justify-center">{displayWeightLabel}</div>
+                  <div className="w-10 sm:flex-1 min-w-0 text-center">REPS</div>
                   <div className="w-10 sm:w-12 text-center">RPE</div>
                   <div className="w-20 sm:w-28 shrink-0 text-center">ACTIONS</div>
                 </div>
@@ -291,21 +294,23 @@ const ExerciseAccordion = ({
                         <span>{setLabel}</span>
                       </div>
 
+                  <div className="flex-1 min-w-0 flex flex-row items-center gap-1">
                       <input
                         type="number"
                         inputMode="decimal"
                         value={String(set.weight) === '0' || String(set.weight) === '0.0' ? '' : set.weight}
                         placeholder="0"
                         onChange={(e) => updateSet(exercise.id, set.id, 'weight', e.target.value)}
-                        className="flex-1 w-0 min-w-0 bg-transparent border-b border-white/10 text-center text-sm md:text-lg font-black text-white focus:outline-none focus:border-volt/50 [-moz-appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        className="w-full bg-transparent border-b border-white/10 text-center text-sm md:text-lg font-black text-white focus:outline-none focus:border-volt/50 [-moz-appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       />
+                    </div>
                       <input
                         type="number"
                         inputMode="decimal"
                         value={String(set.reps) === '0' ? '' : set.reps}
                         placeholder="0"
                         onChange={(e) => updateSet(exercise.id, set.id, 'reps', e.target.value)}
-                        className="flex-1 w-0 min-w-0 bg-transparent border-b border-white/10 text-center text-sm md:text-lg font-black text-white focus:outline-none focus:border-volt/50 [-moz-appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        className="w-10 sm:flex-1 w-0 min-w-0 bg-transparent border-b border-white/10 text-center text-sm md:text-lg font-black text-white focus:outline-none focus:border-volt/50 [-moz-appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       />
                       <input
                         type="number"
@@ -521,9 +526,13 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
     if (!currentSession) return 0;
     let volume = 0;
     currentSession.exercises.forEach(ex => {
+      const isCalisthenics = EXERCISE_DATABASE.find(e => e.id === ex.exerciseId)?.isCalisthenics;
       ex.sets.forEach(set => {
         if (set.isCompleted) {
-          volume += (parseFloat(set.weight) || 0) * (parseInt(set.reps) || 0);
+          const weight = parseFloat(set.weight) || 0;
+          const bodyWeight = profile?.weight || 0;
+          const calculatedWeight = isCalisthenics ? (weight + bodyWeight) : weight;
+          volume += calculatedWeight * (parseInt(set.reps) || 0);
         }
       });
     });
@@ -964,7 +973,7 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
           onBack={onBack}
         />
 
-        <div className="w-full max-w-5xl mx-auto px-4 md:px-8">
+        <div className="w-full max-w-5xl mx-auto md:px-8">
           {/* Intensity Warning Banner */}
         <AnimatePresence>
           {showIntensityWarning && (
@@ -1125,15 +1134,15 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => setIsEndConfirmOpen(true)}
-            className="w-full md:w-auto px-8 py-4 md:py-5 border border-crimson/30 text-crimson hover:bg-crimson hover:text-white transition-all flex items-center justify-center gap-3 font-headline text-xs md:text-sm font-black uppercase tracking-widest"
+            className="flex-1 px-8 py-4 md:py-5 btn-destructive transition-all flex items-center justify-center gap-3 font-headline text-xs md:text-sm font-black uppercase tracking-widest"
           >
             <XCircle size={18} className="md:w-5 md:h-5" />
             <span>{t('workout.endSession')}</span>
           </motion.button>
 
           <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={(isCompleting || hasRpeErrors) ? {} : { scale: 1.02 }}
+            whileTap={(isCompleting || hasRpeErrors) ? {} : { scale: 0.95 }}
             animate={isCompleting ? {
               scale: [1, 0.9, 1.1, 1],
               backgroundColor: ['var(--primary-color)', '#ffffff', '#00ff88', 'var(--primary-color)'],
@@ -1147,7 +1156,8 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
             onClick={handleComplete}
             disabled={isCompleting || hasRpeErrors}
             className={cn(
-              "group relative w-full md:w-auto px-8 md:px-12 py-4 md:py-5 font-headline text-xs md:text-sm font-black uppercase tracking-widest transition-all flex items-center justify-center gap-4 overflow-hidden",
+              "relative flex-1 px-8 md:px-12 py-4 md:py-5 font-headline text-xs md:text-sm font-black uppercase tracking-widest transition-all flex items-center justify-center gap-4 overflow-hidden",
+              !(isCompleting || hasRpeErrors) && "group",
               (isCompleting || hasRpeErrors) ? "bg-zinc-800 text-zinc-500 cursor-not-allowed" : "bg-volt text-void hover:bg-white shadow-[0_0_30px_var(--primary-glow)]"
             )}
           >

@@ -24,9 +24,10 @@ export const MissionHeader = ({
   onBack,
 }: MissionHeaderProps) => {
   const { t } = useSettings();
+  const [isExpanded, setIsExpanded] = React.useState(true);
 
   return (
-    <div className="sticky top-0 z-40 bg-void border-b border-white/5 pb-6 -mx-4 md:-mx-8 px-4 md:px-8 pt-4 md:pt-8 transition-all duration-300">
+    <div className="sticky top-0 z-40 bg-void border-b border-white/5 pb-2 -mx-4 md:-mx-8 px-4 md:px-8 pt-4 md:pt-8 transition-all duration-300">
       <div className="max-w-5xl mx-auto flex flex-col gap-6">
         {/* Breadcrumb & Title Area */}
         <div className="flex items-center gap-4 md:gap-6">
@@ -45,13 +46,22 @@ export const MissionHeader = ({
               </div>
             )}
             <h1 className="font-headline text-3xl sm:text-5xl font-black uppercase tracking-tight text-white leading-none truncate">
-              {title}
+              <span className="sm:hidden">{title.split(':')[0]}</span>
+              <span className="hidden sm:inline">{title}</span>
             </h1>
           </div>
+
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="ml-auto p-2 bg-surface-container-low hover:bg-surface-container-high text-zinc-400 hover:text-white transition-all border border-white/5"
+          >
+            <ChevronLeft className={isExpanded ? "rotate-90" : "-rotate-90"} size={16} />
+          </button>
         </div>
 
-        {/* Mission Details Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 px-4 py-4 bg-surface-container-low/50 border border-white/5 font-mono text-[10px] md:text-xs font-bold uppercase tracking-widest text-zinc-500">
+        {isExpanded && (
+          /* Mission Details Grid */
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 px-4 py-4 bg-surface-container-low/50 border border-white/5 font-mono text-[10px] md:text-xs font-bold uppercase tracking-widest text-zinc-500">
           <div className="flex flex-col gap-1.5">
             <span className="flex items-center gap-2 whitespace-nowrap">
               {t('analysis.readiness')} <InfoTooltip term="Readiness" />
@@ -84,6 +94,7 @@ export const MissionHeader = ({
             <span className="font-black text-white text-xl md:text-2xl">{calories} <span className="text-[10px] opacity-70">{t('workout.kcal')}</span></span>
           </div>
         </div>
+        )}
       </div>
     </div>
   );

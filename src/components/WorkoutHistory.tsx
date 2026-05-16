@@ -296,7 +296,7 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
                             {!isWorkout && ` • ${new Date(log.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`}
                           </span>
                         </div>
-                        <h3 className="text-xs md:text-sm font-bold uppercase tracking-tight group-hover:text-volt transition-colors">
+                        <h3 className="text-xs md:text-sm font-black uppercase tracking-tight group-hover:text-volt transition-colors">
                           {isWorkout ? log.title : log.type}
                         </h3>
                         {isWorkout ? (

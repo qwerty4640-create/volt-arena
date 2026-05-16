@@ -258,7 +258,7 @@ export const TrainingView = ({
   const readinessScoreValue = currentSession?.readiness || calibration.readiness;
   const readinessScore = showReadiness || currentSession?.readiness ? readinessScoreValue : '–';
   const readinessY = 40 - (readinessScoreValue / 100) * 35;
-  const totalLoad = calculateVolume(activeOrNext, true, 'none', !isActiveSession && calibration.isRedline);
+  const totalLoad = calculateVolume(activeOrNext, true, 'none', !isActiveSession && calibration.isRedline, profile?.weight || 0);
   const weightUnit = unit === 'metric' ? t('workout.kg') : t('workout.lbs');
 
   // Estimate duration: 12 mins per exercise + 15 mins warmup/cool
@@ -544,13 +544,12 @@ export const TrainingView = ({
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-4 w-full mt-auto">
+        <div className="flex flex-col gap-4 w-full mt-6">
           {!isActiveSession && calibration.isRedline ? (
             <div className="flex flex-col gap-4 w-full">
-              <div className="flex flex-col sm:flex-row gap-4 w-full">
                 <button
                   onClick={onContinueSession}
-                  className="flex-[2] w-full min-h-[44px] px-4 sm:px-8 py-4 btn-destructive font-headline text-xs md:text-sm font-black uppercase tracking-widest flex flex-col items-center justify-center gap-1 group transition-all"
+                  className="w-full min-h-[44px] px-4 sm:px-8 py-4 btn-destructive font-headline text-xs md:text-sm font-black uppercase tracking-widest flex flex-col items-center justify-center gap-1 group transition-all"
                 >
                   <div className="flex items-center gap-2">
                     <Play size={16} md:size={18} className="fill-white group-hover:scale-110 transition-transform" />
@@ -560,31 +559,30 @@ export const TrainingView = ({
                 </button>
                 <button
                   onClick={onAddActivity}
-                  className="flex-1 btn-secondary min-h-[44px] w-full min-h-[44px] px-4 sm:px-8 py-4 text-xs md:text-sm"
+                  className="w-full btn-secondary min-h-[44px] px-4 sm:px-8 py-4 text-xs md:text-sm flex items-center justify-center gap-2"
                 >
                   <Plus size={14} className="group-hover:rotate-90 transition-transform" />
                   {t('analysis.logNonProgramActivity')}
                 </button>
-              </div>
             </div>
           ) : (
-            <>
+            <div className="flex gap-4 w-full">
               <button
                 onClick={onContinueSession}
-                className="flex-[2] btn-primary w-full min-h-[44px] px-4 sm:px-8 py-4"
+                className="flex-1 btn-primary min-h-[44px] px-4 sm:px-8 py-4 flex items-center justify-center gap-2"
               >
                 <Play size={16} md:size={18} className="fill-void group-hover:scale-110 transition-transform" />
-                {isActiveSession ? t('analysis.continueSession') : t('analysis.startSession')}
+                <span>{isActiveSession ? t('analysis.continueSession') : t('analysis.startSession')}</span>
               </button>
 
               <button
                 onClick={onAddActivity}
-                className="flex-1 btn-secondary w-full min-h-[44px] px-4 sm:px-8 py-4"
+                className="flex-1 btn-secondary min-h-[44px] px-4 sm:px-8 py-4 flex items-center justify-center gap-2"
               >
                 <Plus size={14} className="group-hover:rotate-90 transition-transform" />
-                {t('analysis.logNonProgramActivity')}
+                <span>{t('analysis.logNonProgramActivity')}</span>
               </button>
-            </>
+            </div>
           )}
         </div>
 
@@ -801,7 +799,7 @@ export const TrainingView = ({
                   <div className="flex justify-between items-start mb-2 relative z-10 w-full">
                     <div className="flex flex-col">
                       <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">{log.date}</span>
-                      <h3 className="font-headline text-xs md:text-sm font-bold uppercase tracking-tight text-white group-hover:text-volt transition-colors">{log.title}</h3>
+                      <h3 className="font-headline text-xs md:text-sm font-black uppercase tracking-tight text-white group-hover:text-volt transition-colors">{log.title}</h3>
                     </div>
                   </div>
 

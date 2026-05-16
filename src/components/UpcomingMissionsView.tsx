@@ -240,7 +240,7 @@ export const UpcomingMissionsView: React.FC<UpcomingMissionsViewProps> = ({ onBa
                   <div className="space-y-3">
                     <div>
                       <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest mb-1">Objective</p>
-                      <p className="text-xs md:text-sm font-bold text-white uppercase tracking-tight">
+                      <p className="text-xs md:text-sm font-black font-headline text-white uppercase tracking-tight">
                         {blockForThisMission?.block.label || 'TBD'}
                       </p>
                     </div>

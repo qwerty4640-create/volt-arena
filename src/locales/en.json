@@ -396,7 +396,7 @@
   "analysis.viewLog": "View Log",
   "analysis.prDatabaseSynced": "PR_DATABASE: SYNCED",
   "analysis.recordsCount": "RECORDS: {count}",
-  "analysis.missionLogs": "Mission History",
+  "analysis.missionLogs": "Past Missions",
   "analysis.logStreamActive": "LOG_STREAM: ACTIVE",
   "analysis.totalRecordsCount": "TOTAL_RECORDS: {count}",
   "analysis.redlineOverride": "REDLINE OVERRIDE",

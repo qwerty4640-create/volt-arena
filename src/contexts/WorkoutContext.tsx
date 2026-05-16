@@ -19,7 +19,8 @@ import { BlockType, getBlockForWeek, getRetentionProtocol } from '../constants/p
 import {
   getExercisesByPattern,
   ExerciseDefinition,
-  getSwappableExercises
+  getSwappableExercises,
+  EXERCISE_DATABASE
 } from '../constants/exercises';
 import {
   TRAINING_CONSTRAINTS,
@@ -1212,7 +1213,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
       fatiguePenalty,
       stressPenalty,
       ewmaRatio
-    } = calculateSystemReadiness(history, activeRecoveryHistory, safeSubjectiveReadiness, profile?.programResetAt, unit);
+    } = calculateSystemReadiness(history, activeRecoveryHistory, safeSubjectiveReadiness, profile?.programResetAt, unit, profile?.weight);
 
     const hasSubjectiveData = subjectiveReadiness !== null;
 
@@ -1524,10 +1525,13 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (!session || !session.exercises) return `0 ${unit === 'imperial' ? 'LBS' : 'kg'}`;
     let total = 0;
     session.exercises.forEach(ex => {
+      const isCalis = EXERCISE_DATABASE.find(e => e.id === ex.exerciseId || e.name === ex.name)?.isCalisthenics;
       if (!ex.sets) return;
       ex.sets.forEach(s => {
         if (s.isCompleted && !s.isWarmup) {
-          total += (parseFloat(s.weight) || 0) * (parseInt(s.reps) || 0);
+          let w = parseFloat(s.weight) || 0;
+          if (isCalis) w += (profile?.weight || 0);
+          total += w * (parseInt(s.reps) || 0);
         }
       });
     });
