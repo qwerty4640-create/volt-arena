@@ -897,28 +897,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
           unsubscribeWorkouts();
         };
       } else {
-        const isGuestMode = localStorage.getItem('volt_guest_mode') === 'true';
-        if (isGuestMode) {
-          const guestHistory = localStorage.getItem('volt_ghost_history');
-          let parsedHistory: WorkoutSession[] = [];
-          if (guestHistory) {
-            parsedHistory = JSON.parse(guestHistory);
-          }
-          setHistory(parsedHistory);
-
-          const now = Date.now();
-          const fifteenMins = 15 * 60 * 1000;
-          const twentyFourHours = 24 * 60 * 60 * 1000;
-          const needsReflection = parsedHistory.find(s =>
-            s.completedAt &&
-            !s.reflectionSaved &&
-            (now - s.completedAt) > fifteenMins &&
-            (now - s.completedAt) < twentyFourHours
-          );
-          setPendingReflection(needsReflection || null);
-        } else {
-          setHistory([]);
-        }
+        setHistory([]);
         setRecoveryHistory([]);
         setIsLoading(false);
       }
@@ -1498,21 +1477,12 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
         const workoutsPath = `users/${currentUid}/workouts`;
         // Use setDoc with the local session ID to ensure id matching
         await setDoc(doc(db, workoutsPath, completedSession.id), completedSession);
-      } else {
-        const guestHistory = JSON.parse(localStorage.getItem('volt_ghost_history') || '[]');
-        const newId = `guest_w_${Date.now()}`;
-        const sessionWithId = { ...completedSession, id: newId };
-        const updatedHistory = [sessionWithId, ...guestHistory];
-        localStorage.setItem('volt_ghost_history', JSON.stringify(updatedHistory));
-        setHistory(updatedHistory);
+        showToast('Action Successful.', 3000, 'success');
       }
-      showToast('Action Successful.', 3000, 'success');
     } catch (error) {
       if (auth.currentUser) {
         backupData(currentUid, `workout_${completedSession.id}.json`, completedSession);
         handleFirestoreError(error, OperationType.CREATE, `users/${currentUid}/workouts`);
-      } else {
-        console.error("Guest mode save failed", error);
       }
     } finally {
       // Ensure state nullification and storage cleanup only happens after capture
@@ -1600,7 +1570,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
         squatPR: 0,
         benchPR: 0,
         deadliftPR: 0,
-        programResetAt: 0
+        programResetAt: Date.now()
       });
 
       setCurrentSession(null);
@@ -1654,49 +1624,24 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
         // Rethrow to allow UI to handle it if needed, but the handler logs it
         throw error;
       }
-    } else {
-      const guestHistory = JSON.parse(localStorage.getItem('volt_ghost_history') || '[]');
-      const updatedHistory = guestHistory.map((s: WorkoutSession) => s.id === workout.id ? updatedWorkout : s);
-      localStorage.setItem('volt_ghost_history', JSON.stringify(updatedHistory));
-      setHistory(updatedHistory);
-      showToast('Action Successful.', 3000, 'success');
     }
   };
 
   const deleteHistoryWorkout = async (id: string) => {
-    if (auth.currentUser) {
-      const workoutPath = `users/${auth.currentUser.uid}/workouts/${id}`;
-      try {
-        const { deleteDoc, doc } = await import('firebase/firestore');
-        await deleteDoc(doc(db, `users/${auth.currentUser.uid}/workouts`, id));
-        showToast('Action Successful.', 3000, 'success');
-      } catch (error) {
-        handleFirestoreError(error, OperationType.DELETE, workoutPath);
-      }
-    } else {
-      const guestHistory = JSON.parse(localStorage.getItem('volt_ghost_history') || '[]');
-      const updatedHistory = guestHistory.filter((s: WorkoutSession) => s.id !== id);
-      localStorage.setItem('volt_ghost_history', JSON.stringify(updatedHistory));
-      setHistory(updatedHistory);
+    if (!auth.currentUser) return;
+    
+    const workoutPath = `users/${auth.currentUser.uid}/workouts/${id}`;
+    try {
+      const { deleteDoc, doc } = await import('firebase/firestore');
+      await deleteDoc(doc(db, `users/${auth.currentUser.uid}/workouts`, id));
       showToast('Action Successful.', 3000, 'success');
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, workoutPath);
     }
   };
 
   const saveReflection = async (workoutId: string, actualRpe: number) => {
-    if (!workoutId) return;
-
-    if (!auth.currentUser?.uid) {
-      // Guest mode handling
-      const guestHistory = JSON.parse(localStorage.getItem('volt_ghost_history') || '[]');
-      const updatedHistory = guestHistory.map((w: any) =>
-        w.id === workoutId ? { ...w, actualRpe: Number(actualRpe), reflectionSaved: true } : w
-      );
-      localStorage.setItem('volt_ghost_history', JSON.stringify(updatedHistory));
-      setHistory(updatedHistory);
-      setPendingReflection(null);
-      showToast('Action Successful.', 3000, 'success');
-      return;
-    }
+    if (!workoutId || !auth.currentUser?.uid) return;
 
     const docRef = doc(db, 'users', auth.currentUser.uid, 'workouts', workoutId);
 

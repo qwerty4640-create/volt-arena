@@ -73,7 +73,7 @@ export const BLOCK_TEMPLATES: Record<string, Partial<BlockDefinition>> = {
   [BlockType.RETENTION]: { type: BlockType.RETENTION as BlockType, label: 'Retention Protocol', baseIntensity: 0.60, baseReps: '5', baseSets: 2, intensityIncrementPerWeek: 0 }
 };
 
-const GOAL_EXPANSIONS: Record<string, { type: BlockType; ratio: number }[]> = {
+export const GOAL_EXPANSIONS: Record<string, { type: BlockType; ratio: number }[]> = {
   [BlockType.PURE_STRENGTH]: [
     { type: BlockType.FOUNDATION, ratio: 0.15 },
     { type: BlockType.STRENGTH, ratio: 0.55 },

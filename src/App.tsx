@@ -66,6 +66,7 @@ import { ReadinessCheck } from './components/ReadinessCheck';
 import { ReflectionModal } from './components/ReflectionModal';
 import { InstallPrompt } from './components/InstallPrompt';
 import { PwaUpdater } from './components/PwaUpdater';
+import { UserTour } from './components/UserTour';
 
 declare global {
   interface Window {
@@ -74,7 +75,7 @@ declare global {
   }
 }
 
-const RecoveryIcon = ({ size = 24, strokeWidth = 2, className }: { size?: number, strokeWidth?: number, className?: string }) => (
+const ReadinessIcon = ({ size = 24, strokeWidth = 2, className }: { size?: number, strokeWidth?: number, className?: string }) => (
   <svg 
     xmlns="http://www.w3.org/2000/svg" 
     width={size} 
@@ -95,7 +96,7 @@ const RecoveryIcon = ({ size = 24, strokeWidth = 2, className }: { size?: number
 );
 
 const NAV_ITEMS: NavItem[] = [
-  { id: 'analysis', label: 'nav.dashboard', icon: RecoveryIcon },
+  { id: 'analysis', label: 'nav.dashboard', icon: ReadinessIcon },
   { id: 'analytics', label: 'nav.analytics', icon: BarChart3 },
   { id: 'training', label: 'nav.training', icon: DeploymentIcon },
   { id: 'deployment', label: 'nav.deployment', icon: MissionIcon },
@@ -204,7 +205,6 @@ function AppContent() {
   const isCriticalReadiness = readinessValue < 20;
 
   const [user, setUser] = useState<FirebaseUser | null>(null);
-  const [isGuestMode, setIsGuestMode] = useState(() => localStorage.getItem('volt_guest_mode') === 'true');
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [isSafetyActive, setIsSafetyActive] = useState(false);
   const [preAuthStep, setPreAuthStep] = useState<'carousel' | 'questionnaire' | 'auth'>('carousel');
@@ -547,6 +547,16 @@ function AppContent() {
     return () => recognition.stop();
   }, [isVoiceActive]);
 
+  const [isLargeScreen, setIsLargeScreen] = useState(typeof window !== 'undefined' ? window.innerWidth >= 1024 : false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsLargeScreen(window.innerWidth >= 1024);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   if (isAuthChecking || (user && (isProfileLoading || isWorkoutLoading))) {
     return (
       <div className="h-screen w-screen bg-void flex flex-col items-center justify-center gap-6">
@@ -558,7 +568,7 @@ function AppContent() {
     );
   }
 
-  if (!user && !isGuestMode) {
+  if (!user) {
     const handleAuth = async (e: React.FormEvent) => {
       e.preventDefault();
       if (isEmailAuthLoading || isGoogleAuthLoading) return;
@@ -626,17 +636,201 @@ function AppContent() {
       }
     };
 
+    const renderAuthForm = () => (
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className={`relative z-10 w-full flex flex-col items-center text-center ${
+          isLargeScreen 
+            ? 'py-12 px-8 md:px-12 bg-void' 
+            : 'my-auto max-w-md glass-panel px-4 py-10 md:p-10 border border-white/10'
+        }`}
+      >
+        <VanguardLogo className={`mb-8 ${isLargeScreen ? 'w-[60%]' : ''}`} />
+        <div className="w-full space-y-6">
+          <form onSubmit={handleAuth} className="w-full space-y-4">
+            <div className="space-y-4">
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-zinc-500 group-focus-within:text-volt transition-colors">
+                  <Mail size={16} />
+                </div>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder={t('auth.emailPlaceholder') || "EMAIL ADDRESS"}
+                  required
+                  className="w-full bg-zinc-900/50 border border-white/10 py-4 pl-12 pr-4 text-[10px] sm:text-xs font-bold uppercase tracking-widest text-white placeholder:text-zinc-600 focus:outline-none focus:border-volt/50 transition-all"
+                />
+              </div>
+
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-zinc-500 group-focus-within:text-volt transition-colors">
+                  <Lock size={16} />
+                </div>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder={t('auth.passwordPlaceholder') || "PASSWORD"}
+                  required
+                  className="w-full bg-zinc-900/50 border border-white/10 py-4 pl-12 pr-12 text-[10px] sm:text-xs font-bold uppercase tracking-widest text-white placeholder:text-zinc-600 focus:outline-none focus:border-volt/50 transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-3 flex items-center text-zinc-500 hover:text-volt transition-colors"
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+
+              {isSigningUp && (
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-zinc-500 group-focus-within:text-volt transition-colors">
+                    <Lock size={16} />
+                  </div>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder={t('auth.confirmPasswordPlaceholder') || "CONFIRM PASSWORD"}
+                    required
+                    className="w-full bg-zinc-900/50 border border-white/10 py-4 pl-12 pr-4 text-[10px] sm:text-xs font-bold uppercase tracking-widest text-white placeholder:text-zinc-600 focus:outline-none focus:border-volt/50 transition-all"
+                  />
+                </div>
+              )}
+            </div>
+
+            <button
+              type="submit"
+              disabled={isEmailAuthLoading || isGoogleAuthLoading}
+              className="w-full btn-primary py-4 text-xs uppercase font-black tracking-widest disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {isEmailAuthLoading ? (
+                <Loader2 className="animate-spin" size={18} />
+              ) : (
+                <>
+                  <img 
+                    src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLXNoaWVsZC1jaGVjay1pY29uIGx1Y2lkZS1zaGllbGQtY2hlY2siPjxwYXRoIGQ9Ik0yMCAxM2MwIDUtMy41IDcuNS03LjY2IDguOTVhMSAxIDAgMCAxLS42Ny0uMDFDNy41IDIwLjUgNCAxOCA0IDEzVjZhMSAxIDAgMCAxIDEtMWMyIDAgNC41LTEuMiA2LjI0LTIuNzJhMS4xNyAxLjE3IDAgMCAxIDEuNTIgMEMxNC41MSAzLjgxIDE3IDUgMTkgNWExIDEgMCAwIDEgMSAxeiIvPjxwYXRoIGQ9Im05IDEyIDIgMiA0LTQiLz48L3N2Zz4=" 
+                    alt="Secure" 
+                    className="size-4" 
+                  />
+                  {isSigningUp ? t('auth.signUp') || "INITIALIZE DEPLOYMENT" : t('auth.signIn') || "AUTHORIZE LOGIN"}
+                </>
+              )}
+            </button>
+          </form>
+
+          <div className="relative py-4">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-white/5"></div>
+            </div>
+            <div className="relative flex justify-center text-[8px] font-black uppercase tracking-[0.3em]">
+              <span className="bg-void px-4 text-zinc-600 font-sans">{t('auth.orSecureSso') || "OR SECURE SSO"}</span>
+            </div>
+          </div>
+
+          <button 
+            type="button"
+            onClick={handleGoogleSignIn}
+            disabled={isGoogleAuthLoading || isEmailAuthLoading}
+            className={
+              isLargeScreen 
+                ? "w-full btn-secondary py-4" 
+                : "w-full flex items-center justify-center gap-4 bg-white/5 text-white border border-white/10 py-4 font-sans font-black uppercase tracking-widest hover:bg-white hover:text-void transition-all duration-300 disabled:opacity-50"
+            }
+          >
+            {isGoogleAuthLoading ? (
+              <Loader2 className="animate-spin text-white" size={18} />
+            ) : (
+              <div className="flex items-center gap-3">
+                <svg className="w-5 h-5" viewBox="0 0 24 24">
+                  <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                  <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                  <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" />
+                  <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                </svg>
+                <span>{t('auth.signInWithGoogle')}</span>
+              </div>
+            )}
+          </button>
+
+          {authError && (
+            <p className="text-crimson text-[10px] font-bold uppercase tracking-widest animate-shake">
+              {authError}
+            </p>
+          )}
+
+          <div className="flex flex-col items-center gap-6">
+            <button
+              type="button"
+              onClick={() => setIsSigningUp(!isSigningUp)}
+              className="text-[10px] font-bold uppercase tracking-widest text-volt hover:underline"
+            >
+              {isSigningUp ? t('auth.alreadyHaveAccount') || "ALREADY REGISTERED? LOG IN" : t('auth.noAccount') || "NO DEPLOYMENT ID? REGISTER"}
+            </button>
+
+            {!isLargeScreen && (
+              <button 
+                type="button"
+                onClick={() => setPreAuthStep('carousel')}
+                className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-zinc-500 hover:text-white transition-colors"
+              >
+                <ChevronLeft size={12} /> {t('auth.backToBriefing') || "BACK TO BRIEFING"}
+              </button>
+            )}
+          </div>
+        </div>
+        <p className="mt-12 text-[8px] text-zinc-600 font-medium leading-relaxed max-w-[280px] uppercase tracking-[0.2em]">
+          {t('auth.privacyNotice')}
+        </p>
+      </motion.div>
+    );
+
+    if (isLargeScreen) {
+      return (
+        <div className="h-screen w-screen bg-void flex overflow-hidden">
+          {/* Left Side: Carousel */}
+          <div className="flex-1 hidden lg:block overflow-hidden relative border-r border-white/5">
+            <WelcomeCarousel 
+              hideLogo={true} 
+              isRelative={true}
+              onSignUp={() => {
+                setIsSigningUp(true);
+                setPreAuthStep('questionnaire');
+              }}
+              onSignIn={() => {
+                setIsSigningUp(false);
+                setPreAuthStep('auth');
+              }}
+            />
+          </div>
+
+          {/* Right Side: Auth or Onboarding */}
+          <div className="w-full lg:w-[450px] xl:w-[500px] h-screen overflow-y-auto custom-scrollbar relative bg-void flex flex-col">
+            {preAuthStep === 'questionnaire' ? (
+              <OnboardingFlow 
+                onBack={() => setPreAuthStep('carousel')}
+                onCompleteHandler={(data) => {
+                  localStorage.setItem('volt_pending_onboarding', JSON.stringify(data));
+                  setIsSigningUp(true);
+                  setPreAuthStep('auth');
+                }}
+              />
+            ) : (
+              <div className={`flex-1 flex flex-col items-center justify-center ${!isLargeScreen ? 'p-4 md:p-8' : ''}`}>
+                {renderAuthForm()}
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
     if (preAuthStep === 'carousel') {
       return (
         <WelcomeCarousel
-          onSkip={() => {
-            setIsSigningUp(true);
-            if (localStorage.getItem('volt_pending_onboarding')) {
-              setPreAuthStep('auth');
-            } else {
-              setPreAuthStep('questionnaire');
-            }
-          }}
           onSignUp={() => {
             setIsSigningUp(true);
             setPreAuthStep('questionnaire');
@@ -664,162 +858,8 @@ function AppContent() {
 
     return (
       <div className="h-screen w-screen bg-void flex justify-center p-2 md:p-8 relative overflow-y-auto custom-scrollbar">
+        {renderAuthForm()}
         
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="relative z-10 max-w-md w-full glass-panel px-4 py-10 md:p-10 border border-white/10 flex flex-col items-center text-center my-auto"
-        >
-
-          <VanguardLogo className="mb-8" />
-
-          <div className="w-full space-y-6">
-            <form onSubmit={handleAuth} className="w-full space-y-4">
-              <div className="space-y-4">
-                <div className="relative group">
-                  <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-zinc-500 group-focus-within:text-volt transition-colors">
-                    <Mail size={16} />
-                  </div>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder={t('auth.emailPlaceholder') || "EMAIL ADDRESS"}
-                    required
-                    className="w-full bg-zinc-900/50 border border-white/10 py-4 pl-12 pr-4 text-[10px] sm:text-xs font-bold uppercase tracking-widest text-white placeholder:text-zinc-600 focus:outline-none focus:border-volt/50 transition-all"
-                  />
-                </div>
-
-                <div className="relative group">
-                  <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-zinc-500 group-focus-within:text-volt transition-colors">
-                    <Lock size={16} />
-                  </div>
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder={t('auth.passwordPlaceholder') || "PASSWORD"}
-                    required
-                    className="w-full bg-zinc-900/50 border border-white/10 py-4 pl-12 pr-12 text-[10px] sm:text-xs font-bold uppercase tracking-widest text-white placeholder:text-zinc-600 focus:outline-none focus:border-volt/50 transition-all"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-3 flex items-center text-zinc-500 hover:text-volt transition-colors"
-                  >
-                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
-                </div>
-
-                {isSigningUp && (
-                  <div className="relative group">
-                    <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-zinc-500 group-focus-within:text-volt transition-colors">
-                      <Lock size={16} />
-                    </div>
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder={t('auth.confirmPasswordPlaceholder') || "CONFIRM PASSWORD"}
-                      required
-                      className="w-full bg-zinc-900/50 border border-white/10 py-4 pl-12 pr-4 text-[10px] sm:text-xs font-bold uppercase tracking-widest text-white placeholder:text-zinc-600 focus:outline-none focus:border-volt/50 transition-all"
-                    />
-                  </div>
-                )}
-              </div>
-
-              <button
-                type="submit"
-                disabled={isEmailAuthLoading || isGoogleAuthLoading}
-                className="w-full btn-primary py-4 text-xs uppercase font-black tracking-widest disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {isEmailAuthLoading ? (
-                  <Loader2 className="animate-spin" size={18} />
-                ) : (
-                  <>
-                    <img 
-                      src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLXNoaWVsZC1jaGVjay1pY29uIGx1Y2lkZS1zaGllbGQtY2hlY2siPjxwYXRoIGQ9Ik0yMCAxM2MwIDUtMy41IDcuNS03LjY2IDguOTVhMSAxIDAgMCAxLS42Ny0uMDFDNy41IDIwLjUgNCAxOCA0IDEzVjZhMSAxIDAgMCAxIDEtMWMyIDAgNC41LTEuMiA2LjI0LTIuNzJhMS4xNyAxLjE3IDAgMCAxIDEuNTIgMEMxNC41MSAzLjgxIDE3IDUgMTkgNWExIDEgMCAwIDEgMSAxeiIvPjxwYXRoIGQ9Im05IDEyIDIgMiA0LTQiLz48L3N2Zz4=" 
-                      alt="Secure" 
-                      className="size-4" 
-                    />
-                    {isSigningUp ? t('auth.signUp') || "INITIALIZE DEPLOYMENT" : t('auth.signIn') || "AUTHORIZE LOGIN"}
-                  </>
-                )}
-              </button>
-            </form>
-
-            <div className="relative py-4">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-white/5"></div>
-              </div>
-              <div className="relative flex justify-center text-[8px] font-black uppercase tracking-[0.3em]">
-                <span className="bg-void px-4 text-zinc-600 font-sans">{t('auth.orSecureSso') || "OR SECURE SSO"}</span>
-              </div>
-            </div>
-
-            <button 
-              type="button"
-              onClick={handleGoogleSignIn}
-              disabled={isGoogleAuthLoading || isEmailAuthLoading}
-              className="w-full flex items-center justify-center gap-4 bg-white/5 text-white border border-white/10 py-4 font-sans font-black uppercase tracking-widest hover:bg-white hover:text-void transition-all duration-300 disabled:opacity-50"
-            >
-              {isGoogleAuthLoading ? (
-                <Loader2 className="animate-spin text-white" size={18} />
-              ) : (
-                <div className="flex items-center gap-3">
-                  <svg className="w-5 h-5" viewBox="0 0 24 24">
-                    <path
-                      fill="currentColor"
-                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                    />
-                    <path
-                      fill="currentColor"
-                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                    />
-                    <path
-                      fill="currentColor"
-                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"
-                    />
-                    <path
-                      fill="currentColor"
-                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                    />
-                  </svg>
-                  <span>{t('auth.signInWithGoogle')}</span>
-                </div>
-              )}
-            </button>
-
-            {authError && (
-              <p className="text-crimson text-[10px] font-bold uppercase tracking-widest animate-shake">
-                {authError}
-              </p>
-            )}
-
-            <div className="flex flex-col items-center gap-6">
-              <button
-                type="button"
-                onClick={() => setIsSigningUp(!isSigningUp)}
-                className="text-[10px] font-bold uppercase tracking-widest text-volt hover:underline"
-              >
-                {isSigningUp ? t('auth.alreadyHaveAccount') || "ALREADY REGISTERED? LOG IN" : t('auth.noAccount') || "NO DEPLOYMENT ID? REGISTER"}
-              </button>
-
-              <button 
-                type="button"
-                onClick={() => setPreAuthStep('carousel')}
-                className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-zinc-500 hover:text-white transition-colors"
-              >
-                <ChevronLeft size={12} /> {t('auth.backToBriefing') || "BACK TO BRIEFING"}
-              </button>
-            </div>
-          </div>
-
-          <p className="mt-12 text-[8px] text-zinc-600 font-medium leading-relaxed max-w-[280px] uppercase tracking-[0.2em]">
-            {t('auth.privacyNotice')}
-          </p>
-        </motion.div>
-
         {/* Background Ambience */}
         <div className="fixed bottom-0 left-0 w-[600px] h-[600px] bg-volt/5 blur-[120px] pointer-events-none -z-10" />
       </div>
@@ -864,6 +904,7 @@ function AppContent() {
         }}
         onAddActivity={() => setIsRecoveryModalOpen(true)}
         onViewUpcomingMissions={() => setActiveView('upcoming-missions')}
+        onNavigateToFitnessTest={() => setActiveView('fitness-test')}
         onContinueSession={() => {
           if (!currentSession) {
             setShowReadinessCheck(true);
@@ -1093,6 +1134,7 @@ function AppContent() {
                       onClick={() => setActiveView(item.id)}
                       className={cn(
                         "flex items-center gap-3 group transition-all duration-300 px-3 py-3 rounded-xl border border-transparent",
+                        `vanguard-tour-nav-${item.id}`,
                         isActive ? "bg-white/[0.05] text-white border-white/5" : "text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.02]"
                       )}
                     >
@@ -1192,6 +1234,7 @@ function AppContent() {
                 onClick={() => setActiveView(item.id)}
                 className={cn(
                   "flex flex-col items-center gap-1 transition-all",
+                  `vanguard-tour-nav-${item.id}`,
                   isActive ? "text-volt" : "text-zinc-500"
                 )}
               >
@@ -1215,7 +1258,10 @@ function AppContent() {
               <button
                 key={item.id}
                 onClick={() => setActiveView(item.id)}
-                className="relative group flex flex-col items-center gap-1 focus:outline-none"
+                className={cn(
+                  "relative group flex flex-col items-center gap-1 focus:outline-none",
+                  `vanguard-tour-nav-${item.id}`
+                )}
               >
                 <motion.div
                   animate={isActive ? {
@@ -1391,8 +1437,6 @@ function AppContent() {
         onConfirm={() => {
           setIsExitModalOpen(false);
           logout();
-          localStorage.removeItem('volt_guest_mode');
-          setIsGuestMode(false);
         }}
         onCancel={() => setIsExitModalOpen(false)}
       />
@@ -1401,6 +1445,7 @@ function AppContent() {
         onClose={() => setIsRecoveryModalOpen(false)}
       />
       <InstallPrompt />
+      <UserTour activeView={activeView} />
       <div id="a11y-live-region" className="sr-only" aria-live="polite" aria-atomic="true"></div>
     </div>
   );

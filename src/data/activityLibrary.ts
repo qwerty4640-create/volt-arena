@@ -1,6 +1,6 @@
 import { LucideIcon } from "lucide-react";
 
-export type ActivityCategory = 'Cardio' | 'Combat' | 'Strength' | 'Sport' | 'Recovery';
+export type ActivityCategory = 'Cardio' | 'Combat' | 'Strength' | 'Sport' | 'Recovery' | 'Other';
 
 export interface ActivityType {
   id: string;
@@ -53,4 +53,9 @@ export const ACTIVITY_LIBRARY: ActivityType[] = [
   { id: 'recovery_walking', label: 'Walking', baseMET: 3.5, category: 'Recovery', icon: 'Activity' },
   { id: 'recovery_pilates', label: 'Pilates', baseMET: 3.0, category: 'Recovery', icon: 'Activity' },
   { id: 'recovery_stretching', label: 'Stretching', baseMET: 2.3, category: 'Recovery', icon: 'Activity' },
+  
+  // Other
+  { id: 'other_yard_work', label: 'Yard Work', baseMET: 4.5, category: 'Other', icon: 'Activity' },
+  { id: 'other_hiking', label: 'Hiking', baseMET: 6.0, category: 'Other', icon: 'Activity' },
+  { id: 'other_custom', label: 'Other / Custom', baseMET: 5.0, category: 'Other', icon: 'Zap' },
 ];

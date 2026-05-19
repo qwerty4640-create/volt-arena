@@ -61,7 +61,9 @@ export interface UserProfile {
   dashboardWidgets?: WidgetId[];
   performanceWidgets?: PerformanceWidgetId[];
   programResetAt?: number;
+  lastFitnessTestAt?: number;
   devOverrideFitnessTest?: boolean;
+  pendingFitnessTest?: boolean;
   createdAt: number;
   role?: 'user' | 'admin' | 'engineer';
 }
@@ -148,7 +150,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [showExperimentalMenus, setShowExperimentalMenusState] = useState(false);
   const [experimentalFeatures, setExperimentalFeaturesState] = useState(false);
   const [dashboardWidgets, setDashboardWidgetsState] = useState<WidgetId[]>(['recovery-analysis', 'active-recovery', 'readiness-trend']);
-  const [performanceWidgets, setPerformanceWidgetsState] = useState<PerformanceWidgetId[]>(['progression', 'volume-trend', 'growth', 'tactical']);
+  const [performanceWidgets, setPerformanceWidgetsState] = useState<PerformanceWidgetId[]>(['progression', 'volume-trend', 'growth', 'joint-stress', 'tactical']);
   const [lastVoiceCommand, setLastVoiceCommand] = useState<{ text: string; timestamp: number } | null>(null);
   const [isCustomizeModalOpen, setIsCustomizeModalOpen] = useState(false);
   const [isDeploymentModalOpen, setIsDeploymentModalOpen] = useState(false);
@@ -216,10 +218,11 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
               showExperimentalMenus: false,
               experimentalFeatures: false,
               dashboardWidgets: ['recovery-analysis', 'active-recovery', 'readiness-trend'],
-              performanceWidgets: ['progression', 'volume-trend', 'growth', 'tactical'],
+              performanceWidgets: ['progression', 'volume-trend', 'growth', 'joint-stress', 'tactical'],
               onboardingCompleted: false, // fallback
               level: 'untrained',
               createdAt: Date.now(),
+              programResetAt: Date.now(),
               role: (user.email === 'qwerty4640@gmail.com' || user.email === 'admin@volt.com') ? 'admin' : 'user',
               ...pendingOnboarding
             };
@@ -241,44 +244,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
           setIsProfileLoading(false);
         });
       } else {
-        const isGuestMode = localStorage.getItem('volt_guest_mode') === 'true';
-        if (isGuestMode) {
-          const ghostHistoryStr = localStorage.getItem('volt_ghost_history');
-          const hasHistory = ghostHistoryStr && ghostHistoryStr.length > 5;
-          const initialLevel = hasHistory ? 'intermediate' : 'untrained';
-
-          const ghostProfile: UserProfile = {
-            uid: 'guest',
-            email: 'guest@example.com',
-            displayName: 'Guest Athlete',
-            language: 'en',
-            unit: 'imperial',
-            isVoiceActive: false,
-            immersionMode: 'immersive',
-            showExperimentalMenus: false,
-            experimentalFeatures: false,
-            dashboardWidgets: ['recovery-analysis', 'active-recovery', 'readiness-trend'],
-            performanceWidgets: ['progression', 'volume-trend', 'growth', 'tactical'],
-            onboardingCompleted: false,
-            level: initialLevel,
-            trainingGoal: 'powerbuilding',
-            weight: 175,
-            createdAt: Date.now(),
-            role: 'user'
-          };
-          const savedGhost = localStorage.getItem('volt_ghost_profile');
-          if (savedGhost) {
-            try {
-               setProfile({...ghostProfile, ...JSON.parse(savedGhost)});
-            } catch(e) {
-               setProfile(ghostProfile);
-            }
-          } else {
-            setProfile(ghostProfile);
-          }
-        } else {
-          setProfile(null);
-        }
+        setProfile(null);
         setIsProfileLoading(false);
       }
     }, (error) => {
@@ -451,12 +417,6 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
       } catch (error) {
         handleFirestoreError(error, OperationType.UPDATE, userDocPath);
       }
-    } else {
-      if (profile) {
-        const updated = { ...profile, dashboardWidgets: widgets };
-        setProfile(updated);
-        localStorage.setItem('volt_ghost_profile', JSON.stringify(updated));
-      }
     }
   };
 
@@ -468,12 +428,6 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
         await setDoc(doc(db, userDocPath), { performanceWidgets: widgets }, { merge: true });
       } catch (error) {
         handleFirestoreError(error, OperationType.UPDATE, userDocPath);
-      }
-    } else {
-      if (profile) {
-        const updated = { ...profile, performanceWidgets: widgets };
-        setProfile(updated);
-        localStorage.setItem('volt_ghost_profile', JSON.stringify(updated));
       }
     }
   };
@@ -487,7 +441,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
         data.performanceWidgets = ['conditioning-tracker', 'tactical', 'progression', 'volume-trend'];
       } else {
         // Default strength/hypertrophy goals
-        data.performanceWidgets = ['progression', 'volume-trend', 'growth', 'tactical'];
+        data.performanceWidgets = ['progression', 'volume-trend', 'growth', 'joint-stress', 'tactical'];
       }
       setPerformanceWidgetsState(data.performanceWidgets);
     }
@@ -498,12 +452,6 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
         await setDoc(doc(db, userDocPath), data, { merge: true });
       } catch (error) {
         handleFirestoreError(error, OperationType.UPDATE, userDocPath);
-      }
-    } else {
-      if (profile) {
-        const updated = { ...profile, ...data };
-        setProfile(updated);
-        localStorage.setItem('volt_ghost_profile', JSON.stringify(updated));
       }
     }
   };

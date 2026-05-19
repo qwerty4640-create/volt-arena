@@ -17,7 +17,7 @@ import { useWorkout } from '../contexts/WorkoutContext';
 import { InfoTooltip } from './InfoTooltip';
 import { cn } from '../lib/utils';
 
-export const JointStressWidget = () => {
+export const JointStressWidget = ({ className }: { className?: string }) => {
   const { t } = useSettings();
   const { history, recoveryHistory } = useWorkout();
 
@@ -158,7 +158,7 @@ export const JointStressWidget = () => {
     <motion.div
       initial={{ y: 20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      className="glass-panel px-4 py-6 md:p-8 flex flex-col relative overflow-hidden min-w-0 group/module"
+      className={cn("glass-panel px-4 py-6 md:p-8 flex flex-col relative overflow-hidden min-w-0 group/module", className)}
     >
       <div className="absolute inset-0 opacity-[0.03] pointer-events-none group-hover/module:opacity-[0.05] transition-opacity duration-700"
         style={{ backgroundImage: 'radial-gradient(var(--primary-color) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />

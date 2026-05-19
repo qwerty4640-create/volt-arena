@@ -78,7 +78,7 @@ export function PageHeader({ activeView, onBack, subtitle }: PageHeaderProps) {
         {(activeView === 'analysis' || activeView === 'analytics') && (
           <button 
             onClick={() => setIsCustomizeModalOpen(true)}
-            className="hidden md:flex items-center gap-2 px-6 py-3 btn-primary font-headline text-[10px] font-black uppercase tracking-widest transition-all group"
+            className="hidden md:flex items-center gap-2 px-6 py-3 btn-primary font-headline text-[10px] font-black uppercase tracking-widest transition-all group vanguard-tour-customize-dashboard"
           >
             <Settings2 size={14} />
             {t('analysis.customizeDashboard')}
@@ -88,7 +88,7 @@ export function PageHeader({ activeView, onBack, subtitle }: PageHeaderProps) {
         {activeView === 'deployment' && (
           <button 
             onClick={() => setIsDeploymentModalOpen(true)}
-            className="hidden md:flex items-center gap-2 px-6 py-3 btn-primary font-headline text-[10px] font-black uppercase tracking-widest transition-all group"
+            className="hidden md:flex items-center gap-2 px-6 py-3 btn-primary font-headline text-[10px] font-black uppercase tracking-widest transition-all group vanguard-tour-recalibrate-deployment"
           >
             <Zap size={14} />
             <span>Recalibrate Deployment</span>

@@ -19,7 +19,8 @@ import {
   RefreshCw,
   Search,
   X,
-  ListOrdered
+  ListOrdered,
+  Lock
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useSettings } from '../contexts/SettingsContext';
@@ -31,6 +32,7 @@ import { ExerciseSwapModal } from './ExerciseSwapModal';
 import { getWarmupForLift, COOL_DOWN_ROUTINE } from '../data/warmupLibrary';
 import { getSwappableExercises, EXERCISE_DATABASE } from '../constants/exercises';
 import { getBlockForWeek } from '../constants/periodization';
+import { getFitnessTestInfo } from '../utils/fitnessTestUtils';
 
 interface TrainingViewProps {
   onContinueSession?: () => void;
@@ -38,6 +40,7 @@ interface TrainingViewProps {
   onViewHistory?: (sessionId?: string) => void;
   onAddActivity?: () => void;
   onViewUpcomingMissions?: () => void;
+  onNavigateToFitnessTest?: () => void;
 }
 
 export const TrainingView = ({ 
@@ -45,7 +48,8 @@ export const TrainingView = ({
   isLifting, 
   onViewHistory, 
   onAddActivity,
-  onViewUpcomingMissions
+  onViewUpcomingMissions,
+  onNavigateToFitnessTest
 }: TrainingViewProps) => {
   const { t, unit, profile } = useSettings();
   const {
@@ -318,6 +322,7 @@ export const TrainingView = ({
     return { weight: maxWeight > 0 ? maxWeight.toString() : '–', date: prDate, workoutId: prWorkoutId };
   };
 
+  // ... existing variables ...
   const squatPR = getPR('squat', 'isSquat');
   const benchPR = getPR('bench', 'isBench');
   const deadliftPR = getPR('deadlift', 'isDeadlift');
@@ -338,6 +343,9 @@ export const TrainingView = ({
   };
   const sessionProgress = calculateProgress(currentSession);
 
+  const fitnessTestInfo = getFitnessTestInfo(profile);
+  const isTestRequiredAndLocked = fitnessTestInfo.daysRemaining <= 0 && !profile?.devOverrideFitnessTest && !isActiveSession;
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 auto-rows-min w-full">
       {/* Active/Next Mission Module */}
@@ -346,7 +354,7 @@ export const TrainingView = ({
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.1 }}
         className={cn(
-          "col-span-1 md:col-span-2 lg:col-span-3 shrink-0 glass-panel px-4 py-6 md:p-8 relative overflow-hidden flex flex-col transition-all duration-500 w-full",
+          "col-span-1 md:col-span-2 lg:col-span-3 shrink-0 glass-panel px-4 py-6 md:p-8 relative overflow-hidden flex flex-col transition-all duration-500 w-full vanguard-tour-next-mission",
           isElite && "border-volt/50",
           isAdvanced && "border-yellow-500/30"
         )}
@@ -545,7 +553,27 @@ export const TrainingView = ({
         </div>
 
         <div className="flex flex-col gap-4 w-full mt-6">
-          {!isActiveSession && calibration.isRedline ? (
+          {(!isActiveSession && isTestRequiredAndLocked) ? (
+            <div className="flex flex-col sm:flex-row gap-4 w-full">
+                <button
+                  onClick={onNavigateToFitnessTest}
+                  className="w-full sm:flex-1 min-h-[44px] px-4 sm:px-8 py-4 btn-primary font-headline text-xs md:text-sm font-black uppercase tracking-widest flex flex-col items-center justify-center gap-1 group transition-all"
+                >
+                  <div className="flex items-center gap-2">
+                    <Lock size={18} className="text-void" />
+                    <span>FITNESS TEST REQUIRED</span>
+                  </div>
+                  <span className="text-[8px] opacity-70 font-black uppercase tracking-widest text-void">EVALUATION MUST BE COMPLETED TO PROCEED</span>
+                </button>
+                <button
+                  onClick={onAddActivity}
+                  className="w-full sm:flex-1 btn-secondary min-h-[44px] px-4 sm:px-8 py-4 text-xs md:text-sm flex items-center justify-center gap-2"
+                >
+                  <Plus size={14} className="group-hover:rotate-90 transition-transform" />
+                  {t('analysis.logNonProgramActivity')}
+                </button>
+            </div>
+          ) : !isActiveSession && calibration.isRedline ? (
             <div className="flex flex-col gap-4 w-full">
                 <button
                   onClick={onContinueSession}
@@ -566,7 +594,7 @@ export const TrainingView = ({
                 </button>
             </div>
           ) : (
-            <div className="flex gap-4 w-full">
+            <div className="flex flex-col sm:flex-row gap-4 w-full">
               <button
                 onClick={onContinueSession}
                 className="flex-1 btn-primary min-h-[44px] px-4 sm:px-8 py-4 flex items-center justify-center gap-2"
@@ -599,7 +627,7 @@ export const TrainingView = ({
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.2 }}
-        className="col-span-1 md:col-span-2 lg:col-span-3 shrink-0 glass-panel p-4 md:p-8 flex flex-col w-full"
+        className="col-span-1 md:col-span-2 lg:col-span-3 shrink-0 glass-panel p-4 md:p-8 flex flex-col w-full vanguard-tour-upcoming-missions"
       >
         <div className="flex items-center gap-3 mb-6">
           <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight">{t('analysis.upcomingMissions')}</h2>
@@ -657,7 +685,7 @@ export const TrainingView = ({
 
         <button
           onClick={onViewUpcomingMissions}
-          className="w-full btn-secondary mt-8 py-4"
+          className="w-full btn-secondary mt-8 py-4 vanguard-tour-upcoming-missions-details"
         >
           <span>{t('analysis.viewMoreDetails')}</span>
           <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform text-volt" />
@@ -670,7 +698,7 @@ export const TrainingView = ({
         animate={{ y: 0, opacity: 1 }}
         exit={{ opacity: 0, y: -20 }}
         transition={{ delay: 0.3 }}
-        className="col-span-1 md:col-span-2 lg:col-span-3 shrink-0 glass-panel p-4 md:p-8 flex flex-col w-full"
+        className="col-span-1 md:col-span-2 lg:col-span-3 shrink-0 glass-panel p-4 md:p-8 flex flex-col w-full vanguard-tour-prs"
       >
         <div className="flex items-center gap-3">
           <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight mb-2">{t('analysis.myPRs')}</h2>
@@ -781,7 +809,7 @@ export const TrainingView = ({
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.4 }}
-        className="col-span-1 md:col-span-2 lg:col-span-3 shrink-0 glass-panel p-4 md:p-8 flex flex-col w-full"
+        className="col-span-1 md:col-span-2 lg:col-span-3 shrink-0 glass-panel p-4 md:p-8 flex flex-col w-full vanguard-tour-past-missions"
       >
         <div className="flex items-center gap-3 mb-6 md:mb-10">
           <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight">{t('analysis.missionLogs')}</h2>

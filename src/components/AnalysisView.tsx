@@ -182,7 +182,7 @@ const ReadinessTrendWidget = () => {
     };
 
     return (
-        <div className="w-full glass-panel px-4 py-6 md:p-8 flex flex-col relative group/module overflow-hidden h-full">
+        <div className="w-full glass-panel px-4 py-6 md:p-8 flex flex-col relative group/module overflow-hidden h-full vanguard-tour-readiness-trend">
             <div className="absolute inset-0 opacity-[0.03] pointer-events-none group-hover/module:opacity-[0.05] transition-opacity duration-700"
                 style={{ backgroundImage: 'radial-gradient(var(--primary-color) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6 relative z-10">
@@ -592,8 +592,9 @@ export const ReadinessAnalysisWidget = () => {
                                 </span>
                                 <div className="flex flex-col items-start gap-4">
                                     <div className="flex items-baseline gap-2">
-                                        <span className={cn(
-                                            'text-5xl md:text-7xl lg:text-8xl font-black  tracking-tighter leading-none',
+                                        <span 
+                                            className={cn(
+                                            'text-5xl md:text-7xl lg:text-8xl font-black  tracking-tighter leading-none vanguard-tour-readiness',
                                             readinessScore !== null ? statusColor : 'text-zinc-600'
                                         )}>
                                             {readinessScore !== null ? readinessScore : '–'}

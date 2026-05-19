@@ -18,7 +18,8 @@ const CATEGORY_COLORS: Record<ActivityCategory, string> = {
   Combat: 'bg-crimson/20 text-crimson border-crimson/30',
   Strength: 'bg-volt/20 text-volt border-volt/30',
   Sport: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-  Recovery: 'bg-purple-500/20 text-purple-400 border-purple-500/30'
+  Recovery: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+  Other: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30'
 };
 
 const getIcon = (name: string) => {
@@ -94,7 +95,7 @@ export const NonProgramActivityModal = ({ isOpen, onClose, initialData }: NonPro
     if (profile?.weight) {
       weightKg = unit === 'imperial' ? profile.weight * 0.453592 : profile.weight;
     }
-    const intensityScalar = 1 + (rpe - 7) * 0.05;
+    const intensityScalar = Math.max(0.4, rpe / 6); // Aggressive scaling for lower RPE ranges
     return Math.round((selectedActivity.baseMET * 3.5 * weightKg / 200) * duration * intensityScalar);
   }, [selectedActivity, rpe, duration, profile?.weight, unit]);
 
@@ -199,7 +200,7 @@ export const NonProgramActivityModal = ({ isOpen, onClose, initialData }: NonPro
                 </div>
 
                 <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar">
-                  {(['All', 'Cardio', 'Combat', 'Strength', 'Sport', 'Recovery'] as const).map(category => (
+                  {(['All', 'Cardio', 'Combat', 'Strength', 'Sport', 'Recovery', 'Other'] as const).map(category => (
                     <button
                       key={category}
                       onClick={() => setSelectedCategory(category)}
@@ -284,23 +285,52 @@ export const NonProgramActivityModal = ({ isOpen, onClose, initialData }: NonPro
                 <div className="space-y-4">
                   <div className="flex justify-between items-end">
                     <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('nonProgram.duration')}</label>
-                    <span className="text-2xl font-black text-white">{duration}</span>
+                    <div className="flex items-center gap-2">
+                      <input
+                        id="duration-input"
+                        type="number"
+                        value={duration}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value);
+                          setDuration(isNaN(val) ? 0 : val);
+                        }}
+                        className="w-20 bg-transparent border-none text-right text-2xl font-black text-white focus:outline-none focus:text-volt transition-colors"
+                        min="0"
+                        onFocus={(e) => e.target.select()}
+                      />
+                      <span className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-1">min</span>
+                    </div>
                   </div>
                   <div className="flex gap-2">
-                    {[15, 30, 45, 60, 90].map((d) => (
+                    {[15, 30, 45, 60].map((d) => (
                       <button
                         key={d}
                         onClick={() => setDuration(d)}
                         className={cn(
-                          "flex-1 py-2 text-[10px] font-black uppercase tracking-tight sm:tracking-widest border transition-all rounded-none",
+                          "flex-1 py-3 text-[10px] font-black uppercase tracking-tight sm:tracking-widest border transition-all rounded-none",
                           duration === d
-                            ? "bg-white text-black border-white"
+                            ? "bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.2)]"
                             : "bg-black text-zinc-400 border-zinc-800 hover:border-zinc-700 hover:text-white"
                         )}
                       >
-                        {d}m
+                        {d}M
                       </button>
                     ))}
+                    <button
+                      onClick={() => {
+                        // Focus the input if they click custom
+                        const input = document.getElementById('duration-input');
+                        if (input) input.focus();
+                      }}
+                      className={cn(
+                        "flex-1 py-3 text-[10px] font-black uppercase tracking-tight sm:tracking-widest border transition-all rounded-none",
+                        ![15, 30, 45, 60].includes(duration)
+                          ? "bg-volt text-void border-volt shadow-[0_0_15px_rgba(206,255,0,0.2)]"
+                          : "bg-black text-zinc-400 border-zinc-800 hover:border-zinc-700 hover:text-white"
+                      )}
+                    >
+                      CUSTOM
+                    </button>
                   </div>
                 </div>
               </div>
@@ -318,9 +348,6 @@ export const NonProgramActivityModal = ({ isOpen, onClose, initialData }: NonPro
                       onChange={(e) => setPerformedAt(e.target.value)}
                       className="w-full max-w-full bg-black border border-zinc-800 p-3 text-[11px] font-black uppercase tracking-widest text-white focus:border-volt outline-none transition-all [color-scheme:dark] rounded-none"
                     />
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-600">
-                      <Clock size={16} />
-                    </div>
                   </div>
                 </div>
 

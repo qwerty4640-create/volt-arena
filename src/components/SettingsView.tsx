@@ -93,7 +93,7 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
         >
           <button
             onClick={onNavigateToProfile}
-            className="glass-panel w-full px-4 py-4 md:p-8 flex items-center justify-between hover:bg-volt/[0.06] transition-all group active:scale-[0.995]"
+            className="glass-panel w-full px-4 py-4 md:p-8 flex items-center justify-between hover:bg-volt/[0.06] transition-all group active:scale-[0.995] vanguard-tour-profile"
           >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-volt/10 flex items-center justify-center border border-volt/20 group-hover:border-volt/50 transition-colors overflow-hidden">
@@ -129,7 +129,7 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
       >
         <button
           onClick={() => setShowFieldManual(true)}
-          className="glass-panel w-full px-4 py-4 md:p-8 flex items-center justify-between hover:bg-volt/[0.06] transition-all group active:scale-[0.995]"
+          className="glass-panel w-full px-4 py-4 md:p-8 flex items-center justify-between hover:bg-volt/[0.06] transition-all group active:scale-[0.995] vanguard-tour-field-manual"
         >
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-volt/10 flex items-center justify-center border border-volt/20 group-hover:border-volt/50 transition-colors">
@@ -155,7 +155,7 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.12 }}
-          className="glass-panel px-4 py-6 md:p-8 flex flex-col md:col-span-2 border-b border-white/5"
+          className="glass-panel px-4 py-6 md:p-8 flex flex-col md:col-span-2 border-b border-white/5 vanguard-tour-visual-output"
         >
           <div className="flex items-center gap-3 mb-6 md:mb-8">
             <SunMoon className="text-volt" size={20} />
@@ -298,13 +298,13 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.1 }}
-          className="glass-panel px-4 py-6 md:p-8 flex flex-col"
+          className="glass-panel px-4 py-6 md:p-8 flex flex-col vanguard-tour-unit-measure"
         >
           <div className="flex items-center gap-3 mb-6 md:mb-8">
             <Scale className="text-volt" size={20} />
             <h3 className="font-sans text-sm font-bold uppercase tracking-widest text-white">{t('settings.unit')}</h3>
           </div>
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-2 md:gap-3">
             {UNITS.map(u => (
               <button
                 key={u.id}
@@ -316,8 +316,8 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
                     : "bg-surface-variant text-zinc-400 hover:bg-white/5 hover:text-zinc-200"
                 )}
               >
-                <span className="font-headline text-sm font-black uppercase tracking-widest">{t(`settings.${u.id}`)}</span>
-                {unit === u.id && <CheckCircle2 size={18} className="text-volt" />}
+                <span className="font-headline text-xs md:text-sm font-black uppercase tracking-widest">{t(`settings.${u.id}`)}</span>
+                {unit === u.id && <CheckCircle2 size={16} className="text-volt" />}
               </button>
             ))}
           </div>
@@ -410,23 +410,23 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.18 }}
-          className="glass-panel px-4 py-6 md:p-8 flex flex-col md:col-span-2"
+          className="glass-panel px-4 py-6 md:p-8 flex flex-col vanguard-tour-reset-program"
         >
           <div className="flex items-center gap-3 mb-6 md:mb-8">
             <Target className="text-volt" size={20} />
             <h3 className="font-sans text-sm font-bold uppercase tracking-widest text-white">{t('settings.programManagement')}</h3>
           </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex flex-col h-full justify-between gap-6">
             <div>
               <p className="text-white text-xs font-black uppercase tracking-widest">{t('settings.resetProgram')}</p>
-              <p className="text-zinc-500 text-[8px] font-medium uppercase tracking-widest mt-1">
+              <p className="text-zinc-500 text-[10px] font-medium uppercase tracking-widest mt-2 leading-relaxed">
                 {t('settings.resetProgramDesc')}
               </p>
             </div>
             <button
               onClick={() => setShowResetProgramConfirm(true)}
-              className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 md:px-8 md:py-4 btn-destructive font-headline text-[10px] font-black uppercase tracking-widest shrink-0 transition-all rounded"
+              className="w-full flex items-center justify-center gap-2 px-6 py-4 btn-destructive font-headline text-[10px] font-black uppercase tracking-widest transition-all rounded"
             >
               <RotateCcw size={14} />
               <span>{t('settings.resetProgramBtn')}</span>
@@ -446,20 +446,38 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
             <h3 className="font-sans text-sm font-bold uppercase tracking-widest text-white">{t('settings.systemOps')}</h3>
           </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <p className="text-white text-xs font-black uppercase tracking-widest">{t('settings.accountSession')}</p>
-              <p className="text-zinc-500 text-[8px] font-medium uppercase tracking-widest mt-1">
-                {t('settings.accountSessionDesc')}
-              </p>
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <p className="text-white text-xs font-black uppercase tracking-widest">Interface Induction</p>
+                <p className="text-zinc-500 text-[8px] font-medium uppercase tracking-widest mt-1">
+                  Restart the on-screen instruction protocol for current system modules.
+                </p>
+              </div>
+              <button
+                onClick={() => window.dispatchEvent(new CustomEvent('vanguard_reset_tour'))}
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 md:px-8 md:py-4 btn-secondary font-headline text-[10px] font-black uppercase tracking-widest shrink-0 transition-all rounded vanguard-tour-reset-induction"
+              >
+                <RotateCcw size={14} />
+                <span>Re-initialize Induction</span>
+              </button>
             </div>
-            <button
-              onClick={onExit}
-              className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 md:px-8 md:py-4 btn-destructive font-headline text-[10px] font-black uppercase tracking-widest shrink-0 transition-all rounded"
-            >
-              <Power size={14} />
-              <span>{t('nav.closeApp')}</span>
-            </button>
+
+          <div className="pt-6 border-t border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 vanguard-tour-account-mission">
+              <div>
+                <p className="text-white text-xs font-black uppercase tracking-widest">{t('settings.accountSession')}</p>
+                <p className="text-zinc-500 text-[8px] font-medium uppercase tracking-widest mt-1">
+                  {t('settings.accountSessionDesc')}
+                </p>
+              </div>
+              <button
+                onClick={onExit}
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 md:px-8 md:py-4 btn-destructive font-headline text-[10px] font-black uppercase tracking-widest shrink-0 transition-all rounded"
+              >
+                <Power size={14} />
+                <span>{t('nav.closeApp')}</span>
+              </button>
+            </div>
           </div>
         </motion.div>
       </div>
@@ -562,6 +580,29 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
                   <div className={cn(
                     "absolute top-1 w-4 h-4 bg-white transition-all duration-300",
                     profile?.devOverrideFitnessTest ? "left-7" : "left-1"
+                  )} />
+                </button>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-white/5">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-white text-xs font-black uppercase tracking-widest">Force Fitness Test Pending</p>
+                  <p className="text-zinc-500 text-[8px] font-medium uppercase tracking-widest mt-1">
+                    Directly trigger the "Evaluation Required" state to test lock UI.
+                  </p>
+                </div>
+                <button
+                  onClick={() => updateProfile({ pendingFitnessTest: !profile?.pendingFitnessTest })}
+                  className={cn(
+                    "w-12 h-6 shrink-0 relative transition-colors duration-300",
+                    profile?.pendingFitnessTest ? "bg-volt" : "bg-zinc-700"
+                  )}
+                >
+                  <div className={cn(
+                    "absolute top-1 w-4 h-4 bg-white transition-all duration-300",
+                    profile?.pendingFitnessTest ? "left-7" : "left-1"
                   )} />
                 </button>
               </div>

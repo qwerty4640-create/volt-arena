@@ -297,6 +297,7 @@ export const OnboardingFlow = ({
         medicalConditionDetails: formData.medicalConditionDetails,
         isExperiencedAthlete: formData.isExperiencedAthlete,
         onboardingCompleted: false,
+        programResetAt: Date.now(),
       });
       setStep('complete');
     } finally {
@@ -393,6 +394,7 @@ export const OnboardingFlow = ({
           medicalConditionDetails: formData.medicalConditionDetails,
           isExperiencedAthlete: formData.isExperiencedAthlete,
           onboardingCompleted: true,
+          programResetAt: Date.now(),
         });
       }
       localStorage.removeItem('volt_onboarding_step');
@@ -433,7 +435,7 @@ export const OnboardingFlow = ({
                 </button>
                 <div className="flex-1 space-y-1">
                   <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight text-white">{t('onboarding.title')}</h2>
-                  <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">{t('onboarding.step2')}</p>
+                  <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">{t('onboarding.step1')}</p>
                 </div>
               </div>
 
@@ -621,7 +623,7 @@ export const OnboardingFlow = ({
                 </button>
                 <div className="space-y-1">
                   <h2 className="font-headline text-3xl font-black uppercase tracking-tight text-white">{t('onboarding.title')}</h2>
-                  <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">{t('onboarding.step3')}</p>
+                  <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">{t('onboarding.step2')}</p>
                 </div>
               </div>
 
@@ -813,7 +815,7 @@ export const OnboardingFlow = ({
                 </button>
                 <div className="space-y-1">
                   <h2 className="font-headline text-3xl font-black uppercase tracking-tight text-white">{t('onboarding.title')}</h2>
-                  <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">{t('onboarding.step4')}</p>
+                  <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">{t('onboarding.step3')}</p>
                 </div>
               </div>
 
@@ -971,7 +973,7 @@ export const OnboardingFlow = ({
                 </button>
                 <div className="space-y-1">
                   <h2 className="font-headline text-3xl font-black uppercase tracking-tight text-white">Environment & Experience</h2>
-                  <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">ADVANCED OBJECTIVES SETUP</p>
+                  <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">{t('onboarding.step4')}</p>
                 </div>
               </div>
 

@@ -117,7 +117,7 @@ export const ActiveRecoveryWidget = () => {
   const resetStack = () => setCurrentIndex(0);
 
   return (
-    <div className="w-full glass-panel px-4 py-6 md:p-8 flex flex-col relative group/module overflow-hidden h-full">
+    <div className="w-full glass-panel px-4 py-6 md:p-8 flex flex-col relative group/module overflow-hidden h-full vanguard-tour-active-recovery">
       <div className="absolute inset-0 opacity-[0.03] pointer-events-none group-hover/module:opacity-[0.05] transition-opacity duration-700"
         style={{ backgroundImage: 'radial-gradient(var(--primary-color) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
       <div className="flex items-center justify-between relative z-10 mb-6">

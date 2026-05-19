@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
 import { cn } from '../lib/utils';
+import { ACTIVITY_LIBRARY } from '../data/activityLibrary';
 import { useWorkout, WorkoutSession, ActiveRecovery, Exercise } from '../contexts/WorkoutContext';
 import { BlockType } from '../constants/periodization';
 import { ConfirmationModal } from './ConfirmationModal';
@@ -62,10 +63,40 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
   const [minRpe, setMinRpe] = useState<number>(0);
   const [focusFilter, setFocusFilter] = useState<string>('all');
   const [mounted, setMounted] = useState(false);
+  const detailScrollRef = React.useRef<HTMLDivElement>(null);
+  const listRef = React.useRef<HTMLDivElement>(null);
+  const [detailOffset, setDetailOffset] = useState(0);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (selectedWorkout && detailScrollRef.current) {
+      detailScrollRef.current.scrollTop = 0;
+    }
+  }, [selectedWorkout]);
+
+  // Sync detail widget position with the selected card as the list scrolls
+  useEffect(() => {
+    const list = listRef.current;
+    if (!list || !selectedWorkout) return;
+
+    const syncOffset = () => {
+      const activeCard = list.querySelector(`[data-workout-id="${selectedWorkout.id}"]`) as HTMLElement;
+      if (activeCard) {
+        // Calculate the visual offset relative to the container's top
+        const offset = activeCard.offsetTop - list.scrollTop;
+        setDetailOffset(Math.max(0, offset));
+      }
+    };
+
+    list.addEventListener('scroll', syncOffset);
+    // Initial sync
+    syncOffset();
+    
+    return () => list.removeEventListener('scroll', syncOffset);
+  }, [selectedWorkout]);
 
   React.useEffect(() => {
     if (initialSelectedWorkoutId) {
@@ -262,10 +293,13 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 flex-1 overflow-hidden md:px-0">
         {/* List View */}
-        <div className={cn(
-          "space-y-4 overflow-y-auto custom-scrollbar",
-          selectedWorkout ? "hidden lg:block" : "block"
-        )}>
+        <div 
+          ref={listRef}
+          className={cn(
+            "space-y-4 overflow-y-auto custom-scrollbar relative",
+            selectedWorkout ? "hidden lg:block" : "block"
+          )}
+        >
           {allLogs.length > 0 ? (
             <AnimatePresence mode="popLayout">
               {filteredLogs.map((log, i) => {
@@ -275,10 +309,19 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
                 return (
                   <motion.div
                     key={log.id}
+                    data-workout-id={log.id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.05 }}
-                    onClick={() => setSelectedWorkout(log)}
+                    onClick={(e) => {
+                      setSelectedWorkout(log);
+                      const card = e.currentTarget as HTMLElement;
+                      const list = listRef.current;
+                      if (list) {
+                        const offset = card.offsetTop - list.scrollTop;
+                        setDetailOffset(Math.max(0, offset));
+                      }
+                    }}
                     className={cn(
                       "glass-panel p-4 md:p-8 border-white/5 cursor-pointer group transition-all duration-300",
                       isWorkout ? (selectedWorkout?.id === log.id ? "border-volt/50 bg-volt/5" : "hover:bg-white/5")
@@ -310,16 +353,34 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
                           </div>
                         ) : (
                           <span className="text-[8px] font-black uppercase tracking-widest px-2 py-1 bg-zinc-800 text-zinc-400 border-none">
-                            {t('analysis.tacticalRecovery')}
+                            {(() => {
+                              const act = ACTIVITY_LIBRARY.find(a => a.id === log.activityId);
+                              if (act) {
+                                return t(`analysis.${act.category.toLowerCase()}`) || act.category;
+                              }
+                              return t('analysis.nonProgramRecovery');
+                            })()}
                           </span>
                         )}
                       </div>
                       <div className="flex flex-col items-end gap-2">
-
-                        <div className="flex items-center gap-2">
-                          <div className="flex items-center gap-1 text-zinc-600">
-
-                          </div>
+                        <div className="flex items-center gap-3">
+                          {isWorkout && (
+                            <div className="flex gap-3 mr-1">
+                              {log.rpe !== undefined && (
+                                <div className="flex flex-col items-start">
+                                  <span className="text-[6px] font-black uppercase tracking-widest text-zinc-600">Avg</span>
+                                  <span className="text-[10px] font-black text-white">{(log.rpe || 0).toFixed(1)}</span>
+                                </div>
+                              )}
+                              {log.actualRpe !== undefined && (
+                                <div className="flex flex-col items-start">
+                                  <span className="text-[6px] font-black uppercase tracking-widest text-zinc-600">Actual</span>
+                                  <span className="text-[10px] font-black text-white">{(log.actualRpe || 0).toFixed(1)}</span>
+                                </div>
+                              )}
+                            </div>
+                          )}
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -385,10 +446,16 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
         </div>
 
         {/* Detail View */}
-        <div className={cn(
-          "h-full",
-          selectedWorkout ? "block" : "hidden lg:block"
-        )}>
+        <div 
+          className={cn(
+            "h-fit",
+            selectedWorkout ? "block" : "hidden lg:block"
+          )}
+          style={{ 
+            marginTop: typeof window !== 'undefined' && window.innerWidth >= 1024 ? detailOffset : 0,
+            minHeight: '400px'
+          }}
+        >
           {allLogs.length > 0 ? (
             <AnimatePresence mode="wait">
               {selectedWorkout ? (
@@ -462,27 +529,9 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
-                    <div className="bg-void/40 p-3 md:p-4 border border-white/5">
-                      <span className="block text-[7px] md:text-[8px] font-black uppercase tracking-widest text-zinc-600 mb-1">
-                        {selectedWorkout.logType === 'workout' ? t('analytics.volume') : t('analysis.missionType').toUpperCase()}
-                      </span>
-                      <span className="text-xs md:text-sm font-bold">
-                        {selectedWorkout.logType === 'workout' ? selectedWorkout.volume : t('analysis.nonProgramRecovery')}
-                      </span>
-                    </div>
-                    <div className="bg-void/40 p-3 md:p-4 border border-white/5">
-                      <span className="block text-[7px] md:text-[8px] font-black uppercase tracking-widest text-zinc-600 mb-1">{t('analysis.duration')}</span>
-                      <span className="text-xs md:text-sm font-bold">
-                        {selectedWorkout.logType === 'workout' ? selectedWorkout.duration : `${selectedWorkout.durationMinutes}m`}
-                      </span>
-                    </div>
-                    <div className="bg-void/40 p-3 md:p-4 border border-white/5 col-span-2 md:col-span-1">
-                      <span className="block text-[7px] md:text-[8px] font-black uppercase tracking-widest text-zinc-600 mb-1">{t('analysis.avgRpe')}</span>
-                      <span className="text-xs md:text-sm font-bold">{(selectedWorkout.rpe || 0).toFixed(1)}</span>
-                    </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
                     {selectedWorkout.logType === 'workout' && (selectedWorkout.blockLabel || selectedWorkout.blockType) ? (
-                      <div className="col-span-2 md:col-span-3 bg-volt/5 p-3 md:p-4 border-none flex justify-between items-center">
+                      <div className="col-span-2 md:col-span-4 bg-volt/5 p-3 md:p-4 border-none flex justify-between items-center">
                         <div>
                           <span className="block text-[7px] md:text-[8px] font-black uppercase tracking-widest text-volt/60 mb-1">{t('analysis.periodizationBlock')}</span>
                           <span className="text-xs md:text-sm font-black text-volt uppercase">{selectedWorkout.blockLabel || selectedWorkout.blockType}</span>
@@ -493,10 +542,15 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
                         </div>
                       </div>
                     ) : selectedWorkout.logType === 'recovery' ? (
-                      <div className="col-span-2 md:col-span-3 bg-zinc-500/10 p-3 md:p-4 border-none flex justify-between items-center">
+                      <div className="col-span-2 md:col-span-4 bg-zinc-500/10 p-3 md:p-4 border-none flex justify-between items-center">
                         <div>
                           <span className="block text-[7px] md:text-[8px] font-black uppercase tracking-widest text-zinc-500 mb-1">{t('analysis.missionType')}</span>
-                          <span className="text-xs md:text-sm font-black text-zinc-400 uppercase">{t('analysis.nonProgramRecovery')}</span>
+                          <span className="text-xs md:text-sm font-black text-zinc-400 uppercase">
+                            {(() => {
+                              const act = ACTIVITY_LIBRARY.find(a => a.id === selectedWorkout.activityId);
+                              return act ? t(`analysis.${act.category.toLowerCase()}`) || act.category : t('analysis.nonProgramRecovery');
+                            })()}
+                          </span>
                         </div>
                         <div className="text-right">
                           <span className="block text-[7px] md:text-[8px] font-black uppercase tracking-widest text-zinc-500 mb-1">{t('analysis.impactScore')}</span>
@@ -504,9 +558,37 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
                         </div>
                       </div>
                     ) : null}
+
+                    <div className="bg-void/40 p-3 md:p-4 border border-white/5">
+                      <span className="block text-[7px] md:text-[8px] font-black uppercase tracking-widest text-zinc-600 mb-1">
+                        {selectedWorkout.logType === 'workout' ? t('analytics.volume') : t('analysis.missionType').toUpperCase()}
+                      </span>
+                      <span className="text-xs md:text-sm font-bold">
+                        {selectedWorkout.logType === 'workout' ? selectedWorkout.volume : (() => {
+                          const act = ACTIVITY_LIBRARY.find(a => a.id === selectedWorkout.activityId);
+                          return act ? t(`analysis.${act.category.toLowerCase()}`) || act.category : t('analysis.nonProgramRecovery');
+                        })()}
+                      </span>
+                    </div>
+                    <div className="bg-void/40 p-3 md:p-4 border border-white/5">
+                      <span className="block text-[7px] md:text-[8px] font-black uppercase tracking-widest text-zinc-600 mb-1">{t('analysis.duration')}</span>
+                      <span className="text-xs md:text-sm font-bold">
+                        {selectedWorkout.logType === 'workout' ? selectedWorkout.duration : `${selectedWorkout.durationMinutes}m`}
+                      </span>
+                    </div>
+                    <div className="bg-void/40 p-3 md:p-4 border border-white/5">
+                      <span className="block text-[7px] md:text-[8px] font-black uppercase tracking-widest text-zinc-600 mb-1">{t('analysis.avgRpe')}</span>
+                      <span className="text-xs md:text-sm font-bold">{(selectedWorkout.rpe || 0).toFixed(1)}</span>
+                    </div>
+                    {selectedWorkout.logType === 'workout' && selectedWorkout.actualRpe !== undefined && (
+                      <div className="bg-void/40 p-3 md:p-4 border border-white/5">
+                        <span className="block text-[7px] md:text-[8px] font-black uppercase tracking-widest text-zinc-600 mb-1">{t('workout.actual')} RPE</span>
+                        <span className="text-xs md:text-sm font-bold">{(selectedWorkout.actualRpe || 0).toFixed(1)}</span>
+                      </div>
+                    )}
                   </div>
 
-                  <div className="flex-1 overflow-y-auto custom-scrollbar space-y-6">
+                  <div ref={detailScrollRef} className="flex-1 overflow-y-auto custom-scrollbar space-y-6">
                     {selectedWorkout.logType === 'workout' ? (
                       <div className="space-y-4">
                         <div className="flex items-center gap-2 text-zinc-400">

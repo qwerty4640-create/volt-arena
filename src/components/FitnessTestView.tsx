@@ -59,13 +59,14 @@ const CHECKLIST_ITEMS = [
 import { getFitnessTestInfo } from '../utils/fitnessTestUtils';
 
 export const FitnessTestView = ({ immersionMode = 'immersive', isVoiceActive = false, lastVoiceCommand, onReadyChange }: StageViewProps) => {
-  const { t, profile } = useSettings();
-  const { isUnlocked, daysRemaining, testLabel, testType } = getFitnessTestInfo(profile);
+  const { t, profile, updateProfile } = useSettings();
+  const { isUnlocked, daysRemaining, testLabel, testType, isFinalTest } = getFitnessTestInfo(profile);
   
   const [isReady, setIsReady] = useState(false);
   const [hasEntered, setHasEntered] = useState(false);
   const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
+  const [isPostponeModalOpen, setIsPostponeModalOpen] = useState(false);
   const [setupStep, setSetupStep] = useState<1 | 2 | 3>(1);
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
   const [selectedStage, setSelectedStage] = useState<StageType>('arnold');
@@ -539,10 +540,38 @@ export const FitnessTestView = ({ immersionMode = 'immersive', isVoiceActive = f
       </div>
 
       {/* Bottom Content: Navigation and Action */}
-      <div className="flex items-end justify-between mt-12">
+      <div className="flex items-end justify-between mt-12 pointer-events-auto">
         <div className="flex-1" />
-        <div className="flex-1 flex justify-center" />
-        <div className="flex-1 flex justify-end" />
+        <div className="flex-1 flex justify-center">
+        </div>
+        <div className="flex-1 flex justify-end">
+          <button
+            onClick={() => {
+              // Extract new PRs if applicable
+              const squatTarget = testTargets.find(t => t.name.toLowerCase().includes('squat'));
+              const benchTarget = testTargets.find(t => t.name.toLowerCase().includes('bench'));
+              const deadliftTarget = testTargets.find(t => t.name.toLowerCase().includes('deadlift'));
+
+              updateProfile({
+                pendingFitnessTest: false,
+                devOverrideFitnessTest: false,
+                lastFitnessTestAt: Date.now(),
+                ...(isFinalTest && { programResetAt: Date.now() }), // Only restart timeline if it is the final test
+                ...(squatTarget && { squat1RM: squatTarget.target }),
+                ...(benchTarget && { bench1RM: benchTarget.target }),
+                ...(deadliftTarget && { deadlift1RM: deadliftTarget.target }),
+              });
+              setIsReady(false);
+              setSetupStep(1);
+              setCheckedItems([]);
+              setHasEntered(false);
+            }}
+            className="px-6 py-4 btn-primary font-headline text-xs font-black uppercase tracking-widest flex items-center gap-2 group"
+          >
+            <span>SUBMIT RESULTS</span>
+            <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -591,12 +620,47 @@ export const FitnessTestView = ({ immersionMode = 'immersive', isVoiceActive = f
           </div>
           
           {isUnlocked ? (
-            <button
-              onClick={() => setHasEntered(true)}
-              className="w-full py-4 btn-primary font-headline text-xs font-black uppercase tracking-widest"
-            >
-              Enter Test
-            </button>
+            <div className="flex flex-col gap-6 w-full mt-2">
+              <div className="w-full bg-white/5 p-5 border border-volt/20 relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-2 opacity-5 translate-x-2 -translate-y-2 group-hover:translate-x-0 group-hover:translate-y-0 transition-transform duration-500">
+                  <Trophy size={48} className="text-volt" />
+                </div>
+                <span className="font-sans text-[10px] uppercase font-black text-volt tracking-[0.2em] block mb-2 underline decoration-volt/30 underline-offset-4">Upcoming Protocol Requirements</span>
+                <span className="font-sans text-base font-black text-white uppercase tracking-wider block">{testLabel}</span>
+
+                {testType === 'big3' && (
+                  <div className="grid grid-cols-3 gap-2 w-full mt-4 border-t border-white/5 pt-4">
+                    <div className="flex flex-col items-center">
+                      <span className="text-[7px] font-bold text-zinc-500 uppercase tracking-widest mb-1">{t('onboarding.movement.squat').split(' ')[0]}</span>
+                      <span className="text-sm font-black text-white">{profile?.squat1RM || 0}<span className="text-[10px] text-zinc-500 ml-0.5">{profile?.unit === 'imperial' ? 'LB' : 'KG'}</span></span>
+                    </div>
+                    <div className="flex flex-col items-center border-x border-white/5">
+                      <span className="text-[7px] font-bold text-zinc-500 uppercase tracking-widest mb-1">{t('onboarding.movement.bench').split(' ')[0]}</span>
+                      <span className="text-sm font-black text-white">{profile?.bench1RM || 0}<span className="text-[10px] text-zinc-500 ml-0.5">{profile?.unit === 'imperial' ? 'LB' : 'KG'}</span></span>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <span className="text-[7px] font-bold text-zinc-500 uppercase tracking-widest mb-1">{t('onboarding.movement.deadlift').split(' ')[0]}</span>
+                      <span className="text-sm font-black text-white">{profile?.deadlift1RM || 0}<span className="text-[10px] text-zinc-500 ml-0.5">{profile?.unit === 'imperial' ? 'LB' : 'KG'}</span></span>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex flex-col sm:flex-row gap-3 w-full">
+                <button
+                  onClick={() => setHasEntered(true)}
+                  className="flex-1 py-4 btn-primary font-headline text-xs font-black uppercase tracking-widest"
+                >
+                  Enter Test
+                </button>
+                <button
+                  onClick={() => setIsPostponeModalOpen(true)}
+                  className="flex-1 py-4 btn-secondary font-headline text-[10px] sm:text-xs font-bold uppercase tracking-widest border border-white/10"
+                >
+                  Postpone Due to Fatigue/Injury
+                </button>
+              </div>
+            </div>
           ) : (
             <>
               <div className="w-full bg-white/5 p-4 mt-2">
@@ -829,6 +893,55 @@ export const FitnessTestView = ({ immersionMode = 'immersive', isVoiceActive = f
                     className="w-full py-5 border border-white/10 text-zinc-500 font-sans text-sm font-bold uppercase tracking-widest hover:bg-white/5 transition-all"
                   >
                     {t('stage.cancel')}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+          </Portal>
+        )}
+
+        {isPostponeModalOpen && (
+          <Portal>
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-void/90 backdrop-blur-md" onClick={() => setIsPostponeModalOpen(false)} />
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="relative w-full max-w-sm glass-panel border-white/10 shadow-2xl p-6"
+            >
+              <div className="flex flex-col items-center text-center gap-6">
+                <div className="w-16 h-16 bg-volt/10 text-volt flex items-center justify-center rounded-sm">
+                  <Activity size={32} />
+                </div>
+                
+                <div>
+                  <h3 className="font-sans text-xl font-black uppercase tracking-widest text-white mb-2">
+                    Postpone Evaluation?
+                  </h3>
+                  <p className="text-zinc-400 text-sm font-medium leading-relaxed">
+                    Completing this evaluation is required to accurately calibrate your next training cycle and ensure optimal progression.
+                    <br/><br/>
+                    Are you sure you want to bypass this test due to injury or severe fatigue? Your baseline 1RMs will remain stale.
+                  </p>
+                </div>
+
+                <div className="w-full space-y-3">
+                  <button
+                    onClick={() => {
+                      updateProfile({ lastFitnessTestAt: Date.now(), pendingFitnessTest: false, devOverrideFitnessTest: false });
+                      setIsPostponeModalOpen(false);
+                    }}
+                    className="w-full py-5 bg-white text-void font-sans text-sm font-black uppercase tracking-widest transition-all shadow-lg"
+                  >
+                    Bypass Evaluation
+                  </button>
+                  <button
+                    onClick={() => setIsPostponeModalOpen(false)}
+                    className="w-full py-5 border border-white/10 text-zinc-500 font-sans text-sm font-bold uppercase tracking-widest hover:bg-white/5 transition-all"
+                  >
+                    Return to Test
                   </button>
                 </div>
               </div>

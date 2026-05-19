@@ -193,7 +193,7 @@ export const DeploymentView = () => {
                     <div className="lg:col-span-4 space-y-10">
                       {/* Mission Period */}
                       <section className="space-y-4">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 block">Deployment Period</label>
+                        <label className="text-[10px] md:text-xs font-black uppercase tracking-widest text-zinc-500 block">Deployment Period</label>
                         <div className="grid grid-cols-2 gap-2">
                           {(['3M', '6M', '9M', '12M'] as MissionPeriod[]).map((m) => (
                             <button
@@ -226,7 +226,7 @@ export const DeploymentView = () => {
 
                       {/* Training Frequency */}
                       <section className="space-y-4">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 block">Mission Frequency</label>
+                        <label className="text-[10px] md:text-xs font-black uppercase tracking-widest text-zinc-500 block">Mission Frequency</label>
                         <div className="grid grid-cols-5 gap-2">
                           {[3, 4, 5, 6, 7].map((f) => (
                             <button
@@ -249,10 +249,10 @@ export const DeploymentView = () => {
                       <section className="space-y-4">
                         <div className="flex flex-wrap justify-between items-end gap-2 mb-2">
                           <div className="flex items-center gap-2">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Deployment Objectives</label>
+                            <label className="text-[10px] md:text-xs font-black uppercase tracking-widest text-zinc-500">Deployment Objectives</label>
                             <InfoTooltip term="DeploymentObjectives" />
                           </div>
-                          <span className="text-[8px] font-black uppercase tracking-widest text-zinc-600">
+                          <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-zinc-600">
                             {adjustingObjectives.length} / {currentMaxObjectives} SELECTED
                           </span>
                         </div>
@@ -314,13 +314,13 @@ export const DeploymentView = () => {
                     <div className="lg:col-span-8 space-y-6">
                       <div className="space-y-4">
                         <div className="flex flex-col items-start gap-2">
-                          <h3 className="font-sans text-[10px] font-black uppercase tracking-widest text-zinc-500 flex items-center gap-2">
+                          <h3 className="font-sans text-[10px] md:text-xs font-black uppercase tracking-widest text-zinc-500 flex items-center gap-2">
                             Strategic Timeline Designer
                           </h3>
                           <div className="flex items-center gap-4">
                             <button
                               onClick={() => setAdjustingCustomProgramBlocks(getDefaultBlocks(adjustingObjectives, adjustingMissionPeriod))}
-                              className="text-[8px] font-black uppercase tracking-widest text-zinc-500 hover:text-white transition-colors flex items-center gap-1.5"
+                              className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-white transition-colors flex items-center gap-1.5"
                             >
                               <Loader2 size={10} className={loading ? "animate-spin" : ""} />
                               Reset to Default
@@ -342,7 +342,7 @@ export const DeploymentView = () => {
 
                 {/* Modal Footer */}
                 <div className="p-4 md:p-8 border-t border-white/5 bg-void/50">
-                  <div className="flex gap-4 w-full">
+                    <div className="flex gap-4 w-full">
                     <button
                       onClick={() => setIsDeploymentModalOpen(false)}
                       className="flex-1 btn-secondary py-4"
@@ -352,7 +352,7 @@ export const DeploymentView = () => {
                     <button
                       onClick={handleAdjustProtocol}
                       disabled={loading || !hasChanges}
-                      className="flex-2 btn-primary py-4 disabled:opacity-50 flex items-center justify-center gap-2"
+                      className="flex-2 md:flex-1 btn-primary py-4 disabled:opacity-50 flex items-center justify-center gap-2"
                     >
                       {loading ? (
                         <Loader2 className="animate-spin" size={18} />

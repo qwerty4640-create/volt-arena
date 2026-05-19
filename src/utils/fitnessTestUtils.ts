@@ -7,7 +7,17 @@ export interface FitnessTestInfo {
   daysRemaining: number;
   isUnlocked: boolean;
   targetDate: number;
+  isFinalTest: boolean;
 }
+
+const getPhase = (typeStr: string): number => {
+  const t = (typeStr || '').toLowerCase();
+  if (['peaking', 'max effort', 'max_effort', 'overreach', 'competition'].includes(t)) return 5;
+  if (['power', 'explosiveness', 'tactical', 'resiliency', 'vo2 max', 'vo2_max'].includes(t)) return 4;
+  if (['strength', 'pure_strength', 'powerbuilding', 'threshold', 'pure strength'].includes(t)) return 3;
+  if (['hypertrophy', 'aerobic base', 'capacity', 'endurance', 'volume'].includes(t)) return 2;
+  return 1; // foundation, deload, regeneration, prehab
+};
 
 export const getFitnessTestInfo = (profile: UserProfile | null): FitnessTestInfo => {
   if (!profile) {
@@ -20,69 +30,98 @@ export const getFitnessTestInfo = (profile: UserProfile | null): FitnessTestInfo
     };
   }
 
-  // 1. Calculate program end date
-  const resetTime = profile.programResetAt || Date.now();
-  let totalWeeks = 0;
+  const resetTime = profile.programResetAt || profile.createdAt || Date.now();
+  let nextTargetWeeks = 0;
+  let finalBlockTypeStr = (profile.trainingGoal as string) || 'powerbuilding';
+
+  let isFinalTest = false;
 
   if (profile.customProgramBlocks && profile.customProgramBlocks.length > 0) {
-    totalWeeks = profile.customProgramBlocks.reduce((acc, block) => acc + (block.durationWeeks || 0), 0);
+    const blocks = profile.customProgramBlocks;
+    let cumulativeWeeks = 0;
+    const msElapsed = Date.now() - resetTime;
+    const weeksElapsed = msElapsed / (1000 * 60 * 60 * 24 * 7);
+
+    for (let i = 0; i < blocks.length; i++) {
+      cumulativeWeeks += (blocks[i].durationWeeks || 0);
+      const currentPhase = getPhase(blocks[i].type);
+      const isLast = i === blocks.length - 1;
+      const nextPhase = isLast ? 0 : getPhase(blocks[i + 1].type);
+
+      // Trigger condition: end of program OR (Peak -> Base transition)
+      let trigger = false;
+      if (isLast) {
+        trigger = true;
+      } else if (currentPhase >= 3 && nextPhase === 2) {
+        // Immediate drop to volume without deload
+        trigger = true; 
+      } else if (currentPhase === 1 && nextPhase === 2) {
+        // We are on a deload/regeneration block dropping into volume.
+        // It's possible we just peaked. Test at the end of this deload block.
+        trigger = true;
+      } else if (currentPhase >= 3 && nextPhase === 1) {
+        const afterDeloadPhase = i + 2 < blocks.length ? getPhase(blocks[i + 2].type) : 0;
+        if (afterDeloadPhase === 2 || afterDeloadPhase === 1) {
+           // We'll test after the upcoming deload block instead of now.
+        } else {
+           // Just keep looking
+        }
+      }
+
+      if (trigger) {
+        const potentialTargetDate = resetTime + cumulativeWeeks * 7 * 24 * 60 * 60 * 1000;
+        if (profile.lastFitnessTestAt && profile.lastFitnessTestAt > potentialTargetDate - (7 * 24 * 60 * 60 * 1000)) {
+           continue; 
+        }
+
+        if (cumulativeWeeks >= weeksElapsed || isLast) {
+           nextTargetWeeks = cumulativeWeeks;
+           finalBlockTypeStr = blocks[i].type;
+           isFinalTest = isLast;
+           break;
+        }
+      }
+    }
+    
+    if (nextTargetWeeks === 0) {
+      nextTargetWeeks = cumulativeWeeks;
+      finalBlockTypeStr = blocks[blocks.length - 1].type;
+      isFinalTest = true;
+    }
+
   } else {
-    totalWeeks = (profile.trainingDurationMonths || 3) * 4;
+    nextTargetWeeks = (profile.trainingDurationMonths || 3) * 4;
+    isFinalTest = true;
   }
 
-  const targetDate = resetTime + totalWeeks * 7 * 24 * 60 * 60 * 1000;
+  const targetDate = resetTime + nextTargetWeeks * 7 * 24 * 60 * 60 * 1000;
   const msRemaining = targetDate - Date.now();
   const daysRemaining = Math.max(0, Math.ceil(msRemaining / (1000 * 60 * 60 * 24)));
-  const isUnlocked = profile.devOverrideFitnessTest || daysRemaining <= 0;
+  const isUnlocked = profile.devOverrideFitnessTest || profile.pendingFitnessTest || daysRemaining <= 0;
 
-  // 2. Determine Test Type
-  // Find the last block type in custom program, or use the primary training goal.
-  let finalBlockTypeStr: string = (profile.trainingGoal as string) || 'powerbuilding';
-  
-  if (profile.customProgramBlocks && profile.customProgramBlocks.length > 0) {
-    const lastBlock = profile.customProgramBlocks[profile.customProgramBlocks.length - 1];
-    if (lastBlock && lastBlock.type) {
-      finalBlockTypeStr = lastBlock.type;
-    }
-  }
-
-  // Determine actual test type based on the rules
   let testType = 'none';
   let testLabel = 'No Test Requirement';
-
   const type = finalBlockTypeStr.toLowerCase();
   
-  // Powerbuilding / Pure Strength / Hypertrophy / Peaking -> Big 3 1RM
   if (['powerbuilding', 'pure_strength', 'strength', 'hypertrophy', 'peaking', 'competition', 'max_effort'].includes(type)) {
     testType = 'big3';
     testLabel = '1RM Big 3 (Squat, Bench, Deadlift)';
-  } 
-  // Endurance / Capacity / Aerobic Base -> Max Output / Pacing / VO2 Estimation
-  else if (['endurance', 'capacity', 'aerobic base', 'threshold', 'vo2_max', 'vo2 max'].includes(type) || type === BlockType.AEROBIC_BASE || type === BlockType.THRESHOLD || type === BlockType.VO2_MAX) {
+  } else if (['endurance', 'capacity', 'aerobic base', 'threshold', 'vo2_max', 'vo2 max'].includes(type) || type === BlockType.AEROBIC_BASE || type === BlockType.THRESHOLD || type === BlockType.VO2_MAX) {
     testType = 'endurance';
     testLabel = 'Pacing / VO2 Max Estimation';
-  }
-  // Tactical / Resiliency -> All-Rounded capability and conditioning challenge
-  else if (['tactical', 'resiliency'].includes(type)) {
+  } else if (['tactical', 'resiliency'].includes(type)) {
     testType = 'tactical';
     testLabel = 'All-Rounded Tactical / Resiliency ACFT';
-  }
-  // Longevity / Foundation -> Functional mobility and low-intensity baseline tests
-  else if (['longevity', 'foundation'].includes(type)) {
+  } else if (['longevity', 'foundation'].includes(type)) {
     testType = 'longevity';
     testLabel = 'Functional Mobility Baseline';
-  }
-  // Explosiveness / Power -> Explosive output and velocity testing
-  else if (['explosiveness', 'power'].includes(type)) {
+  } else if (['explosiveness', 'power'].includes(type)) {
     testType = 'explosiveness';
     testLabel = 'Explosive Output / Velocity';
-  }
-  // Prehab / Retention / Deload / Regeneration -> No test required
-  else if (['prehab', 'retention', 'deload', 'regeneration'].includes(type)) {
+  } else if (['prehab', 'retention', 'deload', 'regeneration'].includes(type)) {
     testType = 'none';
     testLabel = 'No test required for recovery/retention protocols.';
   } else {
-    // Default fallback
     testType = 'big3';
     testLabel = '1RM Baseline Evaluation';
   }
@@ -90,8 +129,9 @@ export const getFitnessTestInfo = (profile: UserProfile | null): FitnessTestInfo
   return {
     testType,
     testLabel,
-    daysRemaining,
+    daysRemaining: profile.pendingFitnessTest ? 0 : daysRemaining,
     isUnlocked,
-    targetDate
+    targetDate,
+    isFinalTest
   };
 };

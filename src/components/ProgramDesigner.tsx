@@ -363,14 +363,14 @@ export const ProgramDesigner: React.FC<ProgramDesignerProps> = ({
       {/* 1. Visual Intensity Graph */}
       <div className="glass-panel h-48 relative overflow-hidden bg-void pt-10">
         <div className="absolute top-4 left-6 flex items-center gap-2">
-          <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-500">INTENSITY CURVE</h4>
+          <h4 className="text-[10px] md:text-xs font-black uppercase tracking-widest text-zinc-500">INTENSITY CURVE</h4>
           <div className="inline-flex items-center justify-center w-4 h-4 border border-volt/40">
             <span className="text-[8px] font-black text-volt transform translate-y-[0.5px]">i</span>
           </div>
         </div>
         
         <div className="absolute top-4 right-6">
-          <h4 className="text-[10px] font-black uppercase tracking-widest text-volt">{totalWeeks}-WEEK CYCLE</h4>
+          <h4 className="text-[10px] md:text-xs font-black uppercase tracking-widest text-volt">{totalWeeks}-WEEK CYCLE</h4>
         </div>
 
         <ResponsiveContainer width="100%" height="100%">
@@ -433,8 +433,8 @@ export const ProgramDesigner: React.FC<ProgramDesignerProps> = ({
       {/* 2. Drag and Drop Timeline */}
       <div className="space-y-2">
         <div className="flex flex-col items-start gap-1">
-          <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-500">PROGRAM TIMELINE</h4>
-          {blocks.length > 0 && <span className="text-[10px] font-medium text-white/50">Drag and drop to rearrange blocks.</span>}
+          <h4 className="text-[10px] md:text-xs font-black uppercase tracking-widest text-zinc-500">PROGRAM TIMELINE</h4>
+          {blocks.length > 0 && <span className="text-[10px] md:text-xs font-medium text-white/50">Drag and drop to rearrange blocks.</span>}
         </div>
 
         <div className="bg-void/50 border border-white/5 p-4 min-h-[160px] flex items-center overflow-x-auto custom-scrollbar">
@@ -474,8 +474,8 @@ export const ProgramDesigner: React.FC<ProgramDesignerProps> = ({
         {/* 3. Available Blocks Palette */}
         <div className="space-y-4 lg:col-span-3">
           <div className="flex flex-col items-start gap-1">
-            <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-500">BLOCK PALETTE</h4>
-            <span className="text-[10px] font-medium text-zinc-500">Click to append blocks.</span>
+            <h4 className="text-[10px] md:text-xs font-black uppercase tracking-widest text-zinc-500">BLOCK PALETTE</h4>
+            <span className="text-[10px] md:text-xs font-medium text-zinc-500">Click to append blocks.</span>
           </div>
           <div className="flex flex-wrap gap-2">
             {AVAILABLE_BLOCKS.map((block) => (
@@ -594,8 +594,8 @@ export const ProgramDesigner: React.FC<ProgramDesignerProps> = ({
             <CheckCircle2 size={24} />
           </div>
           <div>
-            <p className="text-sm font-black uppercase text-[#06d6a0]">SEQUENCE INTEGRITY: OPTIMAL</p>
-            <p className="text-[10px] font-medium text-zinc-500 mt-1 leading-relaxed max-w-lg">
+            <p className="text-sm md:text-base font-black uppercase text-[#06d6a0]">SEQUENCE INTEGRITY: OPTIMAL</p>
+            <p className="text-[10px] md:text-sm font-medium text-zinc-500 mt-1 leading-relaxed max-w-lg">
               Vanguard has verified your phase redistribution. Periodization logic adheres to standard force production models.
             </p>
           </div>
