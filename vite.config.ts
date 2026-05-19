@@ -11,14 +11,11 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      injectRegister: null,
-      manifest: false, // use the existing public/manifest.json
+      includeAssets: ['**/*'],
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
         cleanupOutdatedCaches: true,
         skipWaiting: true,
         clientsClaim: true,
-        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
       },
     }),
   ],
