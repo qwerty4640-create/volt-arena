@@ -336,7 +336,7 @@ export const ReadinessCheck = ({ onComplete, onCancel }: ReadinessCheckProps) =>
                       <span className="text-xl font-black text-volt">{Math.round(calibration.readinessModifier * 100)}%</span>
                     </div>
                     <div className="p-3 bg-white/5 flex flex-col gap-1">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Target RPE</span>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">sRPE Ceiling</span>
                       <span className="text-xl font-black text-volt">{baselineRecommendedRpe}</span>
                     </div>
                   </div>

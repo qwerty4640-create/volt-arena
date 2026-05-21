@@ -114,13 +114,13 @@ export const MovementExclusionModal: React.FC<MovementExclusionModalProps> = ({
                       {getExerciseName(mvmt, t)}
                     </span>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-[7px] text-zinc-600 font-bold uppercase tracking-widest">
+                      <span className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest">
                         {mvmt.category}
                       </span>
                       {mvmt.pattern && (
                         <>
                           <div className="w-0.5 h-0.5 rounded-full bg-zinc-800" />
-                          <span className="text-[7px] text-volt/40 font-bold uppercase tracking-widest">
+                          <span className="text-[10px] text-volt/40 font-bold uppercase tracking-widest">
                             {mvmt.pattern.replace('_', ' ')}
                           </span>
                         </>

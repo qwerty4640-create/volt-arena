@@ -40,7 +40,7 @@ export const InfoTooltip = ({ term, className }: InfoTooltipProps) => {
             "w-4 h-4 flex items-center justify-center rounded-full border border-volt/30 text-volt hover:bg-volt hover:text-void transition-all duration-300"
           )}
         >
-          <span className="text-[9px] font-black">i</span>
+          <span className="text-[10px] font-black">i</span>
         </button>
       </div>
 

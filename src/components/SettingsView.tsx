@@ -5,7 +5,6 @@ import { cn } from '../lib/utils';
 import { useSettings, TrainingGoal, getLockedSchemes } from '../contexts/SettingsContext';
 import { useWorkout } from '../contexts/WorkoutContext';
 import { ConfirmationModal } from './ConfirmationModal';
-import { FieldManual } from './FieldManual';
 import { InfoTooltip } from './InfoTooltip';
 
 const LANGUAGES = [
@@ -38,7 +37,6 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
     mockWorkoutCount, setMockWorkoutCount, history, resetProgress, resetProgram,
     debugForceCritical, setDebugForceCritical
   } = useWorkout();
-  const [showFieldManual, setShowFieldManual] = React.useState(false);
   const [isResetting, setIsResetting] = React.useState(false);
   const [showResetConfirm, setShowResetConfirm] = React.useState(false);
   const [showResetProgramConfirm, setShowResetProgramConfirm] = React.useState(false);
@@ -81,7 +79,6 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
 
   return (
     <div className="w-full max-w-7xl space-y-6 md:space-y-8 pb-20 pt-8">
-      <FieldManual isOpen={showFieldManual} onClose={() => setShowFieldManual(false)} />
 
       {/* Profile Section Trigger */}
       {onNavigateToProfile && (
@@ -89,11 +86,11 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
           initial={{ y: -10, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.05 }}
-          className="relative overflow-hidden bg-zinc-900/40"
+          className="relative overflow-hidden glass-panel"
         >
           <button
             onClick={onNavigateToProfile}
-            className="glass-panel w-full px-4 py-4 md:p-8 flex items-center justify-between hover:bg-volt/[0.06] transition-all group active:scale-[0.995] vanguard-tour-profile"
+            className="w-full px-4 py-4 md:p-8 flex items-center justify-between hover:bg-volt/[0.06] transition-all group active:scale-[0.995] vanguard-tour-profile"
           >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-volt/10 flex items-center justify-center border border-volt/20 group-hover:border-volt/50 transition-colors overflow-hidden">
@@ -119,35 +116,6 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
           </button>
         </motion.div>
       )}
-
-      {/* Tactical Field Manual Trigger */}
-      <motion.div
-        initial={{ y: -10, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.08 }}
-        className="relative overflow-hidden bg-zinc-900/40"
-      >
-        <button
-          onClick={() => setShowFieldManual(true)}
-          className="glass-panel w-full px-4 py-4 md:p-8 flex items-center justify-between hover:bg-volt/[0.06] transition-all group active:scale-[0.995] vanguard-tour-field-manual"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-volt/10 flex items-center justify-center border border-volt/20 group-hover:border-volt/50 transition-colors">
-              <Book size={20} className="text-volt" />
-            </div>
-            <div className="text-left">
-              <h3 className="font-sans text-xl font-black uppercase tracking-tight text-white group-hover:text-volt transition-colors">
-                Tactical Field Manual
-              </h3>
-              <p className="text-xs text-zinc-500 font-medium mt-1">Access combat guidelines and operational procedures.</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 text-zinc-500 group-hover:text-volt transition-colors">
-            <span className="text-[10px] font-black uppercase tracking-widest hidden sm:block">Open Manual</span>
-            <ChevronRight size={24} className="text-volt group-hover:scale-110 transition-transform" />
-          </div>
-        </button>
-      </motion.div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Theme Settings */}
@@ -247,7 +215,7 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
                           <div className="flex flex-col items-start">
                             <span className="font-headline text-xs font-black uppercase tracking-widest">{item.label}</span>
                             {isLocked && (
-                              <span className="text-[8px] font-bold text-zinc-600 uppercase tracking-[0.2em] mt-0.5">
+                              <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-[0.2em] mt-0.5">
                                 Locked: Tier {item.minTier}
                               </span>
                             )}
@@ -424,13 +392,34 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
                 {t('settings.resetProgramDesc')}
               </p>
             </div>
-            <button
-              onClick={() => setShowResetProgramConfirm(true)}
-              className="w-full flex items-center justify-center gap-2 px-6 py-4 btn-destructive font-headline text-[10px] font-black uppercase tracking-widest transition-all rounded"
-            >
-              <RotateCcw size={14} />
-              <span>{t('settings.resetProgramBtn')}</span>
-            </button>
+            <div className="flex flex-col gap-2 w-full mt-auto">
+              <button
+                onClick={() => setShowResetProgramConfirm(true)}
+                className="w-full flex items-center justify-center gap-2 px-6 py-4 btn-destructive font-headline text-[10px] font-black uppercase tracking-widest transition-all rounded-none"
+              >
+                <RotateCcw size={14} />
+                <span>{t('settings.resetProgramBtn')}</span>
+              </button>
+              {((profile?.programResetAt || 0) > 0) ? (
+                <button
+                  onClick={async () => {
+                     await updateProfile({ programResetAt: 0, trainingWeekOffset: 0 });
+                  }}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-700 font-headline text-[10px] font-black uppercase tracking-widest transition-all rounded-none"
+                >
+                  <RotateCcw size={14} />
+                  <span>Restore Program Progress</span>
+                </button>
+              ) : (
+                <button
+                  disabled
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white/5 text-zinc-600 font-headline text-[10px] font-black uppercase tracking-widest transition-all rounded-none cursor-not-allowed border border-white/5"
+                >
+                  <RotateCcw size={14} className="opacity-30" />
+                  <span>No Reset History</span>
+                </button>
+              )}
+            </div>
           </div>
         </motion.div>
 
@@ -450,7 +439,7 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <p className="text-white text-xs font-black uppercase tracking-widest">Interface Induction</p>
-                <p className="text-zinc-500 text-[8px] font-medium uppercase tracking-widest mt-1">
+                <p className="text-zinc-500 text-[10px] font-medium uppercase tracking-widest mt-1">
                   Restart the on-screen instruction protocol for current system modules.
                 </p>
               </div>
@@ -466,7 +455,7 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
           <div className="pt-6 border-t border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 vanguard-tour-account-mission">
               <div>
                 <p className="text-white text-xs font-black uppercase tracking-widest">{t('settings.accountSession')}</p>
-                <p className="text-zinc-500 text-[8px] font-medium uppercase tracking-widest mt-1">
+                <p className="text-zinc-500 text-[10px] font-medium uppercase tracking-widest mt-1">
                   {t('settings.accountSessionDesc')}
                 </p>
               </div>
@@ -501,7 +490,7 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
                 <p className="text-zinc-400 text-[10px] font-black uppercase tracking-widest">{t('settings.manualLevel')}</p>
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-volt shadow-[0_0_10px_var(--primary-glow)]" />
-                  <span className="text-[8px] font-black uppercase tracking-widest text-volt">{t('settings.themeSync')}</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-volt">{t('settings.themeSync')}</span>
                 </div>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
@@ -523,7 +512,7 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
                         : "bg-surface-variant text-zinc-400 hover:bg-white/5 hover:text-zinc-200"
                     )}
                   >
-                    <span className={cn("text-[8px]", tier.color)}>●</span>
+                    <span className={cn("text-[10px]", tier.color)}>●</span>
                     {tier.label}
                   </button>
                 ))}
@@ -534,7 +523,7 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
               <p className="text-volt text-[10px] font-black uppercase tracking-widest">
                 {t('settings.effectiveCount')}: <span className="text-white ml-2">{currentCount}</span>
               </p>
-              <p className="text-zinc-500 text-[8px] font-medium uppercase tracking-widest mt-1">
+              <p className="text-zinc-500 text-[10px] font-medium uppercase tracking-widest mt-1">
                 {mockWorkoutCount !== null ? t('settings.usingManual') : t('settings.usingActual')}
               </p>
             </div>
@@ -543,7 +532,7 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <p className="text-crimson text-xs font-black uppercase tracking-widest">SYSTEM OVERLOAD (DEBUG)</p>
-                  <p className="text-zinc-500 text-[8px] font-medium uppercase tracking-widest mt-1">
+                  <p className="text-zinc-500 text-[10px] font-medium uppercase tracking-widest mt-1">
                     Force critical readiness (&lt;20%) to test visual degradation and safety protocols.
                   </p>
                 </div>
@@ -566,7 +555,7 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <p className="text-white text-xs font-black uppercase tracking-widest">Override Fitness Test Lockdown</p>
-                  <p className="text-zinc-500 text-[8px] font-medium uppercase tracking-widest mt-1">
+                  <p className="text-zinc-500 text-[10px] font-medium uppercase tracking-widest mt-1">
                     Bypass the temporal lock on fitness testing protocols for validation.
                   </p>
                 </div>
@@ -589,7 +578,7 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <p className="text-white text-xs font-black uppercase tracking-widest">Force Fitness Test Pending</p>
-                  <p className="text-zinc-500 text-[8px] font-medium uppercase tracking-widest mt-1">
+                  <p className="text-zinc-500 text-[10px] font-medium uppercase tracking-widest mt-1">
                     Directly trigger the "Evaluation Required" state to test lock UI.
                   </p>
                 </div>
@@ -612,7 +601,7 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <p className="text-white text-xs font-black uppercase tracking-widest">{t('settings.experimentalFeatures')}</p>
-                  <p className="text-zinc-500 text-[8px] font-medium uppercase tracking-widest mt-1">
+                  <p className="text-zinc-500 text-[10px] font-medium uppercase tracking-widest mt-1">
                     {t('settings.experimentalFeaturesDesc')}
                   </p>
                 </div>
@@ -635,7 +624,7 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <p className="text-white text-xs font-black uppercase tracking-widest">{t('settings.experimentalMenus')}</p>
-                  <p className="text-zinc-500 text-[8px] font-medium uppercase tracking-widest mt-1">
+                  <p className="text-zinc-500 text-[10px] font-medium uppercase tracking-widest mt-1">
                     {t('settings.experimentalMenusDesc')}
                   </p>
                 </div>
@@ -658,7 +647,7 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <p className="text-crimson text-xs font-black uppercase tracking-widest">{t('settings.resetProgress')}</p>
-                  <p className="text-zinc-500 text-[8px] font-medium uppercase tracking-widest mt-1">
+                  <p className="text-zinc-500 text-[10px] font-medium uppercase tracking-widest mt-1">
                     {t('settings.resetProgressDesc')}
                   </p>
                 </div>

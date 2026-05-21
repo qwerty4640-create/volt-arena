@@ -76,7 +76,7 @@ export const ReflectionModal = ({ session, onSave, onClose }: ReflectionModalPro
                 className="w-full h-2 bg-void appearance-none cursor-pointer accent-volt border border-white/5"
               />
             </div>
-            <div className="flex justify-between text-[8px] font-black text-zinc-600 uppercase tracking-widest">
+            <div className="flex justify-between text-[10px] font-black text-zinc-600 uppercase tracking-widest">
               <span>Easy (1)</span>
               <span>Moderate (5)</span>
               <span>Max Effort (10)</span>

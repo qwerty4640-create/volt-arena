@@ -117,11 +117,15 @@ export const CustomizeDashboardModal = ({ isOpen, onClose, currentWidgets, onSav
   const allWidgets = type === 'dashboard' ? ALL_WIDGETS : ALL_PERFORMANCE_WIDGETS;
 
   const [tempWidgets, setTempWidgets] = useState<(WidgetId | PerformanceWidgetId)[]>(() => {
-    const otherWidgets = allWidgets.map(w => w.id).filter(id => !currentWidgets.includes(id as any));
-    return [...currentWidgets, ...otherWidgets] as (WidgetId | PerformanceWidgetId)[];
+    const validCurrentWidgets = currentWidgets.filter(id => allWidgets.some(w => w.id === id));
+    const otherWidgets = allWidgets.map(w => w.id).filter(id => !validCurrentWidgets.includes(id as any));
+    return [...validCurrentWidgets, ...otherWidgets] as (WidgetId | PerformanceWidgetId)[];
   });
 
-  const [selectedIds, setSelectedIds] = useState<Set<WidgetId | PerformanceWidgetId>>(new Set(currentWidgets));
+  const [selectedIds, setSelectedIds] = useState<Set<WidgetId | PerformanceWidgetId>>(() => {
+    const validCurrentWidgets = currentWidgets.filter(id => allWidgets.some(w => w.id === id));
+    return new Set(validCurrentWidgets);
+  });
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -228,7 +232,7 @@ export const CustomizeDashboardModal = ({ isOpen, onClose, currentWidgets, onSav
                 </button>
                 <button
                   onClick={handleSave}
-                  className="btn-primary flex-2 py-4"
+                  className="btn-primary flex-1 py-4"
                 >
                   <Save size={14} />
                   {t('common.save')}

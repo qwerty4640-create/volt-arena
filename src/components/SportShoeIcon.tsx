@@ -1,7 +1,7 @@
 import React from 'react';
 import { cn } from '../lib/utils';
 
-export const SportShoeIcon = ({ size = 24, strokeWidth = 2, className }: { size?: number, strokeWidth?: number, className?: string }) => (
+export const SportShoeIcon = ({ size = 24, strokeWidth = 2, className }: any) => (
   <svg 
     xmlns="http://www.w3.org/2000/svg" 
     width={size} 

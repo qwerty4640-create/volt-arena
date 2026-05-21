@@ -24,13 +24,13 @@ import {
 } from '../constants/exercises';
 import {
   TRAINING_CONSTRAINTS,
-  getInterferenceAdjustment,
-  getSecondaryInjection
+  getInterferenceAdjustment
 } from '../constants/constraints';
 import { calculateTier } from '../lib/strength';
 import { ACTIVITY_LIBRARY } from '../data/activityLibrary';
 import { isMainLiftMatch, isUnilateral, calculateE1RM } from '../utils/workoutUtils';
 import { calculateSystemReadiness } from '../logic/recoveryEngine';
+import { autoregulateTrainingMax } from '../logic/programmingEngine';
 import { RECOVERY_ACTIVITIES } from '../data/recoveryLibrary';
 
 const READINESS_STORAGE_KEY = 'volt_readiness_scores';
@@ -42,6 +42,7 @@ export interface Set {
   reps: string;
   baseReps?: string;
   rpe: string;
+  actualRpe?: string;
   isCompleted: boolean;
   isWarmup?: boolean;
   duration_seconds?: number;
@@ -405,7 +406,8 @@ const createSessionFromTemplate = (
   lastSession: WorkoutSession | null,
   currentReadiness: number,
   hasAerobicInterference?: boolean,
-  history: WorkoutSession[] = []
+  history: WorkoutSession[] = [],
+  isNextWorkout: boolean = true
 ): WorkoutSession => {
   const goals = profile?.trainingObjectives || (profile?.trainingGoal ? [profile.trainingGoal] : ['powerbuilding']);
   const primaryGoal = goals[0] || 'powerbuilding';
@@ -418,14 +420,17 @@ const createSessionFromTemplate = (
 
   const { block, weekInBlock } = getBlockForWeek(week, totalDurationWeeks, goals, profile?.customProgramBlocks);
 
+  // --- PHASE 1: INITIAL TEMPLATE SELECTION ---
+  const currentPhaseStr = (block.type as string).toLowerCase();
+
   let templatePool = WORKOUT_TEMPLATES;
-  if (goals.includes('endurance')) {
+  if (['endurance', 'aerobic base', 'capacity', 'vo2 max', 'threshold', 'endurance retention'].includes(currentPhaseStr)) {
     templatePool = ENDURANCE_TEMPLATES;
-  } else if (goals.includes('tactical')) {
+  } else if (['tactical'].includes(currentPhaseStr)) {
     templatePool = TACTICAL_TEMPLATES;
-  } else if (goals.includes('explosiveness')) {
+  } else if (['explosiveness', 'power', 'peaking', 'competition / taper'].includes(currentPhaseStr)) {
     templatePool = EXPLOSIVE_TEMPLATES;
-  } else if (goals.includes('prehab') || goals.includes('longevity')) {
+  } else if (['prehab', 'longevity', 'regeneration', 'resiliency'].includes(currentPhaseStr)) {
     templatePool = MEDICAL_TEMPLATES;
   }
 
@@ -433,9 +438,10 @@ const createSessionFromTemplate = (
   const initialTemplate = templatePool[templateIndex];
 
   // --- PHASE 2: BLENDING ENGINE ---
-  const interferenceModifier = getInterferenceAdjustment(goals);
-  const secondaryInjections = getSecondaryInjection(goals);
-
+  // Using active phase goals prevents hybrid bleed from sequential programming blocks
+  const activePhaseGoals = [currentPhaseStr as any];
+  const interferenceModifier = getInterferenceAdjustment(activePhaseGoals);
+  
   // Clone slots to avoid mutating constants
   let dynamicSlots = [...initialTemplate.slots];
 
@@ -462,42 +468,22 @@ const createSessionFromTemplate = (
     });
   }
 
-  // Inject secondary goal work
-  secondaryInjections.forEach(injection => {
-    switch (injection) {
-      case 'POWER_PRIMER':
-      case 'PLYOMETRICS':
-        dynamicSlots.unshift({ pattern: 'plyometric', weight: 0, reps: '3-5', sets: 2 } as any);
-        break;
-      case 'MOBILITY_FLOW':
-      case 'REHAB_CIRCUIT':
-        dynamicSlots.unshift({ pattern: 'mobility', weight: 0, reps: 'hold', sets: 1 } as any);
-        break;
-      case 'ACCESSORY_PUMP':
-        dynamicSlots.push({ pattern: 'accessory', weight: 15, reps: '15', sets: 3 } as any);
-        break;
-      case 'STRENGTH_ACCESORY':
-        dynamicSlots.push({ pattern: 'pull_horizontal', weight: 30, reps: '8', sets: 3 } as any);
-        break;
-      case 'TACTICAL_CONDITIONING':
-      case 'ZONE_2_CARDIO':
-        dynamicSlots.push({ pattern: 'impact', weight: 0, reps: '20 min', sets: 1 } as any);
-        break;
-    }
-  });
+
 
   // 1. Base Intensity from Block + Weekly Progression
   let blockIntensity = block.baseIntensity + (weekInBlock - 1) * block.intensityIncrementPerWeek;
 
   // 2. Readiness Adjustment
   let readinessModifier = 1.0;
-  if (currentReadiness >= 90) readinessModifier = 1.05;
-  else if (currentReadiness < 70 && currentReadiness >= 50) readinessModifier = 0.90;
-  else if (currentReadiness < 50) readinessModifier = 0.80;
+  if (isNextWorkout) {
+    if (currentReadiness >= 90) readinessModifier = 1.05;
+    else if (currentReadiness < 70 && currentReadiness >= 50) readinessModifier = 0.90;
+    else if (currentReadiness < 50) readinessModifier = 0.80;
+  }
 
   // 3. Recovery Adjustment
   let recoveryModifier = 1.0;
-  if (lastSession) {
+  if (isNextWorkout && lastSession) {
     if (lastSession.rpe && lastSession.rpe >= 9) {
       recoveryModifier *= 0.95;
     }
@@ -570,8 +556,17 @@ const createSessionFromTemplate = (
       // Select best fit exercise for the goal
       let selectedExercise = availableExercises[0];
 
+      // If slot specifies a non-zero weight, avoid purely bodyweight squat if weighted alternatives are available in the list
+      const slotWeight = typeof slot.weight === 'string' ? parseFloat(slot.weight) : (typeof slot.weight === 'number' ? slot.weight : 0);
+      if (slotWeight > 0 && selectedExercise?.id === 'bodyweight_squat') {
+        const weightedAlternative = availableExercises.find(e => e.id !== 'bodyweight_squat');
+        if (weightedAlternative) {
+          selectedExercise = weightedAlternative;
+        }
+      }
+
       // Secondary selection logic: if longevity, prefer non-barbell if available for certain patterns
-      if (goals.includes('longevity') && selectedExercise.name.includes('Barbell')) {
+      if (selectedExercise && goals.includes('longevity') && selectedExercise.name.includes('Barbell')) {
         const safer = availableExercises.find(e => !e.name.includes('Barbell'));
         if (safer) selectedExercise = safer;
       }
@@ -591,8 +586,8 @@ const createSessionFromTemplate = (
 
       const constraintExercise = { ...slot, ...selectedExercise } as ConstraintExercise;
       TRAINING_CONSTRAINTS.forEach(constraint => {
-        if (constraint.condition(goals)) {
-          constraint.apply(constraintExercise, goals);
+        if (constraint.condition(activePhaseGoals)) {
+          constraint.apply(constraintExercise, activePhaseGoals);
         }
       });
 
@@ -619,6 +614,16 @@ const createSessionFromTemplate = (
       if (constraintExercise.intensityCap) adjustedIntensity = Math.min(adjustedIntensity, constraintExercise.intensityCap);
       if (constraintExercise.intensityBoost) adjustedIntensity += constraintExercise.intensityBoost;
 
+      let estimated1RM = 0;
+      let dynamicPR = 0;
+      if (history && history.length > 0) {
+         const recentHistory = history.filter(s => (Date.now() - (s.completedAt || 0)) < 90 * 24 * 60 * 60 * 1000); // Last 90 days
+         const e1rms = recentHistory.flatMap(s => s.exercises.find(ex => ex.name.toLowerCase() === selectedExercise.name.toLowerCase())?.sets.map((set: any) => calculateE1RM(parseFloat(set.weight) || 0, parseInt(set.reps) || 0, parseFloat(set.rpe || set.actualRpe || ''))) || []);
+         if (e1rms.length > 0) {
+            dynamicPR = Math.max(...e1rms);
+         }
+      }
+
       if (profile && isMainLift) {
         let liftType = isSquat ? 'Squat' : isBench ? 'Bench Press' : 'Deadlift';
         
@@ -626,16 +631,6 @@ const createSessionFromTemplate = (
         if (isSquat) profilePR = profile.squatPR || 0;
         if (isBench) profilePR = profile.benchPR || 0;
         if (isDeadlift) profilePR = profile.deadliftPR || 0;
-
-        // Auto-regulation: Dynamic E1RM extraction (Phase 1)
-        let dynamicPR = 0;
-        if (history && history.length > 0) {
-           const recentHistory = history.filter(s => (Date.now() - (s.completedAt || 0)) < 90 * 24 * 60 * 60 * 1000); // Last 90 days
-           const e1rms = recentHistory.flatMap(s => s.exercises.find(ex => isMainLiftMatch(ex.name, liftType))?.sets.map(set => calculateE1RM(parseFloat(set.weight) || 0, parseInt(set.reps) || 0)) || []);
-           if (e1rms.length > 0) {
-              dynamicPR = Math.max(...e1rms);
-           }
-        }
         
         let pr = Math.max(profilePR, dynamicPR);
 
@@ -644,21 +639,37 @@ const createSessionFromTemplate = (
           if (profile.unit !== currentUnit) {
             normalizedPR = currentUnit === 'metric' ? pr / 2.20462 : pr * 2.20462;
           }
-          weight = Math.round((normalizedPR * adjustedIntensity) / 5) * 5;
+          estimated1RM = normalizedPR;
         } else {
           const baseWeight = typeof slot.weight === 'string' ? parseFloat(slot.weight) : slot.weight;
-          const estimated1RM = calculateFallback1RM(selectedExercise, profile.weight, currentTier, currentUnit, baseWeight, profile.age, profile.gender, profile.unit);
-          weight = Math.round((estimated1RM * adjustedIntensity) / 5) * 5;
+          estimated1RM = calculateFallback1RM(selectedExercise, profile.weight, currentTier, currentUnit, baseWeight, profile.age, profile.gender, profile.unit);
         }
+      } else if (dynamicPR > 0) {
+        estimated1RM = dynamicPR;
       } else {
         const baseWeight = typeof slot.weight === 'string' ? parseFloat(slot.weight) : slot.weight;
-        const estimated1RM = calculateFallback1RM(selectedExercise, profile?.weight, currentTier, currentUnit, baseWeight, profile?.age, profile?.gender, profile?.unit);
-        weight = Math.round((estimated1RM * adjustedIntensity) / 5) * 5;
+        estimated1RM = calculateFallback1RM(selectedExercise, profile?.weight, currentTier, currentUnit, baseWeight, profile?.age, profile?.gender, profile?.unit);
       }
+
+      let baseFinalIntensity = blockIntensity * recoveryModifier;
+      let adjustedBaseIntensity = baseFinalIntensity;
+      if (constraintExercise.intensityCap) adjustedBaseIntensity = Math.min(adjustedBaseIntensity, constraintExercise.intensityCap);
+      if (constraintExercise.intensityBoost) adjustedBaseIntensity += constraintExercise.intensityBoost;
+
+      let unmodifiedWeight = Math.round((estimated1RM * adjustedBaseIntensity) / 5) * 5;
+
+      weight = Math.round((estimated1RM * adjustedIntensity) / 5) * 5;
 
       // Apply penalty for high-intensity aerobic activity before lower body days
       if (hasAerobicInterference && (isSquat || isDeadlift)) {
         weight = Math.round((weight * 0.85) / 5) * 5;
+        unmodifiedWeight = Math.round((unmodifiedWeight * 0.85) / 5) * 5;
+      }
+
+      // If chosen exercise is a purely bodyweight calisthenic movement (like Bodyweight Squat), added weight is 0
+      if (selectedExercise?.isCalisthenics || selectedExercise?.id === 'bodyweight_squat' || selectedExercise?.id === 'plank' || selectedExercise?.id === 'bicycle_crunch' || selectedExercise?.id === 'mountain_climbers' || selectedExercise?.id === 'flutter_kicks' || selectedExercise?.id === 'leg_raises_floor' || selectedExercise?.id === 'toe_touches' || selectedExercise?.id === 'side_plank') {
+        weight = 0;
+        unmodifiedWeight = 0;
       }
 
       // Adjust reps and sets
@@ -743,7 +754,7 @@ const createSessionFromTemplate = (
             return {
               id: `s${i}-${j}`,
               weight: weight.toString(),
-              baseWeight: weight.toString(),
+              baseWeight: unmodifiedWeight.toString(),
               reps: reps,
               baseReps: reps,
               rpe: targetSetRpe,
@@ -753,7 +764,7 @@ const createSessionFromTemplate = (
           ...(retentionProtocol.active && isMainLift ? [{
             id: `s${i}-retention`,
             weight: (Math.round((weight * 1.05) / 5) * 5).toString(),
-            baseWeight: (Math.round((weight * 1.05) / 5) * 5).toString(),
+            baseWeight: (Math.round((unmodifiedWeight * 1.05) / 5) * 5).toString(),
             reps: '1',
             baseReps: '1',
             rpe: '9',
@@ -773,7 +784,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [history, setHistory] = useState<WorkoutSession[]>([]);
   const [recoveryHistory, setRecoveryHistory] = useState<ActiveRecovery[]>([]);
   const [currentSession, setCurrentSession] = useState<WorkoutSession | null>(null);
-  const [restRemaining, setRestRemaining] = useState<number | null>(null);
+
   const [mockWorkoutCount, setMockWorkoutCount] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [pendingReflection, setPendingReflection] = useState<WorkoutSession | null>(null);
@@ -1163,6 +1174,9 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
         cumulativeFatigueScore: 25,
         recommendedRpe: 5,
         ewmaRatio: 1.8,
+        fatiguePenalty: 1.0,
+        stressPenalty: 1.0,
+        sleepDeficit: 0,
         subjectiveScores: {
           sleepScore: 1,
           stressScore: 1,
@@ -1220,9 +1234,21 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const getNextWorkoutTemplate = useCallback(() => {
-    const filteredHistory = profile?.programResetAt
-      ? history.filter(s => (s.completedAt || 0) > profile.programResetAt!)
-      : history;
+    let filteredHistory = history;
+    
+    // Mitigate bugged backfills: if programResetAt exists but wipes ALL history
+    // when we clearly have history, it's likely a bugged timestamp. Ignore it.
+    if (profile?.programResetAt) {
+      const tempFiltered = history.filter(s => (s.completedAt || 0) > profile.programResetAt!);
+      if (tempFiltered.length > 0) {
+        filteredHistory = tempFiltered;
+      } else if (history.length > 0 && Date.now() - profile.programResetAt < 24 * 60 * 60 * 1000) {
+        // Ignored buggy recent backfill that wiped everything
+      } else if (tempFiltered.length === 0) {
+        // A true manual reset with no items post-reset
+        filteredHistory = [];
+      }
+    }
 
     const lastSession = filteredHistory.length > 0 ? filteredHistory[0] : null;
     const calibration = getCalibrationStatus();
@@ -1265,16 +1291,43 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, [history, profile, unit, nextWorkoutOverrides]); // getCalibrationStatus reads from state correctly.
 
   const getWorkoutTemplate = useCallback((week: number, day: number) => {
-    const filteredHistory = profile?.programResetAt
-      ? history.filter(s => (s.completedAt || 0) > profile.programResetAt!)
-      : history;
+    let filteredHistory = history;
+    if (profile?.programResetAt) {
+      const tempFiltered = history.filter(s => (s.completedAt || 0) > profile.programResetAt!);
+      if (tempFiltered.length > 0) {
+        filteredHistory = tempFiltered;
+      } else if (history.length > 0 && Date.now() - profile.programResetAt < 24 * 60 * 60 * 1000) {
+        // Ignored buggy backfill
+      } else {
+        filteredHistory = [];
+      }
+    }
 
     const lastSession = filteredHistory.length > 0 ? filteredHistory[0] : null;
+
+    let nextWeek = 1;
+    let nextDay = 1;
+
+    if (filteredHistory.length > 0) {
+      const lastWorkout = filteredHistory[0];
+      const dayMatch = lastWorkout.title?.match(/D(\d+)/);
+      const weekMatch = lastWorkout.title?.match(/W(\d+)/);
+      nextDay = dayMatch ? parseInt(dayMatch[1]) + 1 : 1;
+      nextWeek = weekMatch ? parseInt(weekMatch[1]) : 1;
+      const frequency = profile?.trainingFrequency || 3;
+      if (nextDay > frequency) {
+        nextDay = 1;
+        nextWeek += 1;
+      }
+    }
+    const startWeek = nextWeek + (profile?.trainingWeekOffset || 0);
+    const isNextWorkout = (week === startWeek && day === nextDay);
+
     const calibration = getCalibrationStatus();
-    const currentReadiness = calibration.readiness;
+    const currentReadiness = isNextWorkout ? calibration.readiness : 100;
     const hasAerobicInterference = calibration.hasAerobicInterference;
 
-    return createSessionFromTemplate(week, day, profile, unit, lastSession, currentReadiness, hasAerobicInterference, history);
+    return createSessionFromTemplate(week, day, profile, unit, lastSession, currentReadiness, hasAerobicInterference, history, isNextWorkout);
   }, [history, profile, unit]);
 
   const startNewSession = (template?: WorkoutSession, readinessScore?: number, readinessModifier?: number, targetRpe?: number, biometrics?: { sleep: number; stress: number; fatigue: number }) => {
@@ -1331,37 +1384,37 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
         session.stress = finalBiometrics.stress;
         session.fatigue = finalBiometrics.fatigue;
       }
+    }
 
-      if (!calibration.isRedline && readinessScore !== undefined && readinessModifier !== undefined) {
-        session.readiness = readinessScore;
-        session.targetRpe = targetRpe;
+    if (!calibration.isRedline && readinessScore !== undefined && readinessModifier !== undefined) {
+      session.readiness = readinessScore;
+      session.targetRpe = targetRpe;
 
-        // Apply the modifier to the weights
-        session.exercises = (session.exercises || []).map(ex => {
-          const isMainLift = isMainLiftMatch(ex.name || '', 'Squat') ||
-            isMainLiftMatch(ex.name || '', 'Bench Press') ||
-            isMainLiftMatch(ex.name || '', 'Deadlift');
+      // Apply the modifier to the weights
+      session.exercises = (session.exercises || []).map(ex => {
+        const isMainLift = isMainLiftMatch(ex.name || '', 'Squat') ||
+          isMainLiftMatch(ex.name || '', 'Bench Press') ||
+          isMainLiftMatch(ex.name || '', 'Deadlift');
 
-          let updatedSets = ex.sets || [];
+        let updatedSets = ex.sets || [];
 
-          // Cut accessory volume if red light (modifier < 1.0)
-          if (!isMainLift && readinessModifier < 1.0 && updatedSets.length > 2) {
-            updatedSets = updatedSets.slice(0, updatedSets.length - 1);
-          }
+        // Cut accessory volume if red light (modifier < 1.0)
+        if (!isMainLift && readinessModifier < 1.0 && updatedSets.length > 2) {
+          updatedSets = updatedSets.slice(0, updatedSets.length - 1);
+        }
 
-          return {
-            ...ex,
-            sets: updatedSets.map(set => {
-              const baseValue = parseFloat(set.baseWeight || set.weight) || 0;
-              return {
-                ...set,
-                weight: (Math.round((baseValue * readinessModifier) / 5) * 5).toString(),
-                baseWeight: baseValue.toString()
-              };
-            })
-          };
-        });
-      }
+        return {
+          ...ex,
+          sets: updatedSets.map(set => {
+            const baseValue = parseFloat(set.baseWeight || set.weight) || 0;
+            return {
+              ...set,
+              weight: (Math.round((baseValue * readinessModifier) / 5) * 5).toString(),
+              baseWeight: baseValue.toString()
+            };
+          })
+        };
+      });
     }
 
     // Engineering Update: Applied penalized weights at birth if safety triggers active
@@ -1374,25 +1427,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setCurrentSession(session);
   };
 
-  const startRestTimer = (seconds: number) => {
-    setRestRemaining(seconds);
-  };
 
-  useEffect(() => {
-    if (restRemaining === null || restRemaining <= 0) {
-      if (restRemaining === 0) setRestRemaining(null);
-      return;
-    }
-
-    const interval = setInterval(() => {
-      setRestRemaining(prev => {
-        if (prev === null || prev <= 1) return null;
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [restRemaining]);
 
   const addExerciseToSession = (newExercises: Exercise[]) => {
     if (!currentSession) return;
@@ -1434,6 +1469,75 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     // Bug 1 Fix: Capture session data locally before state cleanup as requested
     const sessionToSave = { ...currentSession };
+
+    // Adaptive dynamic adjustment of PRs based on the completed exercises' sets to prevent undertraining or overtraining
+    let squatPRUpdate = profile?.squatPR || 0;
+    let benchPRUpdate = profile?.benchPR || 0;
+    let deadliftPRUpdate = profile?.deadliftPR || 0;
+    let hasPRChanges = false;
+
+    sessionToSave.exercises.forEach(ex => {
+      const isSquat = isMainLiftMatch(ex.name, 'Squat');
+      const isBench = isMainLiftMatch(ex.name, 'Bench Press');
+      const isDeadlift = isMainLiftMatch(ex.name, 'Deadlift');
+      
+      if (isSquat || isBench || isDeadlift) {
+        const completedSets = (ex.sets || []).filter(s => s.isCompleted && !s.isWarmup);
+        if (completedSets.length > 0) {
+          const totalActualRpe = completedSets.reduce((sum, s) => sum + (parseFloat(s.rpe || (s as any).actualRpe || '') || 0), 0);
+          const avgActualRpe = totalActualRpe / completedSets.length;
+          
+          const targetRpe = parseFloat(String(sessionToSave.targetRpe || '7'));
+          
+          if (avgActualRpe > 0 && targetRpe > 0) {
+            const currentPR = isSquat ? squatPRUpdate : isBench ? benchPRUpdate : deadliftPRUpdate;
+            const repsUsed = parseInt(completedSets[0].reps) || 5;
+            const weightUsed = parseFloat(completedSets[0].weight) || 0;
+            
+            // If we have a current PR recorded, run autoregulation engine
+            if (currentPR > 0) {
+              const perf = {
+                exerciseId: ex.exerciseId,
+                targetRPE: targetRpe,
+                actualRPE: avgActualRpe,
+                targetReps: repsUsed,
+                actualReps: repsUsed,
+                weightUsed: weightUsed,
+                isAMRAP: false
+              };
+              const newMax = autoregulateTrainingMax(currentPR, perf, 'submax_531');
+              if (newMax !== currentPR) {
+                if (isSquat) squatPRUpdate = newMax;
+                else if (isBench) benchPRUpdate = newMax;
+                else if (isDeadlift) deadliftPRUpdate = newMax;
+                hasPRChanges = true;
+              }
+            } else if (weightUsed > 0 && repsUsed > 0) {
+              // No baseline PR, bootstrap with RPE-adjusted E1RM of this session
+              const calculatedMax = calculateE1RM(weightUsed, repsUsed, avgActualRpe);
+              if (calculatedMax > 0) {
+                if (isSquat) squatPRUpdate = calculatedMax;
+                else if (isBench) benchPRUpdate = calculatedMax;
+                else if (isDeadlift) deadliftPRUpdate = calculatedMax;
+                hasPRChanges = true;
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (hasPRChanges) {
+      try {
+        await updateProfile({
+          squatPR: Math.round(squatPRUpdate),
+          benchPR: Math.round(benchPRUpdate),
+          deadliftPR: Math.round(deadliftPRUpdate)
+        });
+      } catch (err) {
+        console.error("Auto-updating profile PRs erred:", err);
+      }
+    }
 
     // Calculate actual duration
     const sessionDurationMs = Date.now() - (sessionToSave.startTime || Date.now());
@@ -1684,9 +1788,6 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
       updateActiveRecovery,
       deleteActiveRecovery,
       updateCurrentSession,
-      startRestTimer,
-      restRemaining,
-      setRestRemaining,
       addExerciseToSession,
       replaceExerciseInSession,
       setNextWorkoutExercises,

@@ -57,10 +57,13 @@ const CHECKLIST_ITEMS = [
 ];
 
 import { getFitnessTestInfo } from '../utils/fitnessTestUtils';
+import { useWorkout } from '../contexts/WorkoutContext';
 
 export const FitnessTestView = ({ immersionMode = 'immersive', isVoiceActive = false, lastVoiceCommand, onReadyChange }: StageViewProps) => {
   const { t, profile, updateProfile } = useSettings();
-  const { isUnlocked, daysRemaining, testLabel, testType, isFinalTest } = getFitnessTestInfo(profile);
+  const { getNextWorkoutTemplate } = useWorkout();
+  const nextWorkout = getNextWorkoutTemplate();
+  const { isUnlocked, daysRemaining, missionsRemaining, testLabel, testType, isFinalTest } = getFitnessTestInfo(profile, nextWorkout?.title);
   
   const [isReady, setIsReady] = useState(false);
   const [hasEntered, setHasEntered] = useState(false);
@@ -268,7 +271,7 @@ export const FitnessTestView = ({ immersionMode = 'immersive', isVoiceActive = f
                   className="flex flex-col sm:flex-row sm:items-center justify-between p-4 md:p-6 bg-white/5 border-none gap-4"
                 >
                   <div>
-                    <span className="font-sans text-[8px] font-bold text-zinc-600 uppercase tracking-widest block mb-1">Target {index + 1}</span>
+                    <span className="font-sans text-[10px] font-bold text-zinc-600 uppercase tracking-widest block mb-1">Target {index + 1}</span>
                     <span className="font-sans text-lg md:text-xl font-black uppercase text-white leading-none">{t(targetItem.name)}</span>
                   </div>
                   
@@ -334,7 +337,7 @@ export const FitnessTestView = ({ immersionMode = 'immersive', isVoiceActive = f
                   <div className="flex flex-col items-start">
                     <span className="font-sans text-[10px] md:text-xs font-bold uppercase tracking-widest">{t(item)}</span>
                     {hoveredChecklistItem === item && !checkedItems.includes(item) && isVoiceActive && (
-                      <span className="text-[8px] font-bold text-volt/60 uppercase tracking-widest mt-1 animate-pulse">{t('stage.voiceReady')}</span>
+                      <span className="text-[10px] font-bold text-volt/60 uppercase tracking-widest mt-1 animate-pulse">{t('stage.voiceReady')}</span>
                     )}
                   </div>
                   {checkedItems.includes(item) ? (
@@ -401,14 +404,14 @@ export const FitnessTestView = ({ immersionMode = 'immersive', isVoiceActive = f
             
             <div className="flex flex-col gap-4 md:gap-6">
               <div>
-                <p className="font-sans text-[8px] md:text-[10px] tracking-[0.2em] text-volt uppercase font-bold mb-2">{t('stage.currentPhase')}</p>
+                <p className="font-sans text-[10px] md:text-[10px] tracking-[0.2em] text-volt uppercase font-bold mb-2">{t('stage.currentPhase')}</p>
                 <h2 className="font-sans text-2xl md:text-4xl font-black tracking-tight text-white uppercase">{t(currentTargetItem.name)}</h2>
               </div>
 
               <div>
                 <div className="flex justify-between items-center mb-2">
-                  <p className="font-sans text-[8px] md:text-[10px] tracking-[0.2em] text-zinc-500 uppercase font-bold">{t('stage.stabilityLock')}</p>
-                  <span className="font-sans text-[8px] md:text-[10px] font-bold text-volt">98%</span>
+                  <p className="font-sans text-[10px] md:text-[10px] tracking-[0.2em] text-zinc-500 uppercase font-bold">{t('stage.stabilityLock')}</p>
+                  <span className="font-sans text-[10px] md:text-[10px] font-bold text-volt">98%</span>
                 </div>
                 <div className="h-1.5 w-full bg-zinc-800/50 overflow-hidden">
                   <div 
@@ -472,7 +475,7 @@ export const FitnessTestView = ({ immersionMode = 'immersive', isVoiceActive = f
                   key={targetItem.name}
                   onClick={() => setCurrentTargetIndex(i)}
                   className={cn(
-                    "px-3 md:px-4 py-1.5 md:py-2 font-sans text-[7px] md:text-[8px] font-bold uppercase tracking-widest transition-all",
+                    "px-3 md:px-4 py-1.5 md:py-2 font-sans text-[10px] md:text-[10px] font-bold uppercase tracking-widest transition-all",
                     currentTargetIndex === i 
                       ? "bg-volt text-void shadow-[0_0_15px_var(--primary-glow)]" 
                       : "bg-white/5 text-zinc-500 hover:bg-white/10"
@@ -493,7 +496,7 @@ export const FitnessTestView = ({ immersionMode = 'immersive', isVoiceActive = f
           {/* Biometric Data Grid */}
           <div className="grid grid-cols-2 md:grid-cols-2 gap-3 md:gap-4 w-full max-w-xs md:w-auto">
             <div className="glass-panel p-4 md:p-6 w-full md:w-40 shadow-xl border-white/5">
-              <p className="font-sans text-[7px] md:text-[8px] tracking-[0.2em] text-zinc-500 uppercase font-bold mb-2 md:mb-3">{t('stage.heartRate')}</p>
+              <p className="font-sans text-[10px] md:text-[10px] tracking-[0.2em] text-zinc-500 uppercase font-bold mb-2 md:mb-3">{t('stage.heartRate')}</p>
               <div className="flex items-baseline gap-2">
                 <span className="font-sans text-xl md:text-3xl font-black text-white">142</span>
                 <span className="font-sans text-[8px] md:text-[10px] font-bold text-zinc-500 uppercase">{t('stage.bpm')}</span>
@@ -504,7 +507,7 @@ export const FitnessTestView = ({ immersionMode = 'immersive', isVoiceActive = f
             </div>
 
             <div className="glass-panel p-4 md:p-6 w-full md:w-40 shadow-xl border-white/5">
-              <p className="font-sans text-[7px] md:text-[8px] tracking-[0.2em] text-zinc-500 uppercase font-bold mb-2 md:mb-3">{t('stage.vo2Max')}</p>
+              <p className="font-sans text-[10px] md:text-[10px] tracking-[0.2em] text-zinc-500 uppercase font-bold mb-2 md:mb-3">{t('stage.vo2Max')}</p>
               <div className="flex items-baseline gap-2">
                 <span className="font-sans text-xl md:text-3xl font-black text-white">58.2</span>
                 <span className="font-sans text-[8px] md:text-[10px] font-bold text-zinc-500 uppercase">{t('stage.peak')}</span>
@@ -515,7 +518,7 @@ export const FitnessTestView = ({ immersionMode = 'immersive', isVoiceActive = f
             </div>
 
             <div className="glass-panel p-4 md:p-6 w-full md:w-40 shadow-xl border-white/5">
-              <p className="font-sans text-[7px] md:text-[8px] tracking-[0.2em] text-zinc-500 uppercase font-bold mb-2 md:mb-3">{t('stage.bodyTemp')}</p>
+              <p className="font-sans text-[10px] md:text-[10px] tracking-[0.2em] text-zinc-500 uppercase font-bold mb-2 md:mb-3">{t('stage.bodyTemp')}</p>
               <div className="flex items-baseline gap-2">
                 <span className="font-sans text-xl md:text-3xl font-black text-white">37.2</span>
                 <span className="font-sans text-[8px] md:text-[10px] font-bold text-zinc-500 uppercase">{t('stage.celsius')}</span>
@@ -526,7 +529,7 @@ export const FitnessTestView = ({ immersionMode = 'immersive', isVoiceActive = f
             </div>
 
             <div className="glass-panel p-4 md:p-6 w-full md:w-40 shadow-xl border-white/5">
-              <p className="font-sans text-[7px] md:text-[8px] tracking-[0.2em] text-zinc-500 uppercase font-bold mb-2 md:mb-3">{t('stage.bloodOxygen')}</p>
+              <p className="font-sans text-[10px] md:text-[10px] tracking-[0.2em] text-zinc-500 uppercase font-bold mb-2 md:mb-3">{t('stage.bloodOxygen')}</p>
               <div className="flex items-baseline gap-2">
                 <span className="font-sans text-xl md:text-3xl font-black text-white">99</span>
                 <span className="font-sans text-[8px] md:text-[10px] font-bold text-zinc-500 uppercase">%</span>
@@ -557,9 +560,9 @@ export const FitnessTestView = ({ immersionMode = 'immersive', isVoiceActive = f
                 devOverrideFitnessTest: false,
                 lastFitnessTestAt: Date.now(),
                 ...(isFinalTest && { programResetAt: Date.now() }), // Only restart timeline if it is the final test
-                ...(squatTarget && { squat1RM: squatTarget.target }),
-                ...(benchTarget && { bench1RM: benchTarget.target }),
-                ...(deadliftTarget && { deadlift1RM: deadliftTarget.target }),
+                ...(squatTarget && { squatPR: squatTarget.target }),
+                ...(benchTarget && { benchPR: benchTarget.target }),
+                ...(deadliftTarget && { deadliftPR: deadliftTarget.target }),
               });
               setIsReady(false);
               setSetupStep(1);
@@ -631,16 +634,16 @@ export const FitnessTestView = ({ immersionMode = 'immersive', isVoiceActive = f
                 {testType === 'big3' && (
                   <div className="grid grid-cols-3 gap-2 w-full mt-4 border-t border-white/5 pt-4">
                     <div className="flex flex-col items-center">
-                      <span className="text-[7px] font-bold text-zinc-500 uppercase tracking-widest mb-1">{t('onboarding.movement.squat').split(' ')[0]}</span>
-                      <span className="text-sm font-black text-white">{profile?.squat1RM || 0}<span className="text-[10px] text-zinc-500 ml-0.5">{profile?.unit === 'imperial' ? 'LB' : 'KG'}</span></span>
+                      <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">{t('onboarding.movement.squat').split(' ')[0]}</span>
+                      <span className="text-sm font-black text-white">{profile?.squatPR || 0}<span className="text-[10px] text-zinc-500 ml-0.5">{profile?.unit === 'imperial' ? 'LB' : 'KG'}</span></span>
                     </div>
                     <div className="flex flex-col items-center border-x border-white/5">
-                      <span className="text-[7px] font-bold text-zinc-500 uppercase tracking-widest mb-1">{t('onboarding.movement.bench').split(' ')[0]}</span>
-                      <span className="text-sm font-black text-white">{profile?.bench1RM || 0}<span className="text-[10px] text-zinc-500 ml-0.5">{profile?.unit === 'imperial' ? 'LB' : 'KG'}</span></span>
+                      <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">{t('onboarding.movement.bench').split(' ')[0]}</span>
+                      <span className="text-sm font-black text-white">{profile?.benchPR || 0}<span className="text-[10px] text-zinc-500 ml-0.5">{profile?.unit === 'imperial' ? 'LB' : 'KG'}</span></span>
                     </div>
                     <div className="flex flex-col items-center">
-                      <span className="text-[7px] font-bold text-zinc-500 uppercase tracking-widest mb-1">{t('onboarding.movement.deadlift').split(' ')[0]}</span>
-                      <span className="text-sm font-black text-white">{profile?.deadlift1RM || 0}<span className="text-[10px] text-zinc-500 ml-0.5">{profile?.unit === 'imperial' ? 'LB' : 'KG'}</span></span>
+                      <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">{t('onboarding.movement.deadlift').split(' ')[0]}</span>
+                      <span className="text-sm font-black text-white">{profile?.deadliftPR || 0}<span className="text-[10px] text-zinc-500 ml-0.5">{profile?.unit === 'imperial' ? 'LB' : 'KG'}</span></span>
                     </div>
                   </div>
                 )}
@@ -666,7 +669,8 @@ export const FitnessTestView = ({ immersionMode = 'immersive', isVoiceActive = f
               <div className="w-full bg-white/5 p-4 mt-2">
                 <span className="font-sans text-[10px] uppercase font-bold text-zinc-500 tracking-widest block mb-1">Time To Next Evaluation</span>
                 <span className="font-sans text-3xl font-black text-volt tracking-tighter">{daysRemaining}</span>
-                <span className="font-sans text-[10px] uppercase font-bold text-zinc-500 tracking-widest ml-1">DAYS</span>
+                <span className="font-sans text-[10px] uppercase font-bold text-zinc-500 tracking-widest ml-1">DAYS REMAINING</span>
+                <span className="font-sans text-[10px] uppercase font-bold text-zinc-500 tracking-widest block mt-2 opacity-50">OR COMPLETE {missionsRemaining} SCHEDULED MISSIONS</span>
               </div>
 
               <div className="w-full bg-white/5 p-4 border border-volt/20">

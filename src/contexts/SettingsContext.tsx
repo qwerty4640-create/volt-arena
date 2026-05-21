@@ -150,7 +150,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [showExperimentalMenus, setShowExperimentalMenusState] = useState(false);
   const [experimentalFeatures, setExperimentalFeaturesState] = useState(false);
   const [dashboardWidgets, setDashboardWidgetsState] = useState<WidgetId[]>(['recovery-analysis', 'active-recovery', 'readiness-trend']);
-  const [performanceWidgets, setPerformanceWidgetsState] = useState<PerformanceWidgetId[]>(['progression', 'volume-trend', 'growth', 'joint-stress', 'tactical']);
+  const [performanceWidgets, setPerformanceWidgetsState] = useState<PerformanceWidgetId[]>(['progression', 'growth', 'joint-stress', 'tactical']);
   const [lastVoiceCommand, setLastVoiceCommand] = useState<{ text: string; timestamp: number } | null>(null);
   const [isCustomizeModalOpen, setIsCustomizeModalOpen] = useState(false);
   const [isDeploymentModalOpen, setIsDeploymentModalOpen] = useState(false);
@@ -175,13 +175,32 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
         const userDocPath = `users/${user.uid}`;
         unsubscribeFirestore = onSnapshot(doc(db, userDocPath), (snapshot) => {
           if (snapshot.exists()) {
-            const data = snapshot.data() as UserProfile;
-            
+            const rawData = snapshot.data() as UserProfile;
+            let needsUpdate = false;
+            const updates: Partial<UserProfile> = {};
+
             // Auto-elevate admin for current user if not already set
-            if ((user.email === 'qwerty4640@gmail.com' || user.email === 'admin@volt.com') && data.role !== 'admin') {
-              updateDoc(doc(db, userDocPath), { role: 'admin' });
+            if ((user.email === 'qwerty4640@gmail.com' || user.email === 'admin@volt.com') && rawData.role !== 'admin') {
+              updates.role = 'admin';
+              needsUpdate = true;
             }
 
+            if (!rawData.createdAt) {
+              updates.createdAt = Date.now();
+              needsUpdate = true;
+            }
+
+            if (needsUpdate) {
+              updateDoc(doc(db, userDocPath), updates).catch(err => {
+                console.error("Auth: Failed to backfill profile fields:", err);
+              });
+            }
+
+            const data = {
+              ...rawData,
+              ...updates
+            } as UserProfile;
+            
             setProfile(data);
             if (data.language) setLanguageState(data.language as Language);
             if (data.unit) setUnitState(data.unit as Unit);
@@ -218,7 +237,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
               showExperimentalMenus: false,
               experimentalFeatures: false,
               dashboardWidgets: ['recovery-analysis', 'active-recovery', 'readiness-trend'],
-              performanceWidgets: ['progression', 'volume-trend', 'growth', 'joint-stress', 'tactical'],
+              performanceWidgets: ['progression', 'growth', 'joint-stress', 'tactical'],
               onboardingCompleted: false, // fallback
               level: 'untrained',
               createdAt: Date.now(),
@@ -436,12 +455,12 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
     // Dynamically route dashboard widgets if trainingGoal changes
     if (data.trainingGoal) {
       if (data.trainingGoal === 'longevity') {
-        data.performanceWidgets = ['mobility-matrix', 'joint-stress', 'volume-trend', 'progression'];
+        data.performanceWidgets = ['mobility-matrix', 'joint-stress', 'progression'];
       } else if (data.trainingGoal === 'tactical') {
-        data.performanceWidgets = ['conditioning-tracker', 'tactical', 'progression', 'volume-trend'];
+        data.performanceWidgets = ['conditioning-tracker', 'tactical', 'progression'];
       } else {
         // Default strength/hypertrophy goals
-        data.performanceWidgets = ['progression', 'volume-trend', 'growth', 'joint-stress', 'tactical'];
+        data.performanceWidgets = ['progression', 'growth', 'joint-stress', 'tactical'];
       }
       setPerformanceWidgetsState(data.performanceWidgets);
     }

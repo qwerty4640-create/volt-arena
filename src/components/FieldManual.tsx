@@ -89,7 +89,7 @@ export const FieldManual = ({ isOpen, onClose }: FieldManualProps) => {
                             {t(`tooltip.${key}.title`)}
                           </h4>
                         </div>
-                        <div className="px-2 py-0.5 bg-zinc-900 border border-white/10 text-[8px] font-black uppercase tracking-widest text-zinc-500">
+                        <div className="px-2 py-0.5 bg-zinc-900 border border-white/10 text-[10px] font-black uppercase tracking-widest text-zinc-500">
                           {t('common.id')}: {key.toUpperCase()}
                         </div>
                       </div>
@@ -105,7 +105,7 @@ export const FieldManual = ({ isOpen, onClose }: FieldManualProps) => {
                         </div>
 
                         <div className="space-y-1.5 pt-2">
-                          <p className="text-[9px] font-black text-zinc-500 uppercase tracking-[0.2em] flex items-center gap-2">
+                          <p className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] flex items-center gap-2">
                             <span className="w-1.5 h-1.5 bg-zinc-700 rounded-full" />
                             {t('fieldManual.doctrine')}
                           </p>
@@ -120,7 +120,7 @@ export const FieldManual = ({ isOpen, onClose }: FieldManualProps) => {
               </div>
 
               <div className="p-8 mt-4 border border-dashed border-white/5 text-center opacity-50">
-                <p className="text-[9px] font-black text-zinc-500 uppercase tracking-[0.4em]">
+                <p className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.4em]">
                   {t('fieldManual.endOfDefinitions')}
                 </p>
               </div>

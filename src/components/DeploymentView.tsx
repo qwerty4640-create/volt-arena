@@ -113,9 +113,10 @@ export const DeploymentView = () => {
       // Calculate new competition date based on duration from now
       const newCompetitionDate = Date.now() + (adjustingDuration * 30 * 24 * 60 * 60 * 1000);
 
-      // If duration or goals changed, we reset the program cycle
-      const objectivesChanged = JSON.stringify(adjustingObjectives) !== JSON.stringify(profile.trainingObjectives || (profile.trainingGoal ? [profile.trainingGoal] : ['powerbuilding']));
-      if (adjustingDuration !== profile.trainingDurationMonths || objectivesChanged) {
+      const currentObjectives = profile.trainingObjectives || (profile.trainingGoal ? [profile.trainingGoal] : ['powerbuilding']);
+      const objectivesChanged = JSON.stringify(adjustingObjectives) !== JSON.stringify(currentObjectives);
+      const currentDuration = profile.trainingDurationMonths || 3;
+      if (adjustingDuration !== currentDuration || objectivesChanged) {
         await resetProgram();
       }
 
@@ -181,7 +182,7 @@ export const DeploymentView = () => {
                     </div>
                     <div>
                       <h2 className="font-sans text-xl font-black uppercase tracking-tight text-white">Deployment Settings</h2>
-                      <p className="text-[8px] font-black uppercase tracking-widest text-zinc-500">Recalibrate Program Architecture</p>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Recalibrate Program Architecture</p>
                     </div>
                   </div>
                 </div>
@@ -252,7 +253,7 @@ export const DeploymentView = () => {
                             <label className="text-[10px] md:text-xs font-black uppercase tracking-widest text-zinc-500">Deployment Objectives</label>
                             <InfoTooltip term="DeploymentObjectives" />
                           </div>
-                          <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-zinc-600">
+                          <span className="text-[10px] md:text-[10px] font-black uppercase tracking-widest text-zinc-600">
                             {adjustingObjectives.length} / {currentMaxObjectives} SELECTED
                           </span>
                         </div>
@@ -295,7 +296,7 @@ export const DeploymentView = () => {
                                 </span>
                                 {isSelected && (
                                   <>
-                                    <span className="text-[8px] font-bold uppercase tracking-[0.2em] text-volt mt-0.5 leading-none">
+                                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-volt mt-0.5 leading-none">
                                       {getRankLabel(goalIndex)}
                                     </span>
                                     <div className="absolute top-1 right-1">
@@ -320,7 +321,7 @@ export const DeploymentView = () => {
                           <div className="flex items-center gap-4">
                             <button
                               onClick={() => setAdjustingCustomProgramBlocks(getDefaultBlocks(adjustingObjectives, adjustingMissionPeriod))}
-                              className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-white transition-colors flex items-center gap-1.5"
+                              className="text-[10px] md:text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-white transition-colors flex items-center gap-1.5"
                             >
                               <Loader2 size={10} className={loading ? "animate-spin" : ""} />
                               Reset to Default
@@ -374,7 +375,6 @@ export const DeploymentView = () => {
       <ProgramDetailModal
         isOpen={showProgramDetail}
         onClose={() => setShowProgramDetail(false)}
-        initialDuration={profile?.trainingDurationMonths || 3}
         customProgramBlocks={adjustingCustomProgramBlocks}
       />
 

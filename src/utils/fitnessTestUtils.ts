@@ -5,6 +5,7 @@ export interface FitnessTestInfo {
   testType: string;
   testLabel: string;
   daysRemaining: number;
+  missionsRemaining: number;
   isUnlocked: boolean;
   targetDate: number;
   isFinalTest: boolean;
@@ -19,18 +20,44 @@ const getPhase = (typeStr: string): number => {
   return 1; // foundation, deload, regeneration, prehab
 };
 
-export const getFitnessTestInfo = (profile: UserProfile | null): FitnessTestInfo => {
+export const getFitnessTestInfo = (profile: UserProfile | null, currentMissionTitle?: string): FitnessTestInfo => {
   if (!profile) {
     return {
       testType: 'none',
       testLabel: 'No Test',
       daysRemaining: 0,
+      missionsRemaining: 0,
       isUnlocked: false,
-      targetDate: Date.now()
+      targetDate: Date.now(),
+      isFinalTest: false
     };
   }
 
-  const resetTime = profile.programResetAt || profile.createdAt || Date.now();
+  let resetTime = Date.now();
+  const rawReset = profile.programResetAt || profile.createdAt;
+  if (rawReset) {
+    if (typeof rawReset === 'number') {
+      resetTime = rawReset;
+    } else if (typeof rawReset === 'string') {
+      resetTime = new Date(rawReset).getTime() || Date.now();
+    } else if (typeof (rawReset as any).seconds === 'number') {
+      resetTime = (rawReset as any).seconds * 1000;
+    } else if (typeof (rawReset as any).toDate === 'function') {
+      resetTime = (rawReset as any).toDate().getTime();
+    }
+  }
+
+  let currentMissionWeek = 1;
+  let currentMissionDay = 1;
+  const frequency = profile.trainingFrequency || 3;
+  if (currentMissionTitle) {
+    const match = currentMissionTitle.match(/W(\d+)D(\d+)/);
+    if (match) {
+      currentMissionWeek = parseInt(match[1]);
+      currentMissionDay = parseInt(match[2]);
+    }
+  }
+
   let nextTargetWeeks = 0;
   let finalBlockTypeStr = (profile.trainingGoal as string) || 'powerbuilding';
 
@@ -39,8 +66,7 @@ export const getFitnessTestInfo = (profile: UserProfile | null): FitnessTestInfo
   if (profile.customProgramBlocks && profile.customProgramBlocks.length > 0) {
     const blocks = profile.customProgramBlocks;
     let cumulativeWeeks = 0;
-    const msElapsed = Date.now() - resetTime;
-    const weeksElapsed = msElapsed / (1000 * 60 * 60 * 24 * 7);
+    const weeksElapsed = Math.max(0, currentMissionWeek - 1);
 
     for (let i = 0; i < blocks.length; i++) {
       cumulativeWeeks += (blocks[i].durationWeeks || 0);
@@ -69,8 +95,8 @@ export const getFitnessTestInfo = (profile: UserProfile | null): FitnessTestInfo
       }
 
       if (trigger) {
-        const potentialTargetDate = resetTime + cumulativeWeeks * 7 * 24 * 60 * 60 * 1000;
-        if (profile.lastFitnessTestAt && profile.lastFitnessTestAt > potentialTargetDate - (7 * 24 * 60 * 60 * 1000)) {
+        // If we recently did a fitness test (within 1 week physical time), skip this trigger
+        if (profile.lastFitnessTestAt && profile.lastFitnessTestAt > Date.now() - (7 * 24 * 60 * 60 * 1000)) {
            continue; 
         }
 
@@ -94,10 +120,18 @@ export const getFitnessTestInfo = (profile: UserProfile | null): FitnessTestInfo
     isFinalTest = true;
   }
 
-  const targetDate = resetTime + nextTargetWeeks * 7 * 24 * 60 * 60 * 1000;
+  const totalMissions = nextTargetWeeks * frequency;
+  const completedMissions = ((currentMissionWeek - 1) * frequency) + (currentMissionDay - 1);
+  const missionsRemaining = Math.max(0, totalMissions - completedMissions);
+
+  // Calculate physical target date. We subtract trainingWeekOffset so that if they skipped ahead, 
+  // the calendar target date correctly shrinks, while still ticking down in real physical time.
+  const weekOffset = profile.trainingWeekOffset || 0;
+  const targetDate = resetTime + (nextTargetWeeks - weekOffset) * 7 * 24 * 60 * 60 * 1000;
   const msRemaining = targetDate - Date.now();
   const daysRemaining = Math.max(0, Math.ceil(msRemaining / (1000 * 60 * 60 * 24)));
-  const isUnlocked = profile.devOverrideFitnessTest || profile.pendingFitnessTest || daysRemaining <= 0;
+  
+  const isUnlocked = profile.devOverrideFitnessTest || profile.pendingFitnessTest || daysRemaining <= 0 || missionsRemaining <= 0;
 
   let testType = 'none';
   let testLabel = 'No Test Requirement';
@@ -118,7 +152,7 @@ export const getFitnessTestInfo = (profile: UserProfile | null): FitnessTestInfo
   } else if (['explosiveness', 'power'].includes(type)) {
     testType = 'explosiveness';
     testLabel = 'Explosive Output / Velocity';
-  } else if (['prehab', 'retention', 'deload', 'regeneration'].includes(type)) {
+  } else if (['prehab', 'retention', 'Strength Retention', 'Endurance Retention', 'deload', 'regeneration'].includes(type) || ['Strength Retention', 'Endurance Retention'].some(r => type.includes(r))) {
     testType = 'none';
     testLabel = 'No test required for recovery/retention protocols.';
   } else {
@@ -130,6 +164,7 @@ export const getFitnessTestInfo = (profile: UserProfile | null): FitnessTestInfo
     testType,
     testLabel,
     daysRemaining: profile.pendingFitnessTest ? 0 : daysRemaining,
+    missionsRemaining: profile.pendingFitnessTest ? 0 : missionsRemaining,
     isUnlocked,
     targetDate,
     isFinalTest

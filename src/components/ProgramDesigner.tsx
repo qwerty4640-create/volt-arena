@@ -61,6 +61,8 @@ const AVAILABLE_BLOCKS = [
   { type: BlockType.ENDURANCE, color: 'text-blue-500', bg: 'bg-blue-500/20', borderColor: 'border-blue-500/30' },
   { type: BlockType.PREHAB, color: 'text-purple-300', bg: 'bg-purple-300/20', borderColor: 'border-purple-300/30' },
   { type: BlockType.RETENTION, color: 'text-rose-400', bg: 'bg-rose-400/20', borderColor: 'border-rose-400/30' },
+  { type: BlockType.STRENGTH_RETENTION, color: 'text-volt', bg: 'bg-volt/20', borderColor: 'border-volt/30' },
+  { type: BlockType.ENDURANCE_RETENTION, color: 'text-blue-400', bg: 'bg-blue-400/20', borderColor: 'border-blue-400/30' },
   { type: BlockType.DELOAD, color: 'text-amber-400', bg: 'bg-amber-400/20', borderColor: 'border-amber-400/30' }
 ];
 
@@ -124,7 +126,7 @@ const SortableBlock: React.FC<{
           </button>
           <div className="text-center px-2">
             <span className="font-headline text-lg font-black text-white leading-none">{block.durationWeeks}</span>
-            <span className="text-[7px] font-black uppercase tracking-widest text-zinc-500 block">WEEKS</span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 block">WEEKS</span>
           </div>
           <button
             onPointerDown={(e) => { e.stopPropagation(); }}
@@ -303,13 +305,13 @@ export const ProgramDesigner: React.FC<ProgramDesignerProps> = ({
         }
       } else if (adv.suggestedBlock === BlockType.HYPERTROPHY) {
         insertionIdx = 0; // Insert at the beginning to reset baseline
-      } else if (adv.suggestedBlock === BlockType.RETENTION) {
+      } else if (adv.suggestedBlock === BlockType.RETENTION || adv.suggestedBlock === BlockType.STRENGTH_RETENTION || adv.suggestedBlock === BlockType.ENDURANCE_RETENTION) {
          // Find the gap that needs retention
          for (let i = 0; i < types.length - 1; i++) {
            const current = types[i];
            const next = types[i+1];
-           const isMaintenance = [BlockType.RETENTION, BlockType.DELOAD, BlockType.REGENERATION].includes(current as BlockType) ||
-                                 [BlockType.RETENTION, BlockType.DELOAD, BlockType.REGENERATION].includes(next as BlockType);
+           const isMaintenance = [BlockType.RETENTION, BlockType.STRENGTH_RETENTION, BlockType.ENDURANCE_RETENTION, BlockType.DELOAD, BlockType.REGENERATION].includes(current as BlockType) ||
+                                 [BlockType.RETENTION, BlockType.STRENGTH_RETENTION, BlockType.ENDURANCE_RETENTION, BlockType.DELOAD, BlockType.REGENERATION].includes(next as BlockType);
            if (!isMaintenance && current !== next) {
              const currentBlockWeeks = blocks[i].durationWeeks;
              const nextBlockWeeks = blocks[i+1].durationWeeks;
@@ -365,7 +367,7 @@ export const ProgramDesigner: React.FC<ProgramDesignerProps> = ({
         <div className="absolute top-4 left-6 flex items-center gap-2">
           <h4 className="text-[10px] md:text-xs font-black uppercase tracking-widest text-zinc-500">INTENSITY CURVE</h4>
           <div className="inline-flex items-center justify-center w-4 h-4 border border-volt/40">
-            <span className="text-[8px] font-black text-volt transform translate-y-[0.5px]">i</span>
+            <span className="text-[10px] font-black text-volt transform translate-y-[0.5px]">i</span>
           </div>
         </div>
         
@@ -408,7 +410,7 @@ export const ProgramDesigner: React.FC<ProgramDesignerProps> = ({
                   const d = payload[0].payload;
                   if (d.type === 'EMPTY') return null;
                   return (
-                    <div className="bg-void border border-volt/30 p-2 text-[8px] font-black uppercase tracking-widest text-volt shadow-lg">
+                    <div className="bg-void border border-volt/30 p-2 text-[10px] font-black uppercase tracking-widest text-volt shadow-lg">
                       Week {d.week}: {d.type} ({d.intensity}%)
                     </div>
                   );
@@ -464,7 +466,7 @@ export const ProgramDesigner: React.FC<ProgramDesignerProps> = ({
             <div className="flex-1 w-full flex flex-col items-center justify-center p-8 text-center text-zinc-600">
               <Maximize2 size={24} className="mb-4 opacity-50" />
               <p className="text-[10px] font-black uppercase tracking-widest">Drag blocks or click to assign</p>
-              <p className="text-[8px] mt-2 uppercase tracking-widest max-w-[200px]">Fill the timeline up to {totalWeeks} weeks to proceed.</p>
+              <p className="text-[10px] mt-2 uppercase tracking-widest max-w-[200px]">Fill the timeline up to {totalWeeks} weeks to proceed.</p>
             </div>
           )}
         </div>
@@ -484,7 +486,7 @@ export const ProgramDesigner: React.FC<ProgramDesignerProps> = ({
                 onClick={() => addBlock(block.type)}
                 disabled={remainsWeeks <= 0}
                 className={cn(
-                  "px-4 py-2 border font-headline text-[9px] font-black uppercase tracking-widest transition-all text-left flex items-center gap-3",
+                  "px-4 py-2 border font-headline text-[10px] font-black uppercase tracking-widest transition-all text-left flex items-center gap-3",
                   block.borderColor,
                   block.bg,
                   block.color,
@@ -521,10 +523,10 @@ export const ProgramDesigner: React.FC<ProgramDesignerProps> = ({
                       className="inline-flex items-center justify-center w-4 h-4 border border-orange-400/40 hover:border-orange-400 hover:bg-orange-400/10 transition-colors cursor-pointer pointer-events-auto"
                       title="View Analysis"
                     >
-                      <span className="text-[8px] font-black text-orange-400 transform translate-y-[0.5px]">i</span>
+                      <span className="text-[10px] font-black text-orange-400 transform translate-y-[0.5px]">i</span>
                     </button>
                   </div>
-                  <p className="text-[8px] font-black text-zinc-500">
+                  <p className="text-[10px] font-black text-zinc-500">
                     {adv.recommendation}
                   </p>
                 </div>
@@ -534,7 +536,7 @@ export const ProgramDesigner: React.FC<ProgramDesignerProps> = ({
 
           <button
             onClick={applyRecommendation}
-            className="flex items-center justify-center w-full gap-1.5 px-3 py-2 bg-volt text-void text-[9px] font-black uppercase tracking-widest hover:bg-white transition-colors"
+            className="flex items-center justify-center w-full gap-1.5 px-3 py-2 bg-volt text-void text-[10px] font-black uppercase tracking-widest hover:bg-white transition-colors"
           >
             Apply Optimization
             <ArrowRight size={10} />
@@ -609,7 +611,7 @@ export const ProgramDesigner: React.FC<ProgramDesignerProps> = ({
           </div>
           <div>
             <p className="text-[10px] font-black uppercase tracking-widest text-orange-400">SEQUENCE INCOMPLETE</p>
-            <p className="text-[8px] font-black uppercase tracking-widest text-zinc-500 mt-0.5">
+            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mt-0.5">
               Assigned: {usedWeeks}W / Goal: {totalWeeks}W. Allocate remaining {totalWeeks - usedWeeks} weeks to proceed.
             </p>
           </div>

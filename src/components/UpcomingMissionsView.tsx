@@ -132,12 +132,12 @@ export const UpcomingMissionsView: React.FC<UpcomingMissionsViewProps> = ({ onBa
               <h3 className="font-headline text-xl font-black uppercase tracking-tight text-white mb-2">{block.label}</h3>
               <div className="flex items-center gap-4">
                 <div>
-                  <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest mb-1">Duration</p>
+                  <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">Duration</p>
                   <p className="text-xs font-black text-zinc-300 uppercase">{block.totalWeeks} Weeks</p>
                 </div>
                 <div className="w-px h-8 bg-white/5" />
                 <div>
-                  <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest mb-1">Phases</p>
+                  <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">Phases</p>
                   <p className="text-xs font-black text-zinc-300 uppercase">{block.phases.length} Phases</p>
                 </div>
               </div>
@@ -172,12 +172,12 @@ export const UpcomingMissionsView: React.FC<UpcomingMissionsViewProps> = ({ onBa
               </h3>
               <div className="flex items-center gap-4">
                 <div>
-                  <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest mb-1">Window</p>
+                  <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">Window</p>
                   <p className="text-xs font-black text-zinc-300 uppercase">{phase.durationWeeks} Weeks</p>
                 </div>
                 <div className="w-px h-8 bg-white/5" />
                 <div>
-                  <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest mb-1">Engagements</p>
+                  <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">Engagements</p>
                   <p className="text-xs font-black text-zinc-300 uppercase">{phase.durationWeeks * missionsPerWeek} Missions</p>
                 </div>
               </div>
@@ -224,11 +224,11 @@ export const UpcomingMissionsView: React.FC<UpcomingMissionsViewProps> = ({ onBa
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex flex-col">
                       <span className="text-[10px] font-black tracking-widest text-volt uppercase leading-none mb-1">Mission #{absoluteMissionNum}</span>
-                      <span className="text-[8px] font-bold text-zinc-500 uppercase tracking-widest leading-none">Week {absoluteWeek} | Day {dayInWeek}</span>
+                      <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest leading-none">Week {absoluteWeek} | Day {dayInWeek}</span>
                     </div>
                     {isCompleted ? (
                       <div className="h-8 inline-flex items-center px-2 bg-green-500/10 border border-green-500/20">
-                        <span className="text-[8px] font-black text-green-500 uppercase tracking-widest">Completed</span>
+                        <span className="text-[10px] font-black text-green-500 uppercase tracking-widest">Completed</span>
                       </div>
                     ) : (
                       <div className="w-8 h-8 border border-white/5 flex items-center justify-center bg-zinc-900 group-hover:border-volt/30 transition-colors">
@@ -239,13 +239,13 @@ export const UpcomingMissionsView: React.FC<UpcomingMissionsViewProps> = ({ onBa
 
                   <div className="space-y-3">
                     <div>
-                      <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest mb-1">Objective</p>
+                      <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">Objective</p>
                       <p className="text-xs md:text-sm font-black font-headline text-white uppercase tracking-tight">
                         {blockForThisMission?.block.label || 'TBD'}
                       </p>
                     </div>
                     <div>
-                      <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest mb-1">Prescription</p>
+                      <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">Prescription</p>
                       <p className="text-[10px] font-bold text-zinc-300 uppercase tracking-[0.1em]">
                         {blockForThisMission?.block.baseSets || 3}x{blockForThisMission?.block.baseReps || '8'} @ {intensity}%
                       </p>

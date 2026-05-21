@@ -167,8 +167,10 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
         editData.gender
       );
 
+      const currentGoal = profile?.trainingGoal || 'powerbuilding';
+      const currentDuration = profile?.trainingDurationMonths || 3;
       // Reset program if goal or duration has changed to start fresh cycle
-      if (editData.trainingGoal !== profile?.trainingGoal || editData.trainingDurationMonths !== profile?.trainingDurationMonths) {
+      if (editData.trainingGoal !== currentGoal || editData.trainingDurationMonths !== currentDuration) {
         await resetProgram();
       }
 

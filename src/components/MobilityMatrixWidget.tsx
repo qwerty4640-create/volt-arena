@@ -44,7 +44,7 @@ export const MobilityMatrixWidget: React.FC<MobilityMatrixWidgetProps> = ({ work
           </div>
         </div>
         <div className="text-right flex flex-col items-end">
-          <span className="text-[8px] font-black uppercase tracking-tighter text-zinc-600 mb-1">Grid System v4.0</span>
+          <span className="text-[10px] font-black uppercase tracking-tighter text-zinc-600 mb-1">Grid System v4.0</span>
           <div className="h-1 w-12 bg-zinc-800 overflow-hidden">
             <div className="h-full bg-volt w-2/3" />
           </div>
@@ -60,9 +60,8 @@ export const MobilityMatrixWidget: React.FC<MobilityMatrixWidgetProps> = ({ work
                 dataKey="joint" 
                 tick={{ 
                   fill: '#71717a', 
-                  fontSize: 8, 
+                  fontSize: 10, 
                   fontWeight: 900, 
-                  textTransform: 'uppercase',
                   letterSpacing: '0.1em'
                 }} 
               />
@@ -107,7 +106,7 @@ export const MobilityMatrixWidget: React.FC<MobilityMatrixWidgetProps> = ({ work
         )}
       </div>
 
-      <div className="mt-4 flex items-center gap-4 text-[9px] font-black uppercase tracking-[0.15em] text-zinc-500">
+      <div className="mt-4 flex items-center gap-4 text-[10px] font-black uppercase tracking-[0.15em] text-zinc-500">
         <div className="flex items-center gap-1.5">
           <div className="w-2 h-2 border border-volt/50" />
           <span>Optimal Range</span>

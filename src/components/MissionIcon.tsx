@@ -2,7 +2,7 @@ import React from 'react';
 import { LucideIcon } from 'lucide-react';
 import { cn } from '../lib/utils';
 
-export const MissionIcon: LucideIcon = ({ size = 24, strokeWidth = 2, className, ...props }) => (
+export const MissionIcon = ({ size = 24, strokeWidth = 2, className, ...props }: any) => (
   <svg 
     xmlns="http://www.w3.org/2000/svg" 
     width={size} 

@@ -204,11 +204,11 @@ export const ExerciseSwapModal: React.FC<ExerciseSwapModalProps> = ({
                         </div>
                       </div>
                       <div className="flex flex-wrap items-center gap-2 mt-1 relative">
-                        <div className="text-[8px] font-black uppercase tracking-widest bg-zinc-900 border border-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded">
+                        <div className="text-[10px] font-black uppercase tracking-widest bg-zinc-900 border border-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded">
                           {alt.category}
                         </div>
                         {alt.pattern && alt.pattern.toLowerCase() !== alt.category.toLowerCase() && (
-                          <div className="text-[8px] font-black uppercase tracking-widest bg-zinc-900 border border-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded">
+                          <div className="text-[10px] font-black uppercase tracking-widest bg-zinc-900 border border-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded">
                             {alt.pattern.replace('_', ' ')}
                           </div>
                         )}
@@ -217,7 +217,7 @@ export const ExerciseSwapModal: React.FC<ExerciseSwapModalProps> = ({
                             return null;
                           }
                           return (
-                            <div key={m} className="text-[8px] font-black uppercase tracking-widest bg-zinc-900 border border-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded">
+                            <div key={m} className="text-[10px] font-black uppercase tracking-widest bg-zinc-900 border border-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded">
                               {m}
                             </div>
                           );

@@ -231,7 +231,7 @@ export const NonProgramActivityModal = ({ isOpen, onClose, initialData }: NonPro
                         )}
                       >
                         <ActivityIcon size={14} className="shrink-0" />
-                        <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest leading-tight">{t(`activity.${activity.id}` as any) || activity.label}</span>
+                        <span className="text-[10px] sm:text-[10px] font-black uppercase tracking-widest leading-tight">{t(`activity.${activity.id}` as any) || activity.label}</span>
                       </button>
                     );
                   })}
@@ -275,7 +275,7 @@ export const NonProgramActivityModal = ({ isOpen, onClose, initialData }: NonPro
                     onChange={(e) => setRpe(parseInt(e.target.value))}
                     className="w-full tactical-range accent-volt h-1 bg-zinc-800 border-none outline-none appearance-none cursor-pointer rounded-none"
                   />
-                  <div className="flex justify-between text-[8px] font-black uppercase tracking-widest text-zinc-500">
+                  <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-zinc-500">
                     <span>{t('nonProgram.recovery')}</span>
                     <span>{t('nonProgram.maxEffort')}</span>
                   </div>

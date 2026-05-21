@@ -165,7 +165,7 @@ const ExerciseAccordion = ({
   const displayWeightLabel = exerciseDefinition?.isCalisthenics ? `${weightUnit} + Bodyweight` : weightLabel;
 
   useEffect(() => {
-    if (exercise.sets.every(set => set.isCompleted)) {
+    if (exercise.sets.every((set: any) => set.isCompleted)) {
       setIsExpanded(false);
     }
   }, [exercise.sets]);
@@ -204,14 +204,14 @@ const ExerciseAccordion = ({
               <div className="flex gap-2 items-center">
                 <button
                   onClick={() => { haptics.button(); setSwappingExerciseId(exercise.id); }}
-                  className="flex-1 py-3 bg-surface-container-low hover:bg-volt/10 text-volt transition-all flex items-center justify-center gap-2 group"
+                  className="flex-1 py-3 bg-white/5 border border-white/10 hover:border-volt/30 hover:bg-volt/10 text-volt transition-all flex items-center justify-center gap-2 group"
                 >
                   <RefreshCw size={12} className="group-hover:rotate-180 transition-transform duration-500" />
                   <span className="text-[10px] font-bold uppercase tracking-widest">{t('workout.swap')}</span>
                 </button>
                 <button
                   onClick={() => { haptics.button(); setExerciseToRemove(exercise.id); }}
-                  className="flex-1 py-3 bg-surface-container-low hover:bg-crimson/10 text-crimson transition-all flex items-center justify-center gap-2 group"
+                  className="flex-1 py-3 bg-white/5 border border-white/10 hover:border-crimson/30 hover:bg-crimson/10 text-crimson transition-all flex items-center justify-center gap-2 group"
                 >
                   <Trash2 size={12} />
                   <span className="text-[10px] font-bold uppercase tracking-widest">{t('workout.remove')}</span>
@@ -242,7 +242,7 @@ const ExerciseAccordion = ({
 
               <div className="space-y-2 mt-4">
                 {/* Headers */}
-                <div className="flex items-center gap-1 sm:gap-2 px-1 sm:px-2 text-[9px] sm:text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1 text-center">
+                <div className="flex items-center gap-1 sm:gap-2 px-1 sm:px-2 text-[10px] sm:text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1 text-center">
                   <div className="w-8 sm:w-10 text-center">SET</div>
                   <div className="flex-1 min-w-0 flex justify-center">{displayWeightLabel}</div>
                   <div className="w-10 sm:flex-1 min-w-0 text-center">REPS</div>
@@ -378,11 +378,104 @@ interface WorkoutLogProps {
   onEndSession: () => void;
 }
 
+const LiveMissionHeader = ({
+  currentSession,
+  currentVolume,
+  onBack
+}: {
+  currentSession: any;
+  currentVolume: number;
+  onBack: () => void;
+}) => {
+  const { t, unit, profile } = useSettings();
+  const { calculateProgramCalories, getCalibrationStatus } = useWorkout();
+
+  const [elapsedMs, setElapsedMs] = useState(() => (currentSession?.startTime ? Date.now() - currentSession.startTime : 0));
+
+  useEffect(() => {
+    if (!currentSession?.startTime) return;
+    const updateElapsed = () => {
+      setElapsedMs(Date.now() - currentSession.startTime!);
+    };
+    updateElapsed();
+    const interval = setInterval(updateElapsed, 1000);
+    return () => clearInterval(interval);
+  }, [currentSession?.startTime]);
+
+  const formatDuration = (ms: number) => {
+    const totalSeconds = Math.floor(ms / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  const estimatedCalories = (() => {
+    if (!currentSession) return 0;
+    const durationMins = elapsedMs / 60000;
+    const weightKg = profile?.weight ? (unit === 'imperial' ? profile.weight * 0.453592 : profile.weight) : 75;
+    const activeRpe = currentSession.targetRpe || 7;
+    return Math.round(calculateProgramCalories(weightKg, durationMins, activeRpe, currentVolume));
+  })();
+
+  return (
+    <MissionHeader
+      title={currentSession.title}
+      breadcrumb={t('workout.missionLog')}
+      readiness={getCalibrationStatus().readiness}
+      targetRpe={currentSession.targetRpe || '–'}
+      time={formatDuration(elapsedMs)}
+      calories={estimatedCalories}
+      onBack={onBack}
+    />
+  );
+};
+
 export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps) => {
   const { t, unit, profile, lastVoiceCommand, experimentalFeatures } = useSettings();
   const { showToast } = useToast();
-  const { currentSession, updateCurrentSession, history, getCalibrationStatus, calculateProgramCalories, startRestTimer, restRemaining, setRestRemaining, discardSession } = useWorkout();
+  const { currentSession, updateCurrentSession, history, getCalibrationStatus, calculateProgramCalories, discardSession } = useWorkout();
   const weightUnit = unit === 'metric' ? t('workout.kg') : t('workout.lbs');
+
+  const [restRemaining, setRestRemaining] = useState<number | null>(null);
+  const restTargetRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (restRemaining === null || restTargetRef.current === null) return;
+
+    const tick = () => {
+      if (restTargetRef.current === null) return;
+      const diff = Math.max(0, Math.ceil((restTargetRef.current - Date.now()) / 1000));
+      if (diff <= 0) {
+        setRestRemaining(null);
+        restTargetRef.current = null;
+      } else {
+        setRestRemaining(diff);
+      }
+    };
+
+    const timer = setInterval(tick, 1000);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        tick();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [restRemaining !== null]);
+
+  const startRestTimer = (seconds: number) => {
+    restTargetRef.current = Date.now() + seconds * 1000;
+    setRestRemaining(seconds);
+  };
 
   const [isCompleting, setIsCompleting] = useState(false);
   const [isEndConfirmOpen, setIsEndConfirmOpen] = useState(false);
@@ -393,7 +486,6 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
   const [isAICoachOpen, setIsAICoachOpen] = useState(false);
   const [showIntensityWarning, setShowIntensityWarning] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [elapsedMs, setElapsedMs] = useState(() => (currentSession?.startTime ? Date.now() - currentSession.startTime : 0));
   const lastAutoRegToastRef = useRef<{ [key: string]: number }>({});
   const { requestWakeLock, releaseWakeLock, isLocked } = useWakeLock();
 
@@ -427,27 +519,6 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
     setMounted(true);
   }, []);
 
-  useEffect(() => {
-    if (!currentSession?.startTime) return;
-    const updateElapsed = () => {
-      setElapsedMs(Date.now() - currentSession.startTime!);
-    };
-    updateElapsed();
-    const interval = setInterval(updateElapsed, 1000);
-    return () => clearInterval(interval);
-  }, [currentSession?.startTime]);
-
-  const formatDuration = (ms: number) => {
-    const totalSeconds = Math.floor(ms / 1000);
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
-    if (hours > 0) {
-      return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-    }
-    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  };
-
   const getAutoregulatedExercises = (
     exerciseId: string, 
     setId: string, 
@@ -464,7 +535,7 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
     if (setIndex === -1) return { nextExercises: exercises, willAutoRegulate: false };
 
     const currentSet = ex.sets[setIndex];
-    const targetRpe = currentSession.targetRpe || 7;
+    const targetRpe = currentSession?.targetRpe || 7;
     
     // Determine values considering potential updates
     const actualRpe = parseFloat(updatedRpe ?? currentSet.rpe ?? '');
@@ -537,14 +608,6 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
       });
     });
     return volume;
-  })();
-
-  const estimatedCalories = (() => {
-    if (!currentSession) return 0;
-    const durationMins = elapsedMs / 60000;
-    const weightKg = profile?.weight ? (unit === 'imperial' ? profile.weight * 0.453592 : profile.weight) : 75;
-    const activeRpe = currentSession.targetRpe || 7;
-    return Math.round(calculateProgramCalories(weightKg, durationMins, activeRpe, currentVolume));
   })();
 
   // Voice command listener for AI Coach
@@ -963,13 +1026,9 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
         exit={{ opacity: 0, x: -20 }}
         className="w-full h-full flex flex-col pt-0 md:pt-4 pb-12"
       >
-        <MissionHeader
-          title={currentSession.title}
-          breadcrumb={t('workout.missionLog')}
-          readiness={getCalibrationStatus().readiness}
-          targetRpe={currentSession.targetRpe || '–'}
-          time={formatDuration(elapsedMs)}
-          calories={estimatedCalories}
+        <LiveMissionHeader
+          currentSession={currentSession}
+          currentVolume={currentVolume}
           onBack={onBack}
         />
 
@@ -1109,7 +1168,7 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
                   <span>{t('workout.addExercise')} {limit !== Infinity && `(${additionalCount}/${limit})`}</span>
                 </button>
                 {isAtLimit && (
-                  <p className="text-[8px] font-bold uppercase tracking-widest text-crimson animate-pulse">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-crimson animate-pulse">
                     {t('workout.maxExercises').replace('{level}', t(`nav.${level}`))}
                   </p>
                 )}
@@ -1235,7 +1294,7 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
             className="fixed bottom-24 right-6 md:right-10 w-14 h-14 md:w-16 md:h-16 bg-volt text-void shadow-[0_0_30px_var(--primary-glow)] flex items-center justify-center z-[110] group"
           >
             <Bot size={28} className="md:w-8 md:h-8 group-hover:rotate-12 transition-transform" />
-            <span className="absolute -top-2 -right-2 bg-void text-volt text-[8px] font-bold px-1.5 py-0.5 uppercase tracking-widest border border-volt">EXP</span>
+            <span className="absolute -top-2 -right-2 bg-void text-volt text-[10px] font-bold px-1.5 py-0.5 uppercase tracking-widest border border-volt">EXP</span>
           </motion.button>
 
           <AICoach isOpen={isAICoachOpen} onClose={() => setIsAICoachOpen(false)} />
@@ -1258,7 +1317,7 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
               <div className="flex flex-col">
                 <div className="flex items-center gap-1.5 text-volt mb-0.5">
                   <Timer size={10} className="animate-pulse" />
-                  <span className="text-[7px] font-black uppercase tracking-[0.2em]">{t('workout.restTime')}</span>
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em]">{t('workout.restTime')}</span>
                 </div>
                 <div className="text-2xl font-black text-white font-mono leading-none">
                   {formatRestTime(restRemaining)}
@@ -1269,14 +1328,14 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
 
               <div className="flex gap-1">
                 <button 
-                  onClick={() => setRestRemaining(prev => Math.max(0, (prev || 0) - 30))}
-                  className="px-2 py-1.5 bg-white/5 hover:bg-white/10 text-[9px] font-black border border-white/10 transition-colors"
+                  onClick={() => setRestRemaining((prev: number | null) => Math.max(0, (prev || 0) - 30))}
+                  className="px-2 py-1.5 bg-white/5 hover:bg-white/10 text-[10px] font-black border border-white/10 transition-colors"
                 >
                   -30S
                 </button>
                 <button 
-                  onClick={() => setRestRemaining(prev => (prev || 0) + 30)}
-                  className="px-2 py-1.5 bg-volt/10 hover:bg-volt/20 text-volt text-[9px] font-black border border-volt/20 transition-colors font-mono"
+                  onClick={() => setRestRemaining((prev: number | null) => (prev || 0) + 30)}
+                  className="px-2 py-1.5 bg-volt/10 hover:bg-volt/20 text-volt text-[10px] font-black border border-volt/20 transition-colors font-mono"
                 >
                   +30S
                 </button>
@@ -1286,7 +1345,7 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
 
               <button 
                 onClick={() => setRestRemaining(null)}
-                className="text-[8px] font-black uppercase tracking-[0.2em] text-zinc-500 hover:text-white transition-colors px-1"
+                className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 hover:text-white transition-colors px-1"
               >
                 SKIP
               </button>

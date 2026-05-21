@@ -22,7 +22,6 @@ export interface PerformanceWidget {
 
 export const ALL_PERFORMANCE_WIDGETS: PerformanceWidget[] = [
     { id: 'progression', label: 'analytics.progression', icon: TrendingUp },
-    { id: 'volume-trend', label: 'analysis.weeklyVolumeTrend', icon: BarChart3 },
     { id: 'growth', label: 'analysis.est1rmGrowth', icon: Star },
     { id: 'tactical', label: 'analysis.tacticalIntegration', icon: Activity },
     { id: 'conditioning-tracker', label: 'Conditioning Tracker', icon: Timer },

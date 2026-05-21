@@ -80,7 +80,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 </div>
 
                 <div className="flex flex-col gap-0.5 flex-1 min-w-0">
-                  <span className="text-[7px] font-black uppercase tracking-[0.2em] opacity-50 block leading-none">
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-50 block leading-none">
                     {t(`toast.${toast.type}`)}
                   </span>
                   <p className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.05em] leading-tight">
@@ -100,7 +100,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                   <motion.div 
                     initial={{ width: "100%" }}
                     animate={{ width: "0%" }}
-                    transition={{ duration: toast.duration / 1000, ease: "linear" }}
+                    transition={{ duration: (toast.duration || 3000) / 1000, ease: "linear" }}
                     className={cn(
                       "absolute bottom-0 left-0 h-0.5 opacity-30",
                       toast.type === 'success' && "bg-emerald-500",

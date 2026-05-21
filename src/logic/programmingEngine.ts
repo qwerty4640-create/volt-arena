@@ -90,10 +90,10 @@ export function autoregulateTrainingMax(
   // 1. RPE-Based Adjustment
   if (!performance.isAMRAP) {
     const rpeDiff = performance.targetRPE - performance.actualRPE;
-    if (rpeDiff >= 2) {
-      newMax += (currentMax * 0.025); 
-    } else if (rpeDiff <= -2) {
-      newMax -= (currentMax * 0.025);
+    // Upgrade: Continuous proportional adaptation for intra-session discrepancies
+    // Every 1.0 RPE deviation represents approximately a 1.25% strength adaptation
+    if (Math.abs(rpeDiff) >= 0.5) {
+      newMax += (currentMax * (rpeDiff * 0.0125)); 
     }
   }
 

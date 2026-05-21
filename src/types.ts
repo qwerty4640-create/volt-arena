@@ -4,12 +4,12 @@ export type ViewType = 'analysis' | 'safety' | 'analytics' | 'berserker' | 'trai
 export type ImmersionMode = 'immersive' | 'ar';
 
 export type WidgetId = 'recovery-analysis' | 'active-recovery' | 'readiness-trend' | 'pr' | 'macros';
-export type PerformanceWidgetId = 'progression' | 'volume-trend' | 'growth' | 'tactical' | 'conditioning-tracker' | 'mobility-matrix' | 'joint-stress';
+export type PerformanceWidgetId = 'progression' | 'growth' | 'tactical' | 'conditioning-tracker' | 'mobility-matrix' | 'joint-stress';
 
 export interface NavItem {
   id: ViewType;
   label: string;
-  icon: LucideIcon;
+  icon: any;
   isExperimental?: boolean;
 }
 

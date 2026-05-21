@@ -94,7 +94,7 @@ export const PostWorkoutSummary = ({
             </h2>
           </div>
 
-          <p className="text-zinc-500 font-headline text-[8px] md:text-[10px] font-black uppercase tracking-[0.3em] mt-0 mb-2 text-center">
+          <p className="text-zinc-500 font-headline text-[10px] md:text-[10px] font-black uppercase tracking-[0.3em] mt-0 mb-2 text-center">
             {currentSession?.title || "Heavy Legs W3D3"}
           </p>
 
@@ -102,14 +102,14 @@ export const PostWorkoutSummary = ({
             <div className="flex justify-between items-center w-full">
               <div className="flex items-center gap-2 text-zinc-400">
                 <Star size={14} className="md:w-4 md:h-4" />
-                <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest">
+                <span className="text-[10px] md:text-[10px] font-black uppercase tracking-widest">
                   Mission RPE
                 </span>
               </div>
               <div className="flex items-baseline gap-4">
                 {currentSession?.targetRpe && (
                   <div className="text-right">
-                    <span className="block text-[8px] font-black text-zinc-600 uppercase tracking-widest">
+                    <span className="block text-[10px] font-black text-zinc-600 uppercase tracking-widest">
                       Target
                     </span>
                     <span className="text-lg font-black text-zinc-400">
@@ -118,7 +118,7 @@ export const PostWorkoutSummary = ({
                   </div>
                 )}
                 <div className="text-right">
-                  <span className="block text-[8px] font-black text-zinc-600 uppercase tracking-widest">
+                  <span className="block text-[10px] font-black text-zinc-600 uppercase tracking-widest">
                     Actual
                   </span>
                   <span className="text-2xl md:text-3xl font-black text-volt">
@@ -131,7 +131,7 @@ export const PostWorkoutSummary = ({
             {currentSession?.targetRpe && (
               <div
                 className={cn(
-                  "p-3 text-[8px] font-black uppercase tracking-widest text-center",
+                  "p-3 text-[10px] font-black uppercase tracking-widest text-center",
                   rpe === currentSession.targetRpe
                     ? "bg-volt/10 text-volt"
                     : rpe > currentSession.targetRpe
@@ -157,7 +157,7 @@ export const PostWorkoutSummary = ({
                 onChange={(e) => setRpe(parseFloat(e.target.value))}
                 className="w-full h-2 bg-void appearance-none cursor-pointer accent-volt border border-white/5"
               />
-              <div className="absolute -bottom-6 left-0 right-0 flex justify-between text-[7px] md:text-[8px] font-black text-zinc-600 uppercase tracking-widest">
+              <div className="absolute -bottom-6 left-0 right-0 flex justify-between text-[10px] md:text-[10px] font-black text-zinc-600 uppercase tracking-widest">
                 <span>{t("workout.easy")}</span>
                 <span>{t("workout.moderate")}</span>
                 <span>{t("workout.maxEffort")}</span>

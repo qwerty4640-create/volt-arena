@@ -24,7 +24,9 @@ export enum BlockType {
   EXPLOSIVENESS = 'explosiveness',
   ENDURANCE = 'endurance',
   PREHAB = 'prehab',
-  RETENTION = 'Retention'
+  RETENTION = 'Retention',
+  STRENGTH_RETENTION = 'Strength Retention',
+  ENDURANCE_RETENTION = 'Endurance Retention'
 }
 
 export enum TrainingTrack {
@@ -70,7 +72,9 @@ export const BLOCK_TEMPLATES: Record<string, Partial<BlockDefinition>> = {
   [BlockType.EXPLOSIVENESS]: { type: BlockType.EXPLOSIVENESS as BlockType, label: 'Explosiveness', baseIntensity: 0.80, baseReps: '3', baseSets: 5, intensityIncrementPerWeek: 0.02 },
   [BlockType.ENDURANCE]: { type: BlockType.ENDURANCE as BlockType, label: 'Endurance', baseIntensity: 0.65, baseReps: '20', baseSets: 3, intensityIncrementPerWeek: 0.01 },
   [BlockType.PREHAB]: { type: BlockType.PREHAB as BlockType, label: 'Prehab/Rehab', baseIntensity: 0.55, baseReps: '15', baseSets: 3, intensityIncrementPerWeek: 0.01 },
-  [BlockType.RETENTION]: { type: BlockType.RETENTION as BlockType, label: 'Retention Protocol', baseIntensity: 0.60, baseReps: '5', baseSets: 2, intensityIncrementPerWeek: 0 }
+  [BlockType.RETENTION]: { type: BlockType.RETENTION as BlockType, label: 'Retention Protocol', baseIntensity: 0.60, baseReps: '5', baseSets: 2, intensityIncrementPerWeek: 0 },
+  [BlockType.STRENGTH_RETENTION]: { type: BlockType.STRENGTH_RETENTION as BlockType, label: 'Strength Retention', baseIntensity: 0.85, baseReps: '3', baseSets: 2, intensityIncrementPerWeek: 0 },
+  [BlockType.ENDURANCE_RETENTION]: { type: BlockType.ENDURANCE_RETENTION as BlockType, label: 'Endurance Retention', baseIntensity: 0.65, baseReps: '15 min', baseSets: 1, intensityIncrementPerWeek: 0 }
 };
 
 export const GOAL_EXPANSIONS: Record<string, { type: BlockType; ratio: number }[]> = {
@@ -188,18 +192,31 @@ export const getPlanForDuration = (totalWeeks: number, goalOrGoals: HybridGoal =
     // Insert Retention Protocol between distinct goal transitions
     let retentionWeeks = 0;
     if (idx > 0) {
+      const prevGoalRaw = goals[idx - 1];
+      const prevGoal = baseGoalBlocks[prevGoalRaw]?.type as BlockType || BlockType.POWERBUILDING;
+      const currGoal = baseGoalBlocks[goal]?.type as BlockType || BlockType.POWERBUILDING;
+      
+      const strengthGroup = [BlockType.STRENGTH, BlockType.PURE_STRENGTH, BlockType.POWER, BlockType.POWERBUILDING, BlockType.EXPLOSIVENESS];
+      const enduranceGroup = [BlockType.ENDURANCE, BlockType.AEROBIC_BASE, BlockType.CAPACITY, BlockType.VO2_MAX, BlockType.THRESHOLD];
+
+      let retentionBlockType = BlockType.RETENTION;
+      let template = BLOCK_TEMPLATES[BlockType.RETENTION]!;
+
+      if (strengthGroup.includes(prevGoal) && enduranceGroup.includes(currGoal)) {
+        retentionBlockType = BlockType.STRENGTH_RETENTION;
+        template = BLOCK_TEMPLATES[BlockType.STRENGTH_RETENTION]!;
+      } else if (enduranceGroup.includes(prevGoal) && strengthGroup.includes(currGoal)) {
+        retentionBlockType = BlockType.ENDURANCE_RETENTION;
+        template = BLOCK_TEMPLATES[BlockType.ENDURANCE_RETENTION]!;
+      }
+
       retentionWeeks = Math.min(2, Math.floor(duration * 0.2)); // up to 2 weeks of retention
       if (retentionWeeks > 0) {
         duration -= retentionWeeks;
         plan.push({
-          type: BlockType.RETENTION as BlockType,
-          label: 'Retention Protocol',
-          baseIntensity: 0.85,
-          baseReps: '3',
-          baseSets: 2,
-          intensityIncrementPerWeek: 0,
+          ...template,
           durationWeeks: retentionWeeks
-        });
+        } as BlockDefinition);
         remaining -= retentionWeeks;
       }
     }
@@ -244,7 +261,9 @@ export const BLOCK_PHASE_ORDER: Record<string, number> = {
 
   [BlockType.DELOAD]: 0,
   [BlockType.REGENERATION]: 0,
-  [BlockType.RETENTION]: 0
+  [BlockType.RETENTION]: 0,
+  [BlockType.STRENGTH_RETENTION]: 0,
+  [BlockType.ENDURANCE_RETENTION]: 0
 };
 
 export const applyFluidReorder = (blocks: any[]): any[] => {
@@ -367,21 +386,35 @@ export const analyzeSequenceConflicts = (customProgramBlocks: any[]): SequenceAd
 
   // 5. Missing Retention blocks between major distinct phases
   for (let i = 0; i < types.length - 1; i++) {
-    const current = types[i];
-    const next = types[i+1];
-    const isMaintenance = [BlockType.RETENTION, BlockType.DELOAD, BlockType.REGENERATION].includes(current as BlockType) ||
-                          [BlockType.RETENTION, BlockType.DELOAD, BlockType.REGENERATION].includes(next as BlockType);
+    const current = types[i] as BlockType;
+    const next = types[i+1] as BlockType;
+    const isMaintenance = [BlockType.RETENTION, BlockType.STRENGTH_RETENTION, BlockType.ENDURANCE_RETENTION, BlockType.DELOAD, BlockType.REGENERATION].includes(current) ||
+                          [BlockType.RETENTION, BlockType.STRENGTH_RETENTION, BlockType.ENDURANCE_RETENTION, BlockType.DELOAD, BlockType.REGENERATION].includes(next);
     
     if (!isMaintenance && current !== next) {
       const currentBlockWeeks = parseInt(customProgramBlocks[i].durationWeeks) || 0;
       const nextBlockWeeks = parseInt(customProgramBlocks[i+1].durationWeeks) || 0;
       if (currentBlockWeeks >= 8 && nextBlockWeeks >= 8) {
+        let suggestedBlock = BlockType.RETENTION;
+        let recommendation = "Insert a RETENTION block to stabilize gains before shifting physical focus.";
+        
+        const strengthBlocks = [BlockType.STRENGTH, BlockType.PURE_STRENGTH, BlockType.POWER, BlockType.POWERBUILDING, BlockType.EXPLOSIVENESS];
+        const enduranceBlocks = [BlockType.ENDURANCE, BlockType.AEROBIC_BASE, BlockType.CAPACITY, BlockType.VO2_MAX, BlockType.THRESHOLD];
+
+        if (strengthBlocks.includes(current) && enduranceBlocks.includes(next)) {
+          suggestedBlock = BlockType.STRENGTH_RETENTION;
+          recommendation = "Insert a STRENGTH RETENTION block to lock in maximal force adaptations before shifting to prolonged endurance.";
+        } else if (enduranceBlocks.includes(current) && strengthBlocks.includes(next)) {
+          suggestedBlock = BlockType.ENDURANCE_RETENTION;
+          recommendation = "Insert an ENDURANCE RETENTION block to maintain aerobic baseline while shifting to heavy loads.";
+        }
+
         advisories.push({
           issue: `Direct transition from ${current} to ${next} without a retention phase risks significant decay coefficient of previous adaptations.`,
-          recommendation: "Insert a RETENTION block to stabilize gains before shifting physical focus.",
+          recommendation: recommendation,
           decayRisk: 0.12,
           actionType: 'INSERT',
-          suggestedBlock: BlockType.RETENTION
+          suggestedBlock: suggestedBlock
         });
       }
     }

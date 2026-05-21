@@ -29,6 +29,7 @@ import {
     BarChart,
     Bar,
     Line,
+    Area,
     XAxis,
     YAxis,
     CartesianGrid,
@@ -135,6 +136,15 @@ const ReadinessTrendWidget = () => {
             .sort((a, b) => (a.completedAt || 0) - (b.completedAt || 0));
 
         return timeFilteredHistory.map(session => {
+            let sessionVolume = 0;
+            session.exercises?.forEach((ex: any) => {
+                ex.sets?.forEach((s: any) => {
+                    if (s.isCompleted) {
+                        sessionVolume += (parseFloat(s.weight) || 0) * (parseInt(s.reps) || 0);
+                    }
+                });
+            });
+
             return {
                 date: session.date,
                 title: session.title,
@@ -143,8 +153,9 @@ const ReadinessTrendWidget = () => {
                 fullDate: new Date(session.completedAt || session.date).toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' }),
                 Readiness: session.readiness != null ? session.readiness : 0,
                 Fatigue: session.fatigue != null ? (5 - session.fatigue) * 20 : 0,
-                Sleep: session.sleep != null ? session.sleep * 20 : 0,
-                Stress: session.stress != null ? (5 - session.stress) * 20 : 0
+                Sleep: session.sleep != null ? (5 - session.sleep) * 20 : 0,
+                Stress: session.stress != null ? (5 - session.stress) * 20 : 0,
+                SessionVolume: sessionVolume
             };
         });
     }, [history, timeFrame]);
@@ -169,10 +180,24 @@ const ReadinessTrendWidget = () => {
                                         <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">{entry.name}</span>
                                     </div>
                                     <span className="text-sm font-black text-white">
-                                        {entry.value}{['READINESS', 'SLEEP', 'FATIGUE', 'STRESS'].includes(entry.name?.toUpperCase()) ? '%' : ''}
+                                        {entry.value}
+                                        {['READINESS', 'SLEEP', 'FATIGUE', 'STRESS', 'SLEEP DEFICIT'].includes(entry.name?.toUpperCase()) || entry.dataKey === 'Sleep'
+                                            ? '%' 
+                                            : ''}
                                     </span>
                                 </div>
                             ))}
+                            {data.SessionVolume !== undefined && (
+                                <div className="flex items-center justify-between gap-4 border-t border-white/5 pt-2 mt-2">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-1.5 h-1.5 bg-[#facc15]" />
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">{t('analysis.sessionVolume')}</span>
+                                    </div>
+                                    <span className="text-sm font-black text-white">
+                                        {data.SessionVolume} {weightUnit}
+                                    </span>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -228,31 +253,62 @@ const ReadinessTrendWidget = () => {
             <div className="h-[250px] w-full mt-4 min-w-0 relative z-10">
                 {readinessTrendData.length > 0 ? (
                     <ResponsiveContainer width="100%" height="100%">
-                        <ComposedChart data={readinessTrendData} margin={{ top: 5, right: 5, left: -20, bottom: 25 }}>
+                        <ComposedChart 
+                            data={readinessTrendData} 
+                            margin={{ 
+                                top: 5, 
+                                right: 5, 
+                                left: 0, 
+                                bottom: 25 
+                            }}
+                        >
+                            <defs>
+                                <linearGradient id="colorReadiness" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="var(--primary-color)" stopOpacity={0.25} />
+                                    <stop offset="95%" stopColor="var(--primary-color)" stopOpacity={0.0} />
+                                </linearGradient>
+                            </defs>
                             <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
                             <XAxis
                                 dataKey="displayDate"
                                 axisLine={false}
                                 tickLine={false}
-                                tick={{ fill: '#52525b', fontSize: 10, fontWeight: 900, textTransform: 'uppercase', fontFamily: 'Inter' }}
+                                tick={{ fill: '#52525b', fontSize: 10, fontWeight: 900, fontFamily: 'Inter' }}
                                 dy={10}
                             />
                             <YAxis
                                 yAxisId="left"
                                 axisLine={false}
                                 tickLine={false}
+                                width={35}
                                 tick={{ fill: '#52525b', fontSize: 10, fontWeight: 900, fontFamily: 'Inter' }}
                             />
                             <Tooltip content={<ReadinessTooltip />} cursor={{ stroke: 'var(--primary-color)', strokeWidth: 1, strokeDasharray: '4 4' }} />
-                            {metricOptions.map(metric => selectedMetrics.includes(metric.id) && (
+                            {selectedMetrics.includes('Readiness') && (
+                                <Area
+                                    name="Readiness"
+                                    yAxisId="left"
+                                    type="linear"
+                                    dataKey="Readiness"
+                                    stroke="var(--primary-color)"
+                                    strokeWidth={3}
+                                    fill="url(#colorReadiness)"
+                                    dot={false}
+                                    activeDot={{ r: 6, stroke: 'var(--primary-color)', strokeWidth: 2, fill: '#131313' }}
+                                    animationDuration={1500}
+                                    connectNulls
+                                />
+                            )}
+                            {metricOptions.filter(m => m.id !== 'Readiness').map(metric => selectedMetrics.includes(metric.id) && (
                                 <Line
                                     key={metric.id}
+                                    name={metric.label}
                                     yAxisId="left"
                                     type="linear"
                                     dataKey={metric.id}
                                     stroke={metric.color}
                                     strokeWidth={3}
-                                    dot={{ r: 4, fill: metric.color, strokeWidth: 0 }}
+                                    dot={false}
                                     activeDot={{ r: 6, stroke: metric.color, strokeWidth: 2, fill: '#131313' }}
                                     animationDuration={1500}
                                     connectNulls
@@ -512,7 +568,6 @@ export const ReadinessAnalysisWidget = () => {
                                             <XAxis type="number" domain={[0, 100]} hide />
                                             <YAxis type="category" dataKey="name" hide />
                                             <Tooltip 
-                                                trigger="axis"
                                                 shared={true}
                                                 allowEscapeViewBox={{ x: true, y: true }}
                                                 cursor={{ fill: 'transparent' }}
@@ -1129,9 +1184,8 @@ export const ExternalActivityWidget = ({ externalTimeFrame, onTimeFrameChange }:
 
             <div className="mt-auto border-t border-volt/20 pt-4 relative z-10">
                 <div className="flex items-start gap-3">
-                    <Zap className="text-volt shrink-0 mt-0.5" size={16} />
+                    <Info className="text-volt shrink-0 mt-0.5" size={16} />
                     <div>
-                        <span className="block text-[10px] font-black uppercase tracking-widest text-volt mb-1">Vanguard AI Tip</span>
                         <p className="text-xs text-zinc-400">
                             {calibration.hasAerobicInterference
                                 ? "You're accumulating too much systemic fatigue from extracurricular activities. Consider lowering the RPE of your tactical missions or reducing duration to preserve force production for the barbell."
@@ -1148,6 +1202,8 @@ const WIDGET_COMPONENTS: Record<WidgetId, React.FC<any>> = {
     'recovery-analysis': ReadinessAnalysisWidget,
     'active-recovery': ActiveRecoveryWidget,
     'readiness-trend': ReadinessTrendWidget,
+    'pr': () => null,
+    'macros': () => null
 };
 
 interface SortableWidgetProps {

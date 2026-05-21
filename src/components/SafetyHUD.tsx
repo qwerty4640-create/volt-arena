@@ -55,7 +55,7 @@ export const SafetyHUD = ({ onDismiss }: SafetyHUDProps) => {
             <Biohazard size={32} />
             <div className="text-center">
               <span className="block font-headline text-xl font-black uppercase tracking-wider">ACKNOWLEDGE MANUAL OVERRIDE</span>
-              <span className="block font-headline text-[9px] opacity-70 tracking-widest font-black uppercase mt-1">RESTORE SYSTEM ACCESS</span>
+              <span className="block font-headline text-[10px] opacity-70 tracking-widest font-black uppercase mt-1">RESTORE SYSTEM ACCESS</span>
             </div>
           </motion.button>
         </div>

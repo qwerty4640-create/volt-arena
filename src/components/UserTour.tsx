@@ -157,12 +157,6 @@ export const UserTour: React.FC<UserTourProps> = ({ activeView }) => {
         placement: 'bottom'
       },
       {
-        target: '.vanguard-tour-field-manual',
-        title: "TACTICAL MANUAL",
-        content: "Reference deployment protocols and system documentation if you encounter operational ambiguity.",
-        placement: 'bottom'
-      },
-      {
         target: '.vanguard-tour-visual-output',
         title: "VISUAL OUTPUT",
         content: "Configure interface themes and color filters to optimize your tactical awareness.",
@@ -303,16 +297,6 @@ export const UserTour: React.FC<UserTourProps> = ({ activeView }) => {
 
   return createPortal(
     <div className="fixed inset-0 z-[9999] pointer-events-none font-sans">
-      {/* Dimmed Overlay with Hole */}
-      <div className="absolute inset-0 bg-void/80 pointer-events-auto" style={{
-        maskImage: targetRect 
-          ? `radial-gradient(circle at ${targetRect.left + targetRect.width / 2}px ${targetRect.top + targetRect.height / 2}px, transparent ${Math.max(targetRect.width, targetRect.height) / 2 + 10}px, black ${Math.max(targetRect.width, targetRect.height) / 2 + 20}px)`
-          : 'none',
-        WebkitMaskImage: targetRect 
-          ? `radial-gradient(circle at ${targetRect.left + targetRect.width / 2}px ${targetRect.top + targetRect.height / 2}px, transparent ${Math.max(targetRect.width, targetRect.height) / 2 + 10}px, black ${Math.max(targetRect.width, targetRect.height) / 2 + 20}px)`
-          : 'none'
-      }} onClick={handleSkip} />
-
       {/* Spotlight highlight border */}
       {targetRect && (
         <motion.div
@@ -323,7 +307,7 @@ export const UserTour: React.FC<UserTourProps> = ({ activeView }) => {
             width: targetRect.width + 20,
             height: targetRect.height + 20,
           }}
-          className="absolute border-2 border-volt shadow-[0_0_30px_rgba(0,182,255,0.3)] z-[10000]"
+          className="absolute border-2 border-volt z-[10000]"
           style={{ pointerEvents: 'none' }}
         />
       )}
@@ -382,7 +366,7 @@ export const UserTour: React.FC<UserTourProps> = ({ activeView }) => {
             <div className="flex items-center justify-between pt-4 border-t border-white/5">
               <button
                 onClick={handleSkip}
-                className="text-[9px] font-black uppercase tracking-widest text-zinc-500 hover:text-white transition-colors"
+                className="text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-white transition-colors"
               >
                 Skip
               </button>

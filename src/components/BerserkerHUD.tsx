@@ -131,14 +131,14 @@ export const BerserkerHUD = ({ onComplete, onAddActivity, viewType = 'training' 
 
           {/* Tactical Status Line */}
           <div className="mt-8 flex gap-6 opacity-30 justify-center items-center">
-            <span className="font-sans text-[8px] font-bold uppercase tracking-[0.2em] flex items-center gap-2">
+            <span className="font-sans text-[10px] font-bold uppercase tracking-[0.2em] flex items-center gap-2">
               <Zap size={10} className="text-volt" />
               ELAPSED: {formatDuration(elapsedMs)}
             </span>
-            <span className="font-sans text-[8px] font-bold uppercase tracking-[0.2em]">
+            <span className="font-sans text-[10px] font-bold uppercase tracking-[0.2em]">
               SYS_STATUS: ACTIVE {currentSession?.penaltyType ? '[RECOVERY_RESTRICTED]' : ''}
             </span>
-            <span className="font-sans text-[8px] font-bold uppercase tracking-[0.2em]">
+            <span className="font-sans text-[10px] font-bold uppercase tracking-[0.2em]">
               REF_ID: {currentSession?.id?.substring(0, 8) || 'INITIALIZING'}
             </span>
           </div>

@@ -193,7 +193,7 @@ export const AICoach = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
                   <h4 className="font-headline text-xs font-black uppercase tracking-widest text-white">{t('coach.title')}</h4>
                   <div className="flex items-center gap-1">
                     <div className="w-1.5 h-1.5 rounded-full bg-volt animate-pulse" />
-                    <span className="text-[8px] font-black uppercase tracking-widest text-volt">{t('coach.active')}</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-volt">{t('coach.active')}</span>
                   </div>
                 </div>
               </div>
@@ -229,20 +229,20 @@ export const AICoach = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
                       <div className="mt-3 flex gap-2">
                         <button 
                           onClick={() => handleSend(t('common.yes'))}
-                          className="px-3 py-1 bg-volt text-void text-[8px] font-black uppercase tracking-widest hover:bg-white transition-all"
+                          className="px-3 py-1 bg-volt text-void text-[10px] font-black uppercase tracking-widest hover:bg-white transition-all"
                         >
                           {t('coach.confirm')}
                         </button>
                         <button 
                           onClick={() => handleSend(t('common.no'))}
-                          className="px-3 py-1 bg-white/10 text-white text-[8px] font-black uppercase tracking-widest hover:bg-white/20 transition-all"
+                          className="px-3 py-1 bg-white/10 text-white text-[10px] font-black uppercase tracking-widest hover:bg-white/20 transition-all"
                         >
                           {t('coach.cancel')}
                         </button>
                       </div>
                     )}
                   </div>
-                  <span className="text-[8px] font-black uppercase tracking-widest text-zinc-600 mt-1">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-zinc-600 mt-1">
                     {msg.role === 'user' ? t('coach.athlete') : t('coach.coach')}
                   </span>
                 </div>
@@ -292,13 +292,13 @@ export const AICoach = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
                 <div className="flex gap-2">
                   <button 
                     onClick={() => handleSend(t('coach.surpriseMe'))}
-                    className="px-3 py-1.5 bg-volt/10 border border-volt/30 text-volt text-[8px] font-black uppercase tracking-widest hover:bg-volt hover:text-void transition-all"
+                    className="px-3 py-1.5 bg-volt/10 border border-volt/30 text-volt text-[10px] font-black uppercase tracking-widest hover:bg-volt hover:text-void transition-all"
                   >
                     {t('coach.surpriseMe')}
                   </button>
                   <button 
                     onClick={() => handleSend(t('coach.formCheck'))}
-                    className="px-3 py-1.5 bg-white/5 border border-white/10 text-zinc-400 text-[8px] font-black uppercase tracking-widest hover:bg-white/10 hover:text-white transition-all"
+                    className="px-3 py-1.5 bg-white/5 border border-white/10 text-zinc-400 text-[10px] font-black uppercase tracking-widest hover:bg-white/10 hover:text-white transition-all"
                   >
                     {t('coach.formCheck')}
                   </button>
@@ -306,7 +306,7 @@ export const AICoach = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
                 {isVoiceActive && (
                   <div className="flex items-center gap-1.5">
                     <div className="w-1.5 h-1.5 rounded-full bg-volt animate-pulse" />
-                    <span className="text-[8px] font-black uppercase tracking-widest text-volt">{t('coach.voiceActive')}</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-volt">{t('coach.voiceActive')}</span>
                   </div>
                 )}
               </div>

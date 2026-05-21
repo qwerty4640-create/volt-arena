@@ -533,18 +533,18 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
                     {selectedWorkout.logType === 'workout' && (selectedWorkout.blockLabel || selectedWorkout.blockType) ? (
                       <div className="col-span-2 md:col-span-4 bg-volt/5 p-3 md:p-4 border-none flex justify-between items-center">
                         <div>
-                          <span className="block text-[7px] md:text-[8px] font-black uppercase tracking-widest text-volt/60 mb-1">{t('analysis.periodizationBlock')}</span>
+                          <span className="block text-[10px] md:text-[10px] font-black uppercase tracking-widest text-volt/60 mb-1">{t('analysis.periodizationBlock')}</span>
                           <span className="text-xs md:text-sm font-black text-volt uppercase">{selectedWorkout.blockLabel || selectedWorkout.blockType}</span>
                         </div>
                         <div className="text-right">
-                          <span className="block text-[7px] md:text-[8px] font-black uppercase tracking-widest text-volt/60 mb-1">{t('analysis.progression')}</span>
+                          <span className="block text-[10px] md:text-[10px] font-black uppercase tracking-widest text-volt/60 mb-1">{t('analysis.progression')}</span>
                           <span className="text-xs md:text-sm font-black text-white uppercase tracking-tight">W{selectedWorkout.weekInBlock}</span>
                         </div>
                       </div>
                     ) : selectedWorkout.logType === 'recovery' ? (
                       <div className="col-span-2 md:col-span-4 bg-zinc-500/10 p-3 md:p-4 border-none flex justify-between items-center">
                         <div>
-                          <span className="block text-[7px] md:text-[8px] font-black uppercase tracking-widest text-zinc-500 mb-1">{t('analysis.missionType')}</span>
+                          <span className="block text-[10px] md:text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">{t('analysis.missionType')}</span>
                           <span className="text-xs md:text-sm font-black text-zinc-400 uppercase">
                             {(() => {
                               const act = ACTIVITY_LIBRARY.find(a => a.id === selectedWorkout.activityId);
@@ -553,14 +553,14 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
                           </span>
                         </div>
                         <div className="text-right">
-                          <span className="block text-[7px] md:text-[8px] font-black uppercase tracking-widest text-zinc-500 mb-1">{t('analysis.impactScore')}</span>
+                          <span className="block text-[10px] md:text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">{t('analysis.impactScore')}</span>
                           <span className="text-xs md:text-sm font-black text-white uppercase tracking-tight">{((selectedWorkout.durationMinutes * selectedWorkout.rpe) / 100).toFixed(1)}x</span>
                         </div>
                       </div>
                     ) : null}
 
                     <div className="bg-void/40 p-3 md:p-4 border border-white/5">
-                      <span className="block text-[7px] md:text-[8px] font-black uppercase tracking-widest text-zinc-600 mb-1">
+                      <span className="block text-[10px] md:text-[10px] font-black uppercase tracking-widest text-zinc-600 mb-1">
                         {selectedWorkout.logType === 'workout' ? t('analytics.volume') : t('analysis.missionType').toUpperCase()}
                       </span>
                       <span className="text-xs md:text-sm font-bold">
@@ -571,18 +571,18 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
                       </span>
                     </div>
                     <div className="bg-void/40 p-3 md:p-4 border border-white/5">
-                      <span className="block text-[7px] md:text-[8px] font-black uppercase tracking-widest text-zinc-600 mb-1">{t('analysis.duration')}</span>
+                      <span className="block text-[10px] md:text-[10px] font-black uppercase tracking-widest text-zinc-600 mb-1">{t('analysis.duration')}</span>
                       <span className="text-xs md:text-sm font-bold">
                         {selectedWorkout.logType === 'workout' ? selectedWorkout.duration : `${selectedWorkout.durationMinutes}m`}
                       </span>
                     </div>
                     <div className="bg-void/40 p-3 md:p-4 border border-white/5">
-                      <span className="block text-[7px] md:text-[8px] font-black uppercase tracking-widest text-zinc-600 mb-1">{t('analysis.avgRpe')}</span>
+                      <span className="block text-[10px] md:text-[10px] font-black uppercase tracking-widest text-zinc-600 mb-1">{t('analysis.avgRpe')}</span>
                       <span className="text-xs md:text-sm font-bold">{(selectedWorkout.rpe || 0).toFixed(1)}</span>
                     </div>
                     {selectedWorkout.logType === 'workout' && selectedWorkout.actualRpe !== undefined && (
                       <div className="bg-void/40 p-3 md:p-4 border border-white/5">
-                        <span className="block text-[7px] md:text-[8px] font-black uppercase tracking-widest text-zinc-600 mb-1">{t('workout.actual')} RPE</span>
+                        <span className="block text-[10px] md:text-[10px] font-black uppercase tracking-widest text-zinc-600 mb-1">{t('workout.actual')} RPE</span>
                         <span className="text-xs md:text-sm font-bold">{(selectedWorkout.actualRpe || 0).toFixed(1)}</span>
                       </div>
                     )}
@@ -875,7 +875,7 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
                     onClick={async () => {
                       try {
                         await updateHistoryWorkout(editWorkout);
-                        setSelectedWorkout(editWorkout);
+                        setSelectedWorkout({ ...editWorkout, logType: 'workout' } as unknown as HistoryLog);
                         setIsEditing(false);
                       } catch (error) {
                         console.error("Failed to save workout edits:", error);

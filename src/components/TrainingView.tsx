@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import {
-  Dumbbell,
   Play,
   Activity,
   Trophy,
@@ -29,10 +28,13 @@ import { getExerciseName, isMainLiftMatch, isTimedExercise, calculateVolume } fr
 import { calculateTier } from '../lib/strength';
 import { MissionBriefingModal } from './MissionBriefingModal';
 import { ExerciseSwapModal } from './ExerciseSwapModal';
+import { ExerciseInfoModal } from './ExerciseInfoModal';
 import { getWarmupForLift, COOL_DOWN_ROUTINE } from '../data/warmupLibrary';
-import { getSwappableExercises, EXERCISE_DATABASE } from '../constants/exercises';
+import { getSwappableExercises, EXERCISE_DATABASE, ExerciseDefinition } from '../constants/exercises';
 import { getBlockForWeek } from '../constants/periodization';
 import { getFitnessTestInfo } from '../utils/fitnessTestUtils';
+import { haptics } from '../lib/haptics';
+import { TRAINING_TERMS } from '../data/trainingTerms';
 
 interface TrainingViewProps {
   onContinueSession?: () => void;
@@ -42,6 +44,40 @@ interface TrainingViewProps {
   onViewUpcomingMissions?: () => void;
   onNavigateToFitnessTest?: () => void;
 }
+
+const MissionTimer = ({ startTime, isActiveSession, estDuration }: { startTime?: number, isActiveSession: boolean, estDuration: number }) => {
+  const [elapsedTime, setElapsedTime] = React.useState(() => {
+    if (isActiveSession && startTime) {
+      const diff = Date.now() - startTime;
+      const hours = Math.floor(diff / 3600000);
+      const minutes = Math.floor((diff % 3600000) / 60000);
+      const seconds = Math.floor((diff % 60000) / 1000);
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+    return '';
+  });
+
+  React.useEffect(() => {
+    if (!isActiveSession || !startTime) return;
+
+    const interval = setInterval(() => {
+      const diff = Date.now() - startTime;
+      const hours = Math.floor(diff / 3600000);
+      const minutes = Math.floor((diff % 3600000) / 60000);
+      const seconds = Math.floor((diff % 60000) / 1000);
+      setElapsedTime(
+        `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+      );
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isActiveSession, startTime]);
+
+  if (isActiveSession) {
+    return <span className="font-mono text-xs font-bold uppercase">{elapsedTime}</span>;
+  }
+  return <span className="font-mono text-xs font-bold uppercase">{estDuration} MIN</span>;
+};
 
 export const TrainingView = ({ 
   onContinueSession, 
@@ -106,19 +142,89 @@ export const TrainingView = ({
   const [selectedMission, setSelectedMission] = useState<WorkoutSession | null>(null);
   const [currentPRIndex, setCurrentPRIndex] = useState(0);
 
+  // Mission Library states & filter computations
+  const [librarySearch, setLibrarySearch] = useState('');
+  const [libraryCategory, setLibraryCategory] = useState('All');
+  const [libraryMuscle, setLibraryMuscle] = useState('All');
+  const [libraryPattern, setLibraryPattern] = useState('All');
+  const [libraryInfoExercise, setLibraryInfoExercise] = useState<ExerciseDefinition | null>(null);
+
+  const libraryCategories = React.useMemo(() => {
+    const cats = new Set<string>();
+    EXERCISE_DATABASE.forEach(ex => {
+      if (ex.category) cats.add(ex.category);
+    });
+    return Array.from(cats).sort();
+  }, []);
+
+  const libraryMuscles = React.useMemo(() => {
+    const m = new Set<string>();
+    EXERCISE_DATABASE.forEach(ex => {
+      if (ex.muscles) {
+        ex.muscles.forEach(muscle => m.add(muscle));
+      }
+    });
+    return Array.from(m).sort();
+  }, []);
+
+  const libraryPatterns = React.useMemo(() => {
+    const p = new Set<string>();
+    EXERCISE_DATABASE.forEach(ex => {
+      if (ex.pattern) p.add(ex.pattern);
+    });
+    return Array.from(p).sort();
+  }, []);
+
+  const filteredLibrary = React.useMemo(() => {
+    const searchTerms = librarySearch.toLowerCase().split(/\s+/).filter(Boolean);
+    return EXERCISE_DATABASE.filter(ex => {
+      const matchSearch = searchTerms.length === 0 || searchTerms.every(term => {
+        const searchableString = [
+          ex.name.toLowerCase(),
+          ex.category.toLowerCase(),
+          ex.pattern.toLowerCase(),
+          ...(ex.muscles?.map(m => m.toLowerCase()) || []),
+          ...(ex.description ? [ex.description.toLowerCase()] : [])
+        ].join(' ');
+        return searchableString.includes(term);
+      });
+
+      const matchCategory = libraryCategory === 'All' || ex.category === libraryCategory;
+      const matchPattern = libraryPattern === 'All' || ex.pattern === libraryPattern;
+      const matchMuscle = libraryMuscle === 'All' || (ex.muscles && ex.muscles.includes(libraryMuscle));
+
+      return matchSearch && matchCategory && matchPattern && matchMuscle;
+    }).sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+  }, [librarySearch, libraryCategory, libraryPattern, libraryMuscle]);
+
+  // Tactical Field Manual states & filter computations
+  const [manualSearch, setManualSearch] = useState('');
+
+  const filteredManualTerms = React.useMemo(() => {
+    const searchTerms = manualSearch.toLowerCase().split(/\s+/).filter(Boolean);
+    const allTerms = Object.entries(TRAINING_TERMS);
+
+    return allTerms.filter(([key]) => {
+      if (searchTerms.length === 0) return true;
+      const titleTrans = t(`tooltip.${key}.title`);
+      const shortTrans = t(`tooltip.${key}.short`);
+      const longTrans = t(`tooltip.${key}.long`);
+
+      const searchableString = [
+        key.toLowerCase(),
+        titleTrans.toLowerCase(),
+        shortTrans.toLowerCase(),
+        longTrans.toLowerCase()
+      ].join(' ');
+
+      return searchTerms.every(term => searchableString.includes(term));
+    });
+  }, [manualSearch, t]);
+
   useEffect(() => {
     setMounted(true);
   }, []);
-  const [elapsedTime, setElapsedTime] = React.useState(() => {
-    if (activeOrNext && currentSession?.startTime && isLifting) {
-      const diff = Date.now() - currentSession.startTime;
-      const hours = Math.floor(diff / 3600000);
-      const minutes = Math.floor((diff % 3600000) / 60000);
-      const seconds = Math.floor((diff % 60000) / 1000);
-      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-    }
-    return '00:00:00';
-  });
+
 
   const currentTier = profile ? calculateTier(
     profile.squatPR || 0,
@@ -131,22 +237,7 @@ export const TrainingView = ({
   const isElite = currentTier === 'elite';
   const isAdvanced = currentTier === 'advanced';
 
-  React.useEffect(() => {
-    if (!isActiveSession || !currentSession?.startTime) return;
 
-    const interval = setInterval(() => {
-      const start = currentSession.startTime!;
-      const diff = Date.now() - start;
-      const hours = Math.floor(diff / 3600000);
-      const minutes = Math.floor((diff % 3600000) / 60000);
-      const seconds = Math.floor((diff % 60000) / 1000);
-      setElapsedTime(
-        `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
-      );
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [isActiveSession, currentSession?.startTime]);
 
   // Volume calculation moved to workoutUtils
 
@@ -154,6 +245,11 @@ export const TrainingView = ({
   const focusText = React.useMemo(() => {
     const workout = activeOrNext;
     if (!workout) return t('analysis.focusingOn');
+
+    const title = workout.title || '';
+    if (title.toUpperCase().includes('HYBRID')) {
+      return t('analysis.focusHybrid');
+    }
 
     // Use explicit blockType if available (from WorkoutSession)
     const bType = (workout as any).blockType;
@@ -179,7 +275,6 @@ export const TrainingView = ({
     }
 
     // Fallback to title matching
-    const title = workout.title || '';
     if (title.includes('Foundation')) return t('analysis.focusFoundation');
     if (title.includes('Power')) return t('analysis.focusPower');
     if (title.includes('Hypertrophy')) return t('analysis.focusHypertrophy');
@@ -343,7 +438,7 @@ export const TrainingView = ({
   };
   const sessionProgress = calculateProgress(currentSession);
 
-  const fitnessTestInfo = getFitnessTestInfo(profile);
+  const fitnessTestInfo = getFitnessTestInfo(profile, activeOrNext?.title);
   const isTestRequiredAndLocked = fitnessTestInfo.daysRemaining <= 0 && !profile?.devOverrideFitnessTest && !isActiveSession;
 
   return (
@@ -455,7 +550,7 @@ export const TrainingView = ({
             <div className="flex items-center gap-3 text-zinc-400 md:justify-end">
               <div className="flex items-center gap-2">
                 <Clock size={14} className="text-volt" />
-                <span className="font-mono text-xs font-bold uppercase">{isActiveSession ? elapsedTime : `${estDuration} MIN`}</span>
+                <MissionTimer startTime={currentSession?.startTime} isActiveSession={isActiveSession} estDuration={estDuration} />
                 <span className="text-zinc-700">•</span>
                 <Flame size={14} className="text-volt" />
                 <span className="font-mono text-xs font-bold">{estCalories} KCAL</span>
@@ -580,7 +675,7 @@ export const TrainingView = ({
                   className="w-full min-h-[44px] px-4 sm:px-8 py-4 btn-destructive font-headline text-xs md:text-sm font-black uppercase tracking-widest flex flex-col items-center justify-center gap-1 group transition-all"
                 >
                   <div className="flex items-center gap-2">
-                    <Play size={16} md:size={18} className="fill-white group-hover:scale-110 transition-transform" />
+                    <Play size={16} className="fill-white group-hover:scale-110 transition-transform" />
                     <span>{t('analysis.continueMissionAnyway')}</span>
                   </div>
                   <span className="text-[8px] opacity-70 font-black uppercase tracking-widest">{t('analysis.safetyPenaltyApplied')}</span>
@@ -599,7 +694,7 @@ export const TrainingView = ({
                 onClick={onContinueSession}
                 className="flex-1 btn-primary min-h-[44px] px-4 sm:px-8 py-4 flex items-center justify-center gap-2"
               >
-                <Play size={16} md:size={18} className="fill-void group-hover:scale-110 transition-transform" />
+                <Play size={16} className="fill-void group-hover:scale-110 transition-transform" />
                 <span>{isActiveSession ? t('analysis.continueSession') : t('analysis.startSession')}</span>
               </button>
 
@@ -629,9 +724,7 @@ export const TrainingView = ({
         transition={{ delay: 0.2 }}
         className="col-span-1 md:col-span-2 lg:col-span-3 shrink-0 glass-panel p-4 md:p-8 flex flex-col w-full vanguard-tour-upcoming-missions"
       >
-        <div className="flex items-center gap-3 mb-6">
-          <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight">{t('analysis.upcomingMissions')}</h2>
-        </div>
+        <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight mb-2">{t('analysis.upcomingMissions')}</h2>
         <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed mb-8">
           Preview upcoming mission details before next mission. Mission details can be changed depending on individual deployment progression.
         </p>
@@ -657,9 +750,6 @@ export const TrainingView = ({
                     <div className="flex flex-col">
                       <span className="text-[10px] font-black tracking-widest text-volt uppercase leading-none mb-1">Mission #{missionNum}</span>
                       <span className="text-[8px] font-bold text-zinc-500 uppercase tracking-widest leading-none">Week {weekForThisMission} | Day {dayForThisMission}</span>
-                    </div>
-                    <div className="w-8 h-8 border border-white/5 flex items-center justify-center bg-zinc-900 group-hover:border-volt/30 transition-colors">
-                      <ArrowRight size={14} className="text-zinc-600 group-hover:text-volt transition-colors" />
                     </div>
                   </div>
 
@@ -757,7 +847,7 @@ export const TrainingView = ({
                       <button 
                         onClick={(e) => {
                           e.stopPropagation();
-                          onViewHistory?.(pr.workoutId);
+                          onViewHistory?.(pr.workoutId || undefined);
                         }} 
                         className="flex items-center gap-2 bg-white/5 hover:bg-volt hover:text-void transition-colors px-6 py-3 border border-white/5 group/btn backdrop-blur-sm pointer-events-auto"
                       >
@@ -811,9 +901,8 @@ export const TrainingView = ({
         transition={{ delay: 0.4 }}
         className="col-span-1 md:col-span-2 lg:col-span-3 shrink-0 glass-panel p-4 md:p-8 flex flex-col w-full vanguard-tour-past-missions"
       >
-        <div className="flex items-center gap-3 mb-6 md:mb-10">
-          <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight">{t('analysis.missionLogs')}</h2>
-        </div>
+        <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight mb-2">{t('analysis.missionLogs')}</h2>
+        <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed mb-8">{t('analysis.missionLogsDesc')}</p>
 
         {hasHistory ? (
           <div className="flex flex-col gap-6">
@@ -868,6 +957,229 @@ export const TrainingView = ({
           <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">{t('analysis.totalRecordsCount', { count: history.length })}</span>
         </div>
       </motion.div>
+
+      {/* Mission Library Module */}
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.45 }}
+        className="col-span-1 md:col-span-2 lg:col-span-3 shrink-0 glass-panel p-4 md:p-8 flex flex-col w-full"
+      >
+        <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight mb-2">{t('analysis.missionLibrary')}</h2>
+        <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed mb-8">{t('analysis.missionLibraryDesc')}</p>
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 bg-void/30 p-4 border border-white/5">
+          {/* Advanced Search Input */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
+            <input
+              type="text"
+              placeholder="SEARCH CODEX..."
+              value={librarySearch}
+              onChange={(e) => setLibrarySearch(e.target.value)}
+              className="w-full bg-surface p-3 pl-10 border border-white/5 text-white font-mono text-xs uppercase focus:outline-none focus:border-volt/50 transition-colors placeholder:text-zinc-600 tracking-wider"
+              style={{ borderRadius: 0 }}
+            />
+            {librarySearch && (
+              <button
+                onClick={() => setLibrarySearch('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+
+          {/* Category Filter */}
+          <div>
+            <select
+              value={libraryCategory}
+              onChange={(e) => setLibraryCategory(e.target.value)}
+              className="w-full bg-surface p-3 border border-white/5 text-white font-mono text-xs uppercase focus:outline-none focus:border-volt/50 transition-colors tracking-wider"
+              style={{ borderRadius: 0 }}
+            >
+              <option value="All">ALL CATEGORIES</option>
+              {libraryCategories.map(cat => (
+                <option key={cat} value={cat}>{cat.toUpperCase()}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Movement Pattern Filter */}
+          <div>
+            <select
+              value={libraryPattern}
+              onChange={(e) => setLibraryPattern(e.target.value)}
+              className="w-full bg-surface p-3 border border-white/5 text-white font-mono text-xs uppercase focus:outline-none focus:border-volt/50 transition-colors tracking-wider"
+              style={{ borderRadius: 0 }}
+            >
+              <option value="All">ALL PATTERNS</option>
+              {libraryPatterns.map(pattern => (
+                <option key={pattern} value={pattern}>{pattern.replace('_', ' ').toUpperCase()}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Muscle Target Filter */}
+          <div>
+            <select
+              value={libraryMuscle}
+              onChange={(e) => setLibraryMuscle(e.target.value)}
+              className="w-full bg-surface p-3 border border-white/5 text-white font-mono text-xs uppercase focus:outline-none focus:border-volt/50 transition-colors tracking-wider"
+              style={{ borderRadius: 0 }}
+            >
+              <option value="All">ALL MUSCLES</option>
+              {libraryMuscles.map(m => (
+                <option key={m} value={m}>{m.toUpperCase()}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {filteredLibrary.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+            {filteredLibrary.map((ex) => (
+              <div
+                key={ex.id}
+                onClick={() => {
+                  haptics.button();
+                  setLibraryInfoExercise(ex);
+                }}
+                className="bg-void/40 p-4 border border-white/5 hover:border-volt/20 hover:bg-white/5 cursor-pointer transition-all flex flex-col h-full group"
+              >
+                <div className="space-y-1 mb-3">
+                  <span className="text-[9px] font-black uppercase tracking-widest text-zinc-500">
+                    {ex.category}
+                  </span>
+                  <h3 className="font-headline text-sm font-black uppercase tracking-tight text-white group-hover:text-volt transition-colors">
+                    {ex.name}
+                  </h3>
+                </div>
+
+                <div className="flex-grow mb-4">
+                  <p className="text-[11px] text-zinc-400 line-clamp-2 leading-relaxed">
+                    {ex.description || 'No description available for this mission module.'}
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap gap-1.5 pt-3 border-t border-white/5">
+                  <span className="text-[8px] font-black uppercase tracking-widest text-volt bg-volt/10 px-1.5 py-0.5">
+                    Pattern: {ex.pattern.replace('_', ' ')}
+                  </span>
+                  {ex.muscles?.slice(0, 2).map((muscle, idx) => (
+                    <span key={idx} className="text-[8px] font-black uppercase tracking-widest text-zinc-400 bg-white/5 px-1.5 py-0.5 whitespace-nowrap">
+                      {muscle}
+                    </span>
+                  ))}
+                  {(ex.muscles?.length || 0) > 2 && (
+                    <span className="text-[8px] font-black text-zinc-500">+{ex.muscles!.length - 2}</span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-12 text-center bg-void/20 border border-white/5">
+            <span className="text-3xl font-black text-zinc-800 mb-2">—</span>
+            <h3 className="text-sm font-black uppercase tracking-tight text-zinc-500">No matching search results</h3>
+            <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest max-w-xs leading-relaxed mt-1">
+              Refine your filters or queries to locate available exercise entries
+            </p>
+          </div>
+        )}
+
+        <div className="mt-6 flex justify-between items-center px-1 opacity-40">
+          <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">ENCYCLOPEDIA INDEXING TERMINATION</span>
+          <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">RECORDS RENDERED: {filteredLibrary.length} / {EXERCISE_DATABASE.length}</span>
+        </div>
+      </motion.div>
+
+      {/* Tactical Field Manual Module */}
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.5 }}
+        className="col-span-1 md:col-span-2 lg:col-span-3 shrink-0 glass-panel p-4 md:p-8 flex flex-col w-full"
+      >
+        <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight mb-2">{t('settings.fieldManual')}</h2>
+        <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed mb-8">{t('analysis.fieldManualDesc')}</p>
+
+        <div className="grid grid-cols-1 gap-4 mb-6 bg-void/30 p-4 border border-white/5">
+          {/* Search Input */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
+            <input
+              type="text"
+              placeholder="SEARCH TERMINOLOGY..."
+              value={manualSearch}
+              onChange={(e) => setManualSearch(e.target.value)}
+              className="w-full bg-surface p-3 pl-10 border border-white/5 text-white font-mono text-xs uppercase focus:outline-none focus:border-volt/50 transition-colors placeholder:text-zinc-600 tracking-wider"
+              style={{ borderRadius: 0 }}
+            />
+            {manualSearch && (
+              <button
+                onClick={() => setManualSearch('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {filteredManualTerms.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+            {filteredManualTerms.map(([key]) => {
+              const title = t(`tooltip.${key}.title`);
+              const shortDesc = t(`tooltip.${key}.short`);
+              const longDesc = t(`tooltip.${key}.long`);
+
+              return (
+                <div
+                  key={key}
+                  className="bg-void/40 p-4 border border-white/5 hover:border-volt/20 hover:bg-white/5 transition-all flex flex-col h-full group"
+                >
+                  <div className="mb-4">
+                    <h3 className="font-headline text-sm font-black uppercase tracking-tight text-white group-hover:text-volt transition-colors">
+                      {title}
+                    </h3>
+                  </div>
+
+                  <div className="flex-grow mb-4">
+                    <p className="text-zinc-200 text-[11px] leading-relaxed font-medium pl-2.5 border-l border-volt/20">
+                      {shortDesc}
+                    </p>
+                  </div>
+
+                  <div className="pt-3 border-t border-white/5">
+                    <p className="text-[9px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-1 flex items-center gap-1.5">
+                      <span className="w-1 h-1 bg-zinc-700" />
+                      {t('fieldManual.doctrine')}
+                    </p>
+                    <p className="text-zinc-400 text-[11px] leading-relaxed pl-2.5 border-l border-zinc-800 line-clamp-4 group-hover:line-clamp-none transition-all">
+                      {longDesc}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-12 text-center bg-void/20 border border-white/5">
+            <span className="text-3xl font-black text-zinc-800 mb-2">—</span>
+            <h3 className="text-sm font-black uppercase tracking-tight text-zinc-500">No matching terminologies</h3>
+            <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest max-w-xs leading-relaxed mt-1">
+              Refine your query to locate field manual tactical concepts
+            </p>
+          </div>
+        )}
+
+        <div className="mt-6 flex justify-between items-center px-1 opacity-40">
+          <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">MANUAL INDEXING TERMINATION</span>
+          <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">RECORDS RENDERED: {filteredManualTerms.length} / {Object.keys(TRAINING_TERMS).length}</span>
+        </div>
+      </motion.div>
+
       {/* Routine Detail Modal */}
       <MissionBriefingModal
         isOpen={showRoutineModal || !!selectedMission}
@@ -888,6 +1200,14 @@ export const TrainingView = ({
         onSwap={(newId) => handleSwap(swappingExerciseIdx!, newId)}
         currentExerciseId={swappingExerciseIdx !== null ? (activeOrNext?.exercises[swappingExerciseIdx]?.exerciseId || activeOrNext?.exercises[swappingExerciseIdx]?.name || '') : ''}
       />
+
+      {libraryInfoExercise && (
+        <ExerciseInfoModal
+          exercise={libraryInfoExercise}
+          isOpen={!!libraryInfoExercise}
+          onClose={() => setLibraryInfoExercise(null)}
+        />
+      )}
     </div>
   );
 };

@@ -20,18 +20,26 @@ import { cn } from '../lib/utils';
 export const JointStressWidget = ({ className }: { className?: string }) => {
   const { t } = useSettings();
   const { history, recoveryHistory } = useWorkout();
+  const [timeFrame, setTimeFrame] = React.useState<'1M' | '3M' | '6M' | 'ALL'>('6M');
 
   const stressData = useMemo(() => {
     if (!history && !recoveryHistory) return [];
 
     const weeks: Record<string, { highImpact: number, lowImpact: number, timestamp: number }> = {};
     const now = Date.now();
-    const sixMonthsAgo = now - (180 * 24 * 60 * 60 * 1000);
+    let cutoffTime = 0;
+    if (timeFrame === '1M') {
+      cutoffTime = now - (30 * 24 * 60 * 60 * 1000);
+    } else if (timeFrame === '3M') {
+      cutoffTime = now - (90 * 24 * 60 * 60 * 1000);
+    } else if (timeFrame === '6M') {
+      cutoffTime = now - (180 * 24 * 60 * 60 * 1000);
+    }
 
     // Process Workouts (High Impact)
     history.forEach(session => {
       const date = session.completedAt ? new Date(session.completedAt) : new Date(session.date);
-      if (date.getTime() < sixMonthsAgo) return;
+      if (cutoffTime > 0 && date.getTime() < cutoffTime) return;
 
       const startOfWeek = new Date(date);
       startOfWeek.setDate(date.getDate() - date.getDay());
@@ -60,7 +68,7 @@ export const JointStressWidget = ({ className }: { className?: string }) => {
     // Process Recovery (Low Impact)
     recoveryHistory.forEach(log => {
       const date = new Date(log.timestamp);
-      if (date.getTime() < sixMonthsAgo) return;
+      if (cutoffTime > 0 && date.getTime() < cutoffTime) return;
 
       const startOfWeek = new Date(date);
       startOfWeek.setDate(date.getDate() - date.getDay());
@@ -98,7 +106,7 @@ export const JointStressWidget = ({ className }: { className?: string }) => {
         };
       })
       .sort((a, b) => a.timestamp - b.timestamp);
-  }, [history, recoveryHistory]);
+  }, [history, recoveryHistory, timeFrame]);
 
   const latestStats = useMemo(() => {
     if (stressData.length === 0) return { ratio: 0, status: 'N/A', color: 'text-zinc-500' };
@@ -130,7 +138,7 @@ export const JointStressWidget = ({ className }: { className?: string }) => {
           <div className="absolute top-0 left-0 w-1 h-full bg-volt" />
           <div className="space-y-4">
             <div>
-              <p className="text-[8px] font-black uppercase tracking-[0.3em] text-zinc-500 mb-1">{t('analysis.jointStressTelemetry').toUpperCase()}</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500 mb-1">{t('analysis.jointStressTelemetry').toUpperCase()}</p>
               <p className="text-xs font-black uppercase text-white">{t('analysis.weekOf')} {data.week}</p>
             </div>
             <div className="pt-3 border-t border-white/5 space-y-2">
@@ -162,7 +170,7 @@ export const JointStressWidget = ({ className }: { className?: string }) => {
     >
       <div className="absolute inset-0 opacity-[0.03] pointer-events-none group-hover/module:opacity-[0.05] transition-opacity duration-700"
         style={{ backgroundImage: 'radial-gradient(var(--primary-color) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-12 gap-6">
         <div>
           <div className="flex items-center gap-2 mb-4">
             <ShieldCheck className="text-volt" size={16} />
@@ -174,11 +182,20 @@ export const JointStressWidget = ({ className }: { className?: string }) => {
           </p>
         </div>
 
-        <div className="flex flex-col items-start">
-          <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">{t('workout.status')}</span>
-          <span className={cn("font-headline text-xl md:text-2xl font-black  uppercase", latestStats.color)}>
-            {latestStats.status.toUpperCase()}
-          </span>
+        {/* Dynamic Range Toggle on the top right */}
+        <div className="flex gap-1 bg-void p-1 border border-white/5 flex-wrap sm:flex-nowrap shrink-0 ml-auto lg:ml-0">
+          {(['1M', '3M', '6M', 'ALL'] as const).map((tf) => (
+            <button
+              key={tf}
+              onClick={() => setTimeFrame(tf)}
+              className={cn(
+                "px-3 py-1.5 md:px-4 md:py-2 font-headline text-[10px] md:text-[10px] font-black uppercase tracking-widest transition-all text-center",
+                timeFrame === tf ? "bg-volt text-void shadow-[0_0_15px_rgba(0,182,255,0.3)]" : "text-zinc-500 hover:text-white"
+              )}
+            >
+              {tf}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -191,7 +208,7 @@ export const JointStressWidget = ({ className }: { className?: string }) => {
                 dataKey="week"
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: '#52525b', fontSize: 10, fontWeight: 900, textTransform: 'uppercase', fontFamily: 'Inter' }}
+                tick={{ fill: '#52525b', fontSize: 10, fontWeight: 900, fontFamily: 'Inter' }}
                 dy={10}
               />
               <YAxis
@@ -213,27 +230,37 @@ export const JointStressWidget = ({ className }: { className?: string }) => {
         )}
       </div>
 
-      <div className="mt-8 grid grid-cols-2 gap-4">
-        <div className="p-4 bg-void/40 border border-white/5 relative">
-          <div className="flex items-center gap-1 mb-1">
-            <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest">{t('analysis.jointStressRatio')}</span>
+      <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="p-4 bg-void/40 border border-white/5 relative flex flex-col justify-between min-h-[86px]">
+          <div className="flex items-center gap-1 h-4">
+            <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest leading-none">{t('analysis.jointStressRatio')}</span>
             <InfoTooltip term="jointStress" className="ml-0" />
           </div>
-          <div className="flex items-baseline gap-2">
+          <div className="flex items-baseline gap-2 mt-2">
             <span className="font-headline text-2xl font-black text-white">{latestStats.ratio.toFixed(1)}</span>
             <span className="text-[10px] font-black text-zinc-600 uppercase">%</span>
           </div>
         </div>
-        <div className="p-4 bg-void/40 border border-white/5 flex flex-col justify-center">
-          <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest mb-1 block">{t('onboarding.recommended')} Zone</span>
-          <div className="w-full h-1 bg-zinc-800 relative">
-            <div className="absolute left-[30%] right-[30%] h-full bg-volt/30" />
+        <div className="p-4 bg-void/40 border border-white/5 flex flex-col justify-between min-h-[86px]">
+          <div className="flex items-center gap-1 h-4">
+            <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest leading-none">{t('onboarding.recommended')} Zone</span>
+          </div>
+          <div className="w-full h-3 bg-zinc-900 border border-white/5 relative mt-2 mb-1">
+            <div className="absolute left-[30%] right-[30%] h-full bg-volt/20" />
             <motion.div
               initial={{ left: 0 }}
               animate={{ left: `${Math.min(latestStats.ratio, 100)}%` }}
-              className="absolute top-1/2 -translate-y-1/2 w-1 h-3 bg-white shadow-[0_0_10px_white]"
+              className="absolute top-0 bottom-0 w-1 bg-white shadow-[0_0_10px_white]"
             />
           </div>
+        </div>
+        <div className="p-4 bg-void/40 border border-white/5 flex flex-col justify-between min-h-[86px]">
+          <div className="flex items-center gap-1 h-4">
+            <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest leading-none">{t('workout.status')}</span>
+          </div>
+          <span className={cn("font-headline text-2xl font-black uppercase mt-2 mb-0.5", latestStats.color)}>
+            {latestStats.status.toUpperCase()}
+          </span>
         </div>
       </div>
     </motion.div>

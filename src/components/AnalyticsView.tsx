@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { Trophy, Target, TrendingUp, BarChart3, Calendar, Filter, ChevronDown, Plus, Settings2, Zap } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { motion } from 'motion/react';
+import { TrendingUp, BarChart3, Settings2, Info } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
 import { useWorkout } from '../contexts/WorkoutContext';
 import { filterDataByRange, getTacticalImpact } from '../utils/analyticsEngine';
@@ -12,7 +12,6 @@ import { CustomizeDashboardModal } from './CustomizeDashboardModal';
 import { ConditioningTrackerWidget } from './ConditioningTrackerWidget';
 import { MobilityMatrixWidget } from './MobilityMatrixWidget';
 import { TacticalChart } from './TacticalChart';
-import { PerformanceWidgetId } from '../types';
 import {
   LineChart,
   Line,
@@ -79,7 +78,7 @@ const TacticalIntegration = ({ activeRange, onRangeChange }: { activeRange: stri
               key={tf}
               onClick={() => onRangeChange(tf)}
               className={cn(
-                "px-3 py-1.5 md:px-4 md:py-2 font-headline text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all",
+                "px-3 py-1.5 md:px-4 md:py-2 font-headline text-[10px] md:text-[10px] font-black uppercase tracking-widest transition-all",
                 activeRange === tf ? "bg-volt text-void" : "text-zinc-500 hover:text-white"
               )}
             >
@@ -89,7 +88,7 @@ const TacticalIntegration = ({ activeRange, onRangeChange }: { activeRange: stri
         </div>
       </div>
 
-      <div className="grid grid-cols-2 mb-6 relative z-10 w-full gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 mb-6 relative z-10 w-full gap-4">
         <div className="flex flex-col">
           <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2">
             {activeRange === '1M' ? t('analysis.monthly') :
@@ -100,7 +99,7 @@ const TacticalIntegration = ({ activeRange, onRangeChange }: { activeRange: stri
             <span className="text-2xl sm:text-3xl lg:text-4xl font-black">{totalHours}</span>
             <span className="text-xs font-bold text-zinc-600 mb-1">hrs</span>
           </div>
-          <p className="text-[8px] font-bold text-zinc-500 uppercase mt-1">Avg {avgHours}h / Session</p>
+          <p className="text-[10px] font-bold text-zinc-500 uppercase mt-1">Avg {avgHours}h / Session</p>
         </div>
         <div className="flex flex-col">
           <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2">AVG RPE</span>
@@ -108,7 +107,7 @@ const TacticalIntegration = ({ activeRange, onRangeChange }: { activeRange: stri
             <span className="text-2xl sm:text-3xl lg:text-4xl font-black text-volt">{avgRpe > 0 ? avgRpe.toFixed(1) : '–'}</span>
           </div>
         </div>
-        <div className="flex flex-col col-span-2 pt-4 border-t border-white/5">
+        <div className="flex flex-col">
           <div className="flex items-center gap-1 mb-2">
             <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 block relative">
               Program Impact
@@ -127,9 +126,8 @@ const TacticalIntegration = ({ activeRange, onRangeChange }: { activeRange: stri
 
       <div className="mt-auto border-t border-volt/20 pt-4 relative z-10">
         <div className="flex items-start gap-3">
-          <Zap className="text-volt shrink-0 mt-0.5" size={16} />
+          <Info className="text-volt shrink-0 mt-0.5" size={16} />
           <div>
-            <span className="block text-[10px] font-black uppercase tracking-widest text-volt mb-1">Vanguard AI Tip</span>
             <p className="text-xs text-zinc-400">
               {calibration.hasAerobicInterference
                 ? "You're accumulating too much systemic fatigue from extracurricular activities. Consider lowering the RPE of your tactical missions or reducing duration to preserve force production for the barbell."
@@ -149,11 +147,48 @@ export const AnalyticsView = () => {
 
   const [timeFrame, setTimeFrame] = useState<TimeFrame>('6M');
   const [selectedLifts, setSelectedLifts] = useState<string[]>(['Squat', 'Bench Press', 'Deadlift']);
+  const [customLifts, setCustomLifts] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('vanguard_custom_lifts');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [exerciseSearchQuery, setExerciseSearchQuery] = useState('');
+  const [selectedIndex, setSelectedIndex] = useState(0);
+
+  useEffect(() => {
+    setSelectedIndex(0);
+  }, [exerciseSearchQuery]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('vanguard_custom_lifts', JSON.stringify(customLifts));
+    } catch (e) {
+      console.error('Failed to save custom lifts to localStorage', e);
+    }
+  }, [customLifts]);
+
+  const allExercisesInHistory = useMemo(() => {
+    if (!history) return [];
+    const names = new Set<string>();
+    history.forEach(session => {
+      session.exercises?.forEach(ex => {
+        if (ex.name) {
+          names.add(ex.name);
+        }
+      });
+    });
+    return Array.from(names).sort();
+  }, [history]);
+
+  const customColors = ['#A855F7', '#10B981', '#3B82F6', '#EC4899', '#F97316', '#6366F1', '#14B8A6'];
 
   const liftOptions = [
-    { id: 'Squat', label: t('analytics.squat'), color: 'var(--primary-color)' },
-    { id: 'Bench Press', label: t('analytics.bench'), color: 'var(--primary-color)' },
-    { id: 'Deadlift', label: t('analytics.deadlift'), color: 'var(--primary-color)' }
+    { id: 'Squat', label: t('analytics.squat'), color: '#00b6ff' },
+    { id: 'Bench Press', label: t('analytics.bench'), color: '#EAB308' },
+    { id: 'Deadlift', label: t('analytics.deadlift'), color: '#FF8D7A' }
   ];
 
   const filteredData = useMemo(() => {
@@ -172,9 +207,9 @@ export const AnalyticsView = () => {
       };
 
       selectedLifts.forEach(lift => {
-        const exercise = session.exercises.find(ex => isMainLiftMatch(ex.name, lift));
+        const exercise = session.exercises.find((ex: any) => isMainLiftMatch(ex.name, lift));
         if (exercise) {
-          const maxWeight = Math.max(...exercise.sets.map(s => parseFloat(s.weight) || 0));
+          const maxWeight = Math.max(...exercise.sets.map((s: any) => parseFloat(s.weight) || 0));
           dataPoint[lift] = maxWeight > 0 ? maxWeight : null;
         }
       });
@@ -183,95 +218,7 @@ export const AnalyticsView = () => {
     }).filter(dp => selectedLifts.some(lift => dp[lift] !== undefined));
   }, [history, timeFrame, selectedLifts]);
 
-  const volumeTrendData = useMemo(() => {
-    const timeFilteredHistory = filterDataByRange(history || [], timeFrame);
 
-    const weeks: Record<string, { volume: number, rpeSum: number, rpeCount: number, timestamp: number }> = {};
-
-    timeFilteredHistory.forEach(session => {
-      const date = session.completedAt ? new Date(session.completedAt) : new Date(session.date);
-
-      const startOfWeek = new Date(date);
-      startOfWeek.setDate(date.getDate() - date.getDay());
-      startOfWeek.setHours(0, 0, 0, 0);
-      const weekKey = startOfWeek.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-
-      let sessionVolume = 0;
-      let rpeSum = 0;
-      let rpeCount = 0;
-
-      session.exercises?.forEach(ex => {
-        ex.sets?.forEach(s => {
-          if (s.isCompleted) {
-            sessionVolume += (parseFloat(s.weight) || 0) * (parseInt(s.reps) || 0);
-            const rpeVal = parseFloat(s.rpe);
-            if (!isNaN(rpeVal)) {
-              rpeSum += rpeVal;
-              rpeCount += 1;
-            }
-          }
-        });
-      });
-
-      if (!weeks[weekKey]) {
-        weeks[weekKey] = { volume: 0, rpeSum: 0, rpeCount: 0, timestamp: startOfWeek.getTime() };
-      }
-      weeks[weekKey].volume += sessionVolume;
-      weeks[weekKey].rpeSum += rpeSum;
-      weeks[weekKey].rpeCount += rpeCount;
-    });
-
-    return Object.entries(weeks)
-      .map(([week, data]) => ({
-        week,
-        volume: data.volume,
-        avgRpe: data.rpeCount > 0 ? Number((data.rpeSum / data.rpeCount).toFixed(1)) : null,
-        timestamp: data.timestamp
-      }))
-      .sort((a, b) => a.timestamp - b.timestamp);
-  }, [history, timeFrame]);
-
-  const toggleLift = (liftId: string) => {
-    setSelectedLifts(prev =>
-      prev.includes(liftId)
-        ? prev.filter(id => id !== liftId)
-        : [...prev, liftId]
-    );
-  };
-
-  const VolumeTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload;
-      return (
-        <div className="bg-void/95 backdrop-blur-2xl border border-white/10 p-5 shadow-[0_0_50px_rgba(0,0,0,0.5)] min-w-[200px] relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-1 h-full bg-volt" />
-          <div className="space-y-4">
-            <div>
-              <p className="text-[8px] font-black uppercase tracking-[0.3em] text-zinc-500 mb-1">{t('analysis.volumeTelemetry')}</p>
-              <p className="text-xs font-black uppercase text-white">{t('analysis.weekOf')} {data.week}</p>
-            </div>
-            <div className="pt-3 border-t border-white/5 space-y-2">
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">{t('analysis.totalVolume')}</span>
-                <span className="text-sm font-black text-white">
-                  {data.volume.toLocaleString()} <span className="text-[8px] uppercase not- text-zinc-500">{weightUnit}</span>
-                </span>
-              </div>
-              {data.avgRpe !== null && data.avgRpe !== undefined && (
-                <div className="flex items-center justify-between gap-4">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Avg RPE</span>
-                  <span className="text-sm font-black text-[#FF7162]">
-                    {data.avgRpe}
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      );
-    }
-    return null;
-  };
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
@@ -283,7 +230,7 @@ export const AnalyticsView = () => {
 
           <div className="space-y-4">
             <div>
-              <p className="text-[8px] font-black uppercase tracking-[0.3em] text-zinc-500 mb-1">{t('analysis.telemetryLog')}</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500 mb-1">{t('analysis.telemetryLog')}</p>
               <p className="text-xs font-black uppercase text-white">{data.fullDate}</p>
               <p className="text-[10px] font-black uppercase tracking-tight text-volt mt-1">{data.title}</p>
             </div>
@@ -296,7 +243,7 @@ export const AnalyticsView = () => {
                     <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">{entry.name}</span>
                   </div>
                   <span className="text-sm font-black text-white">
-                    {entry.value} <span className="text-[8px] uppercase not- text-zinc-500">{weightUnit}</span>
+                    {entry.value} <span className="text-[10px] uppercase not- text-zinc-500">{weightUnit}</span>
                   </span>
                 </div>
               ))}
@@ -324,7 +271,7 @@ export const AnalyticsView = () => {
         </button>
       </div>
 
-      <div className="flex flex-col gap-12">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 w-full">
         {performanceWidgets.map((widgetId) => {
           switch (widgetId) {
             case 'progression':
@@ -334,15 +281,36 @@ export const AnalyticsView = () => {
                   initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.1 }}
-                  className="glass-panel px-4 py-6 md:p-8 flex flex-col relative overflow-hidden min-w-0 vanguard-tour-strength-trend"
+                  className="glass-panel px-4 py-6 md:p-8 flex flex-col relative overflow-hidden min-w-0 vanguard-tour-strength-trend lg:col-span-2"
                 >
-                  <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6">
-                    <div>
-                      <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight mb-2">{t('analysis.strengthTrend')}</h2>
-                      <p className="text-zinc-400 text-xs font-medium max-w-md mb-8 leading-relaxed">
-                        {t('analysis.strengthTrendDesc')}
-                      </p>
-                      <div className="flex flex-wrap gap-4">
+                  <div className="flex flex-col mb-12 w-full gap-8">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 w-full">
+                      <div className="flex flex-col">
+                        <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight mb-2">{t('analysis.strengthTrend')}</h2>
+                        <p className="text-zinc-400 text-xs font-medium w-full leading-relaxed">
+                          {t('analysis.strengthTrendDesc')}
+                        </p>
+                      </div>
+
+                      {/* Dynamic Range Toggle on the top right */}
+                      <div className="flex gap-1 bg-void p-1 border border-white/5 flex-wrap sm:flex-nowrap shrink-0">
+                        {(['1M', '3M', '6M', 'ALL'] as TimeFrame[]).map((tf) => (
+                          <button
+                            key={tf}
+                            onClick={() => setTimeFrame(tf)}
+                            className={cn(
+                              "px-3 py-1.5 md:px-4 md:py-2 font-headline text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all text-center",
+                              timeFrame === tf ? "bg-volt text-void shadow-[0_0_15px_rgba(0,182,255,0.3)]" : "text-zinc-500 hover:text-white"
+                            )}
+                          >
+                            {tf}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 w-full">
+                      <div className="flex flex-wrap gap-4 w-full sm:w-auto">
                         {liftOptions.map(lift => (
                           <button
                             key={lift.id}
@@ -366,21 +334,6 @@ export const AnalyticsView = () => {
                         ))}
                       </div>
                     </div>
-
-                    <div className="flex gap-1 bg-void p-1 border border-white/5 flex-wrap md:flex-nowrap shrink-0">
-                      {(['1M', '3M', '6M', 'ALL'] as TimeFrame[]).map((tf) => (
-                        <button
-                          key={tf}
-                          onClick={() => setTimeFrame(tf)}
-                          className={cn(
-                            "px-4 py-2 font-headline text-[10px] font-black uppercase tracking-widest transition-all",
-                            timeFrame === tf ? "bg-volt text-void" : "text-zinc-500 hover:text-white"
-                          )}
-                        >
-                          {tf}
-                        </button>
-                      ))}
-                    </div>
                   </div>
 
                   <div className="h-[300px] w-full mt-4 min-w-0">
@@ -392,7 +345,7 @@ export const AnalyticsView = () => {
                             dataKey="displayDate"
                             axisLine={false}
                             tickLine={false}
-                            tick={{ fill: '#52525b', fontSize: 10, fontWeight: 900, textTransform: 'uppercase', fontFamily: 'Inter' }}
+                            tick={{ fill: '#52525b', fontSize: 10, fontWeight: 900, fontFamily: 'Inter' }}
                             dy={10}
                           />
                           <YAxis
@@ -408,7 +361,7 @@ export const AnalyticsView = () => {
                               dataKey={lift.id}
                               stroke={lift.color}
                               strokeWidth={3}
-                              dot={{ r: 4, fill: lift.color, strokeWidth: 0 }}
+                              dot={false}
                               activeDot={{ r: 6, stroke: lift.color, strokeWidth: 2, fill: '#131313' }}
                               animationDuration={1500}
                               connectNulls
@@ -426,91 +379,10 @@ export const AnalyticsView = () => {
                 </motion.div>
               );
 
-            case 'volume-trend':
-              return (
-                <motion.div
-                  key="volume-trend"
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.25 }}
-                  className="glass-panel px-4 py-6 md:p-8 flex flex-col min-w-0 overflow-hidden vanguard-tour-weekly-volume"
-                >
-                  <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6">
-                    <div>
-                      <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight mb-2">{t('analysis.weeklyVolumeTrend')}</h2>
-                      <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed">
-                        {t('analysis.weeklyVolumeTrendDesc')}
-                      </p>
-                    </div>
-                  </div>
 
-                  <div className="h-[250px] w-full min-w-0">
-                    {volumeTrendData.length > 0 ? (
-                      <ResponsiveContainer width="100%" height="100%">
-                        <ComposedChart data={volumeTrendData} margin={{ top: 5, right: 5, left: -20, bottom: 25 }}>
-                          <defs>
-                            <linearGradient id="colorVolume" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="var(--primary-color)" stopOpacity={0.3} />
-                              <stop offset="95%" stopColor="var(--primary-color)" stopOpacity={0} />
-                            </linearGradient>
-                          </defs>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
-                          <XAxis
-                            dataKey="week"
-                            axisLine={false}
-                            tickLine={false}
-                            tick={{ fill: '#52525b', fontSize: 10, fontWeight: 900, textTransform: 'uppercase', fontFamily: 'Inter' }}
-                            dy={10}
-                          />
-                          <YAxis
-                            yAxisId="left"
-                            axisLine={false}
-                            tickLine={false}
-                            tick={{ fill: '#52525b', fontSize: 10, fontWeight: 900, fontFamily: 'Inter' }}
-                          />
-                          <YAxis
-                            yAxisId="right"
-                            orientation="right"
-                            domain={[0, 10]}
-                            axisLine={false}
-                            tickLine={false}
-                            tick={{ fill: '#FF7162', fontSize: 10, fontWeight: 900, fontFamily: 'Inter' }}
-                          />
-                          <Tooltip content={<VolumeTooltip />} cursor={{ stroke: 'var(--primary-color)', strokeWidth: 1, strokeDasharray: '4 4' }} />
-                          <Area
-                            yAxisId="left"
-                            type="linear"
-                            dataKey="volume"
-                            stroke="var(--primary-color)"
-                            fillOpacity={1}
-                            fill="url(#colorVolume)"
-                            strokeWidth={3}
-                          />
-                          <Line
-                            yAxisId="right"
-                            type="linear"
-                            dataKey="avgRpe"
-                            stroke="var(--primary-color)"
-                            strokeWidth={3}
-                            dot={{ r: 4, fill: 'var(--primary-color)', strokeWidth: 0 }}
-                            activeDot={{ r: 6, stroke: 'var(--primary-color)', strokeWidth: 2, fill: '#131313' }}
-                            animationDuration={1500}
-                            connectNulls
-                          />
-                        </ComposedChart>
-                      </ResponsiveContainer>
-                    ) : (
-                      <div className="h-full flex flex-col items-center justify-center text-zinc-600 space-y-4">
-                        <TrendingUp size={48} strokeWidth={1} />
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em]">{t('analysis.insufficientVolumeData')}</p>
-                      </div>
-                    )}
-                  </div>
-                </motion.div>
-              );
 
             case 'joint-stress':
-              return <JointStressWidget key="joint-stress" className="vanguard-tour-joint-stress" />;
+              return <JointStressWidget key="joint-stress" className="vanguard-tour-joint-stress lg:col-span-2" />;
 
             case 'growth':
               return (
@@ -519,108 +391,379 @@ export const AnalyticsView = () => {
                   initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.3 }}
-                  className="glass-panel px-4 py-6 md:p-8 relative overflow-hidden min-w-0 vanguard-tour-estimated-1rm"
+                  className="glass-panel px-4 py-6 md:p-8 relative overflow-hidden min-w-0 group/module vanguard-tour-estimated-1rm lg:col-span-2"
                 >
                   <div className="absolute inset-0 opacity-[0.03] pointer-events-none group-hover/module:opacity-[0.05] transition-opacity duration-700"
-                    style={{ backgroundImage: 'radial-gradient(var(--primary-color) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
+                    style={{ backgroundImage: 'radial-gradient(var(--primary-color) 1px, transparent 1px)', backgroundSize: '15px 15px' }} />
                   
-                  <div className="relative z-10">
-                    <h3 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight mb-2">
-                      {t('Estimated 1rm')}
-                    </h3>
-
+                  <div className="relative z-10 flex flex-col h-full">
                     {(() => {
-                    const latestE1RMs = liftOptions.map(lift => {
-                      const liftHistory = history.filter(s => s.exercises.some(ex => isMainLiftMatch(ex.name, lift.id)));
-                      const e1rms = liftHistory.flatMap(s => s.exercises.find(ex => isMainLiftMatch(ex.name, lift.id))?.sets.map(set => calculateE1RM(parseFloat(set.weight) || 0, parseInt(set.reps) || 0)) || []);
-                      return e1rms.length > 0 ? Math.round(Math.max(...e1rms)) : 0;
-                    });
-                    const totalSBD = latestE1RMs.reduce((a, b) => a + b, 0);
-
-                    const p = calculateExrxPercentile(totalSBD, profile?.weight || 0, profile?.gender || 'male', profile?.age);
-
-                    return (
-                      <div className="mb-12">
-                        <div className="text-zinc-400 text-xs font-medium mt-2">
-                          {t('analysis.youAreTop')} <span className="text-volt font-bold">{p < 1 ? '<1' : p.toFixed(1)}%</span> {t('analysis.ofPopulation')} <InfoTooltip term="Percentile" className="inline-block z-10 relative" />
-                        </div>
-                      </div>
-                    );
-                  })()}
-
-                  <div className="grid grid-cols-2 gap-8 md:gap-12">
-                    {liftOptions.map((lift, i) => {
-                      const liftHistory = [...history]
-                        .filter(s => s.exercises.some(ex => isMainLiftMatch(ex.name, lift.id)))
-                        .sort((a, b) => (a.completedAt || 0) - (b.completedAt || 0));
-
-                      const e1rms = liftHistory.flatMap(s => s.exercises.find(ex => isMainLiftMatch(ex.name, lift.id))?.sets.map(set => calculateE1RM(parseFloat(set.weight) || 0, parseInt(set.reps) || 0)) || []);
-                      const maxE1RM = e1rms.length > 0 ? Math.round(Math.max(...e1rms)) : 0;
-                      const firstE1RM = e1rms.length > 0 ? Math.round(e1rms[0]) : 0;
-                      const growth = firstE1RM > 0 ? ((maxE1RM - firstE1RM) / firstE1RM * 100).toFixed(1) : '0.0';
-                      const diff = maxE1RM - firstE1RM;
-
-                      return (
-                        <div key={i} className="flex flex-col">
-                          <span className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-2">{lift.label}</span>
-                          <div className="flex items-baseline gap-2">
-                            <span className="font-headline text-2xl md:text-3xl font-black text-white">{maxE1RM > 0 ? maxE1RM : '–'}</span>
-                            <span className="font-headline text-xs font-black text-zinc-500">{weightUnit}</span>
-                          </div>
-                          <span className="text-[8px] font-bold text-volt tracking-widest mt-1 uppercase">
-                            {liftHistory.length > 1 ? (
-                              <>+{diff.toFixed(1)}{weightUnit} ({growth}%)</>
-                            ) : (
-                              <span className="text-zinc-600">{t('analysis.baseline')}</span>
-                            )}
-                          </span>
-                        </div>
-                      );
-                    })}
-
-                    {(() => {
-                      const liftStats = liftOptions.map(lift => {
-                        const liftHistory = [...history]
-                          .filter(s => s.exercises.some(ex => isMainLiftMatch(ex.name, lift.id)))
-                          .sort((a, b) => (a.completedAt || 0) - (b.completedAt || 0));
-
-                        const e1rms = liftHistory.flatMap(s => s.exercises.find(ex => isMainLiftMatch(ex.name, lift.id))?.sets.map(set => calculateE1RM(parseFloat(set.weight) || 0, parseInt(set.reps) || 0)) || []);
-
-                        return {
-                          max: e1rms.length > 0 ? Math.round(Math.max(...e1rms)) : 0,
-                          first: e1rms.length > 0 ? Math.round(e1rms[0]) : 0,
-                          hasHistory: liftHistory.length > 1
-                        };
+                      const latestE1RMs = liftOptions.map(lift => {
+                        const liftHistory = history.filter(s => s.exercises.some(ex => {
+                          if (['Squat', 'Bench Press', 'Deadlift'].includes(lift.id)) {
+                            return isMainLiftMatch(ex.name, lift.id);
+                          }
+                          return ex.name.toLowerCase() === lift.id.toLowerCase();
+                        }));
+                        const e1rms = liftHistory.flatMap(s => s.exercises.find(ex => {
+                          if (['Squat', 'Bench Press', 'Deadlift'].includes(lift.id)) {
+                            return isMainLiftMatch(ex.name, lift.id);
+                          }
+                          return ex.name.toLowerCase() === lift.id.toLowerCase();
+                        })?.sets.map(set => calculateE1RM(parseFloat(set.weight) || 0, parseInt(set.reps) || 0, parseFloat(set.rpe || set.actualRpe || ''))) || []);
+                        return e1rms.length > 0 ? Math.round(Math.max(...e1rms)) : 0;
                       });
+                      const sqMax = latestE1RMs[0] || 0;
+                      const bpMax = latestE1RMs[1] || 0;
+                      const dlMax = latestE1RMs[2] || 0;
+                      const totalSBD = latestE1RMs.reduce((a, b) => a + b, 0);
+ 
+                      const p = calculateExrxPercentile(totalSBD, profile?.weight || 0, profile?.gender || 'male', profile?.age);
+ 
+                      // Calculate E1RM history data points
+                      const sortedSessions = [...history]
+                        .filter(s => s.completedAt || s.date)
+                        .sort((a, b) => {
+                          const timeA = a.completedAt || new Date(a.date).getTime();
+                          const timeB = b.completedAt || new Date(b.date).getTime();
+                          return timeA - timeB;
+                        });
+ 
+                      const filteredSessionsByRange = filterDataByRange(sortedSessions, timeFrame);
 
-                      const total = liftStats.reduce((a, b) => a + b.max, 0);
-                      const firstTotal = liftStats.reduce((a, b) => a + b.first, 0);
-                      const hasMultiSession = liftStats.some(s => s.hasHistory);
+                      const getLiftE1RM = (session: typeof history[0], liftName: string) => {
+                        const ex = session.exercises.find(e => {
+                          if (['Squat', 'Bench Press', 'Deadlift'].includes(liftName)) {
+                            return isMainLiftMatch(e.name, liftName);
+                          }
+                          return e.name.toLowerCase() === liftName.toLowerCase();
+                        });
+                        if (!ex) return null;
+                        const e1rms = ex.sets.map(set => calculateE1RM(parseFloat(set.weight) || 0, parseInt(set.reps) || 0, parseFloat(set.rpe || set.actualRpe || '')));
+                        const valid = e1rms.filter(v => v > 0);
+                        return valid.length > 0 ? Math.round(Math.max(...valid)) : null;
+                      };
+ 
+                      const chartPoints = filteredSessionsByRange.map(session => {
+                        const displayDate = new Date(session.completedAt || session.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                        const fullDate = new Date(session.completedAt || session.date).toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+                        
+                        const point: any = {
+                          date: displayDate,
+                          fullDate,
+                          title: session.title,
+                          'Squat': getLiftE1RM(session, 'Squat'),
+                          'Bench Press': getLiftE1RM(session, 'Bench Press'),
+                          'Deadlift': getLiftE1RM(session, 'Deadlift'),
+                        };
 
-                      const growth = firstTotal > 0 ? ((total - firstTotal) / firstTotal * 100).toFixed(1) : '0.0';
-                      const diff = total - firstTotal;
+                        customLifts.forEach(lift => {
+                          point[lift] = getLiftE1RM(session, lift);
+                        });
+ 
+                        return point;
+                      }).filter(pt => {
+                        const hasStandard = pt.Squat !== null || pt['Bench Press'] !== null || pt.Deadlift !== null;
+                        const hasCustom = customLifts.some(lift => pt[lift] !== null);
+                        return hasStandard || hasCustom;
+                      });
+ 
+                      interface E1RMTooltipPayloadEntry {
+                        name: string;
+                        value: number;
+                        color: string;
+                        payload: {
+                          fullDate: string;
+                          title: string;
+                        };
+                      }
+ 
+                      interface E1RMTooltipProps {
+                        active?: boolean;
+                        payload?: E1RMTooltipPayloadEntry[];
+                      }
+ 
+                      const E1RMTooltip = ({ active, payload }: E1RMTooltipProps) => {
+                        if (active && payload && payload.length) {
+                          const data = payload[0].payload;
+                          return (
+                            <div className="bg-void/95 backdrop-blur-2xl border border-white/10 p-5 shadow-[0_0_50px_rgba(0,0,0,0.5)] min-w-[200px] relative overflow-hidden font-mono select-none">
+                              <div className="absolute top-0 left-0 w-1 h-full bg-volt" />
+                              <div className="space-y-4">
+                                <div>
+                                  <p className="text-[8px] font-black uppercase tracking-[0.3em] text-zinc-500 mb-1">E1RM TELEMETRY</p>
+                                  <p className="text-xs font-black uppercase text-white">{data.fullDate}</p>
+                                  <p className="text-[10px] font-black uppercase tracking-tight text-volt mt-1">{data.title}</p>
+                                </div>
+                                <div className="space-y-2 pt-3 border-t border-white/5">
+                                  {payload.map((entry, index) => (
+                                    <div key={index} className="flex items-center justify-between gap-4">
+                                      <div className="flex items-center gap-2">
+                                        <div className="w-1.5 h-1.5" style={{ backgroundColor: entry.color }} />
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">{entry.name}</span>
+                                      </div>
+                                      <span className="text-sm font-black text-white">
+                                        {entry.value} <span className="text-[8px] uppercase text-zinc-500">{weightUnit}</span>
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        }
+                        return null;
+                      };
+ 
+                      return (<div className="flex flex-col gap-8 w-full">
+                          {/* Header section with title and time range toggle */}
+                          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 w-full">
+                            <div className="flex flex-col">
+                              <h3 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight">
+                                {t('Estimated 1rm')}
+                              </h3>
+                              <div className="text-zinc-400 text-xs font-medium leading-relaxed mt-1">
+                                {t('analysis.youAreTop')} <span className="text-volt font-black">{p < 1 ? '<1' : p.toFixed(1)}%</span> {t('analysis.ofPopulation')} <InfoTooltip term="Percentile" className="inline-block z-10 relative" />
+                              </div>
+                            </div>
 
-                      return (
-                        <div className="flex flex-col">
-                          <span className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-2">{t('analysis.sbd_total')}</span>
-                          <div className="flex items-baseline gap-2">
-                            <span className="font-headline text-2xl md:text-3xl font-black text-white">{total > 0 ? total : '–'}</span>
-                            <span className="font-headline text-xs font-black text-zinc-500">{weightUnit}</span>
+                            {/* Time range toggle inside Estimated 1RM header */}
+                            <div className="flex gap-1 bg-void p-1 border border-white/5 flex-wrap sm:flex-nowrap shrink-0">
+                              {(['1M', '3M', '6M', 'ALL'] as TimeFrame[]).map((tf) => (
+                                <button
+                                  key={tf}
+                                  onClick={() => setTimeFrame(tf)}
+                                  className={cn(
+                                    "px-3 py-1.5 md:px-4 md:py-2 font-headline text-[10px] md:text-[10px] font-black uppercase tracking-widest transition-all text-center",
+                                    timeFrame === tf ? "bg-volt text-void shadow-[0_0_15px_rgba(0,182,255,0.3)]" : "text-zinc-500 hover:text-white"
+                                  )}
+                                >
+                                  {tf}
+                                </button>
+                              ))}
+                            </div>
                           </div>
-                          <span className="text-[8px] font-bold text-volt tracking-widest mt-1 uppercase">
-                            {hasMultiSession ? (
-                              <>+{diff.toFixed(1)}{weightUnit} ({growth}%)</>
-                            ) : (
-                              <span className="text-zinc-600">{t('analysis.baseline')}</span>
-                            )}
-                          </span>
+
+                          {/* Current E1RMs in elegant stats blocks - 4 column, 2+ row grid layout */}
+                          <div className="grid grid-cols-4 gap-y-6 gap-x-4 bg-void/50 border border-white/10 p-4 font-mono w-full">
+                            <div className="flex flex-col">
+                              <span className="text-[9px] font-black tracking-widest text-zinc-500 uppercase">SQUAT</span>
+                              <span className="text-sm font-black text-white">{sqMax > 0 ? `${sqMax} ${weightUnit}` : '–'}</span>
+                            </div>
+                            <div className="flex flex-col border-l border-white/10 pl-4">
+                              <span className="text-[9px] font-black tracking-widest text-zinc-500 uppercase">BENCH</span>
+                              <span className="text-sm font-black text-white">{bpMax > 0 ? `${bpMax} ${weightUnit}` : '–'}</span>
+                            </div>
+                            <div className="flex flex-col border-l border-white/10 pl-4">
+                              <span className="text-[9px] font-black tracking-widest text-zinc-500 uppercase">DEADLIFT</span>
+                              <span className="text-sm font-black text-white">{dlMax > 0 ? `${dlMax} ${weightUnit}` : '–'}</span>
+                            </div>
+                            <div className="flex flex-col border-l border-volt/35 pl-4">
+                              <span className="text-[9px] font-black tracking-widest text-volt uppercase">SBD TOTAL</span>
+                              <span className="text-sm font-black text-volt font-mono">{totalSBD > 0 ? `${totalSBD} ${weightUnit}` : '–'}</span>
+                            </div>
+                            {customLifts.map((lift, idx) => {
+                              const liftHistory = history.filter(s => s.exercises.some(e => e.name.toLowerCase() === lift.toLowerCase()));
+                              const e1rms = liftHistory.flatMap(s => s.exercises.find(e => e.name.toLowerCase() === lift.toLowerCase())?.sets.map(set => calculateE1RM(parseFloat(set.weight) || 0, parseInt(set.reps) || 0, parseFloat(set.rpe || set.actualRpe || ''))) || []);
+                              const maxVal = e1rms.length > 0 ? Math.round(Math.max(...e1rms)) : 0;
+                              const color = customColors[idx % customColors.length];
+                              const isFirstCol = idx % 4 === 0;
+                              return (
+                                <div key={lift} className={`flex flex-col ${isFirstCol ? '' : 'border-l border-white/10 pl-4'}`}>
+                                  <span style={{ color }} className="text-[9px] font-black tracking-widest uppercase">{lift}</span>
+                                  <span className="text-sm font-black text-white">{maxVal > 0 ? `${maxVal} ${weightUnit}` : '–'}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+
+                          {/* Right: Search bar */}
+                          <div className="relative font-mono flex flex-col justify-center w-full">
+                            <div className="w-full">
+                              <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 block mb-2">SEARCH EXERCISE TO PLOT ESTIMATED 1RM TREND:</label>
+                              <div className="flex gap-2">
+                                <div className="relative flex-grow">
+                                  <input
+                                    type="text"
+                                    value={exerciseSearchQuery}
+                                    onChange={(e) => setExerciseSearchQuery(e.target.value)}
+                                    placeholder="Type exercise name (e.g., Overhead Press)..."
+                                    className="w-full bg-void/55 border border-white/10 text-white px-3 py-2 text-xs focus:outline-none focus:border-volt/60 font-mono tracking-wider placeholder-zinc-700"
+                                  />
+                                  {exerciseSearchQuery && (
+                                    <button 
+                                      onClick={() => setExerciseSearchQuery('')}
+                                      className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white text-xs"
+                                    >
+                                      ✕
+                                    </button>
+                                  )}
+
+                                  {/* Suggestions Dropdown */}
+                                  {exerciseSearchQuery && (() => {
+                                    const query = exerciseSearchQuery.toLowerCase();
+                                    const coreLifts = ['squat', 'bench press', 'deadlift', 'barbell squat', 'barbell bench press', 'barbell deadlift'];
+                                    const suggestions = allExercisesInHistory.filter(name => {
+                                      const nameLower = name.toLowerCase();
+                                      return nameLower.includes(query) && 
+                                             !coreLifts.includes(nameLower) && 
+                                             !customLifts.some(cl => cl.toLowerCase() === nameLower);
+                                    }).slice(0, 5);
+
+                                    return (
+                                      <div className="absolute left-0 right-0 top-full mt-1 bg-void border border-white/10 z-50 divide-y divide-white/5 shadow-2xl">
+                                        {suggestions.map((name, index) => (
+                                          <button
+                                            key={name}
+                                            onClick={() => {
+                                              setCustomLifts(prev => [...prev, name]);
+                                              setExerciseSearchQuery('');
+                                            }}
+                                            onKeyDown={(e) => {
+                                              if (e.key === 'Enter') {
+                                                  setCustomLifts(prev => [...prev, name]);
+                                                  setExerciseSearchQuery('');
+                                              }
+                                            }}
+                                            className={`w-full text-left px-3 py-2 text-xs transition-colors font-mono uppercase flex justify-between items-center ${index === selectedIndex ? 'bg-white/10 text-white' : 'text-zinc-400 hover:text-volt hover:bg-white/5'}`}
+                                          >
+                                            <span>{name}</span>
+                                            <span className="text-[9px] text-volt font-black">+ ADD LIFT</span>
+                                          </button>
+                                        ))}
+                                        {!customLifts.some(cl => cl.toLowerCase() === query) && query && (
+                                          <button
+                                            onClick={() => {
+                                              setCustomLifts(prev => [...prev, exerciseSearchQuery.trim()]);
+                                              setExerciseSearchQuery('');
+                                            }}
+                                            onKeyDown={(e) => {
+                                              if (e.key === 'Enter') {
+                                                  setCustomLifts(prev => [...prev, exerciseSearchQuery.trim()]);
+                                                  setExerciseSearchQuery('');
+                                              }
+                                            }}
+                                            className={`w-full text-left px-3 py-2 text-xs transition-colors font-mono uppercase flex justify-between items-center ${suggestions.length === selectedIndex ? 'bg-white/10 text-white' : 'text-zinc-500 hover:text-volt hover:bg-white/5'}`}
+                                          >
+                                            <span>ADD "{exerciseSearchQuery}"</span>
+                                            <span className="text-[9px] text-volt font-black">+ FORCE ADD</span>
+                                          </button>
+                                        )}
+                                      </div>
+                                    );
+                                  })()}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Active Custom Lifts Badges */}
+                          {customLifts.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                              {customLifts.map((lift, idx) => {
+                                const color = customColors[idx % customColors.length];
+                                return (
+                                  <div 
+                                    key={lift} 
+                                    style={{ borderColor: `${color}33`, backgroundColor: `${color}0D` }}
+                                    className="flex items-center gap-2 px-2 py-1 border text-[10px] font-black uppercase tracking-widest font-mono select-none"
+                                  >
+                                    <span style={{ color }}>●</span>
+                                    <span className="text-zinc-300">{lift}</span>
+                                    <button 
+                                      onClick={() => setCustomLifts(prev => prev.filter(l => l !== lift))}
+                                      className="text-zinc-500 hover:text-crimson transition-colors ml-1 font-sans text-xs font-bold"
+                                    >
+                                      ✕
+                                    </button>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+ 
+                          <div className="h-[280px] w-full mt-4 min-w-0">
+                            {chartPoints.length > 0 ? (
+                              <ResponsiveContainer width="100%" height="100%">
+                                <LineChart data={chartPoints} margin={{ top: 10, right: 10, left: -20, bottom: 10 }}>
+                                  <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
+                                  <XAxis
+                                    dataKey="date"
+                                    axisLine={false}
+                                    tickLine={false}
+                                    tick={{ fill: '#52525b', fontSize: 10, fontWeight: 900, fontFamily: 'Inter' }}
+                                    dy={10}
+                                  />
+                                  <YAxis
+                                    axisLine={false}
+                                    tickLine={false}
+                                    tick={{ fill: '#52525b', fontSize: 10, fontWeight: 900, fontFamily: 'Inter' }}
+                                  />
+                                  <Tooltip content={<E1RMTooltip />} cursor={{ stroke: 'var(--primary-color)', strokeWidth: 1, strokeDasharray: '4 4' }} />
+                                  
+                                  <Line
+                                    type="linear"
+                                    dataKey="Squat"
+                                    name="Squat"
+                                    stroke="var(--primary-color)"
+                                    strokeWidth={3}
+                                    dot={false}
+                                    activeDot={{ r: 6, stroke: 'var(--primary-color)', strokeWidth: 2, fill: '#131313' }}
+                                    animationDuration={1500}
+                                    connectNulls
+                                  />
+                                  <Line
+                                    type="linear"
+                                    dataKey="Bench Press"
+                                    name="Bench"
+                                    stroke="#FF7162"
+                                    strokeWidth={3}
+                                    dot={false}
+                                    activeDot={{ r: 6, stroke: '#FF7162', strokeWidth: 2, fill: '#131313' }}
+                                    animationDuration={1500}
+                                    connectNulls
+                                  />
+                                  <Line
+                                    type="linear"
+                                    dataKey="Deadlift"
+                                    name="Deadlift"
+                                    stroke="#F59E0B"
+                                    strokeWidth={3}
+                                    dot={false}
+                                    activeDot={{ r: 6, stroke: '#F59E0B', strokeWidth: 2, fill: '#131313' }}
+                                    animationDuration={1500}
+                                    connectNulls
+                                  />
+                                  {customLifts.map((lift, idx) => {
+                                    const color = customColors[idx % customColors.length];
+                                    return (
+                                      <Line
+                                        key={lift}
+                                        type="linear"
+                                        dataKey={lift}
+                                        name={lift}
+                                        stroke={color}
+                                        strokeWidth={3}
+                                        dot={false}
+                                        activeDot={{ r: 6, stroke: color, strokeWidth: 2, fill: '#131313' }}
+                                        animationDuration={1500}
+                                        connectNulls
+                                      />
+                                    );
+                                  })}
+                                </LineChart>
+                              </ResponsiveContainer>
+                            ) : null}
+                          </div>
                         </div>
                       );
                     })()}
+
+
+
                   </div>
-                </div>
-              </motion.div>
-            );
+                </motion.div>
+              );
 
             case 'tactical':
               return (
@@ -629,7 +772,7 @@ export const AnalyticsView = () => {
                   initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.4 }}
-                  className="glass-panel px-4 py-6 md:p-8 relative overflow-hidden min-w-0 group/module vanguard-tour-tactical-integration"
+                  className="glass-panel px-4 py-6 md:p-8 relative overflow-hidden min-w-0 group/module vanguard-tour-tactical-integration lg:col-span-2"
                 >
                   <div className="absolute inset-0 opacity-[0.03] pointer-events-none group-hover/module:opacity-[0.05] transition-opacity duration-700"
                     style={{ backgroundImage: 'radial-gradient(var(--primary-color) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
@@ -650,7 +793,7 @@ export const AnalyticsView = () => {
                   initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.45 }}
-                  className="min-w-0 h-[300px]"
+                  className="min-w-0 h-[300px] lg:col-span-2"
                 >
                   <ConditioningTrackerWidget workoutHistory={history} />
                 </motion.div>
@@ -663,7 +806,7 @@ export const AnalyticsView = () => {
                   initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.5 }}
-                  className="min-w-0 h-[300px]"
+                  className="min-w-0 h-[300px] lg:col-span-2"
                 >
                   <MobilityMatrixWidget workoutHistory={history} />
                 </motion.div>
@@ -683,6 +826,6 @@ export const AnalyticsView = () => {
         type="performance"
       />
     </div>
-  );
+);
 };
 

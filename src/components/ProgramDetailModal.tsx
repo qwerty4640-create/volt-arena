@@ -20,16 +20,16 @@ import { Portal } from './Portal';
 interface ProgramDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
-  missionPeriod: string;
-  trainingObjectives: string[];
+  missionPeriod?: string;
+  trainingObjectives?: string[];
   customProgramBlocks: CustomBlock[];
 }
 
 export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({
   isOpen,
   onClose,
-  missionPeriod,
-  trainingObjectives,
+  missionPeriod = '3',
+  trainingObjectives = [],
   customProgramBlocks
 }) => {
   const { t, unit } = useSettings();
@@ -119,16 +119,16 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({
                             <div className="flex-1 flex items-center gap-4">
                               <div className="w-12 h-12 flex flex-col items-center justify-center border border-white/10 bg-void">
                                 <span className="text-[14px] font-black text-white leading-none">{idx + 1}</span>
-                                <span className="text-[8px] font-black text-zinc-500 uppercase">BLOCK</span>
+                                <span className="text-[10px] font-black text-zinc-500 uppercase">BLOCK</span>
                               </div>
                               <div>
                                 <div className="flex items-center gap-4">
                                   <h5 className="font-headline text-lg font-black text-white uppercase tracking-tight">{block.type}</h5>
-                                  <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500 border border-white/10 px-1.5 py-0.5">
+                                  <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 border border-white/10 px-1.5 py-0.5">
                                     {block.durationWeeks}W
                                   </span>
                                 </div>
-                                <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-500 mt-0.5">
+                                <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 mt-0.5">
                                   Intensity Target: {Math.round(block.baseIntensity * 100)}% - {Math.round((block.baseIntensity + (block.intensityIncrementPerWeek * block.durationWeeks)) * 100)}%
                                 </p>
                               </div>
@@ -137,15 +137,15 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({
                             {/* Block Specs */}
                             <div className="flex items-center justify-center gap-8 w-full md:w-auto pt-4 md:pt-0 border-t md:border-t-0 border-white/5">
                               <div className="flex flex-col items-center">
-                                <span className="text-[8px] font-black uppercase text-zinc-500 tracking-tighter">REP RANGE</span>
+                                <span className="text-[10px] font-black uppercase text-zinc-500 tracking-tighter">REP RANGE</span>
                                 <span className="text-sm font-black text-volt">{block.baseReps}</span>
                               </div>
                               <div className="flex flex-col items-center">
-                                <span className="text-[8px] font-black uppercase text-zinc-500 tracking-tighter">SETS</span>
+                                <span className="text-[10px] font-black uppercase text-zinc-500 tracking-tighter">SETS</span>
                                 <span className="text-sm font-black text-white">{block.baseSets}</span>
                               </div>
                               <div className="flex flex-col items-center min-w-[60px]">
-                                <span className="text-[8px] font-black uppercase text-zinc-500 tracking-tighter">EFFORT</span>
+                                <span className="text-[10px] font-black uppercase text-zinc-500 tracking-tighter">EFFORT</span>
                                 <div className="flex gap-0.5 mt-1">
                                   {[1, 2, 3, 4, 5].map(i => (
                                     <div key={i} className={cn(

@@ -15,9 +15,15 @@ interface TacticalChartProps {
   data: TacticalChartDataPoint[];
 }
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+interface TooltipProps {
+  active?: boolean;
+  payload?: Array<{ payload: TacticalChartDataPoint }>;
+  label?: string;
+}
+
+const CustomTooltip = ({ active, payload, label }: TooltipProps) => {
   if (active && payload && payload.length) {
-    const dataPoint = payload[0].payload as TacticalChartDataPoint;
+    const dataPoint = payload[0].payload;
     
     return (
       <div className="glass-panel p-3 border-volt bg-void/90 min-w-[150px]">
@@ -55,9 +61,6 @@ export const TacticalChart: React.FC<TacticalChartProps> = ({ data }) => {
             key={i} 
             role="listitem" 
             tabIndex={0}
-            onFocus={(e) => {
-              // Custom focus logic if needed, but standard browser behavior will announce its contents
-            }}
           >
             {`Date: ${d.date}, Activities: ${d.types}, Duration: ${d.totalDuration} minutes, Avg Intensity RPE: ${d.weightedAvgRpe.toFixed(1)}, Cumulative Impact Score: ${d.cumulativeImpact.toFixed(1)}`}
           </div>
@@ -70,16 +73,6 @@ export const TacticalChart: React.FC<TacticalChartProps> = ({ data }) => {
           margin={{ top: 10, right: 10, bottom: 25, left: -20 }}
           style={{ userSelect: 'none' }}
         >
-          <defs>
-            <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-              <feGaussianBlur stdDeviation="3" result="blur" />
-              <feMerge>
-                <feMergeNode in="blur" />
-                <feMergeNode in="blur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-          </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
           
           <XAxis 
@@ -131,9 +124,8 @@ export const TacticalChart: React.FC<TacticalChartProps> = ({ data }) => {
             dataKey="cumulativeImpact" 
             stroke="var(--primary-color)" 
             strokeWidth={3}
-            dot={{ r: 4, fill: 'var(--void)', stroke: 'var(--primary-color)', strokeWidth: 2 }}
+            dot={false}
             activeDot={{ r: 6, fill: 'var(--primary-color)', stroke: 'var(--void)' }}
-            filter="url(#glow)"
           />
         </ComposedChart>
       </ResponsiveContainer>

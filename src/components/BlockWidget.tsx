@@ -161,7 +161,7 @@ export const BlockWidget = ({ }: BlockWidgetProps) => {
     const actualIntensityData = useMemo(() => {
         if (!history || history.length === 0) return [];
 
-        const weekMap: { [week: number]: { rpeSum: number, targetRpeSum: number, count: number } } = {};
+        const weekMap: { [week: number]: { rpeSum: number, targetRpeSum: number, weightRatioSum: number, count: number } } = {};
 
         history.forEach(session => {
             if (session.totalWeek && session.completedAt) {
@@ -169,11 +169,31 @@ export const BlockWidget = ({ }: BlockWidgetProps) => {
                 const rpe = session.actualRpe || session.rpe || 0;
                 const targetRpe = session.targetRpe || 8.0;
 
+                // Calculate weight ratio
+                let weightRatioSum = 0;
+                let weightSetCount = 0;
+                if (session.exercises) {
+                    session.exercises.forEach(ex => {
+                        (ex.sets || []).forEach(s => {
+                            if (s.isCompleted && !s.isWarmup) {
+                                const actW = parseFloat(s.weight) || 0;
+                                const prsW = parseFloat(s.baseWeight || s.weight) || 0;
+                                if (prsW > 0) {
+                                    weightRatioSum += actW / prsW;
+                                    weightSetCount += 1;
+                                }
+                            }
+                        });
+                    });
+                }
+                const weightRatio = weightSetCount > 0 ? weightRatioSum / weightSetCount : 1.0;
+
                 if (!weekMap[week]) {
-                    weekMap[week] = { rpeSum: 0, targetRpeSum: 0, count: 0 };
+                    weekMap[week] = { rpeSum: 0, targetRpeSum: 0, weightRatioSum: 0, count: 0 };
                 }
                 weekMap[week].rpeSum += rpe;
                 weekMap[week].targetRpeSum += targetRpe;
+                weekMap[week].weightRatioSum += weightRatio;
                 weekMap[week].count += 1;
             }
         });
@@ -184,7 +204,13 @@ export const BlockWidget = ({ }: BlockWidgetProps) => {
 
             const avgActual = stats.rpeSum / stats.count;
             const avgTarget = stats.targetRpeSum / stats.count;
-            const ratio = avgTarget > 0 ? avgActual / avgTarget : 1;
+            const avgWeightRatio = stats.weightRatioSum / stats.count;
+            
+            // Intensity ratio is based on both weight ratio and RPE deviation
+            const rpeDiff = avgActual - avgTarget;
+            // A standard scientific model: 1 RPE point difference ~ 3% intensity change
+            const rpeMultiplier = 1 + (rpeDiff * 0.03); 
+            const ratio = avgWeightRatio * rpeMultiplier;
             
             let actualIntensity = Math.round(d.intensity * ratio);
             actualIntensity = Math.max(0, Math.min(100, actualIntensity));
@@ -335,7 +361,7 @@ export const BlockWidget = ({ }: BlockWidgetProps) => {
                                                                 )}
                                                             </div>
                                                             <div className="flex justify-between items-end">
-                                                                <span className="text-[8px] font-bold text-zinc-500 uppercase tracking-widest">
+                                                                <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
                                                                     Weeks {sub.startWeek}-{sub.endWeek}
                                                                 </span>
                                                             </div>
@@ -358,7 +384,7 @@ export const BlockWidget = ({ }: BlockWidgetProps) => {
                                 className="h-full bg-volt shadow-[0_0_10px_var(--primary-glow)]"
                             />
                         </div>
-                        <div className="flex justify-between text-[8px] font-black uppercase tracking-widest text-zinc-600">
+                        <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-zinc-600">
                             <span>{t('analysis.start')}</span>
                             <span>{Math.round(programProgress)}% {t('analysis.complete')}</span>
                             <span>{t('analysis.peak')}</span>
@@ -369,7 +395,7 @@ export const BlockWidget = ({ }: BlockWidgetProps) => {
                 <div className="space-y-4">
                     <div className="flex items-center gap-2 mb-2">
                         <Info size={12} className="text-zinc-500" />
-                        <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
                             {hoveredWeekData ? `Week ${hoveredWeekData.week} Focus` : 'Current Focus'}
                         </span>
                     </div>
@@ -385,12 +411,15 @@ export const BlockWidget = ({ }: BlockWidgetProps) => {
                             </span>
                             <div className="flex gap-4">
                                 <div className="flex items-center gap-1.5">
-                                    <div className="w-2 h-2 rounded-full bg-volt" />
-                                    <span className="text-[8px] font-black uppercase tracking-widest text-zinc-400">Planned</span>
+                                    <div className="flex gap-0.5 items-center">
+                                        <div className="w-1.5 h-0.5 bg-volt" />
+                                        <div className="w-1.5 h-0.5 bg-volt" />
+                                    </div>
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Planned</span>
                                 </div>
                                 <div className="flex items-center gap-1.5">
-                                    <div className="w-2 h-2 rounded-full bg-[#FF7162]" />
-                                    <span className="text-[8px] font-black uppercase tracking-widest text-zinc-400">Actual</span>
+                                    <div className="w-3.5 h-0.5 bg-[#FF7162]" />
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Actual</span>
                                 </div>
                             </div>
                         </div>
@@ -440,6 +469,7 @@ export const BlockWidget = ({ }: BlockWidgetProps) => {
                                     dataKey="plannedIntensity"
                                     stroke="var(--primary-color)"
                                     strokeWidth={3}
+                                    strokeDasharray="5 5"
                                     fillOpacity={1}
                                     fill="url(#intensity-grad)"
                                     animationDuration={1500}
@@ -454,7 +484,7 @@ export const BlockWidget = ({ }: BlockWidgetProps) => {
                                     animationDuration={1500}
                                     connectNulls={true}
                                 />
-                                <ReferenceLine x={currentCycleWeek} stroke="var(--primary-color)" strokeDasharray="3 3" label={{ position: 'top', value: t('analysis.now').toUpperCase(), fill: 'var(--primary-color)', fontSize: 8, fontWeight: 900 }} />
+                                <ReferenceLine x={currentCycleWeek} stroke="var(--primary-color)" strokeDasharray="3 3" label={{ position: 'top', value: t('analysis.now').toUpperCase(), fill: 'var(--primary-color)', fontSize: 10, fontWeight: 900 }} />
                             </AreaChart>
                         </ResponsiveContainer>
                     </div>

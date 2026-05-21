@@ -1,32 +1,34 @@
 export const haptics = {
+  vibrate: (pattern: number | number[]) => {
+    if (typeof window === 'undefined') return;
+    if (!('vibrate' in navigator)) return;
+    
+    try {
+      if (typeof navigator.vibrate === 'function') {
+        navigator.vibrate(pattern);
+      }
+    } catch (error) {
+      console.warn('Vibration API error:', error);
+    }
+  },
   success: () => {
     console.log('Haptic Trigger: success');
-    if (typeof navigator !== 'undefined' && navigator.vibrate) {
-      navigator.vibrate(20);
-    }
+    haptics.vibrate([15, 50, 15]);
   },
   warning: () => {
     console.log('Haptic Trigger: warning');
-    if (typeof navigator !== 'undefined' && navigator.vibrate) {
-      navigator.vibrate(100);
-    }
+    haptics.vibrate([30, 50, 30]);
   },
   button: () => {
-    console.log('Haptic Trigger: button');
-    if (typeof navigator !== 'undefined' && navigator.vibrate) {
-      navigator.vibrate(10);
-    }
+    // console.log('Haptic Trigger: button');
+    haptics.vibrate(10);
   },
   drag: () => {
-    console.log('Haptic Trigger: drag');
-    if (typeof navigator !== 'undefined' && navigator.vibrate) {
-      navigator.vibrate(5);
-    }
+    // console.log('Haptic Trigger: drag');
+    haptics.vibrate(5);
   },
   nav: () => {
-    console.log('Haptic Trigger: nav');
-    if (typeof navigator !== 'undefined' && navigator.vibrate) {
-      navigator.vibrate(15);
-    }
+    // console.log('Haptic Trigger: nav');
+    haptics.vibrate(15);
   },
 };
