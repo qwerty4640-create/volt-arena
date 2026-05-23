@@ -54,6 +54,7 @@ import { WorkoutLog } from './components/WorkoutLog';
 import { PostWorkoutSummary } from './components/PostWorkoutSummary';
 import { WorkoutHistory } from './components/WorkoutHistory';
 import { NonProgramActivityModal } from './components/NonProgramActivityModal';
+import { FloatingRestTimer } from './components/FloatingRestTimer';
 import { cn } from './lib/utils';
 
 import { 
@@ -1397,6 +1398,7 @@ function AppContent() {
         isOpen={isRecoveryModalOpen}
         onClose={() => setIsRecoveryModalOpen(false)}
       />
+      <FloatingRestTimer />
       <InstallPrompt />
       <UserTour activeView={activeView} />
       <div id="a11y-live-region" className="sr-only" aria-live="polite" aria-atomic="true"></div>

@@ -51,6 +51,43 @@ export const NonProgramActivityModal = ({ isOpen, onClose, initialData }: NonPro
   });
   const [note, setNote] = useState('');
 
+  const backdropRef = React.useRef<HTMLDivElement>(null);
+  const headerRef = React.useRef<HTMLDivElement>(null);
+  const footerRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+
+  React.useEffect(() => {
+    if (!isOpen) return;
+
+    const preventDefault = (e: TouchEvent) => {
+      e.preventDefault();
+    };
+
+    const backdrop = backdropRef.current;
+    const header = headerRef.current;
+    const footer = footerRef.current;
+
+    if (backdrop) backdrop.addEventListener('touchmove', preventDefault, { passive: false });
+    if (header) header.addEventListener('touchmove', preventDefault, { passive: false });
+    if (footer) footer.addEventListener('touchmove', preventDefault, { passive: false });
+
+    return () => {
+      if (backdrop) backdrop.removeEventListener('touchmove', preventDefault);
+      if (header) header.removeEventListener('touchmove', preventDefault);
+      if (footer) footer.removeEventListener('touchmove', preventDefault);
+    };
+  }, [isOpen]);
+
   React.useEffect(() => {
     if (isOpen && initialData) {
       setActivityId(initialData.activityId || 'cardio_running');
@@ -152,6 +189,7 @@ export const NonProgramActivityModal = ({ isOpen, onClose, initialData }: NonPro
       {isOpen && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
           <motion.div
+            ref={backdropRef}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -166,7 +204,7 @@ export const NonProgramActivityModal = ({ isOpen, onClose, initialData }: NonPro
             className="relative w-full max-w-xl bg-black border border-zinc-800 rounded-none shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col max-h-[90vh]"
           >
             {/* Header */}
-            <div className="p-4 md:p-6 bg-zinc-900 border-b border-zinc-800 flex items-center justify-between shrink-0">
+            <div ref={headerRef} className="p-4 md:p-6 bg-zinc-900 border-b border-zinc-800 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-4">
                 <div>
                   <h3 className={cn("text-xl md:text-2xl font-black uppercase  tracking-tight text-white")}>{t('analysis.logNonProgramActivity')}</h3>
@@ -182,7 +220,10 @@ export const NonProgramActivityModal = ({ isOpen, onClose, initialData }: NonPro
               {...*/}
             </div>
 
-            <div className="p-4 md:p-6 space-y-6 overflow-y-auto custom-scrollbar flex-1">
+            <div 
+              className="p-4 md:p-6 space-y-6 overflow-y-auto overscroll-y-contain custom-scrollbar flex-1"
+              style={{ WebkitOverflowScrolling: 'touch' }}
+            >
 
               {/* Activity Selection Area */}
               <div className="space-y-4">
@@ -199,7 +240,10 @@ export const NonProgramActivityModal = ({ isOpen, onClose, initialData }: NonPro
                   />
                 </div>
 
-                <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar">
+                <div 
+                  className="flex gap-2 overflow-x-auto overscroll-x-contain pb-2 custom-scrollbar"
+                  style={{ WebkitOverflowScrolling: 'touch' }}
+                >
                   {(['All', 'Cardio', 'Combat', 'Strength', 'Sport', 'Recovery', 'Other'] as const).map(category => (
                     <button
                       key={category}
@@ -216,7 +260,10 @@ export const NonProgramActivityModal = ({ isOpen, onClose, initialData }: NonPro
                   ))}
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-48 overflow-y-auto custom-scrollbar pr-1">
+                <div 
+                  className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-48 overflow-y-auto overscroll-y-contain custom-scrollbar pr-1"
+                  style={{ WebkitOverflowScrolling: 'touch' }}
+                >
                   {filteredActivities.map(activity => {
                     const ActivityIcon = getIcon(activity.icon);
                     return (
@@ -379,7 +426,7 @@ export const NonProgramActivityModal = ({ isOpen, onClose, initialData }: NonPro
             </div>
 
             {/* Footer */}
-            <div className="p-4 md:p-6 bg-zinc-900 border-t border-zinc-800 shrink-0">
+            <div ref={footerRef} className="p-4 md:p-6 bg-zinc-900 border-t border-zinc-800 shrink-0">
               {error && (
                 <div className="bg-crimson/10 border border-crimson/30 p-3 flex items-center gap-2 mb-4 animate-pulse rounded-none">
                   <span className="w-1.5 h-1.5 bg-crimson rounded-none" />

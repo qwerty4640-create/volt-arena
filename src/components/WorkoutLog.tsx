@@ -181,11 +181,18 @@ const ExerciseAccordion = ({
         onClick={() => { haptics.button(); setIsExpanded(!isExpanded); }}
         className="flex items-center justify-between p-4 cursor-pointer hover:bg-white/5 transition-colors border-b border-white/5"
       >
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 md:w-10 md:h-10 bg-volt/10 flex items-center justify-center text-volt shrink-0">
-            <Dumbbell size={16} className="md:w-5 md:h-5" />
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 md:w-10 md:h-10 bg-volt/10 flex items-center justify-center text-volt shrink-0">
+              <Dumbbell size={16} className="md:w-5 md:h-5" />
+            </div>
+            <h3 className="font-sans text-xl md:text-2xl font-black uppercase tracking-tight">{getExerciseName(exercise, t)}</h3>
           </div>
-          <h3 className="font-sans text-xl md:text-2xl font-black uppercase tracking-tight">{getExerciseName(exercise, t)}</h3>
+          {exercise.intent && (
+            <div className="pl-[2.75rem] md:pl-[3.25rem]">
+              <span className="inline-block px-1.5 py-0.5 bg-zinc-800 text-zinc-400 border border-zinc-700 text-[9px] font-black uppercase tracking-widest">{exercise.intent}</span>
+            </div>
+          )}
         </div>
         <div className="text-zinc-500">
           <ChevronDown size={20} className={cn("transition-transform duration-300", isExpanded && "rotate-180")} />
@@ -437,44 +444,11 @@ const LiveMissionHeader = ({
 export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps) => {
   const { t, unit, profile, lastVoiceCommand, experimentalFeatures } = useSettings();
   const { showToast } = useToast();
-  const { currentSession, updateCurrentSession, history, getCalibrationStatus, calculateProgramCalories, discardSession } = useWorkout();
+  const { currentSession, updateCurrentSession, history, getCalibrationStatus, calculateProgramCalories, discardSession, activeRestTarget, setActiveRestTarget } = useWorkout();
   const weightUnit = unit === 'metric' ? t('workout.kg') : t('workout.lbs');
 
-  const [restRemaining, setRestRemaining] = useState<number | null>(null);
-  const restTargetRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    if (restRemaining === null || restTargetRef.current === null) return;
-
-    const tick = () => {
-      if (restTargetRef.current === null) return;
-      const diff = Math.max(0, Math.ceil((restTargetRef.current - Date.now()) / 1000));
-      if (diff <= 0) {
-        setRestRemaining(null);
-        restTargetRef.current = null;
-      } else {
-        setRestRemaining(diff);
-      }
-    };
-
-    const timer = setInterval(tick, 1000);
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        tick();
-      }
-    };
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    return () => {
-      clearInterval(timer);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [restRemaining !== null]);
-
   const startRestTimer = (seconds: number) => {
-    restTargetRef.current = Date.now() + seconds * 1000;
-    setRestRemaining(seconds);
+    setActiveRestTarget(Date.now() + seconds * 1000);
   };
 
   const [isCompleting, setIsCompleting] = useState(false);
@@ -489,8 +463,10 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
   const lastAutoRegToastRef = useRef<{ [key: string]: number }>({});
   const { requestWakeLock, releaseWakeLock, isLocked } = useWakeLock();
 
+  const isResting = activeRestTarget !== null;
+
   useEffect(() => {
-    if (restRemaining !== null && restRemaining > 0) {
+    if (isResting) {
       if (!isLocked) {
         requestWakeLock();
       }
@@ -499,7 +475,7 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
         releaseWakeLock();
       }
     }
-  }, [restRemaining, isLocked, requestWakeLock, releaseWakeLock]);
+  }, [isResting, isLocked, requestWakeLock, releaseWakeLock]);
 
   useEffect(() => {
     return () => {
@@ -508,12 +484,6 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
   }, [releaseWakeLock]);
 
   // Rest timer effect - handled in WorkoutContext
-
-  const formatRestTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
 
   useEffect(() => {
     setMounted(true);
@@ -1300,59 +1270,6 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
           <AICoach isOpen={isAICoachOpen} onClose={() => setIsAICoachOpen(false)} />
         </>
       )}
-
-      {/* Floating Rest Timer */}
-      <AnimatePresence>
-        {restRemaining !== null && (
-          <motion.div
-            drag
-            dragMomentum={false}
-            dragConstraints={{ left: -1000, right: 1000, top: -1000, bottom: 1000 }}
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="fixed bottom-24 right-6 md:right-10 z-[100] cursor-move touch-none"
-          >
-            <div className="bg-void/95 backdrop-blur-xl border border-volt/30 p-3 shadow-[0_0_40px_rgba(0,182,255,0.2)] flex items-center gap-4">
-              <div className="flex flex-col">
-                <div className="flex items-center gap-1.5 text-volt mb-0.5">
-                  <Timer size={10} className="animate-pulse" />
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em]">{t('workout.restTime')}</span>
-                </div>
-                <div className="text-2xl font-black text-white font-mono leading-none">
-                  {formatRestTime(restRemaining)}
-                </div>
-              </div>
-
-              <div className="h-8 w-px bg-white/10" />
-
-              <div className="flex gap-1">
-                <button 
-                  onClick={() => setRestRemaining((prev: number | null) => Math.max(0, (prev || 0) - 30))}
-                  className="px-2 py-1.5 bg-white/5 hover:bg-white/10 text-[10px] font-black border border-white/10 transition-colors"
-                >
-                  -30S
-                </button>
-                <button 
-                  onClick={() => setRestRemaining((prev: number | null) => (prev || 0) + 30)}
-                  className="px-2 py-1.5 bg-volt/10 hover:bg-volt/20 text-volt text-[10px] font-black border border-volt/20 transition-colors font-mono"
-                >
-                  +30S
-                </button>
-              </div>
-
-              <div className="h-8 w-px bg-white/10" />
-
-              <button 
-                onClick={() => setRestRemaining(null)}
-                className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 hover:text-white transition-colors px-1"
-              >
-                SKIP
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Swap Exercise Modal */}
       <ExerciseSwapModal
