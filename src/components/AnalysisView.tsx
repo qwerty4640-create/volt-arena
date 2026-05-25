@@ -414,33 +414,12 @@ export const ReadinessAnalysisWidget = () => {
         return '#ef4444'; // red-500 / crimson
     };
 
-    const getPalette = (scoreHex: string) => {
-        switch (scoreHex) {
-            case '#10b981': // High (Emerald)
-                return {
-                    fatigue: '#3b82f6', // Blue
-                    sleep: '#6366f1',   // Indigo
-                    stress: '#f43f5e'    // Rose
-                };
-            case '#f59e0b': // Medium (Amber)
-                return {
-                    fatigue: '#10b981', // Emerald
-                    sleep: '#00b6ff',   // Volt/Cyan
-                    stress: '#8b5cf6'    // Violet
-                };
-            case '#ef4444': // Low (Red)
-                return {
-                    fatigue: '#10b981', // Emerald
-                    sleep: '#0ea5e9',   // Sky
-                    stress: '#f59e0b'    // Amber
-                };
-            default:
-                return {
-                    fatigue: '#71717a',
-                    sleep: '#3f3f46',
-                    stress: '#18181b'
-                };
-        }
+    const getPalette = (scoreHex?: string) => {
+        return {
+            fatigue: '#ec4899', // Pink (Volume Impact) - Distinct from green & blue
+            sleep: '#00b6ff',   // Volt/Cyan (Sleep Deficit)
+            stress: '#8b5cf6'   // Violet (Stress)
+        };
     };
 
     const statusColor = readinessScore !== null ? getStatusColorText(readinessScore) : 'text-zinc-500';
@@ -1127,8 +1106,9 @@ export const ExternalActivityWidget = ({ externalTimeFrame, onTimeFrameChange }:
             <div className="absolute inset-0 opacity-[0.03] pointer-events-none group-hover/module:opacity-[0.05] transition-opacity duration-700"
                 style={{ backgroundImage: 'radial-gradient(var(--primary-color) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4 relative z-10 w-full">
-                <div>
+                <div className="mb-4">
                     <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight">{t('analysis.tacticalIntegration')}</h2>
+                    <p className="text-zinc-500 text-xs font-medium mt-2">{t('analysis.tacticalIntegrationDesc')}</p>
                 </div>
 
                 <div className="flex gap-1 bg-void p-1 border border-white/5 flex-wrap md:flex-nowrap shrink-0">

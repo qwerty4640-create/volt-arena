@@ -28,7 +28,11 @@ import {
   UserPlus,
   ChevronLeft,
   Eye,
-  EyeOff
+  EyeOff,
+  X,
+  SunMoon,
+  Scale,
+  Target
 } from 'lucide-react';
 import { DeploymentIcon } from './components/DeploymentIcon';
 import { VanguardLogo } from './components/VanguardLogo';
@@ -56,6 +60,7 @@ import { WorkoutHistory } from './components/WorkoutHistory';
 import { NonProgramActivityModal } from './components/NonProgramActivityModal';
 import { FloatingRestTimer } from './components/FloatingRestTimer';
 import { cn } from './lib/utils';
+import { ALL_WIDGETS, ALL_PERFORMANCE_WIDGETS } from './constants/widgets';
 
 import { 
   useSettings 
@@ -227,6 +232,13 @@ function AppContent() {
   const [selectedHistoryWorkoutId, setSelectedHistoryWorkoutId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLifting, setIsLifting] = useState(false);
+  const [isCompetitionActive, setIsCompetitionActive] = useState(false);
+
+  useEffect(() => {
+    if (activeView !== 'fitness-test') {
+      setIsCompetitionActive(false);
+    }
+  }, [activeView]);
 
   const [viewStateOverride, setViewStateOverride] = useState<{view: ViewType, state: any} | null>(null);
 
@@ -245,9 +257,15 @@ function AppContent() {
     if (!query) return [];
 
     const results: any[] = [];
+    const nextWorkoutForTest = getNextWorkoutTemplate();
+    const fitnessTestState = getFitnessTestInfo(profile, nextWorkoutForTest?.title);
+    const isFitnessTestUnlocked = showExperimentalMenus && fitnessTestState.isUnlocked;
 
-    // 1. Check NAV_ITEMS
+    // 1. Check NAV_ITEMS (excluding locked views)
     NAV_ITEMS.forEach(item => {
+      if (!showExperimentalMenus && item.isExperimental) return;
+      if (item.id === 'fitness-test' && !isFitnessTestUnlocked) return;
+
       const label = t(item.label).toLowerCase();
       if (label.includes(query)) {
         results.push({ 
@@ -260,31 +278,104 @@ function AppContent() {
       }
     });
 
-    // 2. Check Deep Features
+    // 2. Check Deep Features (structured as Parent > Feature)
     const deepFeatures = [
-      { id: 'phases', label: 'Operational Phases', alias: ['phases', 'blocks', 'upcoming', 'strategy'], view: 'upcoming-missions', state: { level: 'phases', blockIndex: 0, phaseIndex: null }, icon: MissionIcon },
-      { id: 'missions', label: 'Mission Deployment', alias: ['missions', 'upcoming', 'deployment'], view: 'upcoming-missions', state: { level: 'blocks', blockIndex: null, phaseIndex: null }, icon: DeploymentIcon },
-      { id: 'history', label: 'Past Missions', alias: ['history', 'logs', 'past'], view: 'workout-history', icon: History },
-      { id: 'test', label: 'Physical Assessment', alias: ['test', 'fitness test', 'assessment'], view: 'fitness-test', icon: SportShoeIcon },
-      { id: 'profile', label: 'Operator Profile', alias: ['profile', 'biometrics', 'stats'], view: 'profile', icon: User },
-      { id: 'recovery', label: 'Active Recovery', alias: ['recovery', 'cardio', 'supplementary'], action: 'recovery', icon: Activity },
-      { id: 'settings', label: 'System Settings', alias: ['settings', 'config', 'language'], view: 'settings', icon: Settings },
+      { id: 'phases', label: 'Operational Phases', parentKey: 'nav.training', alias: ['phases', 'blocks', 'upcoming', 'strategy'], view: 'upcoming-missions', state: { level: 'phases', blockIndex: 0, phaseIndex: null }, icon: MissionIcon },
+      { id: 'history', label: 'Past Missions', parentKey: 'nav.training', alias: ['history', 'logs', 'past'], view: 'workout-history', icon: History },
     ];
 
     deepFeatures.forEach(feature => {
+      const parentLabel = t(feature.parentKey);
+      const displayLabel = `${parentLabel} > ${feature.label}`;
       const match = feature.label.toLowerCase().includes(query) || 
+                    displayLabel.toLowerCase().includes(query) ||
                     feature.alias.some(a => a.toLowerCase().includes(query));
       
       if (match && !results.find(r => r.id === feature.id)) {
         results.push({
           id: feature.id,
           type: 'feature',
-          label: feature.label,
+          label: displayLabel,
           icon: feature.icon,
           onSelect: () => {
-            if (feature.action === 'recovery') setIsRecoveryModalOpen(true);
-            else if (feature.view) navigateTo(feature.view as any, feature.state);
+            if (feature.view) navigateTo(feature.view as any, feature.state);
             setSearchQuery('');
+          }
+        });
+      }
+    });
+
+    // 3. Check All Widgets on Dashboard (Readiness) Page
+    ALL_WIDGETS.forEach(widget => {
+      const parentLabel = t('nav.dashboard'); // "Readiness"
+      const widgetLabel = t(widget.label);
+      const displayLabel = `${parentLabel} > ${widgetLabel}`;
+      
+      const match = widgetLabel.toLowerCase().includes(query) || 
+                    displayLabel.toLowerCase().includes(query) ||
+                    widget.id.toLowerCase().includes(query);
+                    
+      if (match && !results.find(r => r.id === `widget-${widget.id}`)) {
+        results.push({
+          id: `widget-${widget.id}`,
+          type: 'widget',
+          label: displayLabel,
+          icon: widget.icon,
+          onSelect: () => {
+            navigateTo('analysis');
+          }
+        });
+      }
+    });
+
+    // 4. Check All Widgets on Performance (Analytics) Page
+    ALL_PERFORMANCE_WIDGETS.forEach(widget => {
+      const parentLabel = t('nav.analytics'); // "Performance"
+      const widgetLabel = t(widget.label);
+      const displayLabel = `${parentLabel} > ${widgetLabel}`;
+      
+      const match = widgetLabel.toLowerCase().includes(query) || 
+                    displayLabel.toLowerCase().includes(query) ||
+                    widget.id.toLowerCase().includes(query);
+                    
+      if (match && !results.find(r => r.id === `widget-${widget.id}`)) {
+        results.push({
+          id: `widget-${widget.id}`,
+          type: 'widget',
+          label: displayLabel,
+          icon: widget.icon,
+          onSelect: () => {
+            navigateTo('analytics');
+          }
+        });
+      }
+    });
+
+    // 5. Check All Settings Page Subsections
+    const settingsWidgets = [
+      { id: 'settings-visual', label: 'Visual Output', parentKey: 'nav.settings', alias: ['theme', 'dark mode', 'color scheme', 'visual'], view: 'settings', icon: SunMoon },
+      { id: 'settings-unit', label: t('settings.unit') || 'Unit of Measure', parentKey: 'nav.settings', alias: ['unit', 'unit of measure', 'metric', 'imperial', 'kg', 'lbs'], view: 'settings', icon: Scale },
+      { id: 'settings-program', label: t('settings.programManagement') || 'Program Management', parentKey: 'nav.settings', alias: ['reset', 'program', 'schedule', 'program management'], view: 'settings', icon: Target },
+      { id: 'settings-system', label: t('settings.systemOps') || 'System Operations', parentKey: 'nav.settings', alias: ['operations', 'induction', 'session', 'sign out', 'system operations'], view: 'settings', icon: Settings },
+      { id: 'settings-profile', label: 'Operator Profile', parentKey: 'nav.settings', alias: ['profile', 'biometrics', 'stats', 'operator profile'], view: 'profile', icon: User },
+    ];
+
+    settingsWidgets.forEach(widget => {
+      const parentLabel = t(widget.parentKey); // "Settings"
+      const displayLabel = `${parentLabel} > ${widget.label}`;
+      
+      const match = widget.label.toLowerCase().includes(query) || 
+                    displayLabel.toLowerCase().includes(query) ||
+                    widget.alias.some(a => a.toLowerCase().includes(query));
+                    
+      if (match && !results.find(r => r.id === widget.id)) {
+        results.push({
+          id: widget.id,
+          type: 'widget',
+          label: displayLabel,
+          icon: widget.icon,
+          onSelect: () => {
+            navigateTo(widget.view as any);
           }
         });
       }
@@ -881,6 +972,7 @@ function AppContent() {
         immersionMode={immersionMode}
         isVoiceActive={isVoiceActive}
         lastVoiceCommand={lastVoiceCommand}
+        onReadyChange={setIsCompetitionActive}
       />;
       case 'profile': return <ProfileView onBack={() => setActiveView('settings')} />;
       case 'workout-log': return <WorkoutLog 
@@ -987,7 +1079,8 @@ function AppContent() {
 
       {/* Top App Bar Shell - Hidden on Desktop/Tablet */}
       <header className={cn(
-        "fixed top-0 left-0 right-0 z-50 flex md:hidden items-center justify-between px-6 bg-void/60 backdrop-blur-lg pt-safe pb-4 h-24"
+        "fixed top-0 left-0 right-0 z-50 flex md:hidden items-center justify-between px-6 bg-void/60 backdrop-blur-lg pt-safe pb-4 h-24 transition-all duration-500",
+        (activeView === 'fitness-test' && isCompetitionActive) ? "opacity-0 -translate-y-full pointer-events-none" : "opacity-100 translate-y-0"
       )}>
         <div className="w-10" />
         <div className="flex items-center justify-center w-[40vw]">
@@ -1010,7 +1103,7 @@ function AppContent() {
 
       <aside className={cn(
         "fixed left-0 top-0 bottom-0 z-40 hidden md:flex transition-all duration-500",
-        (activeView === 'berserker') ? "opacity-0 -translate-x-full pointer-events-none" : "opacity-100 translate-x-0"
+        (activeView === 'berserker' || (activeView === 'fitness-test' && isCompetitionActive)) ? "opacity-0 -translate-x-full pointer-events-none" : "opacity-100 translate-x-0"
       )}>
         {/* Navigation Content Pane */}
         <div className="w-[260px] h-full flex flex-col justify-between py-8 px-6 border-r border-white/5 bg-void/90 backdrop-blur-3xl shadow-2xl overflow-y-auto custom-scrollbar">
@@ -1039,7 +1132,7 @@ function AppContent() {
                   onClick={() => setSearchQuery('')}
                   className="absolute inset-y-0 right-3 flex items-center text-zinc-600 hover:text-volt"
                 >
-                  <Box size={10} />
+                  <X size={10} />
                 </button>
               )}
             </div>
@@ -1053,14 +1146,13 @@ function AppContent() {
                       <button
                         key={`search-${result.id}`}
                         onClick={result.onSelect}
-                        className="flex items-center gap-3 group transition-all duration-300 px-3 py-3 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] text-zinc-400 hover:text-white"
+                        className="flex items-center gap-3 text-left w-full group transition-all duration-300 px-3 py-3 rounded-none border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] text-zinc-400 hover:text-white"
                       >
-                        <div className="p-1.5 bg-volt/10 text-volt rounded-lg">
+                        <div className="p-1.5 bg-volt/10 text-volt rounded-none">
                           <Icon size={18} />
                         </div>
-                        <div className="flex flex-col items-start leading-tight">
-                          <span className="font-sans text-[10px] uppercase font-black tracking-[0.2em]">{result.label}</span>
-                          <span className="text-[8px] opacity-60 uppercase font-bold tracking-widest">{result.type}</span>
+                        <div className="flex flex-col items-start leading-tight text-left">
+                          <span className="font-sans text-[10px] uppercase font-black tracking-[0.2em] text-left">{result.label}</span>
                         </div>
                       </button>
                     );
@@ -1083,7 +1175,7 @@ function AppContent() {
                       key={`pane-${item.id}`}
                       onClick={() => setActiveView(item.id)}
                       className={cn(
-                        "flex items-center gap-3 group transition-all duration-300 px-3 py-3 rounded-xl border border-transparent",
+                        "flex items-center gap-3 text-left w-full group transition-all duration-300 px-3 py-3 rounded-none border border-transparent",
                         `vanguard-tour-nav-${item.id}`,
                         isActive ? "bg-white/[0.05] text-white border-white/5" : "text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.02]"
                       )}
@@ -1091,7 +1183,7 @@ function AppContent() {
                       <div 
                         className={cn(
                           "p-1.5 transition-colors flex items-center justify-center",
-                          item.id === 'training' ? "" : "rounded-lg",
+                          item.id === 'training' ? "" : "rounded-none",
                           isActive ? "bg-volt/10 text-volt" : "text-zinc-600 group-hover:text-zinc-300"
                         )}
                         style={item.id === 'training' ? {
@@ -1103,13 +1195,13 @@ function AppContent() {
                         <Icon size={18} strokeWidth={isActive ? 3 : 2} />
                       </div>
                       <span className={cn(
-                        "font-sans text-[10px] uppercase tracking-[0.2em] transition-colors flex",
+                        "font-sans text-[10px] uppercase tracking-[0.2em] transition-colors flex text-left",
                         item.id === 'fitness-test' ? "flex-col items-start leading-none gap-1" : "items-center gap-2",
                         isActive ? "text-white font-black" : "text-zinc-500 font-bold group-hover:text-zinc-300"
                       )}>
                         <span>{t(item.label)}</span>
                         {item.id === 'fitness-test' && (
-                          <span className="text-[8px] opacity-70 text-zinc-500 font-bold whitespace-nowrap">
+                          <span className="text-[8px] opacity-70 text-zinc-500 font-bold whitespace-nowrap text-left">
                             {(() => {
                               const info = getFitnessTestInfo(profile, nextWorkoutForTest?.title);
                               if (info.isUnlocked) return 'UNLOCKED';
@@ -1121,7 +1213,7 @@ function AppContent() {
                       {isActive && (
                         <motion.div 
                           layoutId="pane-active-indicator" 
-                          className="ml-auto w-1 h-3 rounded-full bg-volt shadow-[0_0_8px_var(--primary-glow)]" 
+                          className="ml-auto w-1 h-3 rounded-none bg-volt shadow-[0_0_8px_var(--primary-glow)]" 
                         />
                       )}
                     </button>
@@ -1135,7 +1227,7 @@ function AppContent() {
           <div className="space-y-6">
             <div 
               onClick={() => setActiveView('profile')}
-              className="flex items-center gap-4 p-3 bg-white/[0.02] border border-white/5 rounded-xl hover:bg-white/[0.04] transition-colors cursor-pointer group"
+              className="flex items-center gap-4 p-3 bg-white/[0.02] border border-white/5 rounded-none hover:bg-white/[0.04] transition-colors cursor-pointer group text-left w-full"
             >
               <div className="w-12 h-12 flex items-center justify-center shrink-0 border border-white/10 relative overflow-hidden bg-zinc-900">
                 {profile?.photoURL || user?.photoURL ? (
@@ -1169,7 +1261,7 @@ function AppContent() {
       {/* Bottom Navigation for Mobile */}
       <nav className={cn(
         "fixed bottom-0 left-0 right-0 z-50 md:hidden bg-void/80 backdrop-blur-xl border-t border-white/5 flex items-center transition-all duration-500 pb-safe",
-        (activeView === 'berserker') ? "translate-y-full" : "translate-y-0"
+        (activeView === 'berserker' || (activeView === 'fitness-test' && isCompetitionActive)) ? "translate-y-full" : "translate-y-0"
       )}>
         <div className="flex-1 flex justify-evenly items-center py-5">
           {[
@@ -1300,11 +1392,16 @@ function AppContent() {
       {/* Main Content Area */}
       <main 
         ref={mainRef}
-        className="flex-1 w-full md:w-[calc(100%-260px)] max-w-none ml-0 md:ml-[260px] px-4 md:px-[var(--app-gutter)] relative h-full flex flex-col items-center pt-[calc(6rem+env(safe-area-inset-top))] md:pt-0 pb-24 md:pb-12 overflow-x-hidden overflow-y-auto custom-scrollbar hud-widget-grid"
+        className={cn(
+          "flex-1 w-full max-w-none relative h-full flex flex-col items-center transition-all duration-500",
+          (activeView === 'berserker' || (activeView === 'fitness-test' && isCompetitionActive))
+            ? "w-full ml-0 md:ml-0 md:w-full md:px-0 pb-0 pt-0 h-screen h-[100vh] overflow-hidden" 
+            : "px-4 md:px-[var(--app-gutter)] pt-[calc(6rem+env(safe-area-inset-top))] md:pt-0 pb-24 md:pb-12 overflow-x-hidden overflow-y-auto custom-scrollbar hud-widget-grid md:w-[calc(100%-260px)] ml-0 md:ml-[260px]"
+        )}
       >
         <div className={cn(
           "hidden md:flex flex-col w-full md:sticky md:top-0 md:z-30 bg-void border-b border-white/5 md:mb-8 md:-mx-[var(--app-gutter)] md:px-[var(--app-gutter)] md:w-[calc(100%+2*var(--app-gutter))]",
-          (activeView === 'post-workout' || activeView === 'berserker' || activeView === 'workout-log') && "md:hidden"
+          (activeView === 'post-workout' || activeView === 'berserker' || activeView === 'workout-log' || (activeView === 'fitness-test' && isCompetitionActive)) && "md:hidden"
         )}>
           <PageHeader 
             activeView={activeView} 
@@ -1319,7 +1416,10 @@ function AppContent() {
             animate={{ opacity: 1, scale: 1, clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 100%)' }}
             exit={{ opacity: 0, scale: 1.05, filter: 'blur(5px)' }}
             transition={{ duration: 0.2, ease: [0.33, 1, 0.68, 1] }}
-            className="w-full flex flex-col items-center justify-start min-w-0"
+            className={cn(
+              "w-full flex flex-col items-center min-w-0",
+              (activeView === 'fitness-test' && isCompetitionActive) ? "h-screen h-[100vh] justify-between" : "justify-start"
+            )}
           >
             {renderView()}
           </motion.div>

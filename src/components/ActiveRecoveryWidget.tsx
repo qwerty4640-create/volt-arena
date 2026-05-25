@@ -65,13 +65,13 @@ const SwipeCard = ({
         <div className="mt-auto relative z-10 pt-8 flex gap-3">
           <button
             onClick={() => onDone(activity)}
-            className="flex-1 py-4 btn-secondary"
+            className="flex-1 py-4 btn-secondary min-h-[44px]"
           >
             <Check size={18} strokeWidth={3} /> {t('recovery.done')}
           </button>
           <button
             onClick={() => onSwipe(activity.id, 'left')}
-            className="p-4 bg-white/5 border border-white/10 text-zinc-500 hover:text-white hover:bg-white/10 transition-all"
+            className="p-4 bg-white/5 border border-white/10 text-zinc-500 hover:text-white hover:bg-white/10 transition-all min-h-[44px] min-w-[44px]"
             title="Next Routine"
           >
             <ChevronRight size={20} />
@@ -192,7 +192,7 @@ export const ActiveRecoveryWidget = () => {
             <p className="text-zinc-500 text-xs uppercase tracking-widest font-bold">{t('recovery.optimized')}</p>
             <button
               onClick={resetStack}
-              className="mt-8 px-6 py-3 bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-[0.2em] hover:bg-white/10 transition-all"
+              className="mt-8 px-6 py-3 bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-[0.2em] hover:bg-white/10 transition-all min-h-[44px]"
             >
               {t('recovery.restart')}
             </button>

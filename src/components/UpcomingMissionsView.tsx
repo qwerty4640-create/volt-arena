@@ -38,7 +38,7 @@ export const UpcomingMissionsView: React.FC<UpcomingMissionsViewProps> = ({ onBa
 
   const hierarchy = topLevelPlan.map((block, bIdx) => {
     // Expand this block specifically to get phases
-    const phases = customBlocks.length > 0 ? [block] : expandPlan([block]);
+    const phases = expandPlan([block], customBlocks.length > 0);
     
     return {
       label: block.label,
@@ -58,9 +58,15 @@ export const UpcomingMissionsView: React.FC<UpcomingMissionsViewProps> = ({ onBa
     };
   });
 
-  const filteredHistory = profile?.programResetAt
-    ? history.filter(s => (s.completedAt || 0) > profile.programResetAt!)
-    : history;
+  let filteredHistory = history;
+  if (profile?.programResetAt) {
+    const tempFiltered = history.filter(s => (s.completedAt || s.startTime || 0) > profile.programResetAt!);
+    if (tempFiltered.length > 0) {
+      filteredHistory = tempFiltered;
+    } else {
+      filteredHistory = history;
+    }
+  }
 
   const handleBack = () => {
     if (viewState.level === 'missions') {
@@ -208,7 +214,22 @@ export const UpcomingMissionsView: React.FC<UpcomingMissionsViewProps> = ({ onBa
               ? Math.round((blockForThisMission.block.baseIntensity + ((blockForThisMission.weekInBlock - 1) * blockForThisMission.block.intensityIncrementPerWeek)) * 100) 
               : 0;
 
-            const isCompleted = filteredHistory.some(s => s.title?.startsWith(`W${absoluteWeek}D${dayInWeek}:`));
+            const isCompleted = filteredHistory.some(s => {
+              if (!s.title) return false;
+              const match = s.title.match(/^W(\d+)\s*D(\d+)/i);
+              if (match) {
+                const w = parseInt(match[1]);
+                const d = parseInt(match[2]);
+                return w === absoluteWeek && d === dayInWeek;
+              }
+              return s.title.startsWith(`W${absoluteWeek}D${dayInWeek}:`) ||
+                     s.title.startsWith(`W${absoluteWeek}D${dayInWeek}`);
+            });
+
+            const workoutTemplate = getWorkoutTemplate(absoluteWeek, dayInWeek);
+            const primaryEx = workoutTemplate?.exercises?.[0];
+            const actualSets = primaryEx?.sets?.filter(s => s.reps !== "1" || !s.id.includes("retention")).length || primaryEx?.sets?.length || blockForThisMission?.block.baseSets || 3;
+            const actualReps = primaryEx?.sets?.[0]?.reps || blockForThisMission?.block.baseReps || '8';
 
             return (
               <motion.div
@@ -216,7 +237,7 @@ export const UpcomingMissionsView: React.FC<UpcomingMissionsViewProps> = ({ onBa
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: i * 0.05 }}
-                onClick={() => setSelectedMission(getWorkoutTemplate(absoluteWeek, dayInWeek))}
+                onClick={() => setSelectedMission(workoutTemplate)}
                 className={`glass-panel p-4 border transition-all cursor-pointer flex flex-col justify-between ${
  isCompleted ? 'bg-zinc-900/50 border-white/5 opacity-50 grayscale' : 'bg-void/50 border-white/5 group hover:border-volt/30' }`}
               >
@@ -247,7 +268,7 @@ export const UpcomingMissionsView: React.FC<UpcomingMissionsViewProps> = ({ onBa
                     <div>
                       <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">Prescription</p>
                       <p className="text-[10px] font-bold text-zinc-300 uppercase tracking-[0.1em]">
-                        {blockForThisMission?.block.baseSets || 3}x{blockForThisMission?.block.baseReps || '8'} @ {intensity}%
+                        {actualSets}X{actualReps} @ {intensity}%
                       </p>
                     </div>
                   </div>

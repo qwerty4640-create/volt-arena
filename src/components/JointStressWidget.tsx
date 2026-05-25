@@ -16,9 +16,10 @@ import { useSettings } from '../contexts/SettingsContext';
 import { useWorkout } from '../contexts/WorkoutContext';
 import { InfoTooltip } from './InfoTooltip';
 import { cn } from '../lib/utils';
+import { EXERCISE_DATABASE } from '../constants/exercises';
 
 export const JointStressWidget = ({ className }: { className?: string }) => {
-  const { t } = useSettings();
+  const { t, unit } = useSettings();
   const { history, recoveryHistory } = useWorkout();
   const [timeFrame, setTimeFrame] = React.useState<'1M' | '3M' | '6M' | 'ALL'>('6M');
 
@@ -48,13 +49,33 @@ export const JointStressWidget = ({ className }: { className?: string }) => {
 
       let sessionHighImpact = 0;
       session.exercises?.forEach(ex => {
+        // Find exercise definition to obtain connectiveTissueStressScore
+        const exerciseId = (ex as any).exerciseId || '';
+        const exerciseName = ex.name || '';
+        const definition = EXERCISE_DATABASE.find(
+          e => (exerciseId && e.id === exerciseId) || e.name.toLowerCase() === exerciseName.toLowerCase()
+        );
+        const stressScore = definition?.connectiveTissueStressScore || 3; // default: 3
+
         ex.sets?.forEach(s => {
           if (s.isCompleted) {
-            const vol = (parseFloat(s.weight) || 0) * (parseInt(s.reps) || 0);
+            const rawWeight = parseFloat(s.weight) || 0;
+            const reps = parseInt(s.reps) || 0;
+
+            // Unit conversion guard: if raw weight is in LBs, normalize it to KG equivalent
+            // So that calculations remain completely unit-independent
+            const normWeight = unit === 'metric' ? rawWeight : rawWeight / 2.20462;
+            
+            // For bodyweight exercises without added load, assume an effective skeletal/bodyweight loading of 15kg
+            const effectiveWeight = normWeight > 0 ? normWeight : 15;
+
             const rpe = parseFloat(s.rpe) || 7;
-            // Weighted by RPE: higher RPE = exponentially higher stress
-            const stressFactor = rpe >= 9.5 ? 2.5 : rpe >= 8.5 ? 1.8 : rpe >= 7 ? 1.2 : 1.0;
-            sessionHighImpact += vol * stressFactor;
+            const rpeStressFactor = rpe >= 9.5 ? 2.5 : rpe >= 8.5 ? 1.8 : rpe >= 7 ? 1.2 : 1.0;
+
+            // Calculate Equivalent Joint Impact Strain
+            // Scaled elegantly to match active recovery minutes (lowImpact) points
+            const setStressPoints = (effectiveWeight * reps * stressScore * rpeStressFactor) / 20;
+            sessionHighImpact += setStressPoints;
           }
         });
       });

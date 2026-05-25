@@ -135,12 +135,15 @@ export const GOAL_EXPANSIONS: Record<string, { type: BlockType; ratio: number }[
   ],
 };
 
-export const expandPlan = (plan: BlockDefinition[]): BlockDefinition[] => {
+export const expandPlan = (plan: BlockDefinition[], isCustom = false): BlockDefinition[] => {
   const expanded: BlockDefinition[] = [];
+  const macroGoals = ['powerbuilding', 'pure_strength', 'longevity', 'tactical', 'explosiveness', 'endurance', 'prehab'];
   
   plan.forEach(block => {
     const expansion = GOAL_EXPANSIONS[block.type];
-    if (expansion) {
+    const shouldExpand = expansion && (!isCustom || macroGoals.includes(block.type));
+    
+    if (shouldExpand) {
       let remainingWeeks = block.durationWeeks;
       expansion.forEach((sub, idx) => {
         const isLast = idx === expansion.length - 1;
@@ -466,8 +469,8 @@ export const getBlockForWeek = (totalWeek: number, totalDurationWeeks: number | 
   // Analyze: Why was Mission #9 Foundation during Hypertrophy?
   // Because 'expandPlan' was breaking down top-level objectives (like Hypertrophy) into sub-phases (Foundation -> Hypertrophy -> Overreach -> Deload).
   // A 6-month Hypertrophy block has a 20% Foundation phase (5 weeks). So week 3 (Mission #9) remained Foundation.
-  // Fix: By bypassing 'expandPlan' for custom blocks, the timeline remains exactly as crafted by the user. If they drag Hypertrophy for 12 weeks, it stays Hypertrophy for 12 weeks.
-  const plan = (hasCustomBlocks ? basicPlan : expandPlan(basicPlan)).filter(b => b && b.label);
+  // Fix: By utilizing 'expandPlan' with hasCustomBlocks, we only expand macro goals (like Powerbuilding) but preserve custom-crafted specific phases (like Hypertrophy).
+  const plan = expandPlan(basicPlan, hasCustomBlocks).filter(b => b && b.label);
 
   if (!plan || plan.length === 0) {
     const fallbackTemplate = BLOCK_TEMPLATES[BlockType.FOUNDATION];

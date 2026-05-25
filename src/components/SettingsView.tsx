@@ -139,7 +139,7 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
                     key={tOpt}
                     onClick={() => setTheme(tOpt)}
                     className={cn(
-                      "flex-1 flex items-center justify-center gap-2 py-3 transition-colors",
+                      "flex-1 flex items-center justify-center gap-2 py-3 transition-colors min-h-[44px]",
                       theme === tOpt
                         ? "bg-volt text-void font-bold"
                         : "text-zinc-500 hover:text-zinc-300"
@@ -198,7 +198,7 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
                           }
                         }}
                         className={cn(
-                          "flex items-center justify-between p-3 transition-all relative overflow-hidden",
+                          "flex items-center justify-between p-3 transition-all relative overflow-hidden min-h-[56px]",
                           fantasyColorScheme === item.id
                             ? "bg-volt/10 text-volt border-l-[3px] border-volt"
                             : isLocked
@@ -445,7 +445,7 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
               </div>
               <button
                 onClick={() => window.dispatchEvent(new CustomEvent('vanguard_reset_tour'))}
-                className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 md:px-8 md:py-4 btn-secondary font-headline text-[10px] font-black uppercase tracking-widest shrink-0 transition-all rounded vanguard-tour-reset-induction"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 md:px-8 md:py-4 btn-secondary font-headline text-[10px] font-black uppercase tracking-widest shrink-0 transition-all rounded min-h-[44px]"
               >
                 <RotateCcw size={14} />
                 <span>Re-initialize Induction</span>

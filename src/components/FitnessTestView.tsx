@@ -7,6 +7,7 @@ import {
   Map,
   Dumbbell,
   ArrowRight,
+  ArrowLeft,
   ChevronRight,
   Circle,
   Trophy,
@@ -15,7 +16,9 @@ import {
   Volume2,
   AlertTriangle,
   Timer,
-  Activity
+  Activity,
+  Check,
+  X
 } from 'lucide-react';
 import { ImmersionMode } from '../types';
 import { cn } from '../lib/utils';
@@ -60,7 +63,7 @@ import { getFitnessTestInfo } from '../utils/fitnessTestUtils';
 import { useWorkout } from '../contexts/WorkoutContext';
 
 export const FitnessTestView = ({ immersionMode = 'immersive', isVoiceActive = false, lastVoiceCommand, onReadyChange }: StageViewProps) => {
-  const { t, profile, updateProfile } = useSettings();
+  const { t, profile, updateProfile, unit, theme } = useSettings();
   const { getNextWorkoutTemplate } = useWorkout();
   const nextWorkout = getNextWorkoutTemplate();
   const { isUnlocked, daysRemaining, missionsRemaining, testLabel, testType, isFinalTest } = getFitnessTestInfo(profile, nextWorkout?.title);
@@ -70,7 +73,7 @@ export const FitnessTestView = ({ immersionMode = 'immersive', isVoiceActive = f
   const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
   const [isPostponeModalOpen, setIsPostponeModalOpen] = useState(false);
-  const [setupStep, setSetupStep] = useState<1 | 2 | 3>(1);
+  const [setupStep, setSetupStep] = useState<1 | 2>(1);
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
   const [selectedStage, setSelectedStage] = useState<StageType>('arnold');
   const getInitialTargets = () => {
@@ -83,7 +86,7 @@ export const FitnessTestView = ({ immersionMode = 'immersive', isVoiceActive = f
       case 'tactical':
         return [
           { name: 'Weighted Ruck (3mi)', target: 45, unit: 'mins', step: 1 },
-          { name: 'Farmer Carry Max', target: 100, unit: 'kg', step: 5 },
+          { name: 'Farmer Carry Max', target: unit === 'imperial' ? 220 : 100, unit: unit === 'imperial' ? 'stage.lbs' : 'stage.kg', step: unit === 'imperial' ? 10 : 5 },
           { name: 'Max Pullups', target: 15, unit: 'reps', step: 1 }
         ];
       case 'longevity':
@@ -94,42 +97,219 @@ export const FitnessTestView = ({ immersionMode = 'immersive', isVoiceActive = f
       case 'explosiveness':
         return [
           { name: 'Vertical Jump', target: 30, unit: 'in', step: 0.5 },
-          { name: 'Power Clean 1RM', target: 100, unit: 'kg', step: 2.5 },
+          { name: 'Power Clean 1RM', target: unit === 'imperial' ? 220 : 100, unit: unit === 'imperial' ? 'stage.lbs' : 'stage.kg', step: unit === 'imperial' ? 5 : 2.5 },
           { name: 'Broad Jump', target: 100, unit: 'in', step: 1 }
         ];
       default: // big3
+        const isImperial = unit === 'imperial';
+        const squat1RM = profile?.squatPR || 0;
+        const bench1RM = profile?.benchPR || 0;
+        const deadlift1RM = profile?.deadliftPR || 0;
+
+        const defaultSquat = isImperial ? 495 : 225;
+        const defaultBench = isImperial ? 315 : 145;
+        const defaultDeadlift = isImperial ? 585 : 265;
+
+        const baseSquat = squat1RM > 0 ? squat1RM : defaultSquat;
+        const baseBench = bench1RM > 0 ? bench1RM : defaultBench;
+        const baseDeadlift = deadlift1RM > 0 ? deadlift1RM : defaultDeadlift;
+
+        const step = isImperial ? 5 : 2.5;
+
+        const sq1 = Math.round((baseSquat * 0.90) / step) * step;
+        const sq2 = Math.round((baseSquat * 1.00) / step) * step;
+        const sq3 = Math.round((baseSquat * 1.05) / step) * step;
+
+        const bp1 = Math.round((baseBench * 0.90) / step) * step;
+        const bp2 = Math.round((baseBench * 1.00) / step) * step;
+        const bp3 = Math.round((baseBench * 1.05) / step) * step;
+
+        const dl1 = Math.round((baseDeadlift * 0.90) / step) * step;
+        const dl2 = Math.round((baseDeadlift * 1.00) / step) * step;
+        const dl3 = Math.round((baseDeadlift * 1.05) / step) * step;
+
         return [
-          { name: 'stage.squat', target: 225, unit: 'kg', step: 2.5 },
-          { name: 'stage.benchPress', target: 145, unit: 'kg', step: 2.5 },
-          { name: 'stage.deadlift', target: 265, unit: 'kg', step: 2.5 }
+          { name: 'stage.squat', attempt: 1, target: sq1, unit: isImperial ? 'stage.lbs' : 'stage.kg', step },
+          { name: 'stage.squat', attempt: 2, target: sq2, unit: isImperial ? 'stage.lbs' : 'stage.kg', step },
+          { name: 'stage.squat', attempt: 3, target: sq3, unit: isImperial ? 'stage.lbs' : 'stage.kg', step },
+          { name: 'stage.benchPress', attempt: 1, target: bp1, unit: isImperial ? 'stage.lbs' : 'stage.kg', step },
+          { name: 'stage.benchPress', attempt: 2, target: bp2, unit: isImperial ? 'stage.lbs' : 'stage.kg', step },
+          { name: 'stage.benchPress', attempt: 3, target: bp3, unit: isImperial ? 'stage.lbs' : 'stage.kg', step },
+          { name: 'stage.deadlift', attempt: 1, target: dl1, unit: isImperial ? 'stage.lbs' : 'stage.kg', step },
+          { name: 'stage.deadlift', attempt: 2, target: dl2, unit: isImperial ? 'stage.lbs' : 'stage.kg', step },
+          { name: 'stage.deadlift', attempt: 3, target: dl3, unit: isImperial ? 'stage.lbs' : 'stage.kg', step }
         ];
     }
   };
 
-  const [testTargets, setTestTargets] = useState<{name: string, target: number, unit: string, step: number}[]>(getInitialTargets());
+  const [testTargets, setTestTargets] = useState<{name: string, target: number, unit: string, step: number, attempt?: number, status?: 'success' | 'failed'}[]>(() => getInitialTargets());
+  const [targetInputs, setTargetInputs] = useState<Record<number, string>>({});
+  const [timerSeconds, setTimerSeconds] = useState(0);
+  const [activeRestType, setActiveRestType] = useState<'squat-to-bench' | 'bench-to-deadlift' | null>(null);
+
+  React.useEffect(() => {
+    if (activeRestType && timerSeconds > 0) {
+      const interval = setInterval(() => {
+        setTimerSeconds(s => s - 1);
+      }, 1000);
+      return () => clearInterval(interval);
+    } else if (activeRestType && timerSeconds === 0) {
+      if (activeRestType === 'squat-to-bench') {
+        setCurrentTargetIndex(3); // Start Bench Press A1
+      } else if (activeRestType === 'bench-to-deadlift') {
+        setCurrentTargetIndex(6); // Start Deadlift A1
+      }
+      setActiveRestType(null);
+    }
+  }, [activeRestType, timerSeconds]);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const handleCompleteAttemptWithStatus = (status: 'success' | 'failed') => {
+    // 1. Mark status
+    setTestTargets(prev => prev.map((l, idx) => idx === currentTargetIndex ? { ...l, status } : l));
+    setAttemptCountdown(null);
+
+    const isBig3 = testType === 'big3';
+    
+    if (isBig3) {
+      if (currentTargetIndex === 2) {
+        // Squat 3rd attempt completed -> trigger 30 min timer (1800 seconds)
+        setTimerSeconds(1800);
+        setActiveRestType('squat-to-bench');
+        return;
+      } else if (currentTargetIndex === 5) {
+        // Bench Press 3rd attempt completed -> trigger 45 min timer (2700 seconds)
+        setTimerSeconds(2700);
+        setActiveRestType('bench-to-deadlift');
+        return;
+      }
+    }
+    
+    // Default advancement
+    if (currentTargetIndex < testTargets.length - 1) {
+      setCurrentTargetIndex(prev => prev + 1);
+    }
+  };
+
+  React.useEffect(() => {
+    setTestTargets(getInitialTargets());
+    setTargetInputs({});
+    setTimerSeconds(0);
+    setActiveRestType(null);
+  }, [unit, profile?.squatPR, profile?.benchPR, profile?.deadliftPR, testType]);
   const [currentTargetIndex, setCurrentTargetIndex] = useState(0);
-  const [checkedItems, setCheckedItems] = useState<string[]>([]);
-  
-  // Voice Recognition State
+  const [localWeightInput, setLocalWeightInput] = useState('');
+  const lastIndexRef = React.useRef<number>(currentTargetIndex);
+
+  React.useEffect(() => {
+    const currentItem = testTargets[currentTargetIndex];
+    if (currentItem && (lastIndexRef.current !== currentTargetIndex || localWeightInput === '')) {
+      setLocalWeightInput(currentItem.target.toString());
+      lastIndexRef.current = currentTargetIndex;
+    }
+  }, [currentTargetIndex, testTargets, localWeightInput]);
+
   const [hoveredChecklistItem, setHoveredChecklistItem] = useState<string | null>(null);
   const lastProcessedCommandRef = React.useRef<number>(0);
+
+  const [attemptCountdown, setAttemptCountdown] = useState<number | null>(null);
+  const [attemptActiveMap, setAttemptActiveMap] = useState<Record<number, boolean>>({});
+
+  React.useEffect(() => {
+    if (attemptCountdown !== null && attemptCountdown > 0) {
+      const interval = setInterval(() => {
+        setAttemptCountdown(c => (c !== null && c > 0 ? c - 1 : null));
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [attemptCountdown]);
+
+  React.useEffect(() => {
+    setAttemptCountdown(null);
+  }, [currentTargetIndex]);
+
+  React.useEffect(() => {
+    if (!isReady) {
+      setAttemptActiveMap({});
+      setAttemptCountdown(null);
+    }
+  }, [isReady]);
 
   React.useEffect(() => {
     onReadyChange?.(isReady);
   }, [isReady, onReadyChange]);
 
-  const toggleCheck = (item: string) => {
-    setCheckedItems(prev => 
-      prev.includes(item) ? prev.filter(i => i !== item) : [...prev, item]
-    );
+  const handleReadyClick = () => {
+    if (!attemptActiveMap[currentTargetIndex]) {
+      setAttemptCountdown(90);
+      setAttemptActiveMap(prev => ({ ...prev, [currentTargetIndex]: true }));
+    } else {
+      if (attemptCountdown !== null) {
+        setAttemptCountdown(null);
+      } else {
+        setAttemptCountdown(90);
+      }
+    }
   };
 
   const updateTarget = (index: number, delta: number) => {
     setTestTargets(prev => prev.map((l, i) => i === index ? { ...l, target: Math.max(0, l.target + delta) } : l));
+    setTargetInputs(prev => {
+      const next = { ...prev };
+      delete next[index];
+      return next;
+    });
+  };
+
+  const adjustTargetWeight = (delta: number) => {
+    const currentItem = testTargets[currentTargetIndex];
+    if (currentItem) {
+      const newVal = Math.max(0, currentItem.target + delta);
+      const rounded = parseFloat(newVal.toFixed(1));
+      setLocalWeightInput(rounded.toString());
+      setTestTargets(prev => prev.map((l, i) => i === currentTargetIndex ? { ...l, target: rounded } : l));
+    }
+  };
+
+  const handleTargetChange = (value: string) => {
+    const cleanValue = value.replace(/[^0-9.]/g, '');
+    setLocalWeightInput(cleanValue);
+    const parsed = parseFloat(cleanValue);
+    if (!isNaN(parsed)) {
+      setTestTargets(prev => prev.map((l, i) => i === currentTargetIndex ? { ...l, target: Math.max(0, parsed) } : l));
+    }
   };
 
   const setTargetValue = (index: number, value: number) => {
     setTestTargets(prev => prev.map((l, i) => i === index ? { ...l, target: value } : l));
+    setTargetInputs(prev => {
+      const next = { ...prev };
+      delete next[index];
+      return next;
+    });
+  };
+
+  const handleInputChange = (index: number, strVal: string) => {
+    // Treat comma as decimal point for international users
+    const filteredVal = strVal.replace(/[^0-9.]/g, '').replace(/(\..*?)\..*/g, '$1');
+    setTargetInputs(prev => ({ ...prev, [index]: filteredVal }));
+    const parsed = parseFloat(filteredVal);
+    if (!isNaN(parsed) && parsed >= 0) {
+      setTestTargets(prev => prev.map((l, i) => i === index ? { ...l, target: parsed } : l));
+    }
+  };
+
+  const handleInputBlur = (index: number) => {
+    setTargetInputs(prev => {
+      const next = { ...prev };
+      delete next[index];
+      return next;
+    });
   };
 
   // Voice Recognition Logic
@@ -159,24 +339,16 @@ export const FitnessTestView = ({ immersionMode = 'immersive', isVoiceActive = f
       }
     }
 
-    // Handle Checklist (Step 3)
-    if (setupStep === 3 && hoveredChecklistItem) {
-      if (transcript.includes('yes') || transcript.includes('ready') || transcript.includes('check')) {
-        setCheckedItems(prev => prev.includes(hoveredChecklistItem) ? prev : [...prev, hoveredChecklistItem]);
-      }
-    }
-
     // Global Commands (Redundant but kept for local context if needed)
     if (transcript.includes('next step')) {
       if (setupStep === 1) setSetupStep(2);
-      else if (setupStep === 2) setSetupStep(3);
+      else if (setupStep === 2) setIsTermsModalOpen(true);
     }
     if (transcript.includes('back')) {
       if (setupStep === 2) setSetupStep(1);
-      else if (setupStep === 3) setSetupStep(2);
     }
     if (transcript.includes('enter arena') || transcript.includes('start competition')) {
-      if (setupStep === 3) setIsTermsModalOpen(true);
+      setIsTermsModalOpen(true);
     }
   }, [lastVoiceCommand, isVoiceActive, setupStep, hoveredChecklistItem]);
 
@@ -188,9 +360,65 @@ export const FitnessTestView = ({ immersionMode = 'immersive', isVoiceActive = f
     window.scrollTo(0, 0);
   }, [setupStep, isReady]);
 
-  const isSetupComplete = checkedItems.length === CHECKLIST_ITEMS.length;
-
   const currentTargetItem = testTargets[currentTargetIndex];
+
+  const getNextDisciplineStartIndex = () => {
+    const currentName = testTargets[currentTargetIndex]?.name;
+    if (!currentName) return -1;
+    for (let i = currentTargetIndex + 1; i < testTargets.length; i++) {
+      if (testTargets[i].name !== currentName) {
+        return i;
+      }
+    }
+    return -1;
+  };
+
+  const hasNextDiscipline = getNextDisciplineStartIndex() !== -1;
+
+  const handleNextDiscipline = () => {
+    const nextIdx = getNextDisciplineStartIndex();
+    if (nextIdx !== -1) {
+      setCurrentTargetIndex(nextIdx);
+      setActiveRestType(null); // Clear active timers on jump
+    }
+  };
+
+  const getPrevDisciplineStartIndex = () => {
+    const currentName = testTargets[currentTargetIndex]?.name;
+    if (!currentName) return -1;
+    let prevNameIndex = -1;
+    for (let i = currentTargetIndex - 1; i >= 0; i--) {
+      if (testTargets[i].name !== currentName) {
+        prevNameIndex = i;
+        break;
+      }
+    }
+    if (prevNameIndex === -1) return -1;
+    const prevName = testTargets[prevNameIndex].name;
+    for (let i = 0; i < testTargets.length; i++) {
+      if (testTargets[i].name === prevName) {
+        return i;
+      }
+    }
+    return -1;
+  };
+
+  const hasPrevDiscipline = getPrevDisciplineStartIndex() !== -1;
+
+  const handlePrevDiscipline = () => {
+    const prevIdx = getPrevDisciplineStartIndex();
+    if (prevIdx !== -1) {
+      setCurrentTargetIndex(prevIdx);
+      setActiveRestType(null); // Clear active timers on jump
+    }
+  };
+
+  const getLiftMax = (lift: string) => {
+    if (lift === 'stage.squat') return profile?.squatPR || 0;
+    if (lift === 'stage.benchPress') return profile?.benchPR || 0;
+    if (lift === 'stage.deadlift') return profile?.deadliftPR || 0;
+    return 0;
+  };
 
   const renderSetup = () => (
     <motion.div 
@@ -205,20 +433,19 @@ export const FitnessTestView = ({ immersionMode = 'immersive', isVoiceActive = f
         <div className="flex items-center gap-4">
           <Trophy className="text-volt" size={24} />
           <span className="font-sans text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] md:tracking-[0.4em] text-volt">
-            {t('stage.stepCount', { step: setupStep, total: 3 })}: {setupStep === 1 ? t('stage.selectArena') : setupStep === 2 ? t('stage.enterWeights') : t('stage.safetyProtocol')}
+            {t('stage.stepCount', { step: setupStep, total: 2 })}: {setupStep === 1 ? t('stage.selectArena') : t('stage.enterWeights')}
           </span>
         </div>
         
         <div className="flex items-center gap-2">
           <div className={cn("w-8 md:w-12 h-1 transition-colors", setupStep === 1 ? "bg-volt" : "bg-volt/20")} />
           <div className={cn("w-8 md:w-12 h-1 transition-colors", setupStep === 2 ? "bg-volt" : "bg-volt/20")} />
-          <div className={cn("w-8 md:w-12 h-1 transition-colors", setupStep === 3 ? "bg-volt" : "bg-volt/20")} />
         </div>
       </div>
 
       {setupStep === 1 && (
         <div className="col-span-12">
-          <section className="glass-panel p-6 md:p-12 border-white/5 space-y-6 md:space-y-8">
+          <section className="glass-panel p-4 md:p-8 border-white/5 space-y-6 md:space-y-8">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {STAGES.map((stage) => (
                 <button
@@ -263,41 +490,118 @@ export const FitnessTestView = ({ immersionMode = 'immersive', isVoiceActive = f
 
       {setupStep === 2 && (
         <div className="col-span-12 flex flex-col gap-6 md:gap-8">
-          <section className="glass-panel p-6 md:p-8 border-none space-y-6">
-            <div className="space-y-3 md:space-y-4">
-              {testTargets.map((targetItem, index) => (
-                <div 
-                  key={targetItem.name}
-                  className="flex flex-col sm:flex-row sm:items-center justify-between p-4 md:p-6 bg-white/5 border-none gap-4"
-                >
-                  <div>
-                    <span className="font-sans text-[10px] font-bold text-zinc-600 uppercase tracking-widest block mb-1">Target {index + 1}</span>
-                    <span className="font-sans text-lg md:text-xl font-black uppercase text-white leading-none">{t(targetItem.name)}</span>
-                  </div>
-                  
-                  <div className="flex items-center justify-between sm:justify-end gap-4">
-                    <button 
-                      onClick={() => updateTarget(index, -targetItem.step)}
-                      className="w-10 h-10 bg-white/5 hover:bg-white/10 flex items-center justify-center text-zinc-400 transition-colors"
-                    >
-                      -
-                    </button>
-                    <div className="text-center min-w-[80px] md:min-w-[100px]">
-                      <span className="text-2xl md:text-3xl font-black text-volt leading-none">{targetItem.target.toFixed(1)}</span>
-                      <span className="text-[10px] font-black text-zinc-500 ml-1 uppercase">{t(targetItem.unit)}</span>
+          <section className="glass-panel p-4 md:p-8 border-none space-y-6">
+            {testTargets.some(t => t.attempt !== undefined) ? (
+              <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 xl:gap-6">
+                {(['stage.squat', 'stage.benchPress', 'stage.deadlift']).map((liftName) => {
+                  const attempts = testTargets.filter(t => t.name === liftName);
+                  return (
+                    <div key={liftName} className="glass-panel p-4 md:p-5 xl:p-6 border-white/5 bg-white/5 flex flex-col gap-5">
+                      <div className="border-b border-white/10 pb-3 flex items-center justify-between">
+                        <h3 className="font-sans text-base md:text-lg font-black uppercase text-volt leading-none tracking-wider">
+                          {t(liftName)}
+                        </h3>
+                        <span className="text-[9px] font-black tracking-widest text-zinc-500 uppercase">
+                          MAX: {getLiftMax(liftName)} {t(unit === 'imperial' ? 'stage.lbs' : 'stage.kg')}
+                        </span>
+                      </div>
+
+                      <div className="flex flex-col gap-4">
+                        {attempts.map((attemptItem) => {
+                          const globalIndex = testTargets.findIndex(t => t === attemptItem);
+                          return (
+                            <div key={`attempt-${attemptItem.attempt}`} className="flex flex-col gap-2 p-4 bg-void/40 border border-white/5">
+                              <div className="flex justify-between items-center text-[10px] font-bold text-zinc-500 uppercase tracking-widest leading-none">
+                                <span>Attempt {attemptItem.attempt}</span>
+                                {attemptItem.attempt === 3 && (
+                                  <span className="text-volt px-1.5 py-0.5 bg-volt/10 text-[8px] font-black tracking-[0.1em]">
+                                    PR GOAL
+                                  </span>
+                                )}
+                              </div>
+
+                              <div className="flex items-center justify-between gap-4 mt-1">
+                                <button
+                                  onClick={() => updateTarget(globalIndex, -attemptItem.step)}
+                                  className="w-10 h-10 shrink-0 bg-white/5 hover:bg-white/10 active:bg-volt/10 flex items-center justify-center text-zinc-400 hover:text-white font-black text-lg transition-colors"
+                                  id={`sub-btn-${globalIndex}`}
+                                >
+                                  -
+                                </button>
+                                <div className="text-center flex-1 flex items-center justify-center gap-2">
+                                  <input
+                                    type="text"
+                                    inputMode="decimal"
+                                    value={targetInputs[globalIndex] !== undefined ? targetInputs[globalIndex] : attemptItem.target.toString()}
+                                    onChange={(e) => handleInputChange(globalIndex, e.target.value)}
+                                    onBlur={() => handleInputBlur(globalIndex)}
+                                    className="w-24 bg-void/50 text-center border border-white/10 font-sans text-2xl font-black text-white focus:border-volt/50 focus:outline-none py-1 leading-none selection:bg-volt/30"
+                                    style={{ borderRadius: '0' }}
+                                  />
+                                  <span className="text-[10px] font-black text-zinc-500 uppercase leading-none">
+                                    {t(attemptItem.unit)}
+                                  </span>
+                                </div>
+                                <button
+                                  onClick={() => updateTarget(globalIndex, attemptItem.step)}
+                                  className="w-10 h-10 shrink-0 bg-white/5 hover:bg-white/10 active:bg-volt/10 flex items-center justify-center text-zinc-400 hover:text-white font-black text-lg transition-colors"
+                                  id={`add-btn-${globalIndex}`}
+                                >
+                                  +
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
-                    <button 
-                      onClick={() => updateTarget(index, targetItem.step)}
-                      className="w-10 h-10 bg-white/5 hover:bg-white/10 flex items-center justify-center text-zinc-400 transition-colors"
-                    >
-                      +
-                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="space-y-3 md:space-y-4">
+                {testTargets.map((targetItem, index) => (
+                  <div 
+                    key={`${targetItem.name}-${index}`}
+                    className="flex flex-col sm:flex-row sm:items-center justify-between p-4 md:p-6 bg-white/5 border-none gap-4"
+                  >
+                    <div>
+                      <span className="font-sans text-[10px] font-bold text-zinc-600 uppercase tracking-widest block mb-1">Target {index + 1}</span>
+                      <span className="font-sans text-lg md:text-xl font-black uppercase text-white leading-none">{t(targetItem.name)}</span>
+                    </div>
+                    
+                    <div className="flex items-center justify-between sm:justify-end gap-4">
+                      <button 
+                        onClick={() => updateTarget(index, -targetItem.step)}
+                        className="w-10 h-10 bg-white/5 hover:bg-white/10 flex items-center justify-center text-zinc-400 transition-colors"
+                      >
+                        -
+                      </button>
+                      <div className="text-center min-w-[124px] flex items-center justify-center gap-2">
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          value={targetInputs[index] !== undefined ? targetInputs[index] : targetItem.target.toString()}
+                          onChange={(e) => handleInputChange(index, e.target.value)}
+                          onBlur={() => handleInputBlur(index)}
+                          className="w-24 bg-void/50 text-center border border-white/10 font-sans text-2xl md:text-3xl font-black text-volt focus:border-volt focus:outline-none py-1 leading-none selection:bg-volt/30"
+                          style={{ borderRadius: '0' }}
+                        />
+                        <span className="text-[10px] font-black text-zinc-500 uppercase leading-none">{t(targetItem.unit)}</span>
+                      </div>
+                      <button 
+                        onClick={() => updateTarget(index, targetItem.step)}
+                        className="w-10 h-10 bg-white/5 hover:bg-white/10 flex items-center justify-center text-zinc-400 transition-colors"
+                      >
+                        +
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
             
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-col-reverse sm:flex-row gap-4">
               <button
                 onClick={() => setSetupStep(1)}
                 className="flex-1 py-3 btn-secondary"
@@ -305,279 +609,489 @@ export const FitnessTestView = ({ immersionMode = 'immersive', isVoiceActive = f
                 <span className="text-xs md:text-sm font-black uppercase tracking-[0.15em]">{t('stage.back')}</span>
               </button>
               <button
-                onClick={() => setSetupStep(3)}
+                onClick={() => setIsTermsModalOpen(true)}
                 className="flex-[2] py-4 btn-primary group shadow-[0_0_30px_var(--primary-glow)]"
               >
-                <span className="text-sm md:text-base font-black uppercase tracking-[0.15em]">{t('stage.nextStep')}</span>
+                <span className="text-sm md:text-base font-black uppercase tracking-[0.15em]">{t('stage.enterTest')}</span>
                 <ArrowRight size={20} className="group-hover:translate-x-2 transition-transform" />
               </button>
             </div>
           </section>
         </div>
       )}
-
-      {setupStep === 3 && (
-        <div className="col-span-12">
-          <div className="glass-panel p-6 md:p-12 border-none flex flex-col gap-6 md:gap-10">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
-              {CHECKLIST_ITEMS.map((item) => (
-                <button
-                  key={item}
-                  onClick={() => toggleCheck(item)}
-                  onMouseEnter={() => setHoveredChecklistItem(item)}
-                  onMouseLeave={() => setHoveredChecklistItem(null)}
-                  className={cn(
-                    "flex items-center justify-between p-4 md:p-6 border-none transition-all group relative",
-                    checkedItems.includes(item)
-                      ? "bg-volt/10 text-volt"
-                      : "bg-white/5 text-zinc-400 hover:bg-white/10",
-                    hoveredChecklistItem === item && !checkedItems.includes(item) && "ring-2 ring-volt/40"
-                  )}
-                >
-                  <div className="flex flex-col items-start">
-                    <span className="font-sans text-[10px] md:text-xs font-bold uppercase tracking-widest">{t(item)}</span>
-                    {hoveredChecklistItem === item && !checkedItems.includes(item) && isVoiceActive && (
-                      <span className="text-[10px] font-bold text-volt/60 uppercase tracking-widest mt-1 animate-pulse">{t('stage.voiceReady')}</span>
-                    )}
-                  </div>
-                  {checkedItems.includes(item) ? (
-                    <CheckCircle2 size={20} className="md:w-6 md:h-6" />
-                  ) : (
-                    <Circle size={20} className="md:w-6 md:h-6 opacity-20 group-hover:opacity-40" />
-                  )}
-                </button>
-              ))}
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-4 mt-4">
-              <button
-                onClick={() => setSetupStep(2)}
-                className="flex-1 py-3 btn-secondary"
-              >
-                <span className="text-xs md:text-sm font-black uppercase tracking-[0.15em]">{t('stage.back')}</span>
-              </button>
-              <button
-                disabled={!isSetupComplete}
-                onClick={() => setIsTermsModalOpen(true)}
-                className={cn(
-                  "flex-[2] py-4 group relative overflow-hidden",
-                  isSetupComplete 
-                    ? "btn-primary shadow-[0_0_40px_var(--primary-glow)]" 
-                    : "bg-zinc-800 text-zinc-500 cursor-not-allowed"
-                )}
-              >
-                <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 relative z-10">
-                  <div className={cn(
-                    "px-2 md:px-3 py-1 font-headline text-[10px] font-black flex items-center gap-2",
-                    isSetupComplete ? "bg-void/20 text-void" : "bg-white/5 text-zinc-500"
-                  )}>
-                    <span className="text-[10px] md:text-xs">{checkedItems.length}/{CHECKLIST_ITEMS.length}</span>
-                    <span className="uppercase tracking-widest opacity-60 hidden sm:inline">{t('stage.verified')}</span>
-                  </div>
-                  <span className="text-sm md:text-base font-black uppercase tracking-[0.1em] md:tracking-[0.15em]">{t('stage.startCompetition')}</span>
-                </div>
-                <ArrowRight size={20} className="relative z-10 group-hover:translate-x-2 transition-transform" />
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </motion.div>
   );
 
-  const renderReadyHUD = () => (
-    <div className="relative z-20 w-full max-w-screen-2xl h-full flex flex-col justify-between py-6 md:py-12 px-2 md:px-12 pointer-events-none">
-      {/* Top Content: Main Status and Biometrics */}
-      <div className="flex-1 flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-0">
-        
-        {/* Left Side: Phase Information */}
-        <motion.div 
-          initial={{ x: -50, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          className="w-full lg:flex-1 flex flex-col gap-4 md:gap-6 items-center lg:items-start pointer-events-auto order-2 lg:order-1"
-        >
-          {/* Phase Card */}
-          <div className="glass-panel p-6 md:p-8 w-full max-w-xs md:w-80 shadow-2xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-4 md:p-6 text-volt">
-              <Timer size={20} className="md:w-6 md:h-6 animate-pulse" />
-            </div>
-            
-            <div className="flex flex-col gap-4 md:gap-6">
-              <div>
-                <p className="font-sans text-[10px] md:text-[10px] tracking-[0.2em] text-volt uppercase font-bold mb-2">{t('stage.currentPhase')}</p>
-                <h2 className="font-sans text-2xl md:text-4xl font-black tracking-tight text-white uppercase">{t(currentTargetItem.name)}</h2>
-              </div>
-
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <p className="font-sans text-[10px] md:text-[10px] tracking-[0.2em] text-zinc-500 uppercase font-bold">{t('stage.stabilityLock')}</p>
-                  <span className="font-sans text-[10px] md:text-[10px] font-bold text-volt">98%</span>
-                </div>
-                <div className="h-1.5 w-full bg-zinc-800/50 overflow-hidden">
-                  <div 
-                    style={{ width: '98%' }}
-                    className="h-full bg-volt shadow-[0_0_15px_var(--primary-glow)]" 
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-between items-center pt-2">
-                <p className="font-sans text-[8px] md:text-[10px] tracking-[0.2em] text-zinc-500 uppercase font-bold">{t('stage.gripTension')}</p>
-                <span className="font-sans text-[8px] md:text-[10px] font-bold text-volt uppercase tracking-widest">{t('stage.active')}</span>
-              </div>
-            </div>
-          </div>
-
-          <button 
-            onClick={() => setIsReady(false)}
-            className="flex items-center gap-2 text-zinc-500 hover:text-white transition-colors group"
-          >
-            <ChevronRight size={14} className="rotate-180 group-hover:-translate-x-1 transition-transform" />
-            <span className="font-sans text-[8px] md:text-[10px] font-bold uppercase tracking-widest">{t('stage.backProtocol')}</span>
-          </button>
-        </motion.div>
-
-          <div className="w-full lg:w-auto flex flex-col items-center gap-4 md:gap-8 order-1 lg:order-2">
+  const renderReadyHUD = () => {
+    if (activeRestType) {
+      const totalDuration = activeRestType === 'squat-to-bench' ? 1800 : 2700;
+      const progress = (timerSeconds / totalDuration) * 100;
+      
+      return (
+        <div className="relative z-20 w-full max-w-screen-2xl h-full flex flex-col justify-between py-6 md:py-12 px-4 sm:px-8 md:px-12 pointer-events-auto">
+          {/* Top Content: Main Status */}
+          <div className="flex-1 flex flex-col items-center justify-center max-w-2xl mx-auto w-full gap-8">
             <motion.div 
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ 
-                scale: [1, 1.05, 1],
-                opacity: 1,
-                boxShadow: [
-                  "0 0 40px var(--primary-glow)",
-                  "0 0 60px var(--primary-glow)",
-                  "0 0 40px var(--primary-glow)"
-                ]
-              }}
-              transition={{
-                scale: { duration: 2, repeat: Infinity, ease: "easeInOut" },
-                boxShadow: { duration: 2, repeat: Infinity, ease: "easeInOut" },
-                opacity: { duration: 0.5 }
-              }}
-              className="px-8 md:px-16 py-4 md:py-6 border-2 border-volt/40 bg-volt/5 backdrop-blur-xl"
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="glass-panel p-8 md:p-12 border-volt/30 bg-void/85 w-full text-center space-y-8 shadow-[0_0_50px_rgba(0,182,255,0.15)]"
+              style={{ borderRadius: '0' }}
             >
-              <h1 className="font-sans text-3xl md:text-6xl font-black tracking-[0.2em] md:tracking-[0.4em] text-volt text-glow-volt text-center translate-x-[0.1em] md:translate-x-[0.2em]">
-                {t('stage.ready')}
-              </h1>
-            </motion.div>
-
-            <div className="flex flex-col items-center gap-1 md:gap-2">
-              <span className="font-sans text-zinc-500 text-[8px] md:text-[10px] tracking-[0.2em] font-bold uppercase">{t('stage.targetLoad')}</span>
-              <div className="flex items-baseline gap-2 md:gap-3">
-                <span className="font-sans text-4xl md:text-7xl font-black tracking-tighter text-white">{currentTargetItem.target.toFixed(1)}</span>
-                <span className="font-sans text-lg md:text-2xl font-bold text-volt">{t(currentTargetItem.unit)}</span>
+              <div className="flex flex-col items-center gap-2">
+                <Timer className="text-volt animate-pulse" size={40} />
+                <span className="font-sans text-[10px] md:text-xs font-black uppercase tracking-[0.3em] text-volt">
+                  MANDATORY RECOVERY PROTOCOL
+                </span>
               </div>
-            </div>
 
-            <div className="flex flex-wrap justify-center gap-2 md:gap-4 mt-2 md:mt-4 pointer-events-auto">
-              {testTargets.map((targetItem, i) => (
+              <div className="space-y-2">
+                <h2 className="font-sans text-5xl md:text-8xl font-black tracking-tight text-white font-mono leading-none">
+                  {formatTime(timerSeconds)}
+                </h2>
+                <p className="text-zinc-500 text-[10px] tracking-widest uppercase font-bold">
+                  CNS REGEN & HYDRO-RESTORE SEQUENCE
+                </p>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="w-full bg-white/5 h-2 relative overflow-hidden" style={{ borderRadius: '0' }}>
+                <div 
+                  className="bg-volt h-full transition-all duration-1000 ease-linear"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+
+              <div className="text-xs md:text-sm text-zinc-400 font-medium leading-relaxed max-w-md mx-auto">
+                {activeRestType === 'squat-to-bench' ? (
+                  "Initiated a 30-Minute rest block following heavy Squat attempts to complete cellular ATP regeneration, lower heart rate variability, and prepare muscles for Flat Bench Press."
+                ) : (
+                  "Initiated a 45-Minute rest block following Bench Press attempts to relieve spinal loading, fully restore cellular glycogen status, and maximize motor system recruitment before pulling Deadlifts."
+                )}
+              </div>
+
+              <div className="pt-4 flex flex-col md:flex-row gap-4 justify-center">
                 <button
-                  key={targetItem.name}
-                  onClick={() => setCurrentTargetIndex(i)}
-                  className={cn(
-                    "px-3 md:px-4 py-1.5 md:py-2 font-sans text-[10px] md:text-[10px] font-bold uppercase tracking-widest transition-all",
-                    currentTargetIndex === i 
-                      ? "bg-volt text-void shadow-[0_0_15px_var(--primary-glow)]" 
-                      : "bg-white/5 text-zinc-500 hover:bg-white/10"
-                  )}
+                  onClick={() => {
+                    if (activeRestType === 'squat-to-bench') {
+                      setCurrentTargetIndex(3); // Start Bench Press A1
+                    } else {
+                      setCurrentTargetIndex(6); // Start Deadlift A1
+                    }
+                    setActiveRestType(null);
+                  }}
+                  className="btn-primary py-4 px-8 tracking-widest uppercase font-black text-xs"
+                  style={{ borderRadius: '0' }}
                 >
-                  {t(targetItem.name).split(' ')[0]}
+                  Skip Rest & Start {activeRestType === 'squat-to-bench' ? 'Bench Press' : 'Deadlift'}
                 </button>
-              ))}
-            </div>
+              </div>
+            </motion.div>
           </div>
 
-        {/* Right Side: Biometrics */}
-        <motion.div 
-          initial={{ x: 50, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          className="w-full lg:flex-1 flex flex-col gap-4 md:gap-6 items-center lg:items-end pointer-events-auto order-3"
-        >
-          {/* Biometric Data Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-2 gap-3 md:gap-4 w-full max-w-xs md:w-auto">
-            <div className="glass-panel p-4 md:p-6 w-full md:w-40 shadow-xl border-white/5">
-              <p className="font-sans text-[10px] md:text-[10px] tracking-[0.2em] text-zinc-500 uppercase font-bold mb-2 md:mb-3">{t('stage.heartRate')}</p>
-              <div className="flex items-baseline gap-2">
-                <span className="font-sans text-xl md:text-3xl font-black text-white">142</span>
-                <span className="font-sans text-[8px] md:text-[10px] font-bold text-zinc-500 uppercase">{t('stage.bpm')}</span>
-              </div>
-              <div className="mt-2 h-1 w-full bg-zinc-900 overflow-hidden">
-                <div className="h-full bg-crimson w-3/4 shadow-[0_0_10px_rgba(255,0,0,0.3)]" />
-              </div>
-            </div>
+          {/* Simple Withdraw/Abort Footer */}
+          <div className="flex justify-between items-end mt-12">
+            <button
+              onClick={() => setIsWithdrawModalOpen(true)}
+              className="px-6 py-4 border border-zinc-800 hover:border-zinc-700 text-zinc-500 hover:text-white font-sans text-[10px] font-bold uppercase tracking-[0.3em] transition-all"
+              style={{ borderRadius: '0' }}
+            >
+              ABORT SEQUENCE
+            </button>
+            
+            <button
+              onClick={() => {
+                const squatTargets = testTargets.filter(t => t.name.toLowerCase().includes('squat'));
+                const benchTargets = testTargets.filter(t => t.name.toLowerCase().includes('bench'));
+                const deadliftTargets = testTargets.filter(t => t.name.toLowerCase().includes('deadlift'));
 
-            <div className="glass-panel p-4 md:p-6 w-full md:w-40 shadow-xl border-white/5">
-              <p className="font-sans text-[10px] md:text-[10px] tracking-[0.2em] text-zinc-500 uppercase font-bold mb-2 md:mb-3">{t('stage.vo2Max')}</p>
-              <div className="flex items-baseline gap-2">
-                <span className="font-sans text-xl md:text-3xl font-black text-white">58.2</span>
-                <span className="font-sans text-[8px] md:text-[10px] font-bold text-zinc-500 uppercase">{t('stage.peak')}</span>
-              </div>
-              <div className="mt-2 h-1 w-full bg-zinc-900 overflow-hidden">
-                <div className="h-full bg-volt w-4/5 shadow-[0_0_10px_var(--primary-glow)]" />
-              </div>
-            </div>
+                const maxSquatVal = squatTargets.filter(t => t.status === 'success').length > 0
+                  ? Math.max(...squatTargets.filter(t => t.status === 'success').map(t => t.target))
+                  : undefined;
+                const maxBenchVal = benchTargets.filter(t => t.status === 'success').length > 0
+                  ? Math.max(...benchTargets.filter(t => t.status === 'success').map(t => t.target))
+                  : undefined;
+                const maxDeadliftVal = deadliftTargets.filter(t => t.status === 'success').length > 0
+                  ? Math.max(...deadliftTargets.filter(t => t.status === 'success').map(t => t.target))
+                  : undefined;
 
-            <div className="glass-panel p-4 md:p-6 w-full md:w-40 shadow-xl border-white/5">
-              <p className="font-sans text-[10px] md:text-[10px] tracking-[0.2em] text-zinc-500 uppercase font-bold mb-2 md:mb-3">{t('stage.bodyTemp')}</p>
-              <div className="flex items-baseline gap-2">
-                <span className="font-sans text-xl md:text-3xl font-black text-white">37.2</span>
-                <span className="font-sans text-[8px] md:text-[10px] font-bold text-zinc-500 uppercase">{t('stage.celsius')}</span>
-              </div>
-              <div className="mt-2 h-1 w-full bg-zinc-900 overflow-hidden">
-                <div className="h-full bg-white/40 w-1/2" />
-              </div>
-            </div>
-
-            <div className="glass-panel p-4 md:p-6 w-full md:w-40 shadow-xl border-white/5">
-              <p className="font-sans text-[10px] md:text-[10px] tracking-[0.2em] text-zinc-500 uppercase font-bold mb-2 md:mb-3">{t('stage.bloodOxygen')}</p>
-              <div className="flex items-baseline gap-2">
-                <span className="font-sans text-xl md:text-3xl font-black text-white">99</span>
-                <span className="font-sans text-[8px] md:text-[10px] font-bold text-zinc-500 uppercase">%</span>
-              </div>
-              <div className="mt-2 h-1 w-full bg-zinc-900 overflow-hidden">
-                <div className="h-full bg-volt w-[99%]" />
-              </div>
-            </div>
+                updateProfile({
+                  pendingFitnessTest: false,
+                  devOverrideFitnessTest: false,
+                  lastFitnessTestAt: Date.now(),
+                  ...(isFinalTest && { programResetAt: Date.now() }),
+                  ...(maxSquatVal !== undefined && { squatPR: maxSquatVal }),
+                  ...(maxBenchVal !== undefined && { benchPR: maxBenchVal }),
+                  ...(maxDeadliftVal !== undefined && { deadliftPR: maxDeadliftVal }),
+                });
+                setIsReady(false);
+                setSetupStep(1);
+                setHasEntered(false);
+                setActiveRestType(null);
+              }}
+              className="px-6 py-4 btn-secondary font-headline text-xs font-black uppercase tracking-widest"
+              style={{ borderRadius: '0' }}
+            >
+              SUBMIT EARLY
+            </button>
           </div>
-        </motion.div>
-      </div>
-
-      {/* Bottom Content: Navigation and Action */}
-      <div className="flex items-end justify-between mt-12 pointer-events-auto">
-        <div className="flex-1" />
-        <div className="flex-1 flex justify-center">
         </div>
-        <div className="flex-1 flex justify-end">
+      );
+    }
+
+    const isActive = attemptActiveMap[currentTargetIndex];
+
+    const renderReadyBoxContent = () => {
+      if (!isActive) {
+        return (
+          <div className="flex flex-col items-center">
+            <h1 className="font-sans text-3xl md:text-6xl font-black tracking-[0.2em] md:tracking-[0.4em] text-void text-center translate-x-[0.1em] md:translate-x-[0.2em] uppercase">
+              {t('stage.ready')}
+            </h1>
+            <span className="text-[8px] md:text-[10px] tracking-[0.2em] font-extrabold text-void/70 font-mono uppercase mt-2">
+              PRESS TO START ATTEMPT
+            </span>
+          </div>
+        );
+      }
+
+      if (attemptCountdown !== null) {
+        return (
+          <div className="flex flex-col items-center">
+            <h1 className="font-sans font-black text-3xl md:text-6xl tracking-[0.1em] text-void text-center font-mono">
+              {formatTime(attemptCountdown)}
+            </h1>
+            <span className="text-[8px] md:text-[10px] tracking-[0.2em] font-extrabold text-void/85 font-mono uppercase mt-2">
+              RESET TIMER
+            </span>
+            <span className="text-[8px] md:text-[10px] tracking-wider font-extrabold text-void/65 font-sans uppercase mt-2 text-center">
+              You have 90 seconds to complete lift attempt
+            </span>
+          </div>
+        );
+      }
+
+      return (
+        <div className="flex flex-col items-center">
+          <h1 className="font-sans text-xl md:text-3xl font-black tracking-[0.1em] text-void text-center uppercase">
+            ATTEMPT ACTIVE
+          </h1>
+          <span className="text-[8px] md:text-[10px] tracking-[0.2em] font-extrabold text-void/70 font-mono uppercase mt-2">
+            RESTART TIMER (90S)
+          </span>
+        </div>
+      );
+    };
+
+    return (
+      <div className="relative z-20 w-full max-w-screen-2xl h-full flex flex-col justify-between py-6 md:py-12 px-4 sm:px-8 md:px-12 pointer-events-none">
+        {/* Top Content: Main Status */}
+        <div className="flex-1 flex flex-col items-center justify-center gap-12">
+
+          {/* Center: Target Load and Lift Selectors */}
+          <div className="w-full max-w-md flex flex-col items-center gap-4 md:gap-8 pointer-events-auto">
+            <motion.button 
+              onClick={handleReadyClick}
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{
+                scale: 1,
+                opacity: 1,
+                boxShadow: isActive ? "0 0 30px rgba(0, 182, 255, 0.15)" : "0 0 40px var(--primary-glow)"
+              }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              transition={{ duration: 0.3 }}
+              className="px-8 md:px-16 py-4 md:py-6 border-2 border-volt bg-volt text-void cursor-pointer hover:brightness-110 active:brightness-95 transition-all focus:outline-none focus:ring-1 focus:ring-volt block w-full outline-offset-0 select-none shadow-[0_0_20px_var(--primary-glow)]"
+              style={{ borderRadius: '0' }}
+            >
+              {renderReadyBoxContent()}
+            </motion.button>
+
+            <div className="flex flex-col items-center gap-2 pointer-events-auto w-full">
+              <span className="font-sans text-zinc-300 text-[8px] md:text-[10px] tracking-[0.2em] font-bold uppercase">{t('stage.targetLoad')}</span>
+              
+              <div className="flex flex-col items-center gap-2 w-full">
+                {/* Steppers & Interactive Input Row */}
+                <div className="flex items-center justify-between gap-3 bg-void/30 border border-zinc-800 p-1 md:p-2 w-full" style={{ borderRadius: '0' }}>
+                  
+                  {/* Left adjust buttons */}
+                  <div className="flex gap-1">
+                    <button 
+                      onClick={() => adjustTargetWeight(-((currentTargetItem.step || 2.5) * 2))}
+                      className="w-10 h-10 border border-zinc-800 hover:border-zinc-600 text-zinc-400 hover:text-white font-mono text-xs font-black transition-all flex items-center justify-center bg-zinc-900/40 cursor-pointer"
+                      style={{ borderRadius: '0' }}
+                      title={`-${(currentTargetItem.step || 2.5) * 2}`}
+                    >
+                      -{((currentTargetItem.step || 2.5) * 2).toFixed(1).replace('.0', '')}
+                    </button>
+                    <button 
+                      onClick={() => adjustTargetWeight(-(currentTargetItem.step || 2.5))}
+                      className="w-10 h-10 border border-zinc-800 hover:border-zinc-600 text-zinc-400 hover:text-white font-mono text-xs font-black transition-all flex items-center justify-center bg-zinc-900/40 cursor-pointer"
+                      style={{ borderRadius: '0' }}
+                      title={`-${currentTargetItem.step || 2.5}`}
+                    >
+                      -{(currentTargetItem.step || 2.5).toFixed(1).replace('.0', '')}
+                    </button>
+                  </div>
+
+                  {/* Weight Input Box */}
+                  <div className="flex items-baseline gap-1 md:gap-2 px-1 md:px-2">
+                    <input
+                      type="text"
+                      pattern="[0-9]*\.?[0-9]*"
+                      inputMode="decimal"
+                      value={localWeightInput}
+                      onChange={(e) => handleTargetChange(e.target.value)}
+                      className="font-sans text-4xl md:text-6xl font-black tracking-tighter text-white bg-transparent border-b border-dashed border-zinc-700 hover:border-zinc-500 focus:border-volt focus:outline-none text-center w-24 md:w-36 select-all font-mono"
+                      style={{ borderRadius: '0' }}
+                    />
+                    <span className="font-sans text-xs md:text-sm font-bold text-volt uppercase">{t(currentTargetItem.unit)}</span>
+                  </div>
+
+                  {/* Right adjust buttons */}
+                  <div className="flex gap-1">
+                    <button 
+                      onClick={() => adjustTargetWeight(currentTargetItem.step || 2.5)}
+                      className="w-10 h-10 border border-zinc-800 hover:border-zinc-600 text-zinc-400 hover:text-white font-mono text-xs font-black transition-all flex items-center justify-center bg-zinc-900/40 cursor-pointer"
+                      style={{ borderRadius: '0' }}
+                      title={`+${currentTargetItem.step || 2.5}`}
+                    >
+                      +{(currentTargetItem.step || 2.5).toFixed(1).replace('.0', '')}
+                    </button>
+                    <button 
+                      onClick={() => adjustTargetWeight((currentTargetItem.step || 2.5) * 2)}
+                      className="w-10 h-10 border border-zinc-800 hover:border-zinc-600 text-zinc-400 hover:text-white font-mono text-xs font-black transition-all flex items-center justify-center bg-zinc-900/40 cursor-pointer"
+                      style={{ borderRadius: '0' }}
+                      title={`+${(currentTargetItem.step || 2.5) * 2}`}
+                    >
+                      +{((currentTargetItem.step || 2.5) * 2).toFixed(1).replace('.0', '')}
+                    </button>
+                  </div>
+
+                </div>
+
+                <span className="text-[9px] text-zinc-300 tracking-wider uppercase font-extrabold text-center">
+                  TAP VALUE TO MANUALLY KEY IN OR USE ADJUSTMENT CHIPS
+                </span>
+
+              </div>
+            </div>
+
+            {/* Attempt Succeeded / Failed Buttons */}
+            {attemptActiveMap[currentTargetIndex] && (
+              <div className="flex flex-row gap-3 w-full max-w-md mt-2 pointer-events-auto md:static">
+                <button
+                  onClick={() => handleCompleteAttemptWithStatus('success')}
+                  className="flex-1 py-4 px-2 sm:px-6 tracking-widest uppercase font-black text-[10px] sm:text-xs flex items-center justify-center gap-1 sm:gap-2 border-none shadow-[0_0_20px_rgba(16,185,129,0.3)] bg-emerald-500 text-void cursor-pointer hover:bg-emerald-400 active:scale-[0.98] transition-all md:fixed md:left-20 lg:left-32 xl:left-48 md:top-1/2 md:-translate-y-1/2 md:w-48 md:h-48 md:text-sm md:flex-col md:gap-4 md:shadow-[0_0_30px_rgba(16,185,129,0.2)] md:hover:shadow-[0_0_40px_rgba(16,185,129,0.4)] md:z-50 md:pointer-events-auto"
+                  style={{ borderRadius: '0' }}
+                >
+                  <Check className="stroke-[3px] text-void w-4 h-4 md:stroke-[4px] md:w-12 md:h-12" />
+                  <span>Lifted</span>
+                </button>
+                
+                <button
+                  onClick={() => handleCompleteAttemptWithStatus('failed')}
+                  className="flex-1 py-4 px-2 sm:px-6 tracking-widest uppercase font-black text-[10px] sm:text-xs flex items-center justify-center gap-1 sm:gap-2 border-none shadow-[0_0_20px_rgba(239,68,68,0.3)] bg-red-500 text-void transition-all cursor-pointer hover:bg-red-400 active:scale-[0.98] md:fixed md:right-20 lg:right-32 xl:right-48 md:top-1/2 md:-translate-y-1/2 md:w-48 md:h-48 md:text-sm md:flex-col md:gap-4 md:shadow-[0_0_30px_rgba(239,68,68,0.2)] md:hover:shadow-[0_0_40px_rgba(239,68,68,0.4)] md:z-50 md:pointer-events-auto"
+                  style={{ borderRadius: '0' }}
+                >
+                  <X className="stroke-[3px] text-void w-4 h-4 md:stroke-[4px] md:w-12 md:h-12" />
+                  <span className="text-center text-void">Failed</span>
+                </button>
+              </div>
+            )}
+
+            <div className="w-full max-w-md mt-2">
+              {testType === 'big3' ? (
+                <div className="flex flex-col gap-3 border border-white/5 bg-void/50 p-4" style={{ borderRadius: '0' }}>
+                  {(() => {
+                    const currentDiscipline = testTargets[currentTargetIndex]?.name;
+                    return (['stage.squat', 'stage.benchPress', 'stage.deadlift'])
+                      .filter(liftKey => liftKey === currentDiscipline)
+                      .map((liftKey) => {
+                        const attempts = testTargets
+                          .map((t, idx) => ({ ...t, originalIndex: idx }))
+                          .filter(t => t.name === liftKey);
+                        
+                        return (
+                          <div key={liftKey} className="flex flex-col gap-4 w-full">
+                            <div className="flex flex-row items-center justify-between gap-4 w-full">
+                              <span className="text-[10px] md:text-xs uppercase tracking-[0.2em] font-black text-zinc-400 font-sans truncate w-24 text-left">
+                                {t(liftKey).replace(' Press', '')}
+                              </span>
+                              <div className="flex-1 grid grid-cols-3 gap-2">
+                                {attempts.map((targetItem) => {
+                                  const idx = targetItem.originalIndex;
+                                  const isSelected = currentTargetIndex === idx;
+                                  const isCompleted = idx < currentTargetIndex;
+                                  const status = targetItem.status;
+                                  
+                                  const firstIncompleteIdx = testTargets.findIndex(t => t.status === undefined);
+                                  const isFutureDisabled = firstIncompleteIdx !== -1 && idx > firstIncompleteIdx;
+                                  
+                                  return (
+                                    <button
+                                      key={idx}
+                                      disabled={isFutureDisabled}
+                                      onClick={() => {
+                                        setCurrentTargetIndex(idx);
+                                        setActiveRestType(null); // Clear active timers on manual jump
+                                      }}
+                                      className={cn(
+                                        "py-2 px-1 text-xs font-black transition-all border outline-none flex items-center justify-center gap-1 cursor-pointer",
+                                        isSelected
+                                          ? "bg-volt text-void border-volt shadow-[0_0_15px_var(--primary-glow)]"
+                                          : status === 'success'
+                                            ? "bg-emerald-950/40 text-emerald-400 border-emerald-500/30 hover:bg-emerald-950/60"
+                                            : status === 'failed'
+                                              ? "bg-red-950/40 text-red-400 border-red-500/30 hover:bg-red-950/60"
+                                              : isCompleted
+                                                ? "bg-white/10 text-zinc-400 border-white/5 opacity-60 hover:bg-white/15"
+                                                : isFutureDisabled
+                                                  ? (theme === 'light'
+                                                    ? "bg-zinc-800/10 text-zinc-300 border-zinc-700/25 opacity-70 cursor-not-allowed"
+                                                    : "bg-zinc-900/20 text-zinc-700 border-zinc-800/40 opacity-40 cursor-not-allowed")
+                                                  : "bg-white/5 text-zinc-500 border-white/10 hover:bg-white/10"
+                                      )}
+                                      style={{ borderRadius: '0' }}
+                                      title={`${t(liftKey)} - Attempt ${targetItem.attempt}`}
+                                    >
+                                      <span>A{targetItem.attempt}</span>
+                                      {status === 'success' && <Check size={10} className="stroke-[3px] text-emerald-400 shrink-0" />}
+                                      {status === 'failed' && <X size={10} className="stroke-[3px] text-red-400 shrink-0" />}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+
+                            {/* Discipline Navigation Buttons */}
+                            {(hasPrevDiscipline || hasNextDiscipline) && (
+                              <div className="flex items-center justify-between pt-2 border-t border-white/5 w-full">
+                                {hasPrevDiscipline ? (
+                                  <button
+                                    onClick={handlePrevDiscipline}
+                                    className="btn-tertiary flex items-center gap-1 cursor-pointer"
+                                    style={{ borderRadius: '0' }}
+                                  >
+                                    <ArrowLeft size={12} className="stroke-[2.5px]" />
+                                    <span>Previous Discipline</span>
+                                  </button>
+                                ) : (
+                                  <div />
+                                )}
+                                {hasNextDiscipline ? (
+                                  <button
+                                    onClick={handleNextDiscipline}
+                                    className="btn-tertiary flex items-center gap-1 cursor-pointer"
+                                    style={{ borderRadius: '0' }}
+                                  >
+                                    <span>Next Discipline</span>
+                                    <ArrowRight size={12} className="stroke-[2.5px]" />
+                                  </button>
+                                ) : (
+                                  <div />
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      });
+                  })()}
+                </div>
+              ) : (
+                <div className="flex flex-wrap justify-center gap-2">
+                  {testTargets.map((targetItem, i) => {
+                    const isSelected = currentTargetIndex === i;
+                    const status = targetItem.status;
+                    const firstIncompleteIdx = testTargets.findIndex(t => t.status === undefined);
+                    const isFutureDisabled = firstIncompleteIdx !== -1 && i > firstIncompleteIdx;
+                    return (
+                      <button
+                        key={`${targetItem.name}-${targetItem.attempt || i}`}
+                        disabled={isFutureDisabled}
+                        onClick={() => {
+                          setCurrentTargetIndex(i);
+                          setActiveRestType(null); // Clear active timers on manual jump
+                        }}
+                        className={cn(
+                          "px-3 md:px-4 py-1.5 md:py-2 font-sans text-[10px] md:text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-1.5 border cursor-pointer",
+                          isSelected 
+                            ? "bg-volt text-void border-volt shadow-[0_0_15px_var(--primary-glow)]" 
+                            : status === 'success'
+                              ? "bg-emerald-950/40 text-emerald-400 border-emerald-500/30 hover:bg-emerald-950/60"
+                              : status === 'failed'
+                                ? "bg-red-950/40 text-red-400 border-red-500/30 hover:bg-red-950/60"
+                                : isFutureDisabled
+                                  ? (theme === 'light'
+                                    ? "bg-zinc-800/10 text-zinc-300 border-zinc-700/25 opacity-70 cursor-not-allowed"
+                                    : "bg-zinc-900/20 text-zinc-700 border-zinc-800/40 opacity-40 cursor-not-allowed")
+                                  : "bg-white/5 text-zinc-500 border-transparent hover:bg-white/10"
+                        )}
+                        style={{ borderRadius: '0' }}
+                      >
+                        <span>{targetItem.attempt ? `${t(targetItem.name).split(' ')[0]} A${targetItem.attempt}` : t(targetItem.name)}</span>
+                        {status === 'success' && <Check size={12} className="stroke-[3px] text-emerald-400 shrink-0" />}
+                        {status === 'failed' && <X size={12} className="stroke-[3px] text-red-400 shrink-0" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+
+        </div>
+
+        {/* Bottom Content: Navigation and Action */}
+        <div className="flex flex-row items-center justify-center gap-4 mt-12 pointer-events-auto w-full max-w-md mx-auto">
+          <button
+            onClick={() => setIsWithdrawModalOpen(true)}
+            className="flex-1 py-4 btn-secondary-destructive font-headline text-[10px] sm:text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2"
+            style={{ borderRadius: '0' }}
+          >
+            {t('stage.withdrawCompetition')}
+          </button>
+          
           <button
             onClick={() => {
-              // Extract new PRs if applicable
-              const squatTarget = testTargets.find(t => t.name.toLowerCase().includes('squat'));
-              const benchTarget = testTargets.find(t => t.name.toLowerCase().includes('bench'));
-              const deadliftTarget = testTargets.find(t => t.name.toLowerCase().includes('deadlift'));
+              // Extract new PRs if applicable with multi-attempts support
+              const squatTargets = testTargets.filter(t => t.name.toLowerCase().includes('squat'));
+              const benchTargets = testTargets.filter(t => t.name.toLowerCase().includes('bench'));
+              const deadliftTargets = testTargets.filter(t => t.name.toLowerCase().includes('deadlift'));
+
+              const maxSquatVal = squatTargets.filter(t => t.status === 'success').length > 0
+                ? Math.max(...squatTargets.filter(t => t.status === 'success').map(t => t.target))
+                : undefined;
+              const maxBenchVal = benchTargets.filter(t => t.status === 'success').length > 0
+                ? Math.max(...benchTargets.filter(t => t.status === 'success').map(t => t.target))
+                : undefined;
+              const maxDeadliftVal = deadliftTargets.filter(t => t.status === 'success').length > 0
+                ? Math.max(...deadliftTargets.filter(t => t.status === 'success').map(t => t.target))
+                : undefined;
 
               updateProfile({
                 pendingFitnessTest: false,
                 devOverrideFitnessTest: false,
                 lastFitnessTestAt: Date.now(),
                 ...(isFinalTest && { programResetAt: Date.now() }), // Only restart timeline if it is the final test
-                ...(squatTarget && { squatPR: squatTarget.target }),
-                ...(benchTarget && { benchPR: benchTarget.target }),
-                ...(deadliftTarget && { deadliftPR: deadliftTarget.target }),
+                ...(maxSquatVal !== undefined && { squatPR: maxSquatVal }),
+                ...(maxBenchVal !== undefined && { benchPR: maxBenchVal }),
+                ...(maxDeadliftVal !== undefined && { deadliftPR: maxDeadliftVal }),
               });
               setIsReady(false);
               setSetupStep(1);
-              setCheckedItems([]);
               setHasEntered(false);
+              setActiveRestType(null);
             }}
-            className="px-6 py-4 btn-primary font-headline text-xs font-black uppercase tracking-widest flex items-center gap-2 group"
+            className="flex-1 py-4 btn-primary font-headline text-[10px] sm:text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 group"
+            style={{ borderRadius: '0' }}
           >
-            <span>SUBMIT RESULTS</span>
-            <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+            <span>COMPLETE TEST</span>
+            <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform shrink-0" />
           </button>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const currentStageImage = STAGES.find(s => s.id === selectedStage)?.image || STAGES[0].image;
 
@@ -607,9 +1121,9 @@ export const FitnessTestView = ({ immersionMode = 'immersive', isVoiceActive = f
 
   if (!isUnlocked || !hasEntered) {
     return (
-      <div className="relative w-full h-full flex flex-col items-center justify-center p-6 text-center pt-safe">
+      <div className="relative w-full h-full flex flex-col items-center justify-center text-center pt-safe">
         <div className="absolute inset-0 bg-void/90 backdrop-blur-md z-0" />
-        <div className="relative z-10 glass-panel p-8 md:p-12 max-w-lg border-white/5 flex flex-col items-center gap-6">
+        <div className="relative z-10 glass-panel p-4 md:p-8 max-w-lg border-white/5 flex flex-col items-center gap-6">
           <div className="w-16 h-16 bg-volt/10 text-volt flex items-center justify-center rounded-sm">
             {isUnlocked ? <Activity size={32} /> : <Lock size={32} />}
           </div>
@@ -625,9 +1139,6 @@ export const FitnessTestView = ({ immersionMode = 'immersive', isVoiceActive = f
           {isUnlocked ? (
             <div className="flex flex-col gap-6 w-full mt-2">
               <div className="w-full bg-white/5 p-5 border border-volt/20 relative overflow-hidden group">
-                <div className="absolute top-0 right-0 p-2 opacity-5 translate-x-2 -translate-y-2 group-hover:translate-x-0 group-hover:translate-y-0 transition-transform duration-500">
-                  <Trophy size={48} className="text-volt" />
-                </div>
                 <span className="font-sans text-[10px] uppercase font-black text-volt tracking-[0.2em] block mb-2 underline decoration-volt/30 underline-offset-4">Upcoming Protocol Requirements</span>
                 <span className="font-sans text-base font-black text-white uppercase tracking-wider block">{testLabel}</span>
 
@@ -649,18 +1160,20 @@ export const FitnessTestView = ({ immersionMode = 'immersive', isVoiceActive = f
                 )}
               </div>
               
-              <div className="flex flex-col sm:flex-row gap-3 w-full">
-                <button
-                  onClick={() => setHasEntered(true)}
-                  className="flex-1 py-4 btn-primary font-headline text-xs font-black uppercase tracking-widest"
-                >
-                  Enter Test
-                </button>
+              <div className="flex flex-col-reverse sm:flex-row gap-3 w-full">
                 <button
                   onClick={() => setIsPostponeModalOpen(true)}
-                  className="flex-1 py-4 btn-secondary font-headline text-[10px] sm:text-xs font-bold uppercase tracking-widest border border-white/10"
+                  className="flex-1 basis-1/2 min-w-0 py-4 btn-secondary font-headline text-[10px] sm:text-xs font-bold uppercase tracking-widest border border-white/10 flex items-center justify-center gap-2"
                 >
-                  Postpone Due to Fatigue/Injury
+                  <X size={14} />
+                  Postpone Test
+                </button>
+                <button
+                  onClick={() => setHasEntered(true)}
+                  className="flex-1 basis-1/2 min-w-0 py-4 btn-primary font-headline text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2"
+                >
+                  <span className="text-xs md:text-sm font-black uppercase tracking-[0.15em]">{t('stage.enterTest')}</span>
+                  <ChevronRight size={16} />
                 </button>
               </div>
             </div>
@@ -680,6 +1193,60 @@ export const FitnessTestView = ({ immersionMode = 'immersive', isVoiceActive = f
             </>
           )}
         </div>
+
+        <AnimatePresence>
+          {isPostponeModalOpen && (
+            <Portal>
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div className="absolute inset-0 bg-void/90 backdrop-blur-md z-0" onClick={() => setIsPostponeModalOpen(false)} />
+                <motion.div
+                  initial={{ scale: 0.95, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.95, opacity: 0 }}
+                  className="relative z-10 w-full max-w-sm glass-panel border-white/10 shadow-2xl p-6 flex flex-col items-center"
+                  style={{ borderRadius: '0 !important' }}
+                >
+                  <div className="flex flex-col items-center text-center gap-6 w-full">
+                    <div className="w-16 h-16 bg-volt/10 text-volt flex items-center justify-center border border-volt/20">
+                      <Activity size={32} />
+                    </div>
+                    
+                    <div>
+                      <h3 className="font-sans text-xl font-black uppercase tracking-widest text-white mb-2">
+                        Postpone Evaluation?
+                      </h3>
+                      <p className="text-zinc-400 text-sm font-medium leading-relaxed font-sans">
+                        Completing this evaluation is required to accurately calibrate your next training cycle and ensure optimal progression.
+                        <br/><br/>
+                        Are you sure you want to bypass this test due to injury or severe fatigue? Your baseline 1RMs will remain stale.
+                      </p>
+                    </div>
+
+                    <div className="w-full space-y-3">
+                      <button
+                        onClick={() => {
+                          updateProfile({ lastFitnessTestAt: Date.now(), pendingFitnessTest: false, devOverrideFitnessTest: false });
+                          setIsPostponeModalOpen(false);
+                        }}
+                        className="w-full py-5 btn-primary font-sans text-sm font-black uppercase tracking-widest transition-all shadow-lg"
+                        style={{ borderRadius: '0 !important' }}
+                      >
+                        Bypass Evaluation
+                      </button>
+                      <button
+                        onClick={() => setIsPostponeModalOpen(false)}
+                        className="w-full py-5 btn-secondary font-sans text-sm font-bold uppercase tracking-widest hover:bg-white/5 transition-all"
+                        style={{ borderRadius: '0 !important' }}
+                      >
+                        Return to Test
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              </div>
+            </Portal>
+          )}
+        </AnimatePresence>
       </div>
     );
   }
@@ -687,9 +1254,19 @@ export const FitnessTestView = ({ immersionMode = 'immersive', isVoiceActive = f
   return (
     <div 
       ref={scrollContainerRef}
-      className="relative w-full h-full flex flex-col items-center overflow-y-auto custom-scrollbar pt-safe"
+      className={cn(
+        "relative w-full flex flex-col items-center",
+        isReady 
+          ? "h-screen h-[100vh] w-screen w-[100vw] overflow-hidden p-0 m-0" 
+          : "h-full overflow-y-auto custom-scrollbar pt-safe"
+      )}
     >
-      <div className="w-full flex-1 flex flex-col items-center justify-center min-h-full py-20 px-3 md:px-12">
+      <div className={cn(
+        "w-full flex-1 flex flex-col items-center",
+        isReady 
+          ? "h-screen h-[100vh] w-screen w-[100vw] p-0 m-0 justify-center select-none" 
+          : "min-h-full py-20 px-0 sm:px-0 md:px-0 justify-center"
+      )}>
         {/* Immersive Arena Background */}
         <AnimatePresence>
           {(immersionMode === 'immersive' && isReady) && (
@@ -719,24 +1296,7 @@ export const FitnessTestView = ({ immersionMode = 'immersive', isVoiceActive = f
         </AnimatePresence>
       </div>
 
-      {/* Withdraw from Competition Button */}
-      <AnimatePresence>
-        {isReady && (
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            className="fixed bottom-12 left-1/2 -translate-x-1/2 z-40"
-          >
-            <button
-              onClick={() => setIsWithdrawModalOpen(true)}
-              className="px-8 py-3 btn-destructive font-sans text-[10px] font-bold uppercase tracking-[0.3em] transition-all backdrop-blur-md"
-            >
-              {t('stage.withdrawCompetition')}
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+
 
       {/* Terms and Conditions Modal */}
       <AnimatePresence>
@@ -755,7 +1315,7 @@ export const FitnessTestView = ({ immersionMode = 'immersive', isVoiceActive = f
                 initial={{ scale: 0.9, opacity: 0, y: 40 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
                 exit={{ scale: 0.9, opacity: 0, y: 40 }}
-                className="relative w-full max-w-2xl glass-panel p-6 md:p-10 border-white/10 shadow-2xl overflow-hidden min-h-[500px] h-auto max-h-[90vh] flex flex-col"
+                className="relative w-full max-w-2xl glass-panel p-4 md:p-8 border-white/10 shadow-2xl overflow-hidden min-h-[500px] h-auto max-h-[90vh] flex flex-col"
               >
               {/* Background Glow */}
               <div className="absolute -top-24 -right-24 w-64 h-64 bg-volt blur-[100px] opacity-10" />
@@ -882,11 +1442,11 @@ export const FitnessTestView = ({ immersionMode = 'immersive', isVoiceActive = f
                     onClick={() => {
                       setIsReady(false);
                       setSetupStep(1);
-                      setCheckedItems([]);
                       setCurrentTargetIndex(0);
                       setTestTargets(getInitialTargets());
                       setIsWithdrawModalOpen(false);
                       setHasEntered(false);
+                      setActiveRestType(null);
                     }}
                     className="w-full py-5 btn-destructive font-sans text-sm font-bold uppercase tracking-widest transition-all shadow-lg"
                   >
@@ -907,50 +1467,53 @@ export const FitnessTestView = ({ immersionMode = 'immersive', isVoiceActive = f
 
         {isPostponeModalOpen && (
           <Portal>
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-void/90 backdrop-blur-md" onClick={() => setIsPostponeModalOpen(false)} />
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="relative w-full max-w-sm glass-panel border-white/10 shadow-2xl p-6"
-            >
-              <div className="flex flex-col items-center text-center gap-6">
-                <div className="w-16 h-16 bg-volt/10 text-volt flex items-center justify-center rounded-sm">
-                  <Activity size={32} />
-                </div>
-                
-                <div>
-                  <h3 className="font-sans text-xl font-black uppercase tracking-widest text-white mb-2">
-                    Postpone Evaluation?
-                  </h3>
-                  <p className="text-zinc-400 text-sm font-medium leading-relaxed">
-                    Completing this evaluation is required to accurately calibrate your next training cycle and ensure optimal progression.
-                    <br/><br/>
-                    Are you sure you want to bypass this test due to injury or severe fatigue? Your baseline 1RMs will remain stale.
-                  </p>
-                </div>
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              <div className="absolute inset-0 bg-void/90 backdrop-blur-md" onClick={() => setIsPostponeModalOpen(false)} />
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                className="relative z-10 w-full max-w-sm glass-panel border-white/10 shadow-2xl p-6 flex flex-col items-center"
+                style={{ borderRadius: '0 !important' }}
+              >
+                <div className="flex flex-col items-center text-center gap-6 w-full">
+                  <div className="w-16 h-16 bg-volt/10 text-volt flex items-center justify-center border border-volt/20">
+                    <Activity size={32} />
+                  </div>
+                  
+                  <div>
+                    <h3 className="font-sans text-xl font-black uppercase tracking-widest text-white mb-2">
+                      Postpone Evaluation?
+                    </h3>
+                    <p className="text-zinc-400 text-sm font-medium leading-relaxed font-sans">
+                      Completing this evaluation is required to accurately calibrate your next training cycle and ensure optimal progression.
+                      <br/><br/>
+                      Are you sure you want to bypass this test due to injury or severe fatigue? Your baseline 1RMs will remain stale.
+                    </p>
+                  </div>
 
-                <div className="w-full space-y-3">
-                  <button
-                    onClick={() => {
-                      updateProfile({ lastFitnessTestAt: Date.now(), pendingFitnessTest: false, devOverrideFitnessTest: false });
-                      setIsPostponeModalOpen(false);
-                    }}
-                    className="w-full py-5 bg-white text-void font-sans text-sm font-black uppercase tracking-widest transition-all shadow-lg"
-                  >
-                    Bypass Evaluation
-                  </button>
-                  <button
-                    onClick={() => setIsPostponeModalOpen(false)}
-                    className="w-full py-5 border border-white/10 text-zinc-500 font-sans text-sm font-bold uppercase tracking-widest hover:bg-white/5 transition-all"
-                  >
-                    Return to Test
-                  </button>
+                  <div className="w-full space-y-3">
+                    <button
+                      onClick={() => {
+                        updateProfile({ lastFitnessTestAt: Date.now(), pendingFitnessTest: false, devOverrideFitnessTest: false });
+                        setIsPostponeModalOpen(false);
+                      }}
+                      className="w-full py-5 btn-primary font-sans text-sm font-black uppercase tracking-widest transition-all shadow-lg"
+                      style={{ borderRadius: '0 !important' }}
+                    >
+                      Bypass Evaluation
+                    </button>
+                    <button
+                      onClick={() => setIsPostponeModalOpen(false)}
+                      className="w-full py-5 btn-secondary font-sans text-sm font-bold uppercase tracking-widest hover:bg-white/5 transition-all"
+                      style={{ borderRadius: '0 !important' }}
+                    >
+                      Return to Test
+                    </button>
+                  </div>
                 </div>
-              </div>
-            </motion.div>
-          </div>
+              </motion.div>
+            </div>
           </Portal>
         )}
       </AnimatePresence>

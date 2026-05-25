@@ -307,17 +307,32 @@ export const TrainingView = ({
     return (w - 1) * f + d;
   };
 
-  const filteredHistory = profile?.programResetAt
-    ? history.filter(s => (s.completedAt || 0) > profile.programResetAt!)
-    : history;
+  let filteredHistory = history;
+  if (profile?.programResetAt) {
+    const tempFiltered = history.filter(s => (s.completedAt || s.startTime || 0) > profile.programResetAt!);
+    if (tempFiltered.length > 0) {
+      filteredHistory = tempFiltered;
+    } else {
+      filteredHistory = history;
+    }
+  }
 
   const isMissionCompleted = (mNum: number) => {
     const f = profile?.trainingFrequency || 3;
     const w = Math.floor((mNum - 1) / f) + 1;
     const d = ((mNum - 1) % f) + 1;
     // Check if any history item matches this WwDd
-    const prefix = `W${w}D${d}:`;
-    return filteredHistory.some(s => s.title?.startsWith(prefix));
+    return filteredHistory.some(s => {
+      if (!s.title) return false;
+      const match = s.title.match(/^W(\d+)\s*D(\d+)/i);
+      if (match) {
+        const foundW = parseInt(match[1]);
+        const foundD = parseInt(match[2]);
+        return foundW === w && foundD === d;
+      }
+      const prefix = `W${w}D${d}`;
+      return s.title.startsWith(`${prefix}:`) || s.title.startsWith(prefix);
+    });
   };
 
   const nextMissionBase = getAbsoluteMissionNum(activeOrNext?.title || '');
@@ -550,7 +565,7 @@ export const TrainingView = ({
             <div className="flex items-center gap-3 text-zinc-400 md:justify-end">
               <div className="flex items-center gap-2">
                 <Clock size={14} className="text-volt" />
-                <MissionTimer startTime={currentSession?.startTime} isActiveSession={isActiveSession} estDuration={estDuration} />
+                <MissionTimer startTime={currentSession?.startTime} isActiveSession={!!isActiveSession} estDuration={estDuration} />
                 <span className="text-zinc-700">•</span>
                 <Flame size={14} className="text-volt" />
                 <span className="font-mono text-xs font-bold">{estCalories} KCAL</span>
@@ -639,7 +654,7 @@ export const TrainingView = ({
             </span>
             <button
               onClick={() => setShowRoutineModal(true)}
-              className="mt-3 text-[10px] font-black uppercase tracking-[0.2em] text-volt hover:text-white transition-colors flex items-center gap-1.5 btn-tertiary"
+              className="mt-3 text-[10px] font-black uppercase tracking-[0.2em] text-volt hover:text-white transition-colors flex items-center gap-1.5 btn-tertiary min-h-[44px] px-2"
             >
               <ListOrdered size={12} />
               Mission Briefing
@@ -738,11 +753,15 @@ export const TrainingView = ({
               : 0;
 
             const dayForThisMission = ((missionNum - 1) % (profile?.trainingFrequency || 3)) + 1;
+            const workoutTemplate = getWorkoutTemplate(weekForThisMission, dayForThisMission);
+            const primaryEx = workoutTemplate?.exercises?.[0];
+            const actualSets = primaryEx?.sets?.filter(s => s.reps !== "1" || !s.id.includes("retention")).length || primaryEx?.sets?.length || blockForThisMission?.block.baseSets || 3;
+            const actualReps = primaryEx?.sets?.[0]?.reps || blockForThisMission?.block.baseReps || '8';
 
             return (
               <div
                 key={missionNum}
-                onClick={() => setSelectedMission(getWorkoutTemplate(weekForThisMission, dayForThisMission))}
+                onClick={() => setSelectedMission(workoutTemplate)}
                 className="p-4 bg-void/50 border border-white/5 group hover:border-volt/30 transition-all cursor-pointer flex flex-col justify-between h-full"
               >
                 <div>
@@ -763,7 +782,7 @@ export const TrainingView = ({
                     <div>
                       <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest mb-1">Prescription</p>
                       <p className="text-[10px] font-bold text-zinc-300 uppercase tracking-[0.1em]">
-                        {blockForThisMission?.block.baseSets || 3}x{blockForThisMission?.block.baseReps || '8'} @ {intensity}%
+                        {actualSets}X{actualReps} @ {intensity}%
                       </p>
                     </div>
                   </div>
@@ -775,7 +794,7 @@ export const TrainingView = ({
 
         <button
           onClick={onViewUpcomingMissions}
-          className="w-full btn-secondary mt-8 py-4 vanguard-tour-upcoming-missions-details"
+          className="w-full btn-secondary mt-8 py-4 vanguard-tour-upcoming-missions-details min-h-[44px]"
         >
           <span>{t('analysis.viewMoreDetails')}</span>
           <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform text-volt" />
@@ -863,7 +882,7 @@ export const TrainingView = ({
             <div className="flex items-center gap-4 relative z-10">
               <button 
                 onClick={() => setCurrentPRIndex((currentPRIndex - 1 + 3) % 3)}
-                className="p-4 bg-white/5 border border-white/10 hover:bg-volt hover:text-void transition-all"
+                className="p-4 bg-white/5 border border-white/10 hover:bg-volt hover:text-void transition-all min-h-[44px] min-w-[44px]"
                 aria-label="Previous PR"
               >
                 <ChevronLeft size={20} />
@@ -871,7 +890,7 @@ export const TrainingView = ({
               
               <button 
                 onClick={() => setCurrentPRIndex((currentPRIndex + 1) % 3)}
-                className="p-4 bg-white/5 border border-white/10 hover:bg-volt hover:text-void transition-all"
+                className="p-4 bg-white/5 border border-white/10 hover:bg-volt hover:text-void transition-all min-h-[44px] min-w-[44px]"
                 aria-label="Next PR"
               >
                 <ChevronRight size={20} />

@@ -45,7 +45,7 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({
     ? getPlanFromCustomBlocks(customProgramBlocks)
     : getPlanForDuration(totalWeeks, trainingObjectives as any);
 
-  const plan = expandPlan(basicPlan);
+  const plan = expandPlan(basicPlan, !!(customProgramBlocks && customProgramBlocks.length > 0));
 
   const content = null; // Removed unused content
 

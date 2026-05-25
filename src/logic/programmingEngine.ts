@@ -1,5 +1,5 @@
-export type TrainingAge = 'novice' | 'intermediate' | 'advanced';
-export type GymProfile = 'commercial' | 'powerlifting' | 'home';
+export type TrainingAge = "novice" | "intermediate" | "advanced";
+export type GymProfile = "commercial" | "powerlifting" | "home";
 
 export interface ReadinessScore {
   sleep: number; // 1-5
@@ -28,12 +28,15 @@ export interface UserOnboardingData {
   meetDate?: number; // Unix timestamp
 }
 
-export type LogicEngineType = 'linear_5x5' | 'submax_531' | 'block_periodization';
+export type LogicEngineType =
+  | "linear_5x5"
+  | "submax_531"
+  | "block_periodization";
 
 export interface TrainingState {
   engineType: LogicEngineType;
   currentWeek: number;
-  currentBlock: 'hypertrophy' | 'strength' | 'peaking' | 'deload';
+  currentBlock: "hypertrophy" | "strength" | "peaking" | "deload";
   trainingMaxes: {
     squat: number;
     bench: number;
@@ -50,14 +53,14 @@ export interface TrainingState {
 export function assignLogicEngine(data: UserOnboardingData): LogicEngineType {
   if (data.meetDate) {
     // If they have a competition timeline, use Block Periodization to peak them
-    return 'block_periodization';
+    return "block_periodization";
   }
-  
-  if (data.trainingAge === 'novice') {
-    return 'linear_5x5';
+
+  if (data.trainingAge === "novice") {
+    return "linear_5x5";
   }
-  
-  return 'submax_531';
+
+  return "submax_531";
 }
 
 /**
@@ -66,10 +69,10 @@ export function assignLogicEngine(data: UserOnboardingData): LogicEngineType {
  */
 export function calculateReadinessModifier(score: ReadinessScore): number {
   const total = score.sleep + score.stress + score.soreness;
-  // Max score is 15. 
+  // Max score is 15.
   // If score is very low (e.g., < 7), trigger Low Energy Mode
   if (total <= 7) {
-    return 0.90; // 10% reduction
+    return 0.9; // 10% reduction
   } else if (total <= 10) {
     return 0.95; // 5% reduction
   }
@@ -80,12 +83,12 @@ export function calculateReadinessModifier(score: ReadinessScore): number {
  * Autoregulates the Training Max for the next session based on intra-set feedback.
  */
 export function autoregulateTrainingMax(
-  currentMax: number, 
+  currentMax: number,
   performance: LiftPerformance,
-  engine: LogicEngineType
+  engine: LogicEngineType,
 ): number {
   let newMax = currentMax;
-  const MAX_INCREASE_PERCENT = 0.10; // 10% safety guardrail
+  const MAX_INCREASE_PERCENT = 0.1; // 10% safety guardrail
 
   // 1. RPE-Based Adjustment
   if (!performance.isAMRAP) {
@@ -93,7 +96,14 @@ export function autoregulateTrainingMax(
     // Upgrade: Continuous proportional adaptation for intra-session discrepancies
     // Every 1.0 RPE deviation represents approximately a 1.25% strength adaptation
     if (Math.abs(rpeDiff) >= 0.5) {
-      newMax += (currentMax * (rpeDiff * 0.0125)); 
+      newMax += currentMax * (rpeDiff * 0.0125);
+    }
+
+    // Reps-Based Adjustment for missed targets
+    const repDiff = performance.actualReps - performance.targetReps;
+    if (repDiff < 0) {
+      // For every missed rep on normal sets, reduce max by roughly 2%
+      newMax -= currentMax * (Math.abs(repDiff) * 0.02);
     }
   }
 
@@ -101,9 +111,9 @@ export function autoregulateTrainingMax(
   if (performance.isAMRAP) {
     const repDiff = performance.actualReps - performance.targetReps;
     if (repDiff >= 3) {
-      newMax += (currentMax * 0.05);
+      newMax += currentMax * 0.05;
     } else if (repDiff < 0) {
-      newMax -= (currentMax * 0.025);
+      newMax -= currentMax * 0.025;
     }
   }
 
@@ -127,55 +137,90 @@ export interface ObjectivePerformance {
   exerciseName?: string;
 }
 
-export function generateAutoregulationFeedback(perf: ObjectivePerformance): { message: string, action: string, type: 'decrease' | 'swap' | 'none' } {
-  if (perf.goal === 'pure_strength' || perf.goal === 'hypertrophy' || perf.goal === 'powerbuilding') {
+export function generateAutoregulationFeedback(perf: ObjectivePerformance): {
+  message: string;
+  action: string;
+  type: "decrease" | "swap" | "none";
+} {
+  if (
+    perf.goal === "pure_strength" ||
+    perf.goal === "hypertrophy" ||
+    perf.goal === "powerbuilding"
+  ) {
     if (perf.targetReps !== undefined && perf.actualReps !== undefined) {
       const diff = perf.targetReps - perf.actualReps;
       if (diff >= 2) {
         return {
           message: `You missed your rep target by ${diff}, dropping weight by 5%.`,
-          action: 'drop_weight_5_percent',
-          type: 'decrease'
+          action: "drop_weight_5_percent",
+          type: "decrease",
         };
       }
     }
-  } else if (perf.goal === 'endurance' || perf.goal === 'tactical') {
-    if (perf.timeExceedingThreshold !== undefined && perf.timeExceedingThreshold >= 40) {
+  } else if (perf.goal === "endurance" || perf.goal === "tactical") {
+    if (
+      perf.timeExceedingThreshold !== undefined &&
+      perf.timeExceedingThreshold >= 40
+    ) {
       return {
         message: `Heart rate exceeded aerobic threshold for ${perf.timeExceedingThreshold}% of the movement; pace objective will be reduced by 30 seconds.`,
-        action: 'reduce_pace_30s',
-        type: 'decrease'
+        action: "reduce_pace_30s",
+        type: "decrease",
       };
     }
-  } else if (perf.goal === 'prehab' || perf.goal === 'longevity') {
+  } else if (perf.goal === "prehab" || perf.goal === "longevity") {
     if (perf.painScale !== undefined && perf.painScale > 4) {
       const exercise = perf.exerciseName || "movement";
       return {
         message: `Shoulder pain scale reported > 4 for ${exercise}. Automatically substituting with dumbbell neutral grip pressing.`,
-        action: 'substitute_exercise_neutral_grip',
-        type: 'swap'
+        action: "substitute_exercise_neutral_grip",
+        type: "swap",
       };
     }
   }
-  
-  return { message: "Performance within expected parameters. Maintaining current progression.", action: 'none', type: 'none' };
+
+  return {
+    message:
+      "Performance within expected parameters. Maintaining current progression.",
+    action: "none",
+    type: "none",
+  };
 }
 
 /**
  * Handles exercise substitution based on injury list and gym profile.
  */
 export function getExerciseSubstitution(
-  targetExerciseId: string, 
-  injuryList: string[], 
-  gymProfile: GymProfile
+  targetExerciseId: string,
+  injuryList: string[],
+  gymProfile: GymProfile,
 ): string {
   // Mapping of primary movements to their swappable variations based on pattern and impact
   const substitutions: Record<string, string[]> = {
-    'barbell_squat': ['squat_high_bar', 'squat_front', 'squat_safety_bar', 'squat_goblet'],
-    'deadlift_conventional': ['deadlift_sumo', 'deadlift_hex_bar', 'rdl', 'stiff_leg_deadlift'],
-    'bench_press': ['bench_press_close_grip', 'bench_press_incline', 'bench_press_dumbbell'],
-    'overhead_press': ['push_press', 'seated_db_press', 'z_press', 'db_shoulder_press'],
-    'pull_ups': ['lat_pulldowns', 'chin_ups', 'neutral_grip_pull_ups']
+    barbell_squat: [
+      "squat_high_bar",
+      "squat_front",
+      "squat_safety_bar",
+      "squat_goblet",
+    ],
+    deadlift_conventional: [
+      "deadlift_sumo",
+      "deadlift_hex_bar",
+      "rdl",
+      "stiff_leg_deadlift",
+    ],
+    bench_press: [
+      "bench_press_close_grip",
+      "bench_press_incline",
+      "bench_press_dumbbell",
+    ],
+    overhead_press: [
+      "push_press",
+      "seated_db_press",
+      "z_press",
+      "db_shoulder_press",
+    ],
+    pull_ups: ["lat_pulldowns", "chin_ups", "neutral_grip_pull_ups"],
   };
 
   if (!injuryList.includes(targetExerciseId)) {
@@ -183,18 +228,18 @@ export function getExerciseSubstitution(
   }
 
   const alternatives = substitutions[targetExerciseId] || [];
-  
+
   for (const alt of alternatives) {
     if (!injuryList.includes(alt)) {
       // Check gym profile constraints (e.g., commercial gyms might not have a safety bar)
-      if (alt === 'squat_safety_bar' && gymProfile === 'commercial') {
+      if (alt === "squat_safety_bar" && gymProfile === "commercial") {
         continue;
       }
       return alt;
     }
   }
 
-  return 'rest'; // Fallback if all options are exhausted
+  return "rest"; // Fallback if all options are exhausted
 }
 
 /**

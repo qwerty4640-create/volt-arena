@@ -27,7 +27,7 @@ import {
 interface BlockWidgetProps {}
 
 export const BlockWidget = ({}: BlockWidgetProps) => {
-  const { t, profile } = useSettings();
+  const { t, profile, setIsDeploymentModalOpen } = useSettings();
   const { history, getNextWorkoutTemplate } = useWorkout();
   const nextWorkout = getNextWorkoutTemplate();
   const currentBlock = nextWorkout.blockType || BlockType.HYPERTROPHY;
@@ -47,7 +47,7 @@ export const BlockWidget = ({}: BlockWidgetProps) => {
         );
   }, [profile]);
 
-  const plan = expandPlan(basicPlan);
+  const plan = expandPlan(basicPlan, !!(profile?.customProgramBlocks && profile.customProgramBlocks.length > 0));
   const blockDef = plan.find((b) => b.type === currentBlock);
   const totalWeeks = blockDef?.durationWeeks || 4;
   const cycleLength = plan.reduce((acc, b) => acc + b.durationWeeks, 0) || 4;
@@ -644,6 +644,14 @@ export const BlockWidget = ({}: BlockWidgetProps) => {
             </ResponsiveContainer>
           </div>
         </div>
+
+        <button
+          onClick={() => setIsDeploymentModalOpen(true)}
+          className="mt-6 md:hidden w-full flex items-center justify-center gap-2 px-6 py-4 btn-primary font-headline text-[10px] font-black uppercase tracking-widest transition-all group rounded-none"
+        >
+          <Zap size={14} />
+          <span>Recalibrate Deployment</span>
+        </button>
       </div>
     </div>
   );

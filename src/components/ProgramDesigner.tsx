@@ -245,7 +245,7 @@ export const ProgramDesigner: React.FC<ProgramDesignerProps> = ({
         } as BlockDefinition;
       });
 
-      const detailedPlan = expandPlan(plainPlan);
+      const detailedPlan = expandPlan(plainPlan, true);
 
       detailedPlan.forEach((block) => {
         for (let w = 1; w <= block.durationWeeks; w++) {

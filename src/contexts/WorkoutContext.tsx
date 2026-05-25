@@ -1010,26 +1010,35 @@ const createSessionFromTemplate = (
       let estimated1RM = 0;
       let dynamicPR = 0;
       if (history && history.length > 0) {
-        const recentHistory = history.filter(
-          (s) => Date.now() - (s.completedAt || 0) < 90 * 24 * 60 * 60 * 1000,
-        ); // Last 90 days
-        const e1rms = recentHistory.flatMap(
-          (s) =>
-            s.exercises
-              .find(
-                (ex) =>
-                  ex.name.toLowerCase() === selectedExercise.name.toLowerCase(),
-              )
-              ?.sets.map((set: any) =>
+        const sessionsWithEx = history
+          .filter((s) =>
+            s.exercises.some(
+              (ex) =>
+                ex.name.toLowerCase() === selectedExercise.name.toLowerCase(),
+            ),
+          )
+          .sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
+
+        if (sessionsWithEx.length > 0) {
+          const latestSession = sessionsWithEx[0];
+          const targetEx = latestSession.exercises.find(
+            (ex) =>
+              ex.name.toLowerCase() === selectedExercise.name.toLowerCase(),
+          );
+          if (targetEx) {
+            const e1rms = targetEx.sets
+              .map((set: any) =>
                 calculateE1RM(
                   parseFloat(set.weight) || 0,
                   parseInt(set.reps) || 0,
                   parseFloat(set.rpe || set.actualRpe || ""),
                 ),
-              ) || [],
-        );
-        if (e1rms.length > 0) {
-          dynamicPR = Math.max(...e1rms);
+              )
+              .filter((val) => val > 0);
+            if (e1rms.length > 0) {
+              dynamicPR = Math.max(...e1rms);
+            }
+          }
         }
       }
 
@@ -1041,7 +1050,8 @@ const createSessionFromTemplate = (
         if (isBench) profilePR = profile.benchPR || 0;
         if (isDeadlift) profilePR = profile.deadliftPR || 0;
 
-        let pr = Math.max(profilePR, dynamicPR);
+        // Autoregulation: heavily prioritize the E1RM generated from the LAST session, falling back to static profile PR.
+        let pr = dynamicPR > 0 ? dynamicPR : profilePR;
 
         if (pr > 0) {
           let normalizedPR = pr;
@@ -1095,6 +1105,95 @@ const createSessionFromTemplate = (
       if (constraintExercise.intensityBoost)
         adjustedBaseIntensity += constraintExercise.intensityBoost;
 
+      // Phase 2: Autoregulatory Set & Rep Generation (Undulating Periodization)
+      // Adapting Prilepin's Chart principles to maintain high-quality volume without excessive CNS/mechanical failure.
+      let dynamicReps = block.baseReps;
+      let dynamicSets = block.baseSets;
+      if (isMainLift) {
+        const isHypertrophyOriented = [
+          BlockType.HYPERTROPHY,
+          BlockType.FOUNDATION,
+          BlockType.LONGEVITY,
+          BlockType.RESILIENCY,
+          BlockType.CAPACITY,
+          BlockType.REGENERATION,
+          BlockType.POWERBUILDING,
+        ].includes(block.type as BlockType);
+
+        const isDeloadOrRetention = [
+          BlockType.DELOAD,
+          BlockType.RETENTION,
+          BlockType.STRENGTH_RETENTION,
+          BlockType.ENDURANCE_RETENTION,
+        ].includes(block.type as BlockType);
+
+        if (isDeloadOrRetention) {
+          // Keep base reps and sets to prevent accidental strength-zone loading
+          dynamicReps = block.baseReps || "8";
+          dynamicSets = block.baseSets || 2;
+        } else if (isHypertrophyOriented) {
+          if (adjustedIntensity < 0.65) {
+            dynamicReps = "10-12";
+            dynamicSets = 3;
+          } else if (adjustedIntensity < 0.72) {
+            dynamicReps = "8-12";
+            dynamicSets = 4;
+          } else if (adjustedIntensity < 0.78) {
+            dynamicReps = "8-10";
+            dynamicSets = 4;
+          } else if (adjustedIntensity < 0.83) {
+            dynamicReps = "6-8";
+            dynamicSets = 4;
+          } else {
+            dynamicReps = "6-8";
+            dynamicSets = 4;
+          }
+        } else {
+          // Standard strength / peaking block mapping
+          if (adjustedIntensity < 0.65) {
+            dynamicReps = "8-10";
+            dynamicSets = 3;
+          } else if (adjustedIntensity < 0.75) {
+            dynamicReps = "6-8";
+            dynamicSets = 4;
+          } else if (adjustedIntensity < 0.80) {
+            dynamicReps = "4-6";
+            dynamicSets = 5;
+          } else if (adjustedIntensity < 0.85) {
+            dynamicReps = "3-4";
+            dynamicSets = 6;
+          } else if (adjustedIntensity < 0.90) {
+            dynamicReps = "2-3";
+            dynamicSets = 7;
+          } else if (adjustedIntensity < 0.95) {
+            dynamicReps = "1-2";
+            dynamicSets = 8;
+          } else {
+            dynamicReps = "1";
+            dynamicSets = 10;
+          }
+        }
+      }
+
+      let reps = isMainLift ? dynamicReps : slot.reps;
+      let sets = isMainLift ? dynamicSets : slot.sets;
+
+      // Auto-Regulate the Intensity to prevent mechanical failure on high-readiness high-rep sets
+      if (estimated1RM > 0) {
+        let parsedMinReps = parseInt(reps.split("-")[0]) || 8;
+        let targetRpeCeiling =
+          constraintExercise.targetRPE || (isMainLift ? 8.5 : 8.0);
+        let effectiveReps = parsedMinReps + (10 - targetRpeCeiling);
+        let safeIntensityLimit = (37 - Math.min(effectiveReps, 12)) / 36;
+
+        if (adjustedIntensity > safeIntensityLimit) {
+          adjustedIntensity = safeIntensityLimit;
+        }
+        if (adjustedBaseIntensity > safeIntensityLimit) {
+          adjustedBaseIntensity = safeIntensityLimit;
+        }
+      }
+
       let unmodifiedWeight =
         Math.round((estimated1RM * adjustedBaseIntensity) / 5) * 5;
 
@@ -1124,31 +1223,6 @@ const createSessionFromTemplate = (
         unmodifiedWeight = 0;
       }
 
-      // Adjust reps and sets
-      // Phase 2: Autoregulatory Set & Rep Generation (Undulating Periodization)
-      let dynamicReps = block.baseReps;
-      let dynamicSets = block.baseSets;
-      if (isMainLift) {
-        if (adjustedIntensity < 0.65) {
-          dynamicReps = "10-12";
-          dynamicSets = 3;
-        } else if (adjustedIntensity < 0.75) {
-          dynamicReps = "8-10";
-          dynamicSets = 4;
-        } else if (adjustedIntensity < 0.85) {
-          dynamicReps = "5-8";
-          dynamicSets = 5;
-        } else if (adjustedIntensity < 0.92) {
-          dynamicReps = "3-5";
-          dynamicSets = 4;
-        } else {
-          dynamicReps = "1-3";
-          dynamicSets = 3;
-        }
-      }
-
-      let reps = isMainLift ? dynamicReps : slot.reps;
-      let sets = isMainLift ? dynamicSets : slot.sets;
       let exerciseName = selectedExercise.name;
 
       const unilateral =
@@ -1449,9 +1523,56 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({
             },
           );
 
+          const biometricsPath = `users/${user.uid}/recovery_data/current`;
+          const unsubscribeBiometrics = onSnapshot(
+            doc(db, biometricsPath),
+            (snapshot) => {
+              if (snapshot.exists()) {
+                const data = snapshot.data();
+                const isRecent =
+                  Date.now() - (data.timestamp || 0) < 24 * 60 * 60 * 1000;
+                if (isRecent) {
+                  const parsed = {
+                    sleep: Number(data.sleep) || 5,
+                    stress: Number(data.stress) || 5,
+                    fatigue: Number(data.fatigue) || 5,
+                    soreness:
+                      data.soreness !== undefined
+                        ? Number(data.soreness)
+                        : undefined,
+                    mood:
+                      data.mood !== undefined ? Number(data.mood) : undefined,
+                    timestamp: Number(data.timestamp) || Date.now(),
+                  };
+                  setSubjectiveReadiness(parsed);
+                  localStorage.setItem(
+                    READINESS_STORAGE_KEY,
+                    JSON.stringify(parsed),
+                  );
+                } else {
+                  setSubjectiveReadiness(null);
+                  localStorage.removeItem(READINESS_STORAGE_KEY);
+                }
+              } else {
+                setSubjectiveReadiness(null);
+                localStorage.removeItem(READINESS_STORAGE_KEY);
+              }
+            },
+            (error) => {
+              if (auth.currentUser) {
+                console.error(
+                  "Auth: Firestore biometrics reader error:",
+                  error,
+                );
+                handleFirestoreError(error, OperationType.GET, biometricsPath);
+              }
+            },
+          );
+
           unsubscribeFirestore = () => {
             unsubscribeRecovery();
             unsubscribeWorkouts();
+            unsubscribeBiometrics();
           };
         } else {
           setHistory([]);
@@ -1598,7 +1719,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({
       );
     }
 
-    const intensityScalar = 1 + (data.rpe - 7) * 0.05;
+    const intensityScalar = Math.max(0.4, data.rpe / 6);
     const MET = activity.baseMET;
     const durationMins = data.durationMinutes;
     const totalBurn = Math.round(
@@ -2219,7 +2340,16 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({
               : isBench
                 ? benchPRUpdate
                 : deadliftPRUpdate;
-            const repsUsed = parseInt(completedSets[0].reps) || 5;
+            const targetRepsStr =
+              completedSets[0].baseReps || completedSets[0].reps;
+            const targetRepsParsed = parseInt(targetRepsStr.split("-")[0]) || 5;
+
+            const totalActualReps = completedSets.reduce(
+              (sum, s) => sum + (parseInt(s.reps) || 0),
+              0,
+            );
+            const avgActualReps = totalActualReps / completedSets.length;
+
             const weightUsed = parseFloat(completedSets[0].weight) || 0;
 
             // If we have a current PR recorded, run autoregulation engine
@@ -2228,8 +2358,8 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({
                 exerciseId: ex.exerciseId,
                 targetRPE: targetRpe,
                 actualRPE: avgActualRpe,
-                targetReps: repsUsed,
-                actualReps: repsUsed,
+                targetReps: targetRepsParsed,
+                actualReps: avgActualReps,
                 weightUsed: weightUsed,
                 isAMRAP: false,
               };
@@ -2244,11 +2374,11 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({
                 else if (isDeadlift) deadliftPRUpdate = newMax;
                 hasPRChanges = true;
               }
-            } else if (weightUsed > 0 && repsUsed > 0) {
+            } else if (weightUsed > 0 && avgActualReps > 0) {
               // No baseline PR, bootstrap with RPE-adjusted E1RM of this session
               const calculatedMax = calculateE1RM(
                 weightUsed,
-                repsUsed,
+                avgActualReps,
                 avgActualRpe,
               );
               if (calculatedMax > 0) {
