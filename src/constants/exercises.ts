@@ -330,7 +330,25 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
 export const EXERCISE_DATABASE_TYPED: ExerciseDefinition[] = EXERCISE_DATABASE as unknown as ExerciseDefinition[];
 
 export const getExercisesByPattern = (pattern: ExerciseDefinition['pattern'], impact: ExerciseDefinition['impact'] = 'medium') => {
-  return EXERCISE_DATABASE_TYPED.filter(e => e.pattern === pattern && (impact === 'high' ? true : e.impact === impact || e.impact === 'low'));
+  const filtered = EXERCISE_DATABASE_TYPED.filter(e => e.pattern === pattern && (impact === 'high' ? true : e.impact === impact || e.impact === 'low'));
+  
+  return [...filtered].sort((a, b) => {
+    // If pattern is 'core', show exercises belonging to 'Core' category first
+    if (pattern === 'core') {
+      const aIsCore = a.category.toLowerCase() === 'core';
+      const bIsCore = b.category.toLowerCase() === 'core';
+      if (aIsCore && !bIsCore) return -1;
+      if (!aIsCore && bIsCore) return 1;
+    }
+    // If pattern is 'accessory', show exercises belonging to 'Accessory' or 'Prehab' first
+    if (pattern === 'accessory') {
+      const aIsAcc = ['accessory', 'prehab'].includes(a.category.toLowerCase());
+      const bIsAcc = ['accessory', 'prehab'].includes(b.category.toLowerCase());
+      if (aIsAcc && !bIsAcc) return -1;
+      if (!aIsAcc && bIsAcc) return 1;
+    }
+    return 0;
+  });
 };
 
 export const getSwappableExercises = (exerciseId: string) => {

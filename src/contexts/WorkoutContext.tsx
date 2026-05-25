@@ -246,41 +246,110 @@ const cleanObject = (obj: any): any => {
 
 const WorkoutContext = createContext<WorkoutContextType | undefined>(undefined);
 
-const WORKOUT_TEMPLATES = [
+const FULL_BODY_TEMPLATES = [
   {
-    title: "Foundation",
+    title: "Full Body 1",
     slots: [
-      { pattern: "squat", weight: 60, reps: "8", sets: 3 },
-      { pattern: "push_horizontal", weight: 40, reps: "10", sets: 3 },
-      { pattern: "pull_horizontal", weight: 30, reps: "12", sets: 3 },
+      { pattern: "squat", weight: 60, reps: "8", sets: 3, impact: "high" },
+      { pattern: "push_horizontal", weight: 50, reps: "8", sets: 3, impact: "high" },
+      { pattern: "pull_vertical", weight: 0, reps: "10", sets: 3, impact: "medium" },
+      { pattern: "core", weight: 0, reps: "1 min", sets: 2, impact: "low" },
     ],
   },
   {
-    title: "Power",
+    title: "Full Body 2",
     slots: [
-      { pattern: "hinge", weight: 80, reps: "5", sets: 3 },
-      { pattern: "push_vertical", weight: 30, reps: "8", sets: 3 },
-      { pattern: "pull_vertical", weight: 0, reps: "10", sets: 3 },
+      { pattern: "hinge", weight: 70, reps: "5", sets: 3, impact: "high" },
+      { pattern: "push_vertical", weight: 40, reps: "8", sets: 3, impact: "high" },
+      { pattern: "pull_horizontal", weight: 40, reps: "10", sets: 3, impact: "medium" },
+      { pattern: "accessory", weight: 10, reps: "15", sets: 2, impact: "low" },
     ],
   },
   {
-    title: "Hybrid",
+    title: "Full Body 3",
     slots: [
-      { pattern: "squat", weight: 40, reps: "12", sets: 3, impact: "low" },
-      {
-        pattern: "push_horizontal",
-        weight: 25,
-        reps: "10",
-        sets: 3,
-        impact: "low",
-      },
-      {
-        pattern: "pull_vertical",
-        weight: 30,
-        reps: "12",
-        sets: 3,
-        impact: "low",
-      },
+      { pattern: "squat", weight: 50, reps: "10", sets: 3, impact: "medium" },
+      { pattern: "push_horizontal", weight: 40, reps: "10", sets: 3, impact: "medium" },
+      { pattern: "hinge", weight: 50, reps: "10", sets: 2, impact: "medium" },
+      { pattern: "accessory", weight: 15, reps: "15", sets: 3, impact: "low" },
+    ],
+  },
+];
+
+const UPPER_LOWER_TEMPLATES = [
+  {
+    title: "Lower Body 1",
+    slots: [
+      { pattern: "squat", weight: 60, reps: "8", sets: 3, impact: "high" },
+      { pattern: "hinge", weight: 50, reps: "10", sets: 3, impact: "medium" },
+      { pattern: "core", weight: 0, reps: "1 min", sets: 3, impact: "low" },
+    ],
+  },
+  {
+    title: "Upper Body 1",
+    slots: [
+      { pattern: "push_horizontal", weight: 60, reps: "8", sets: 3, impact: "high" },
+      { pattern: "pull_vertical", weight: 0, reps: "8", sets: 3, impact: "high" },
+      { pattern: "push_vertical", weight: 40, reps: "10", sets: 3, impact: "medium" },
+    ],
+  },
+  {
+    title: "Lower Body 2",
+    slots: [
+      { pattern: "hinge", weight: 70, reps: "6", sets: 3, impact: "high" },
+      { pattern: "squat", weight: 50, reps: "10", sets: 3, impact: "medium" },
+      { pattern: "core", weight: 0, reps: "1 min", sets: 3, impact: "low" },
+    ],
+  },
+  {
+    title: "Upper Body 2",
+    slots: [
+      { pattern: "push_vertical", weight: 50, reps: "8", sets: 3, impact: "high" },
+      { pattern: "pull_horizontal", weight: 50, reps: "8", sets: 3, impact: "high" },
+      { pattern: "push_horizontal", weight: 40, reps: "10", sets: 3, impact: "medium" },
+    ],
+  },
+];
+
+const PPL_UL_TEMPLATES = [
+  {
+    title: "Push",
+    slots: [
+      { pattern: "push_horizontal", weight: 60, reps: "8", sets: 3, impact: "high" },
+      { pattern: "push_vertical", weight: 40, reps: "10", sets: 3, impact: "medium" },
+      { pattern: "accessory", weight: 10, reps: "15", sets: 3, impact: "low" },
+    ],
+  },
+  {
+    title: "Pull",
+    slots: [
+      { pattern: "pull_vertical", weight: 0, reps: "8", sets: 3, impact: "high" },
+      { pattern: "pull_horizontal", weight: 40, reps: "10", sets: 3, impact: "medium" },
+      { pattern: "accessory", weight: 15, reps: "15", sets: 3, impact: "low" },
+    ],
+  },
+  {
+    title: "Legs",
+    slots: [
+      { pattern: "squat", weight: 60, reps: "8", sets: 3, impact: "high" },
+      { pattern: "hinge", weight: 50, reps: "10", sets: 3, impact: "medium" },
+      { pattern: "core", weight: 0, reps: "1 min", sets: 3, impact: "low" },
+    ],
+  },
+  {
+    title: "Upper",
+    slots: [
+      { pattern: "push_horizontal", weight: 50, reps: "10", sets: 3, impact: "medium" },
+      { pattern: "pull_horizontal", weight: 50, reps: "10", sets: 3, impact: "medium" },
+      { pattern: "accessory", weight: 15, reps: "12", sets: 3, impact: "low" },
+    ],
+  },
+  {
+    title: "Lower",
+    slots: [
+      { pattern: "hinge", weight: 70, reps: "5", sets: 3, impact: "high" },
+      { pattern: "squat", weight: 40, reps: "12", sets: 3, impact: "medium" },
+      { pattern: "core", weight: 0, reps: "1 min", sets: 3, impact: "low" },
     ],
   },
 ];
@@ -289,22 +358,29 @@ const ENDURANCE_TEMPLATES = [
   {
     title: "Aerobic Base",
     slots: [
-      { pattern: "impact", weight: 0, reps: "45 min", sets: 1 },
-      { pattern: "core", weight: 0, reps: "1 min", sets: 3 },
+      { pattern: "impact", weight: 0, reps: "45 min", sets: 1, impact: "low" },
+      { pattern: "core", weight: 0, reps: "1 min", sets: 3, impact: "low" },
     ],
   },
   {
     title: "Threshold",
     slots: [
-      { pattern: "impact", weight: 0, reps: "5 min", sets: 4 },
-      { pattern: "mobility", weight: 0, reps: "10 min", sets: 1 },
+      { pattern: "impact", weight: 0, reps: "5 min", sets: 4, impact: "medium" },
+      { pattern: "mobility", weight: 0, reps: "10 min", sets: 1, impact: "low" },
+    ],
+  },
+  {
+    title: "Aerobic Recovery",
+    slots: [
+      { pattern: "impact", weight: 0, reps: "30 min", sets: 1, impact: "low" },
+      { pattern: "mobility", weight: 0, reps: "15 min", sets: 1, impact: "low" },
     ],
   },
   {
     title: "Lactate",
     slots: [
-      { pattern: "impact", weight: 0, reps: "1 min", sets: 8 },
-      { pattern: "pull_horizontal", weight: 20, reps: "15", sets: 2 },
+      { pattern: "impact", weight: 0, reps: "1 min", sets: 8, impact: "high" },
+      { pattern: "pull_horizontal", weight: 20, reps: "15", sets: 2, impact: "low" },
     ],
   },
 ];
@@ -313,25 +389,32 @@ const TACTICAL_TEMPLATES = [
   {
     title: "Combat Capacity",
     slots: [
-      { pattern: "impact", weight: 40, reps: "30 min", sets: 1 },
-      { pattern: "push_vertical", weight: 20, reps: "15", sets: 3 },
-      { pattern: "core", weight: 0, reps: "1 min", sets: 3 },
+      { pattern: "impact", weight: 40, reps: "30 min", sets: 1, impact: "medium" },
+      { pattern: "push_vertical", weight: 20, reps: "15", sets: 3, impact: "medium" },
+      { pattern: "core", weight: 0, reps: "1 min", sets: 3, impact: "low" },
     ],
   },
   {
     title: "Functional Strength",
     slots: [
-      { pattern: "hinge", weight: 60, reps: "8", sets: 4 },
-      { pattern: "pull_vertical", weight: 0, reps: "AMRAP", sets: 3 },
-      { pattern: "plyometric", weight: 0, reps: "5", sets: 4 },
+      { pattern: "hinge", weight: 60, reps: "8", sets: 4, impact: "high" },
+      { pattern: "pull_vertical", weight: 0, reps: "AMRAP", sets: 3, impact: "high" },
+      { pattern: "plyometric", weight: 0, reps: "5", sets: 4, impact: "high" },
     ],
   },
   {
     title: "Work Capacity",
     slots: [
-      { pattern: "squat", weight: 30, reps: "15", sets: 4 },
-      { pattern: "push_horizontal", weight: 30, reps: "20", sets: 3 },
-      { pattern: "impact", weight: 0, reps: "10 min", sets: 1 },
+      { pattern: "squat", weight: 30, reps: "15", sets: 4, impact: "medium" },
+      { pattern: "push_horizontal", weight: 30, reps: "20", sets: 3, impact: "medium" },
+      { pattern: "impact", weight: 0, reps: "10 min", sets: 1, impact: "low" },
+    ],
+  },
+  {
+    title: "Tactical Endurance",
+    slots: [
+      { pattern: "impact", weight: 20, reps: "45 min", sets: 1, impact: "low" },
+      { pattern: "core", weight: 0, reps: "1 min", sets: 4, impact: "low" },
     ],
   },
 ];
@@ -340,17 +423,33 @@ const EXPLOSIVE_TEMPLATES = [
   {
     title: "Rate of Force",
     slots: [
-      { pattern: "plyometric", weight: 0, reps: "3", sets: 5 },
-      { pattern: "squat", weight: 70, reps: "3", sets: 4 },
-      { pattern: "pull_horizontal", weight: 40, reps: "8", sets: 3 },
+      { pattern: "plyometric", weight: 0, reps: "3", sets: 5, impact: "high" },
+      { pattern: "squat", weight: 70, reps: "3", sets: 4, impact: "high" },
+      { pattern: "pull_horizontal", weight: 40, reps: "8", sets: 3, impact: "medium" },
     ],
   },
   {
     title: "Elasticity",
     slots: [
-      { pattern: "plyometric", weight: 0, reps: "5", sets: 4 },
-      { pattern: "hinge", weight: 60, reps: "5", sets: 3 },
-      { pattern: "core", weight: 0, reps: "30 sec", sets: 4 },
+      { pattern: "plyometric", weight: 0, reps: "5", sets: 4, impact: "medium" },
+      { pattern: "hinge", weight: 60, reps: "5", sets: 3, impact: "high" },
+      { pattern: "core", weight: 0, reps: "30 sec", sets: 4, impact: "low" },
+    ],
+  },
+  {
+    title: "Dynamic Effort Lower",
+    slots: [
+      { pattern: "squat", weight: 40, reps: "2", sets: 8, impact: "medium" },
+      { pattern: "plyometric", weight: 0, reps: "3", sets: 4, impact: "low" },
+      { pattern: "push_vertical", weight: 30, reps: "8", sets: 3, impact: "medium" },
+    ],
+  },
+  {
+    title: "Dynamic Effort Upper",
+    slots: [
+      { pattern: "push_horizontal", weight: 40, reps: "3", sets: 8, impact: "medium" },
+      { pattern: "hinge", weight: 45, reps: "6", sets: 3, impact: "medium" },
+      { pattern: "core", weight: 0, reps: "45 sec", sets: 3, impact: "low" },
     ],
   },
 ];
@@ -359,23 +458,37 @@ const MEDICAL_TEMPLATES = [
   {
     title: "Restoration",
     slots: [
-      { pattern: "mobility", weight: 0, reps: "5 min", sets: 2 },
-      { pattern: "core", weight: 0, reps: "1 min", sets: 3 },
-      { pattern: "accessory", weight: 10, reps: "15", sets: 3 },
+      { pattern: "mobility", weight: 0, reps: "5 min", sets: 2, impact: "low" },
+      { pattern: "core", weight: 0, reps: "1 min", sets: 3, impact: "low" },
+      { pattern: "accessory", weight: 10, reps: "15", sets: 3, impact: "low" },
     ],
   },
   {
     title: "Stability",
     slots: [
-      { pattern: "core", weight: 0, reps: "45 sec", sets: 4 },
-      { pattern: "accessory", weight: 15, reps: "12", sets: 3 },
-      { pattern: "mobility", weight: 0, reps: "10 min", sets: 1 },
+      { pattern: "core", weight: 0, reps: "45 sec", sets: 4, impact: "low" },
+      { pattern: "accessory", weight: 15, reps: "12", sets: 3, impact: "low" },
+      { pattern: "mobility", weight: 0, reps: "10 min", sets: 1, impact: "low" },
+    ],
+  },
+  {
+    title: "Joint Integrity",
+    slots: [
+      { pattern: "accessory", weight: 10, reps: "15", sets: 4, impact: "low" },
+      { pattern: "core", weight: 0, reps: "1 min", sets: 3, impact: "low" },
+    ],
+  },
+  {
+    title: "Active Recovery",
+    slots: [
+      { pattern: "mobility", weight: 0, reps: "15 min", sets: 1, impact: "low" },
+      { pattern: "accessory", weight: 10, reps: "20", sets: 2, impact: "low" },
     ],
   },
 ];
 
 const calculateFallback1RM = (
-  exercise: ExerciseDefinition,
+  exercise: ExerciseDefinition | undefined,
   bodyweight: number | undefined,
   level: string,
   unit: string,
@@ -399,7 +512,11 @@ const calculateFallback1RM = (
   const maxBw = unit === "imperial" ? 250 : 115;
   const effectiveBw = Math.min(bw, maxBw);
 
-  const name = exercise.name.toLowerCase();
+  if (!exercise) {
+    return Math.round(templateBaseWeight);
+  }
+
+  const name = exercise.name ? exercise.name.toLowerCase() : "";
   let multiplier = 0;
   const isFemale = gender === "female";
 
@@ -725,7 +842,24 @@ const createSessionFromTemplate = (
   const currentPhaseStr = (block.type as string).toLowerCase();
   const missionInfo = getDailyMissionTitleAndDesc(block.type, day);
 
-  let templatePool = WORKOUT_TEMPLATES;
+  const frequency = profile?.trainingFrequency || 3;
+  let templatePool = UPPER_LOWER_TEMPLATES;
+  
+  if (
+    !currentPhaseStr || 
+    ["hypertrophy", "foundation", "powerbuilding", "strength", "pure_strength", "max_effort", "overreach", "deload"].includes(
+      currentPhaseStr
+    )
+  ) {
+    if (frequency === 3) {
+      templatePool = FULL_BODY_TEMPLATES;
+    } else if (frequency === 4) {
+      templatePool = UPPER_LOWER_TEMPLATES;
+    } else {
+      templatePool = PPL_UL_TEMPLATES;
+    }
+  }
+
   if (
     [
       "endurance",
@@ -753,7 +887,8 @@ const createSessionFromTemplate = (
     templatePool = MEDICAL_TEMPLATES;
   }
 
-  const templateIndex = (day - 1) % templatePool.length;
+  const globalSessionIndex = (week - 1) * frequency + (day - 1);
+  const templateIndex = globalSessionIndex % templatePool.length;
   const initialTemplate = templatePool[templateIndex];
 
   // --- PHASE 2: BLENDING ENGINE ---
@@ -762,7 +897,7 @@ const createSessionFromTemplate = (
   const interferenceModifier = getInterferenceAdjustment(activePhaseGoals);
 
   // Clone slots to avoid mutating constants
-  let dynamicSlots = [...initialTemplate.slots];
+  let dynamicSlots = initialTemplate.slots.map((s) => ({ ...s }));
 
   // Apply Medical Conditions filtering
   if (profile?.hasMedicalConditions && profile.medicalConditionDetails) {
@@ -820,17 +955,19 @@ const createSessionFromTemplate = (
   let volumeModifier = 1.0 * interferenceModifier;
 
   // Intelligent Frequency Compensation: Scale volume per session if training more frequently
-  // than the 3-day baseline to prevent excessive weekly load on repeated patterns.
-  const frequency = profile?.trainingFrequency || 3;
-  if (frequency > 3) {
-    // If training 4 days, scale each session by ~82% (4 * 0.82 = 3.3 sessions worth of volume)
-    // If training 5 days, scale each session by ~66% (5 * 0.66 = 3.3 sessions worth of volume)
-    // This allows for a slight weekly increase (~10%) but prevents 100% hikes on repeated templates.
+  const isHypertrophyBlock = [BlockType.HYPERTROPHY, BlockType.FOUNDATION, BlockType.POWERBUILDING].includes(block.type as any);
+  let frequencyScale = 1.0;
+
+  if (frequency > 3 && isHypertrophyBlock) {
     const baselineDays = 3;
-    const loadAllowance = 1.1; // 10% more weekly volume capacity allowed for higher frequency
-    const scalingFactor = (baselineDays / frequency) * loadAllowance;
-    volumeModifier *= Math.min(1.0, scalingFactor);
+    const loadAllowance = 1.25;
+    frequencyScale = (baselineDays / frequency) * loadAllowance;
+  } else if (frequency > 3) {
+    const baselineDays = 3;
+    const loadAllowance = 1.1;
+    frequencyScale = (baselineDays / frequency) * loadAllowance;
   }
+  frequencyScale = Math.min(1.0, frequencyScale);
 
   const isFinalWeek = weekInBlock === block.durationWeeks;
 
@@ -916,6 +1053,11 @@ const createSessionFromTemplate = (
       // Select best fit exercise for the goal
       let selectedExercise = availableExercises[0];
 
+      // Safe fallback if no exercises are available for this pattern/impact combo
+      if (!selectedExercise) {
+        selectedExercise = EXERCISE_DATABASE.find((e: any) => e.pattern === slot.pattern) || EXERCISE_DATABASE[0];
+      }
+
       // If slot specifies a non-zero weight, avoid purely bodyweight squat if weighted alternatives are available in the list
       const slotWeight =
         typeof slot.weight === "string"
@@ -936,10 +1078,11 @@ const createSessionFromTemplate = (
       if (
         selectedExercise &&
         goals.includes("longevity") &&
+        selectedExercise.name &&
         selectedExercise.name.includes("Barbell")
       ) {
         const safer = availableExercises.find(
-          (e) => !e.name.includes("Barbell"),
+          (e) => e.name && !e.name.includes("Barbell"),
         );
         if (safer) selectedExercise = safer;
       }
@@ -967,24 +1110,28 @@ const createSessionFromTemplate = (
         }
       });
 
-      let weight = 0;
+      let weight: number | string = 0;
+      let unmodifiedWeight: number | string = 0;
       const isSquatPattern = slot.pattern === "squat";
       const isBenchPattern = slot.pattern === "push_horizontal";
       const isDeadliftPattern = slot.pattern === "hinge";
 
-      const isSquat =
+      const isSquat = !!(
         isSquatPattern &&
-        selectedExercise.impact === "high" &&
+        selectedExercise?.name &&
         !selectedExercise.name.toLowerCase().includes("dumbbell") &&
-        !selectedExercise.name.toLowerCase().includes("goblet");
-      const isBench =
+        !selectedExercise.name.toLowerCase().includes("goblet")
+      );
+      const isBench = !!(
         isBenchPattern &&
-        selectedExercise.impact === "high" &&
-        !selectedExercise.name.toLowerCase().includes("dumbbell");
-      const isDeadlift =
+        selectedExercise?.name &&
+        !selectedExercise.name.toLowerCase().includes("dumbbell")
+      );
+      const isDeadlift = !!(
         isDeadliftPattern &&
-        selectedExercise.impact === "high" &&
-        !selectedExercise.name.toLowerCase().includes("dumbbell");
+        selectedExercise?.name &&
+        !selectedExercise.name.toLowerCase().includes("dumbbell")
+      );
       const isMainLift = isSquat || isBench || isDeadlift;
 
       const currentTier = profile
@@ -1007,13 +1154,22 @@ const createSessionFromTemplate = (
       if (constraintExercise.intensityBoost)
         adjustedIntensity += constraintExercise.intensityBoost;
 
+      // Secondary Compound scaling: If it is a main lift pattern but programmed in a medium impact slot,
+      // it is a secondary lift for the day (e.g., Day 1 Trap Bar Deadlift / Squat variation).
+      // Scale its intensity down by 15% (multiplier of 0.85) to manage fatigue and prevent high axial loading on repeated patterns.
+      if (isMainLift && slot.impact === "medium") {
+        adjustedIntensity *= 0.85;
+      }
+
       let estimated1RM = 0;
       let dynamicPR = 0;
-      if (history && history.length > 0) {
+      let lastWeight = 0;
+      if (history && history.length > 0 && selectedExercise?.name) {
         const sessionsWithEx = history
           .filter((s) =>
             s.exercises.some(
               (ex) =>
+                ex.name &&
                 ex.name.toLowerCase() === selectedExercise.name.toLowerCase(),
             ),
           )
@@ -1023,9 +1179,15 @@ const createSessionFromTemplate = (
           const latestSession = sessionsWithEx[0];
           const targetEx = latestSession.exercises.find(
             (ex) =>
+              ex.name &&
               ex.name.toLowerCase() === selectedExercise.name.toLowerCase(),
           );
-          if (targetEx) {
+          if (targetEx && targetEx.sets) {
+            const validSets = targetEx.sets.filter((s:any) => parseFloat(s.weight) > 0);
+            if (validSets.length > 0) {
+              lastWeight = parseFloat(validSets[0].weight);
+            }
+            
             const e1rms = targetEx.sets
               .map((set: any) =>
                 calculateE1RM(
@@ -1104,6 +1266,11 @@ const createSessionFromTemplate = (
         );
       if (constraintExercise.intensityBoost)
         adjustedBaseIntensity += constraintExercise.intensityBoost;
+
+      // Secondary Compound scaling for base intensity
+      if (isMainLift && slot.impact === "medium") {
+        adjustedBaseIntensity *= 0.85;
+      }
 
       // Phase 2: Autoregulatory Set & Rep Generation (Undulating Periodization)
       // Adapting Prilepin's Chart principles to maintain high-quality volume without excessive CNS/mechanical failure.
@@ -1194,15 +1361,24 @@ const createSessionFromTemplate = (
         }
       }
 
-      let unmodifiedWeight =
-        Math.round((estimated1RM * adjustedBaseIntensity) / 5) * 5;
+      if (isMainLift) {
+        unmodifiedWeight = Math.round((estimated1RM * adjustedBaseIntensity) / 5) * 5;
+        weight = Math.round((estimated1RM * adjustedIntensity) / 5) * 5;
 
-      weight = Math.round((estimated1RM * adjustedIntensity) / 5) * 5;
-
-      // Apply penalty for high-intensity aerobic activity before lower body days
-      if (hasAerobicInterference && (isSquat || isDeadlift)) {
-        weight = Math.round((weight * 0.85) / 5) * 5;
-        unmodifiedWeight = Math.round((unmodifiedWeight * 0.85) / 5) * 5;
+        // Apply penalty for high-intensity aerobic activity before lower body days
+        if (hasAerobicInterference && (isSquat || isDeadlift)) {
+          weight = Math.round((weight * 0.85) / 5) * 5;
+          unmodifiedWeight = Math.round((unmodifiedWeight * 0.85) / 5) * 5;
+        }
+      } else {
+        // Nullify strict % math for accessories, use exact last weight or fall back to RPE
+        if (lastWeight > 0) {
+          weight = lastWeight;
+          unmodifiedWeight = lastWeight;
+        } else {
+          weight = "RPE 8";
+          unmodifiedWeight = "RPE 8";
+        }
       }
 
       const isCalisthenic =
@@ -1231,10 +1407,22 @@ const createSessionFromTemplate = (
         sets = sets * 2;
       }
 
-      if (volumeModifier < 1.0) {
-        sets = Math.round(sets * volumeModifier);
+      let slotVolumeModifier = volumeModifier;
+      
+      if (frequencyScale < 1.0) {
+        if (slot.impact === 'high' || isMainLift) {
+           slotVolumeModifier *= frequencyScale;
+        } else if (slot.impact === 'medium') {
+           slotVolumeModifier *= Math.max(0.7, frequencyScale);
+        } else {
+           // isolate accessories: bypass frequency penalty entirely
+        }
+      }
+
+      if (slotVolumeModifier < 1.0) {
+        sets = Math.round(sets * slotVolumeModifier);
         // Safeguard for main lifts to prevent excessive volume drop on frequency shifts
-        if (isMainLift && sets < 2 && volumeModifier > 0.5) {
+        if (isMainLift && sets < 2 && slotVolumeModifier > 0.5) {
           sets = 2;
         }
         sets = Math.max(1, sets);
@@ -1341,9 +1529,9 @@ const createSessionFromTemplate = (
             ? [
                 {
                   id: `s${i}-retention`,
-                  weight: (Math.round((weight * 1.05) / 5) * 5).toString(),
+                  weight: (Math.round(((weight as number) * 1.05) / 5) * 5).toString(),
                   baseWeight: (
-                    Math.round((unmodifiedWeight * 1.05) / 5) * 5
+                    Math.round(((unmodifiedWeight as number) * 1.05) / 5) * 5
                   ).toString(),
                   reps: "1",
                   baseReps: "1",
