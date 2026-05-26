@@ -121,6 +121,15 @@ export const ConditioningTrackerWidget: React.FC<ConditioningTrackerWidgetProps>
         </span>
         <span className="text-volt/40">Unit: Tonnage/Min</span>
       </div>
+
+      <div className="mt-4 flex justify-between items-center px-1 opacity-60">
+        <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">
+          SYS_STATUS: STREAMING
+        </span>
+        <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">
+          REF_ID: COND_TRK
+        </span>
+      </div>
     </div>
   );
 };

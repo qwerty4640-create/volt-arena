@@ -9,6 +9,56 @@ import { cn } from '../lib/utils';
 import { ProgramDetailModal } from './ProgramDetailModal';
 import { calculateTier, getTierStyle } from '../lib/strength';
 
+const formatDigitsToMask = (digits: string, format: 'MM:SS' | 'HH:MM:SS'): string => {
+  if (digits.length === 0) return '';
+  
+  if (format === 'MM:SS') {
+    let formatted = '';
+    for (let i = 0; i < 4; i++) {
+      if (i === 2) formatted += ':';
+      if (i < digits.length) {
+        formatted += digits[i];
+      } else {
+        formatted += '_';
+      }
+    }
+    return formatted;
+  } else {
+    let formatted = '';
+    for (let i = 0; i < 6; i++) {
+      if (i === 2 || i === 4) formatted += ':';
+      if (i < digits.length) {
+        formatted += digits[i];
+      } else {
+        formatted += '_';
+      }
+    }
+    return formatted;
+  }
+};
+
+const handleTimeMaskChange = (
+  newVal: string, 
+  currentVal: string, 
+  format: 'MM:SS' | 'HH:MM:SS'
+): string => {
+  if (!newVal) return '';
+  
+  // If user deleted character(s)
+  if (newVal.length < currentVal.length) {
+    const currentDigits = currentVal.replace(/\D/g, '');
+    if (currentDigits.length > 0) {
+      const newDigits = currentDigits.slice(0, -1);
+      return formatDigitsToMask(newDigits, format);
+    }
+    return '';
+  }
+  
+  const maxDigits = format === 'MM:SS' ? 4 : 6;
+  const digits = newVal.replace(/\D/g, '').slice(0, maxDigits);
+  return formatDigitsToMask(digits, format);
+};
+
 export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
   const { profile, updateProfile, t, unit } = useSettings();
   const { history, resetProgram } = useWorkout();
@@ -77,6 +127,14 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
     deadliftPR: profile?.deadliftPR || 0,
   });
 
+  const [showEnduranceModal, setShowEnduranceModal] = React.useState(false);
+  const [editEnduranceData, setEditEnduranceData] = React.useState({
+    oneMileTime: profile?.oneMileTime || '',
+    fiveMileTime: profile?.fiveMileTime || '',
+    halfMarathonTime: profile?.halfMarathonTime || '',
+    fullMarathonTime: profile?.fullMarathonTime || '',
+  });
+
   // Calculate current training week
   const lastWorkout = (history?.length || 0) > 0 ? history[0] : null;
 
@@ -99,6 +157,22 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
       });
       showToast(t('toast.actionSuccessful'), 3000, 'success');
       setShow1RMModal(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateEndurance = async () => {
+    setLoading(true);
+    try {
+      await updateProfile({
+        oneMileTime: editEnduranceData.oneMileTime,
+        fiveMileTime: editEnduranceData.fiveMileTime,
+        halfMarathonTime: editEnduranceData.halfMarathonTime,
+        fullMarathonTime: editEnduranceData.fullMarathonTime,
+      });
+      showToast(t('toast.actionSuccessful'), 3000, 'success');
+      setShowEnduranceModal(false);
     } finally {
       setLoading(false);
     }
@@ -132,6 +206,12 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
         trainingGoal: profile.trainingGoal || 'powerbuilding',
         trainingObjectives: profile.trainingObjectives || (profile.trainingGoal ? [profile.trainingGoal] : ['powerbuilding']),
         trainingDurationMonths: profile.trainingDurationMonths || 3,
+      });
+      setEditEnduranceData({
+        oneMileTime: profile.oneMileTime || '',
+        fiveMileTime: profile.fiveMileTime || '',
+        halfMarathonTime: profile.halfMarathonTime || '',
+        fullMarathonTime: profile.fullMarathonTime || '',
       });
     }
   }, [profile]);
@@ -236,6 +316,12 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
       )}
       {/* Header Section */}
       <div className="relative border border-white/5 bg-surface-high p-6 md:p-8 mb-8 md:mb-12 shadow-2xl overflow-hidden group">
+        {/* Decorative corner elements for tactical feel */}
+        <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-volt/40 px-0 py-0" />
+        <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-volt/40 px-0 py-0" />
+        <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-volt/40 px-0 py-0" />
+        <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-volt/40 px-0 py-0" />
+
         <div className="absolute top-0 right-0 w-64 h-64 bg-volt/5 blur-3xl -z-10 rounded-full group-hover:bg-volt/10 transition-colors duration-1000" />
         <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-volt/20 to-transparent" />
 
@@ -339,6 +425,15 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
             </div>
           </div>
         </div>
+
+        <div className="flex justify-between items-center mt-8 pt-6 border-t border-white/5 opacity-60 relative z-10">
+          <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">
+            SYS_STATUS: ACTIVE
+          </span>
+          <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">
+            REF_ID: OPERATOR_DOSSIER
+          </span>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -346,56 +441,149 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
-          className="glass-panel px-4 py-8 md:p-6 space-y-6"
+          className="glass-panel px-4 py-8 md:p-6 space-y-6 relative overflow-hidden flex flex-col justify-between"
         >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Trophy className="text-volt" size={20} />
-              <h3 className="font-sans text-sm font-bold uppercase tracking-widest text-white">{t('analysis.performanceMetrics')}</h3>
+          {/* Decorative corner elements for tactical feel */}
+          <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-volt/40" />
+          <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-volt/40" />
+          <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-volt/40" />
+          <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-volt/40" />
+
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Trophy className="text-volt" size={20} />
+                <h3 className="font-sans text-sm font-bold uppercase tracking-widest text-white">{t('analysis.performanceMetrics')}</h3>
+              </div>
+              <button
+                onClick={() => {
+                  setEdit1RMData({
+                    squatPR: profile.squatPR || 0,
+                    benchPR: profile.benchPR || 0,
+                    deadliftPR: profile.deadliftPR || 0,
+                  });
+                  setShow1RMModal(true);
+                }}
+                className="p-2 bg-volt/10 border border-volt/30 text-volt hover:bg-volt/20 hover:border-volt transition-all shadow-[0_0_10px_rgba(0,182,255,0.1)]"
+              >
+                <Edit3 size={14} />
+              </button>
             </div>
-            <button
-              onClick={() => {
-                setEdit1RMData({
-                  squatPR: profile.squatPR || 0,
-                  benchPR: profile.benchPR || 0,
-                  deadliftPR: profile.deadliftPR || 0,
-                });
-                setShow1RMModal(true);
-              }}
-              className="p-2 bg-volt/10 border border-volt/30 text-volt hover:bg-volt/20 hover:border-volt transition-all shadow-[0_0_10px_rgba(0,182,255,0.1)]"
-            >
-              <Edit3 size={14} />
-            </button>
+
+            <div className="space-y-4">
+              <div className="p-8 bg-void/60 border-l-4 border-volt relative overflow-hidden">
+                <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-500 mb-4 relative z-10">{t('analysis.totalLiftWeight')}</p>
+                <div className="flex items-baseline gap-4 relative z-10">
+                  <span className="text-7xl font-sans font-black text-volt tracking-tighter drop-shadow-[0_0_30px_var(--primary-glow)]">
+                    {(profile.squatPR || 0) + (profile.benchPR || 0) + (profile.deadliftPR || 0)}
+                  </span>
+                  <span className="text-sm font-black text-zinc-400 uppercase tracking-[0.2em]">{unit === 'metric' ? 'kg' : 'LBS'}</span>
+                </div>
+                <div className="absolute top-0 right-0 w-48 h-48 bg-volt/5 blur-[80px] rounded-full -mr-24 -mt-24 pointer-events-none" />
+              </div>
+
+              <div className="grid grid-cols-1 gap-3">
+                {stats.filter(s => s.label !== 'Total').map((stat) => (
+                  <div key={stat.label} className="flex items-center justify-between p-4 bg-void/40 border border-white/5 hover:border-volt/20 transition-colors group/item">
+                    <div className="flex items-center gap-4">
+                      <div className={cn("p-2 bg-white/5 transition-all group-hover/item:bg-volt/10", stat.color)}>
+                        <stat.icon size={14} strokeWidth={3} className={cn(stat.glow)} />
+                      </div>
+                      <span className="text-xs font-bold text-white uppercase tracking-widest group-hover:text-volt transition-colors">{stat.label}</span>
+                    </div>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-lg font-sans font-black text-white">{stat.value}</span>
+                      <span className="text-[8px] font-bold text-zinc-400 uppercase">{unit === 'metric' ? 'kg' : 'LBS'}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
-          <div className="space-y-4">
-            <div className="p-8 bg-void/60 border-l-4 border-volt relative overflow-hidden">
-              <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-500 mb-4 relative z-10">{t('analysis.totalLiftWeight')}</p>
-              <div className="flex items-baseline gap-4 relative z-10">
-                <span className="text-7xl font-sans font-black text-volt tracking-tighter drop-shadow-[0_0_30px_var(--primary-glow)]">
-                  {(profile.squatPR || 0) + (profile.benchPR || 0) + (profile.deadliftPR || 0)}
-                </span>
-                <span className="text-sm font-black text-zinc-400 uppercase tracking-[0.2em]">{unit === 'metric' ? 'kg' : 'LBS'}</span>
+          <div className="flex justify-between items-center mt-8 pt-6 border-t border-white/5 opacity-60">
+            <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">
+              SYS_STATUS: ACTIVE
+            </span>
+            <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">
+              REF_ID: STRENGTH_1RM
+            </span>
+          </div>
+        </motion.div>
+
+        {/* Endurance Performance */}
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="glass-panel px-4 py-8 md:p-6 space-y-6 relative overflow-hidden flex flex-col justify-between"
+        >
+          {/* Decorative corner elements for tactical feel */}
+          <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-volt/40" />
+          <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-volt/40" />
+          <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-volt/40" />
+          <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-volt/40" />
+
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Activity className="text-volt" size={20} />
+                <h3 className="font-sans text-sm font-bold uppercase tracking-widest text-white">{t('settings.endurancePRs') || 'Endurance PRs'}</h3>
               </div>
-              <div className="absolute top-0 right-0 w-48 h-48 bg-volt/5 blur-[80px] rounded-full -mr-24 -mt-24 pointer-events-none" />
+              <button
+                onClick={() => {
+                  setEditEnduranceData({
+                    oneMileTime: profile.oneMileTime || '',
+                    fiveMileTime: profile.fiveMileTime || '',
+                    halfMarathonTime: profile.halfMarathonTime || '',
+                    fullMarathonTime: profile.fullMarathonTime || '',
+                  });
+                  setShowEnduranceModal(true);
+                }}
+                className="p-2 bg-volt/10 border border-volt/30 text-volt hover:bg-volt/20 hover:border-volt transition-all shadow-[0_0_10px_rgba(0,182,255,0.1)]"
+              >
+                <Edit3 size={14} />
+              </button>
             </div>
 
-            <div className="grid grid-cols-1 gap-3">
-              {stats.filter(s => s.label !== 'Total').map((stat) => (
-                <div key={stat.label} className="flex items-center justify-between p-4 bg-void/40 border border-white/5 hover:border-volt/20 transition-colors group/item">
-                  <div className="flex items-center gap-4">
-                    <div className={cn("p-2 bg-white/5 transition-all group-hover/item:bg-volt/10", stat.color)}>
-                      <stat.icon size={14} strokeWidth={3} className={cn(stat.glow)} />
-                    </div>
-                    <span className="text-xs font-bold text-white uppercase tracking-widest group-hover:text-volt transition-colors">{stat.label}</span>
-                  </div>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-lg font-sans font-black text-white">{stat.value}</span>
-                    <span className="text-[8px] font-bold text-zinc-400 uppercase">{unit === 'metric' ? 'kg' : 'LBS'}</span>
-                  </div>
+            <div className="space-y-4">
+              <div className="p-8 bg-void/60 border-l-4 border-volt relative overflow-hidden">
+                <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-500 mb-4 relative z-10">{t('settings.aerobicClassification') || 'Aerobic Classification'}</p>
+                <div className="flex items-baseline gap-4 relative z-10">
+                  <span className="text-7xl font-sans font-black text-volt tracking-tighter drop-shadow-[0_0_30px_var(--primary-glow)] uppercase">
+                    {profile.oneMileTime || profile.fiveMileTime || profile.halfMarathonTime || profile.fullMarathonTime ? 'ACTIVE' : 'BASELINE'}
+                  </span>
                 </div>
-              ))}
+                <div className="absolute top-0 right-0 w-48 h-48 bg-volt/5 blur-[80px] rounded-full -mr-24 -mt-24 pointer-events-none" />
+              </div>
+
+              <div className="grid grid-cols-1 gap-3">
+                {[
+                  { label: t('settings.oneMileGoal') || '1 Mile Time', value: profile.oneMileTime || '--:--', color: 'text-volt', glow: 'drop-shadow-[0_0_5px_var(--primary-glow)]' },
+                  { label: t('settings.fiveMileGoal') || '5 Mile Time', value: profile.fiveMileTime || '--:--', color: 'text-volt', glow: 'drop-shadow-[0_0_5px_var(--primary-glow)]' },
+                  { label: t('settings.halfMarathon') || 'Half Marathon', value: profile.halfMarathonTime || '--:--', color: 'text-volt', glow: 'drop-shadow-[0_0_5px_var(--primary-glow)]' },
+                  { label: t('settings.fullMarathon') || 'Full Marathon', value: profile.fullMarathonTime || '--:--', color: 'text-volt', glow: 'drop-shadow-[0_0_5px_var(--primary-glow)]' },
+                ].map((item) => (
+                  <div key={item.label} className="flex items-center justify-between p-4 bg-void/40 border border-white/5 hover:border-volt/20 transition-colors group/item">
+                    <div className="flex items-center gap-4">
+                      <div className={cn("p-2 bg-white/5 transition-all group-hover/item:bg-volt/10", item.color)}>
+                        <Activity size={14} strokeWidth={3} className={cn(item.glow)} />
+                      </div>
+                      <span className="text-xs font-bold text-white uppercase tracking-widest group-hover:text-volt transition-colors">{item.label}</span>
+                    </div>
+                    <span className="text-lg font-sans font-black text-white">{item.value}</span>
+                  </div>
+                ))}
+              </div>
             </div>
+          </div>
+
+          <div className="flex justify-between items-center mt-8 pt-6 border-t border-white/5 opacity-60">
+            <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">
+              SYS_STATUS: ACTIVE
+            </span>
+            <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">
+              REF_ID: ENDURANCE_PERF
+            </span>
           </div>
         </motion.div>
       </div>
@@ -739,6 +927,113 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
                       className="btn-primary flex-2 py-4"
                     >
                       {loading ? t('settings.recalculate') : t('coach.confirm')}
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
+
+      {/* Endurance PRs Adjustment Modal */}
+      {mounted && createPortal(
+        <AnimatePresence>
+          {showEnduranceModal && (
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 overflow-y-auto custom-scrollbar">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setShowEnduranceModal(false)}
+                className="fixed inset-0 bg-void/80 backdrop-blur-sm"
+              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className="relative w-full max-w-md glass-panel p-4 md:p-8 border-volt/30 shadow-2xl my-auto"
+              >
+                <div className="flex items-center gap-4 mb-8">
+                  <div className="p-2 md:p-4 bg-volt/10 text-volt">
+                    <Activity size={32} />
+                  </div>
+                  <div>
+                    <h3 className="font-sans text-2xl font-black uppercase tracking-tight text-white">{t('settings.updateEndurance') || 'Update Endurance'}</h3>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">{t('settings.endurancePRs') || 'Endurance Personal Records'}</p>
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-white">{t('settings.oneMileGoal') || '1 Mile Time'}</label>
+                      <input
+                        type="text"
+                        placeholder="__:__"
+                        value={editEnduranceData.oneMileTime}
+                        onChange={(e) => setEditEnduranceData({ 
+                          ...editEnduranceData, 
+                          oneMileTime: handleTimeMaskChange(e.target.value, editEnduranceData.oneMileTime, 'MM:SS') 
+                        })}
+                        className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-mono text-xl font-black focus:border-volt outline-none transition-all text-center tracking-[0.15em] placeholder-zinc-700"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-white">{t('settings.fiveMileGoal') || '5 Mile Time'}</label>
+                      <input
+                        type="text"
+                        placeholder="__:__"
+                        value={editEnduranceData.fiveMileTime}
+                        onChange={(e) => setEditEnduranceData({ 
+                          ...editEnduranceData, 
+                          fiveMileTime: handleTimeMaskChange(e.target.value, editEnduranceData.fiveMileTime, 'MM:SS') 
+                        })}
+                        className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-mono text-xl font-black focus:border-volt outline-none transition-all text-center tracking-[0.15em] placeholder-zinc-700"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-white">{t('settings.halfMarathon') || 'Half Marathon'}</label>
+                      <input
+                        type="text"
+                        placeholder="__:__:__"
+                        value={editEnduranceData.halfMarathonTime}
+                        onChange={(e) => setEditEnduranceData({ 
+                          ...editEnduranceData, 
+                          halfMarathonTime: handleTimeMaskChange(e.target.value, editEnduranceData.halfMarathonTime, 'HH:MM:SS') 
+                        })}
+                        className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-mono text-xl font-black focus:border-volt outline-none transition-all text-center tracking-[0.15em] placeholder-zinc-700"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-white">{t('settings.fullMarathon') || 'Full Marathon'}</label>
+                      <input
+                        type="text"
+                        placeholder="__:__:__"
+                        value={editEnduranceData.fullMarathonTime}
+                        onChange={(e) => setEditEnduranceData({ 
+                          ...editEnduranceData, 
+                          fullMarathonTime: handleTimeMaskChange(e.target.value, editEnduranceData.fullMarathonTime, 'HH:MM:SS') 
+                        })}
+                        className="w-full bg-surface-container-lowest border-b-2 border-white/5 p-4 text-white font-mono text-xl font-black focus:border-volt outline-none transition-all text-center tracking-[0.15em] placeholder-zinc-700"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex gap-4">
+                    <button
+                      onClick={() => setShowEnduranceModal(false)}
+                      className="btn-secondary flex-1 py-4"
+                    >
+                      {t('common.close') || 'Close'}
+                    </button>
+                    <button
+                      onClick={handleUpdateEndurance}
+                      disabled={loading}
+                      className="btn-primary flex-2 py-4"
+                    >
+                      {loading ? t('settings.recalculate') || 'Saving...' : t('coach.confirm') || 'Confirm'}
                     </button>
                   </div>
                 </div>

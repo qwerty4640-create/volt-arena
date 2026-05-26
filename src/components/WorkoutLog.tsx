@@ -420,6 +420,9 @@ const LiveMissionHeader = ({
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
 
+  const calibration = getCalibrationStatus();
+  const prescribedRpeValue = currentSession?.prescribedRpe || calibration.recommendedRpe || '–';
+
   const estimatedCalories = (() => {
     if (!currentSession) return 0;
     const durationMins = elapsedMs / 60000;
@@ -432,8 +435,9 @@ const LiveMissionHeader = ({
     <MissionHeader
       title={currentSession.title}
       breadcrumb={t('workout.missionLog')}
-      readiness={getCalibrationStatus().readiness}
+      readiness={calibration.readiness}
       targetRpe={currentSession.targetRpe || '–'}
+      prescribedRpe={prescribedRpeValue}
       time={formatDuration(elapsedMs)}
       calories={estimatedCalories}
       onBack={onBack}
@@ -510,7 +514,6 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
     // Determine values considering potential updates
     const actualRpe = parseFloat(updatedRpe ?? currentSet.rpe ?? '');
     const actualReps = parseInt(updatedReps ?? currentSet.reps ?? '0') || 0;
-    const actualWeight = parseFloat(updatedWeight ?? currentSet.weight ?? '0') || 0;
     
     const isCompleted = currentSet.isCompleted;
 
@@ -519,18 +522,14 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
       return { nextExercises: exercises, willAutoRegulate: false };
     }
 
-    const prescribedWeight = parseFloat(currentSet.baseWeight || currentSet.weight) || 0;
     const prescribedReps = parseInt(currentSet.baseReps || currentSet.reps) || 0;
-
-    let weightRatio = 1;
-    if (prescribedWeight > 0 && actualWeight > 0) weightRatio = actualWeight / prescribedWeight;
     
     let repFactor = 1;
     if (prescribedReps > 0 && actualReps > 0) repFactor = 1 + (actualReps - prescribedReps) * 0.03;
 
     const rpeDiff = actualRpe - targetRpe;
-    const adjustmentFactor = 1 - (rpeDiff * 0.04);
-    let totalFactor = weightRatio * repFactor * adjustmentFactor;
+    const adjustmentFactor = 1 - (rpeDiff * 0.05); // 5% drop per RPE point over
+    let totalFactor = repFactor * adjustmentFactor;
 
     const isRepFailure = actualReps < prescribedReps && actualReps > 0;
     if (isRepFailure && rpeDiff >= 0) totalFactor *= 0.95;

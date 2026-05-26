@@ -324,7 +324,13 @@ export const BlockWidget = ({}: BlockWidgetProps) => {
   };
 
   return (
-    <div className="glass-panel px-4 py-6 md:p-8 border-none flex flex-col justify-between h-full relative overflow-hidden min-w-0">
+    <div className="glass-panel dot-grid-bg px-4 py-6 md:p-8 border-none flex flex-col justify-between h-full relative overflow-hidden min-w-0">
+      {/* Decorative corner elements for tactical feel */}
+      <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-volt/40 px-0 py-0" />
+      <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-volt/40 px-0 py-0" />
+      <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-volt/40 px-0 py-0" />
+      <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-volt/40 px-0 py-0" />
+
       <div className="absolute top-0 right-0 w-24 h-24 bg-volt/5 blur-[40px] -z-10" />
 
       <div className="flex flex-col mb-6 md:mb-8 relative z-10">
@@ -486,16 +492,7 @@ export const BlockWidget = ({}: BlockWidgetProps) => {
             </div>
           </div>
         </div>
-        {/*}
-                <div className="space-y-4">
-                    <div className="flex items-center gap-2 mb-2">
-                        <Info size={12} className="text-zinc-500" />
-                        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
-                            {hoveredWeekData ? `Week ${hoveredWeekData.week} Focus` : 'Current Focus'}
-                        </span>
-                    </div>
-                </div>
-{*/}
+        
         {/* Intensity & Performance Graph */}
         <div className="flex flex-col">
           <div className="flex justify-between items-end mb-4 vanguard-tour-intensity-curve">
@@ -643,6 +640,15 @@ export const BlockWidget = ({}: BlockWidgetProps) => {
               </AreaChart>
             </ResponsiveContainer>
           </div>
+        </div>
+
+        <div className="flex justify-between items-center mt-auto pt-6 border-t border-white/5 opacity-60">
+          <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">
+            SYS_STATUS: ACTIVE
+          </span>
+          <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">
+            REF_ID: DEP_PROG
+          </span>
         </div>
 
         <button

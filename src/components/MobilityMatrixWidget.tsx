@@ -23,6 +23,11 @@ export const MobilityMatrixWidget: React.FC<MobilityMatrixWidgetProps> = ({ work
 
   return (
     <div className="glass-panel p-4 h-full flex flex-col border border-white/5 relative overflow-hidden">
+      {/* Decorative corner elements for tactical feel */}
+      <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-volt/40" />
+      <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-volt/40" />
+      <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-volt/40" />
+      <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-volt/40" />
       {/* Tactical UI elements */}
       <div className="absolute top-0 right-0 p-2 opacity-20">
         <div className="flex flex-col items-end gap-1">
@@ -115,6 +120,15 @@ export const MobilityMatrixWidget: React.FC<MobilityMatrixWidgetProps> = ({ work
           <div className="w-2 h-0.5 bg-volt/30" />
           <span>Active Matrix</span>
         </div>
+      </div>
+
+      <div className="mt-4 flex justify-between items-center px-1 opacity-60">
+        <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">
+          SYS_STATUS: MEASURED
+        </span>
+        <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">
+          REF_ID: MOB_MTX
+        </span>
       </div>
     </div>
   );

@@ -213,7 +213,11 @@
 
 @layer components {
   .btn-primary {
-    @apply bg-volt text-void font-headline text-xs md:text-sm font-black uppercase tracking-widest hover:bg-white hover:shadow-[0_0_20px_var(--primary-glow)] hover:brightness-110 active:scale-95 active:brightness-90 transition-all flex items-center justify-center gap-2;
+    @apply bg-volt text-void font-headline text-xs md:text-sm font-black uppercase tracking-widest hover:shadow-[0_0_20px_var(--primary-glow)] active:scale-95 active:brightness-90 transition-all flex items-center justify-center gap-2;
+  }
+
+  .btn-primary:hover {
+    background-color: color-mix(in srgb, var(--primary-color) 70%, black 30%) !important;
   }
 
   .btn-secondary {
@@ -243,6 +247,16 @@
 
   .glass-panel {
     @apply bg-surface-variant/40 backdrop-blur-[40px];
+  }
+
+  .dot-grid-bg {
+    background-image: radial-gradient(color-mix(in srgb, var(--primary-color, #00b6ff) 3%, transparent) 1px, transparent 1px);
+    background-size: 20px 20px;
+    transition: background-image 0.5s ease-in-out;
+  }
+
+  .dot-grid-bg:hover {
+    background-image: radial-gradient(color-mix(in srgb, var(--primary-color, #00b6ff) 5%, transparent) 1px, transparent 1px);
   }
 
   .volt-glow {
@@ -720,6 +734,7 @@
 }
 
 /* Primary Button Global Overrides for Light Themes */
+:root[data-theme="light"] .btn-primary,
 :root[data-theme="light"] button.bg-volt,
 :root[data-theme="light"] button.bg-crimson {
   background-color: var(--primary-color) !important;
@@ -727,13 +742,16 @@
   box-shadow: 0 0 20px var(--primary-glow) !important;
 }
 
+:root[data-theme="light"] .btn-primary:hover,
 :root[data-theme="light"] button.bg-volt:hover,
 :root[data-theme="light"] button.bg-crimson:hover {
-  filter: brightness(1.2);
+  background-color: color-mix(in srgb, var(--primary-color) 70%, black 30%) !important;
+  filter: none !important;
   box-shadow: 0 0 30px var(--primary-glow) !important;
 }
 
 /* Specific fix for text-void legibility on primary buttons in light mode */
+:root[data-theme="light"] .btn-primary,
 :root[data-theme="light"] button.bg-volt,
 :root[data-theme="light"] button.bg-crimson {
   text-shadow: none !important;
@@ -967,3 +985,24 @@
   display: inline-block;
   animation: glitch-skew 0.5s infinite linear alternate-reverse;
 }
+
+/* Custom battery charging animation */
+@keyframes batteryChargeFlash {
+  0%, 100% {
+    opacity: 1;
+    background-color: rgba(16, 185, 129, 0.25);
+    border-color: rgba(16, 185, 129, 0.4);
+    box-shadow: 0 0 10px 2px rgba(16, 185, 129, 0.35);
+  }
+  50% {
+    opacity: 0.4;
+    background-color: rgba(16, 185, 129, 0.05);
+    border-color: rgba(16, 185, 129, 0.15);
+    box-shadow: 0 0 0px 0px rgba(16, 185, 129, 0);
+  }
+}
+
+.animate-battery-charge {
+  animation: batteryChargeFlash 3s infinite ease-in-out;
+}
+

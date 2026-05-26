@@ -23,7 +23,8 @@ import {
     Edit2,
     Trash2,
     Waypoints,
-    AlertTriangle
+    AlertTriangle,
+    Navigation
 } from 'lucide-react';
 import {
     BarChart,
@@ -135,29 +136,47 @@ const ReadinessTrendWidget = () => {
         const timeFilteredHistory = filterDataByRange(history || [], timeFrame)
             .sort((a, b) => (a.completedAt || 0) - (b.completedAt || 0));
 
-        return timeFilteredHistory.map(session => {
-            let sessionVolume = 0;
-            session.exercises?.forEach((ex: any) => {
-                ex.sets?.forEach((s: any) => {
-                    if (s.isCompleted) {
-                        sessionVolume += (parseFloat(s.weight) || 0) * (parseInt(s.reps) || 0);
-                    }
-                });
-            });
+        // Group by week
+        const weeklyData: { [key: string]: any } = {};
 
-            return {
-                date: session.date,
-                title: session.title,
-                timestamp: session.completedAt || new Date(session.date).getTime(),
-                displayDate: new Date(session.completedAt || session.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-                fullDate: new Date(session.completedAt || session.date).toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' }),
-                Readiness: session.readiness != null ? session.readiness : 0,
-                Fatigue: session.fatigue != null ? (5 - session.fatigue) * 20 : 0,
-                Sleep: session.sleep != null ? (5 - session.sleep) * 20 : 0,
-                Stress: session.stress != null ? (5 - session.stress) * 20 : 0,
-                SessionVolume: sessionVolume
-            };
+        timeFilteredHistory.forEach(session => {
+            const date = new Date(session.completedAt || session.date);
+            // Get start of week (Sunday)
+            const weekStart = new Date(date);
+            weekStart.setDate(date.getDate() - date.getDay());
+            weekStart.setHours(0, 0, 0, 0);
+            
+            const weekKey = weekStart.toISOString();
+
+            if (!weeklyData[weekKey]) {
+                weeklyData[weekKey] = {
+                    date: weekStart,
+                    timestamp: weekStart.getTime(),
+                    displayDate: weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                    fullDate: `Week of ${weekStart.toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}`,
+                    ReadinessSum: 0,
+                    FatigueSum: 0,
+                    SleepSum: 0,
+                    StressSum: 0,
+                    Count: 0
+                };
+            }
+
+            weeklyData[weekKey].ReadinessSum += session.readiness || 0;
+            weeklyData[weekKey].FatigueSum += session.fatigue != null ? (5 - session.fatigue) * 20 : 0;
+            weeklyData[weekKey].SleepSum += session.sleep != null ? (5 - session.sleep) * 20 : 0;
+            weeklyData[weekKey].StressSum += session.stress != null ? (5 - session.stress) * 20 : 0;
+            weeklyData[weekKey].Count += 1;
         });
+
+        // Convert to array and average
+        return Object.values(weeklyData).map(week => ({
+            ...week,
+            Readiness: week.ReadinessSum / week.Count,
+            Fatigue: week.FatigueSum / week.Count,
+            Sleep: week.SleepSum / week.Count,
+            Stress: week.StressSum / week.Count,
+        })).sort((a, b) => a.timestamp - b.timestamp);
     }, [history, timeFrame]);
 
     const ReadinessTooltip = ({ active, payload }: any) => {
@@ -170,7 +189,6 @@ const ReadinessTrendWidget = () => {
                         <div>
                             <p className="text-[8px] font-black uppercase tracking-[0.3em] text-zinc-500 mb-1">{t('analysis.telemetryLog')}</p>
                             <p className="text-xs font-black uppercase text-white">{data.fullDate}</p>
-                            <p className="text-[10px] font-black uppercase tracking-tight text-volt mt-1">{data.title}</p>
                         </div>
                         <div className="space-y-2 pt-3 border-t border-white/5">
                             {payload.filter((entry: any) => entry.value !== null && entry.value !== undefined).map((entry: any, index: number) => (
@@ -180,24 +198,13 @@ const ReadinessTrendWidget = () => {
                                         <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">{entry.name}</span>
                                     </div>
                                     <span className="text-sm font-black text-white">
-                                        {entry.value}
+                                        {Math.round(entry.value)}
                                         {['READINESS', 'SLEEP', 'FATIGUE', 'STRESS', 'SLEEP DEFICIT'].includes(entry.name?.toUpperCase()) || entry.dataKey === 'Sleep'
                                             ? '%' 
                                             : ''}
                                     </span>
                                 </div>
                             ))}
-                            {data.SessionVolume !== undefined && (
-                                <div className="flex items-center justify-between gap-4 border-t border-white/5 pt-2 mt-2">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-1.5 h-1.5 bg-[#facc15]" />
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">{t('analysis.sessionVolume')}</span>
-                                    </div>
-                                    <span className="text-sm font-black text-white">
-                                        {data.SessionVolume} {weightUnit}
-                                    </span>
-                                </div>
-                            )}
                         </div>
                     </div>
                 </div>
@@ -208,6 +215,11 @@ const ReadinessTrendWidget = () => {
 
     return (
         <div className="w-full glass-panel px-4 py-6 md:p-8 flex flex-col relative group/module overflow-hidden h-full vanguard-tour-readiness-trend">
+            {/* Decorative corner elements for tactical feel */}
+            <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-volt/40" />
+            <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-volt/40" />
+            <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-volt/40" />
+            <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-volt/40" />
             <div className="absolute inset-0 opacity-[0.03] pointer-events-none group-hover/module:opacity-[0.05] transition-opacity duration-700"
                 style={{ backgroundImage: 'radial-gradient(var(--primary-color) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6 relative z-10">
@@ -322,6 +334,15 @@ const ReadinessTrendWidget = () => {
                         <p className="text-[10px] font-black uppercase tracking-[0.2em]">{t('analysis.insufficientData')}</p>
                     </div>
                 )}
+            </div>
+
+            <div className="mt-6 flex justify-between items-center px-1 opacity-60 w-full z-10">
+                <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em] text-zinc-500">
+                    SYS_STATUS: ACTIVE
+                </span>
+                <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em] text-zinc-500">
+                    REF_ID: RDNS_TREND
+                </span>
             </div>
         </div>
     );
@@ -521,22 +542,30 @@ export const ReadinessAnalysisWidget = () => {
 
     return (
         <div className="w-full glass-panel px-4 py-6 md:p-8 flex flex-col relative group/module overflow-hidden h-full">
+            {/* Decorative corner elements for tactical feel */}
+            <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-volt/40" />
+            <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-volt/40" />
+            <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-volt/40" />
+            <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-volt/40" />
             <div className="absolute inset-0 opacity-[0.03] pointer-events-none group-hover/module:opacity-[0.05] transition-opacity duration-700"
                 style={{ backgroundImage: 'radial-gradient(var(--primary-color) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
 
             {/* Header: title + readiness score + recalibrate button */}
-            <div className="flex items-start justify-between mb-4 md:mb-6 relative z-10 w-full gap-4">
-                    <div className="flex flex-col w-full">
-                        <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight">
-                            {t('analysis.recoveryAnalysis')}
-                        </h2>
-                        <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed mb-8 md:mb-10">
-                            Bio-mechanical readiness is system-managed based on historical training volume.
-                        </p>
+            <div className="flex items-start justify-between mb-8 md:mb-12 relative z-10 w-full gap-4">
+                <div className="flex flex-col">
+                    <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight mb-2">
+                        {t('analysis.recoveryAnalysis')}
+                    </h2>
+                    <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed">
+                        Bio-mechanical readiness is system-managed based on historical training volume.
+                    </p>
+                </div>
+            </div>
 
-                        {/* Bar Chart Visualization - Single Stacked Bar */}
-                        {readinessScore !== null && (
-                            <div className="w-full flex flex-col mb-16">
+            {/* Content Container */}
+            {/* Bar Chart Visualization - Single Stacked Bar */}
+            {readinessScore !== null && (
+                <div className="w-full flex flex-col mb-16">
                                 <div className="h-12 w-full max-w-4xl -ml-2 relative group/barchart">
                                     <ResponsiveContainer width="100%" height="100%" style={{ overflow: 'visible' }}>
                                         <BarChart 
@@ -665,8 +694,6 @@ export const ReadinessAnalysisWidget = () => {
                                 )}
                             </div>
                         </div>
-                    </div>
-                </div>
 
                 {calibration.overtrainingRisk !== 'none' && (
                     <div className={cn(
@@ -691,7 +718,7 @@ export const ReadinessAnalysisWidget = () => {
                 )}
 
                 {/* 4-column grid: Fatigue | Sleep | Stress | Volume */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 relative z-10 w-full flex-1">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mt-10 md:mt-16 lg:mt-24 relative z-10 w-full flex-1">
 
                     {/* Fatigue */}
                     <FactorColumn
@@ -745,7 +772,15 @@ export const ReadinessAnalysisWidget = () => {
                     </div>
                 </div>
 
+            <div className="mt-6 flex justify-between items-center px-1 opacity-60 w-full z-10">
+                <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em] text-zinc-500">
+                    SYS_STATUS: CALIBRATED
+                </span>
+                <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em] text-zinc-500">
+                    REF_ID: RDNS_ANALYSIS
+                </span>
             </div>
+        </div>
     );
 };
 
@@ -768,7 +803,12 @@ export const RecoveryWidget = () => {
     const statusColor = getStatusColor(scoreValue);
 
     return (
-        <div className="glass-panel px-4 py-6 md:p-8 border-none flex flex-col items-center justify-between text-center h-full">
+        <div className="glass-panel px-4 py-6 md:p-8 border-none flex flex-col items-center justify-between text-center h-full relative overflow-hidden">
+            {/* Decorative corner elements for tactical feel */}
+            <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-volt/40" />
+            <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-volt/40" />
+            <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-volt/40" />
+            <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-volt/40" />
             <div className="w-full flex justify-between items-center mb-2 xl:mb-4">
                 <div className="flex items-center gap-2">
                     <span className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500">
@@ -962,7 +1002,12 @@ const VolumeWidget = () => {
     }, [volumeData]);
 
     return (
-        <div className="glass-panel px-4 py-6 md:p-8 border-none space-y-4 xl:space-y-8 h-full">
+        <div className="glass-panel px-4 py-6 md:p-8 border-none space-y-4 xl:space-y-8 h-full relative overflow-hidden">
+            {/* Decorative corner elements for tactical feel */}
+            <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-volt/40" />
+            <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-volt/40" />
+            <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-volt/40" />
+            <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-volt/40" />
             <div className="flex justify-between items-center">
                 <span className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500">{t('analysis.weeklyAccumulatedVolume')}</span>
             </div>
@@ -1018,7 +1063,12 @@ const MacrosWidget = () => {
     ] : [];
 
     return (
-        <div className="glass-panel px-4 py-6 md:p-8 border-none space-y-4 xl:space-y-8 h-full flex flex-col">
+        <div className="glass-panel px-4 py-6 md:p-8 border-none space-y-4 xl:space-y-8 h-full flex flex-col relative overflow-hidden">
+            {/* Decorative corner elements for tactical feel */}
+            <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-volt/40" />
+            <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-volt/40" />
+            <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-volt/40" />
+            <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-volt/40" />
             <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2">
                     <span className="text-[10px] font-black uppercase tracking-[0.3em] text-volt drop-shadow-[0_0_8px_var(--primary-glow)]">{t('analysis.macroDistribution')}</span>
@@ -1103,10 +1153,19 @@ export const ExternalActivityWidget = ({ externalTimeFrame, onTimeFrameChange }:
 
     return (
         <div className="glass-panel px-4 py-6 md:p-8 h-full flex flex-col relative overflow-hidden group/module w-full min-w-0">
+            {/* Decorative corner elements for tactical feel */}
+            <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-volt/40" />
+            <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-volt/40" />
+            <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-volt/40" />
+            <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-volt/40" />
             <div className="absolute inset-0 opacity-[0.03] pointer-events-none group-hover/module:opacity-[0.05] transition-opacity duration-700"
                 style={{ backgroundImage: 'radial-gradient(var(--primary-color) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4 relative z-10 w-full">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-start mb-8 gap-4 relative z-10 w-full">
                 <div className="mb-4">
+                    <div className="flex items-center gap-2 mb-4">
+                        <Navigation className="text-volt" size={16} />
+                        <span className="text-[10px] font-black uppercase tracking-widest text-volt">FIELD PROTOCOL</span>
+                    </div>
                     <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight">{t('analysis.tacticalIntegration')}</h2>
                     <p className="text-zinc-500 text-xs font-medium mt-2">{t('analysis.tacticalIntegrationDesc')}</p>
                 </div>

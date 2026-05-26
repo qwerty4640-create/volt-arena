@@ -94,6 +94,7 @@ export interface WorkoutSession {
   completedAt?: number;
   rpe?: number;
   targetRpe?: number;
+  prescribedRpe?: number;
   actualRpe?: number; // Post-session reflection
   reflectionSaved?: boolean;
   readiness?: number;
@@ -2397,13 +2398,18 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({
       }
     }
 
+    session.prescribedRpe = calibration.recommendedRpe;
+    if (session.targetRpe === undefined) {
+      session.targetRpe = targetRpe || calibration.recommendedRpe;
+    }
+
     if (
       !calibration.isRedline &&
       readinessScore !== undefined &&
       readinessModifier !== undefined
     ) {
       session.readiness = readinessScore;
-      session.targetRpe = targetRpe;
+      session.targetRpe = targetRpe || calibration.recommendedRpe;
 
       // Apply the modifier to the weights
       session.exercises = (session.exercises || []).map((ex) => {

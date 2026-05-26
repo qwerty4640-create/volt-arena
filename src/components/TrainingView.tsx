@@ -464,11 +464,17 @@ export const TrainingView = ({
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.1 }}
         className={cn(
-          "col-span-1 md:col-span-2 lg:col-span-3 shrink-0 glass-panel px-4 py-6 md:p-8 relative overflow-hidden flex flex-col transition-all duration-500 w-full vanguard-tour-next-mission",
+          "col-span-1 md:col-span-2 lg:col-span-3 shrink-0 glass-panel dot-grid-bg px-4 py-6 md:p-8 relative overflow-hidden flex flex-col transition-all duration-500 w-full vanguard-tour-next-mission",
           isElite && "border-volt/50",
           isAdvanced && "border-yellow-500/30"
         )}
       >
+        {/* Decorative corner elements for tactical feel */}
+        <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-volt/40 px-0 py-0" />
+        <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-volt/40 px-0 py-0" />
+        <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-volt/40 px-0 py-0" />
+        <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-volt/40 px-0 py-0" />
+
         <div className="flex flex-col md:flex-row justify-between items-start mb-6 md:mb-8 relative z-10 gap-4 md:gap-0">
           <div>
             <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-2 md:mb-4">
@@ -737,9 +743,15 @@ export const TrainingView = ({
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.2 }}
-        className="col-span-1 md:col-span-2 lg:col-span-3 shrink-0 glass-panel p-4 md:p-8 flex flex-col w-full vanguard-tour-upcoming-missions"
+        className="col-span-1 md:col-span-2 lg:col-span-3 shrink-0 glass-panel dot-grid-bg p-4 md:p-8 flex flex-col w-full relative overflow-hidden vanguard-tour-upcoming-missions"
       >
-        <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight mb-2">{t('analysis.upcomingMissions')}</h2>
+        {/* Decorative corner elements for tactical feel */}
+        <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-volt/40 px-0 py-0" />
+        <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-volt/40 px-0 py-0" />
+        <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-volt/40 px-0 py-0" />
+        <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-volt/40 px-0 py-0" />
+
+        <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight mb-2 relative z-10">{t('analysis.upcomingMissions')}</h2>
         <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed mb-8">
           Preview upcoming mission details before next mission. Mission details can be changed depending on individual deployment progression.
         </p>
@@ -799,6 +811,15 @@ export const TrainingView = ({
           <span>{t('analysis.viewMoreDetails')}</span>
           <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform text-volt" />
         </button>
+
+        <div className="mt-4 flex justify-between items-center px-1 opacity-60">
+          <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">
+            SYS_STATUS: PROJECTED
+          </span>
+          <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">
+            REF_ID: W{Math.floor(((upcomingMissionNums[0] || (nextMissionBase + 1)) - 1) / (profile?.trainingFrequency || 3)) + 1}D{(((upcomingMissionNums[0] || (nextMissionBase + 1)) - 1) % (profile?.trainingFrequency || 3)) + 1}
+          </span>
+        </div>
       </motion.div>
 
       {/* My PRs Module */}
@@ -807,9 +828,15 @@ export const TrainingView = ({
         animate={{ y: 0, opacity: 1 }}
         exit={{ opacity: 0, y: -20 }}
         transition={{ delay: 0.3 }}
-        className="col-span-1 md:col-span-2 lg:col-span-3 shrink-0 glass-panel p-4 md:p-8 flex flex-col w-full vanguard-tour-prs"
+        className="col-span-1 md:col-span-2 lg:col-span-3 shrink-0 glass-panel dot-grid-bg p-4 md:p-8 flex flex-col w-full relative overflow-hidden vanguard-tour-prs"
       >
-        <div className="flex items-center gap-3">
+        {/* Decorative corner elements for tactical feel */}
+        <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-volt/40 px-0 py-0" />
+        <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-volt/40 px-0 py-0" />
+        <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-volt/40 px-0 py-0" />
+        <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-volt/40 px-0 py-0" />
+
+        <div className="flex items-center gap-3 relative z-10">
           <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight mb-2">{t('analysis.myPRs')}</h2>
 
         </div>
@@ -918,9 +945,15 @@ export const TrainingView = ({
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.4 }}
-        className="col-span-1 md:col-span-2 lg:col-span-3 shrink-0 glass-panel p-4 md:p-8 flex flex-col w-full vanguard-tour-past-missions"
+        className="col-span-1 md:col-span-2 lg:col-span-3 shrink-0 glass-panel dot-grid-bg p-4 md:p-8 flex flex-col w-full relative overflow-hidden vanguard-tour-past-missions"
       >
-        <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight mb-2">{t('analysis.missionLogs')}</h2>
+        {/* Decorative corner elements for tactical feel */}
+        <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-volt/40 px-0 py-0" />
+        <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-volt/40 px-0 py-0" />
+        <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-volt/40 px-0 py-0" />
+        <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-volt/40 px-0 py-0" />
+
+        <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight mb-2 relative z-10">{t('analysis.missionLogs')}</h2>
         <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed mb-8">{t('analysis.missionLogsDesc')}</p>
 
         {hasHistory ? (
@@ -982,9 +1015,15 @@ export const TrainingView = ({
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.45 }}
-        className="col-span-1 md:col-span-2 lg:col-span-3 shrink-0 glass-panel p-4 md:p-8 flex flex-col w-full"
+        className="col-span-1 md:col-span-2 lg:col-span-3 shrink-0 glass-panel dot-grid-bg p-4 md:p-8 flex flex-col w-full relative overflow-hidden"
       >
-        <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight mb-2">{t('analysis.missionLibrary')}</h2>
+        {/* Decorative corner elements for tactical feel */}
+        <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-volt/40 px-0 py-0" />
+        <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-volt/40 px-0 py-0" />
+        <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-volt/40 px-0 py-0" />
+        <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-volt/40 px-0 py-0" />
+
+        <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight mb-2 relative z-10">{t('analysis.missionLibrary')}</h2>
         <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed mb-8">{t('analysis.missionLibraryDesc')}</p>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 bg-void/30 p-4 border border-white/5">
@@ -1118,9 +1157,15 @@ export const TrainingView = ({
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.5 }}
-        className="col-span-1 md:col-span-2 lg:col-span-3 shrink-0 glass-panel p-4 md:p-8 flex flex-col w-full"
+        className="col-span-1 md:col-span-2 lg:col-span-3 shrink-0 glass-panel dot-grid-bg p-4 md:p-8 flex flex-col w-full relative overflow-hidden"
       >
-        <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight mb-2">{t('settings.fieldManual')}</h2>
+        {/* Decorative corner elements for tactical feel */}
+        <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-volt/40 px-0 py-0" />
+        <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-volt/40 px-0 py-0" />
+        <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-volt/40 px-0 py-0" />
+        <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-volt/40 px-0 py-0" />
+
+        <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight mb-2 relative z-10">{t('settings.fieldManual')}</h2>
         <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed mb-8">{t('analysis.fieldManualDesc')}</p>
 
         <div className="grid grid-cols-1 gap-4 mb-6 bg-void/30 p-4 border border-white/5">

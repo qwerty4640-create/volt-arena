@@ -86,32 +86,49 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
           initial={{ y: -10, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.05 }}
-          className="relative overflow-hidden glass-panel"
+          className="relative overflow-hidden glass-panel dot-grid-bg"
         >
+          {/* Decorative corner elements for tactical feel */}
+          <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-volt/40" />
+          <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-volt/40" />
+          <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-volt/40" />
+          <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-volt/40" />
+
           <button
             onClick={onNavigateToProfile}
-            className="w-full px-4 py-4 md:p-8 flex items-center justify-between hover:bg-volt/[0.06] transition-all group active:scale-[0.995] vanguard-tour-profile"
+            className="w-full px-4 py-4 md:p-8 flex flex-col hover:bg-volt/[0.06] transition-all group active:scale-[0.995] vanguard-tour-profile gap-6"
           >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-volt/10 flex items-center justify-center border border-volt/20 group-hover:border-volt/50 transition-colors overflow-hidden">
-                {profile?.photoURL ? (
-                  <img src={profile.photoURL} alt="Profile" className="w-full h-full object-cover aspect-square" />
-                ) : (
-                  <User size={20} className="text-volt" />
-                )}
+            <div className="flex items-center justify-between w-full">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-volt/10 flex items-center justify-center border border-volt/20 group-hover:border-volt/50 transition-colors overflow-hidden">
+                  {profile?.photoURL ? (
+                    <img src={profile.photoURL} alt="Profile" className="w-full h-full object-cover aspect-square" />
+                  ) : (
+                    <User size={20} className="text-volt" />
+                  )}
+                </div>
+                <div className="text-left">
+                  <h3 className="font-sans text-xl font-black uppercase tracking-tight text-white group-hover:text-volt transition-colors">
+                    {profile?.firstName && profile?.lastName
+                      ? `${profile.firstName} ${profile.lastName}`
+                      : profile?.firstName || profile?.lastName || 'Athlete Profile'}
+                  </h3>
+                  <p className="text-xs text-zinc-500 font-medium mt-1">View performance metrics and biometrics.</p>
+                </div>
               </div>
-              <div className="text-left">
-                <h3 className="font-sans text-xl font-black uppercase tracking-tight text-white group-hover:text-volt transition-colors">
-                  {profile?.firstName && profile?.lastName
-                    ? `${profile.firstName} ${profile.lastName}`
-                    : profile?.firstName || profile?.lastName || 'Athlete Profile'}
-                </h3>
-                <p className="text-xs text-zinc-500 font-medium mt-1">View performance metrics and biometrics.</p>
+              <div className="flex items-center gap-2 text-zinc-500 group-hover:text-volt transition-colors">
+                <span className="text-[10px] font-black uppercase tracking-widest hidden sm:block">Open Profile</span>
+                <ChevronRight size={24} className="text-volt group-hover:scale-110 transition-transform" />
               </div>
             </div>
-            <div className="flex items-center gap-2 text-zinc-500 group-hover:text-volt transition-colors">
-              <span className="text-[10px] font-black uppercase tracking-widest hidden sm:block">Open Profile</span>
-              <ChevronRight size={24} className="text-volt group-hover:scale-110 transition-transform" />
+
+            <div className="flex justify-between items-center w-full pt-6 border-t border-white/5 opacity-60">
+              <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">
+                SYS_STATUS: ACTIVE
+              </span>
+              <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">
+                REF_ID: OPERATOR_PROFILE
+              </span>
             </div>
           </button>
         </motion.div>
@@ -123,8 +140,13 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.12 }}
-          className="glass-panel px-4 py-6 md:p-8 flex flex-col md:col-span-2 border-b border-white/5 vanguard-tour-visual-output"
+          className="glass-panel dot-grid-bg px-4 py-6 md:p-8 flex flex-col md:col-span-2 border-b border-white/5 vanguard-tour-visual-output relative overflow-hidden"
         >
+          {/* Decorative corner elements for tactical feel */}
+          <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-volt/40" />
+          <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-volt/40" />
+          <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-volt/40" />
+          <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-volt/40" />
           <div className="flex items-center gap-3 mb-6 md:mb-8">
             <SunMoon className="text-volt" size={20} />
             <h3 className="font-sans text-sm font-bold uppercase tracking-widest text-white">Visual Output</h3>
@@ -229,6 +251,14 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
               </div>
             )}
           </div>
+          <div className="flex justify-between items-center mt-auto pt-6 border-t border-white/5 opacity-60">
+            <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">
+              SYS_STATUS: ACTIVE
+            </span>
+            <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">
+              REF_ID: VISUAL_OUT
+            </span>
+          </div>
         </motion.div>
 
         {/* Language Settings */}
@@ -266,8 +296,13 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.1 }}
-          className="glass-panel px-4 py-6 md:p-8 flex flex-col vanguard-tour-unit-measure"
+          className="glass-panel dot-grid-bg px-4 py-6 md:p-8 flex flex-col vanguard-tour-unit-measure relative overflow-hidden"
         >
+          {/* Decorative corner elements for tactical feel */}
+          <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-volt/40" />
+          <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-volt/40" />
+          <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-volt/40" />
+          <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-volt/40" />
           <div className="flex items-center gap-3 mb-6 md:mb-8">
             <Scale className="text-volt" size={20} />
             <h3 className="font-sans text-sm font-bold uppercase tracking-widest text-white">{t('settings.unit')}</h3>
@@ -288,6 +323,14 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
                 {unit === u.id && <CheckCircle2 size={16} className="text-volt" />}
               </button>
             ))}
+          </div>
+          <div className="flex justify-between items-center mt-auto pt-6 border-t border-white/5 opacity-60">
+            <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">
+              SYS_STATUS: ACTIVE
+            </span>
+            <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">
+              REF_ID: METRIC_UNITS
+            </span>
           </div>
         </motion.div>
 
@@ -378,8 +421,13 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.18 }}
-          className="glass-panel px-4 py-6 md:p-8 flex flex-col vanguard-tour-reset-program"
+          className="glass-panel dot-grid-bg px-4 py-6 md:p-8 flex flex-col vanguard-tour-reset-program relative overflow-hidden"
         >
+          {/* Decorative corner elements for tactical feel */}
+          <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-volt/40" />
+          <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-volt/40" />
+          <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-volt/40" />
+          <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-volt/40" />
           <div className="flex items-center gap-3 mb-6 md:mb-8">
             <Target className="text-volt" size={20} />
             <h3 className="font-sans text-sm font-bold uppercase tracking-widest text-white">{t('settings.programManagement')}</h3>
@@ -392,7 +440,7 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
                 {t('settings.resetProgramDesc')}
               </p>
             </div>
-            <div className="flex flex-col gap-2 w-full mt-auto">
+            <div className="grid grid-cols-2 gap-2 w-full mt-auto">
               <button
                 onClick={() => setShowResetProgramConfirm(true)}
                 className="w-full flex items-center justify-center gap-2 px-6 py-4 btn-destructive font-headline text-[10px] font-black uppercase tracking-widest transition-all rounded-none"
@@ -405,7 +453,7 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
                   onClick={async () => {
                      await updateProfile({ programResetAt: 0, trainingWeekOffset: 0 });
                   }}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-700 font-headline text-[10px] font-black uppercase tracking-widest transition-all rounded-none"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-4 bg-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-700 font-headline text-[10px] font-black uppercase tracking-widest transition-all rounded-none"
                 >
                   <RotateCcw size={14} />
                   <span>Restore Program Progress</span>
@@ -413,13 +461,21 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
               ) : (
                 <button
                   disabled
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white/5 text-zinc-600 font-headline text-[10px] font-black uppercase tracking-widest transition-all rounded-none cursor-not-allowed border border-white/5"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-4 bg-white/5 text-zinc-600 font-headline text-[10px] font-black uppercase tracking-widest transition-all rounded-none cursor-not-allowed border border-white/5"
                 >
                   <RotateCcw size={14} className="opacity-30" />
-                  <span>No Reset History</span>
+                  <span>Restore Program</span>
                 </button>
               )}
             </div>
+          </div>
+          <div className="flex justify-between items-center mt-auto pt-6 border-t border-white/5 opacity-60">
+            <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">
+              SYS_STATUS: ACTIVE
+            </span>
+            <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">
+              REF_ID: PROG_MGMT
+            </span>
           </div>
         </motion.div>
 
@@ -428,8 +484,13 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.2 }}
-          className="glass-panel px-4 py-6 md:p-8 flex flex-col md:col-span-2"
+          className="glass-panel dot-grid-bg px-4 py-6 md:p-8 flex flex-col md:col-span-2 relative overflow-hidden"
         >
+          {/* Decorative corner elements for tactical feel */}
+          <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-volt/40" />
+          <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-volt/40" />
+          <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-volt/40" />
+          <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-volt/40" />
           <div className="flex items-center gap-3 mb-6 md:mb-8">
             <Settings className="text-volt" size={20} />
             <h3 className="font-sans text-sm font-bold uppercase tracking-widest text-white">{t('settings.systemOps')}</h3>
@@ -448,7 +509,7 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
                 className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 md:px-8 md:py-4 btn-secondary font-headline text-[10px] font-black uppercase tracking-widest shrink-0 transition-all rounded min-h-[44px]"
               >
                 <RotateCcw size={14} />
-                <span>Re-initialize Induction</span>
+                <span>Review instructions</span>
               </button>
             </div>
 
@@ -468,6 +529,14 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
               </button>
             </div>
           </div>
+          <div className="flex justify-between items-center mt-auto pt-6 border-t border-white/5 opacity-60">
+            <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">
+              SYS_STATUS: ACTIVE
+            </span>
+            <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">
+              REF_ID: SYS_OPS
+            </span>
+          </div>
         </motion.div>
       </div>
 
@@ -477,8 +546,13 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.2 }}
-          className="glass-panel px-4 py-6 md:p-8 border-none"
+          className="glass-panel dot-grid-bg px-4 py-6 md:p-8 border-none relative overflow-hidden"
         >
+          {/* Decorative corner elements for tactical feel */}
+          <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-volt/40" />
+          <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-volt/40" />
+          <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-volt/40" />
+          <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-volt/40" />
           <div className="flex items-center gap-3 mb-6 md:mb-8">
             <Terminal className="text-volt" size={20} />
             <h3 className="font-sans text-sm font-bold uppercase tracking-widest text-white">{t('settings.devTools')}</h3>
@@ -673,6 +747,14 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
                 </button>
               </div>
             </div>
+          </div>
+          <div className="flex justify-between items-center mt-auto pt-6 border-t border-white/5 opacity-60">
+            <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">
+              SYS_STATUS: DEBUG
+            </span>
+            <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">
+              REF_ID: DEV_TOOLS
+            </span>
           </div>
         </motion.div>
       )}

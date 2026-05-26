@@ -64,6 +64,10 @@ export interface UserProfile {
   lastFitnessTestAt?: number;
   devOverrideFitnessTest?: boolean;
   pendingFitnessTest?: boolean;
+  oneMileTime?: string;
+  fiveMileTime?: string;
+  halfMarathonTime?: string;
+  fullMarathonTime?: string;
   createdAt: number;
   role?: 'user' | 'admin' | 'engineer';
 }

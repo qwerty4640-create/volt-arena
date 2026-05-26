@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Check, Clock, Zap, X, ChevronRight, RotateCcw } from 'lucide-react';
+import { Check, Clock, X, ChevronRight, RotateCcw } from 'lucide-react';
+import { BatteryCharging } from './BatteryCharging';
 import { useWorkout } from '../contexts/WorkoutContext';
 import { useSettings } from '../contexts/SettingsContext';
 import { useToast } from '../contexts/ToastContext';
@@ -35,8 +36,8 @@ const SwipeCard = ({
           style={{ backgroundImage: 'radial-gradient(var(--primary-color) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
 
         <div className="flex items-start justify-between mb-8 relative z-10">
-          <div className="p-3 bg-volt/10 border border-volt/20 text-volt">
-            <Zap size={24} />
+          <div className="p-3 bg-emerald-500/25 border border-emerald-500/40 text-emerald-400 animate-battery-charge">
+            <BatteryCharging size={24} />
           </div>
           <div className="flex flex-col items-end">
             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-volt mb-1 text-right">{t('recovery.impact')}</span>
@@ -57,7 +58,7 @@ const SwipeCard = ({
             </span>
             <span>•</span>
             <span className="flex items-center gap-1.5">
-              <Zap size={14} className="text-volt" /> RPE {activity.recommendedRpe}
+              <BatteryCharging size={14} className="text-volt" /> RPE {activity.recommendedRpe}
             </span>
           </div>
         </div>
@@ -118,14 +119,19 @@ export const ActiveRecoveryWidget = () => {
 
   return (
     <div className="w-full glass-panel px-4 py-6 md:p-8 flex flex-col relative group/module overflow-hidden h-full vanguard-tour-active-recovery">
+      {/* Decorative corner elements for tactical feel */}
+      <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-volt/40" />
+      <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-volt/40" />
+      <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-volt/40" />
+      <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-volt/40" />
       <div className="absolute inset-0 opacity-[0.03] pointer-events-none group-hover/module:opacity-[0.05] transition-opacity duration-700"
         style={{ backgroundImage: 'radial-gradient(var(--primary-color) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
-      <div className="flex items-center justify-between relative z-10 mb-6">
+      <div className="flex items-center justify-between relative z-10 mb-6 w-full">
         <div className="flex flex-col">
           <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight">
             {t('recovery.title')}
           </h2>
-          <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed">
+          <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed mt-2">
             {t('recovery.subtitle')}
           </p>
         </div>
@@ -198,6 +204,15 @@ export const ActiveRecoveryWidget = () => {
             </button>
           </motion.div>
         )}
+      </div>
+
+      <div className="mt-6 flex justify-between items-center px-1 opacity-60 w-full z-10">
+        <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em] text-zinc-500">
+          SYS_STATUS: ACTIVE
+        </span>
+        <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em] text-zinc-500">
+          REF_ID: ACT_RECOV
+        </span>
       </div>
     </div>
   );

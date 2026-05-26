@@ -9,6 +9,7 @@ interface MissionHeaderProps {
   breadcrumb?: string;
   readiness: number;
   targetRpe: string | number;
+  prescribedRpe?: string | number;
   time: string;
   calories: number;
   onBack: () => void;
@@ -19,6 +20,7 @@ export const MissionHeader = ({
   breadcrumb,
   readiness,
   targetRpe,
+  prescribedRpe,
   time,
   calories,
   onBack,
@@ -46,8 +48,7 @@ export const MissionHeader = ({
               </div>
             )}
             <h1 className="font-headline text-3xl sm:text-5xl font-black uppercase tracking-tight text-white leading-none truncate">
-              <span className="sm:hidden">{title.split(':')[0]}</span>
-              <span className="hidden sm:inline">{title}</span>
+              {title.split(':')[0]}
             </h1>
           </div>
 
@@ -75,9 +76,11 @@ export const MissionHeader = ({
           
           <div className="flex flex-col gap-1.5 border-l border-white/5 pl-4">
             <span className="flex items-center gap-2 whitespace-nowrap">
-              {t('workout.targetRpe')} <InfoTooltip term="sRPE" />
+              Target RPE/sRPE <InfoTooltip term="sRPE" />
             </span>
-            <span className="font-black text-white text-xl md:text-2xl">{targetRpe || '–'}</span>
+            <span className="font-black text-white text-xl md:text-2xl">
+              {prescribedRpe !== undefined ? `${prescribedRpe}/${targetRpe}` : `${targetRpe}/${targetRpe}`}
+            </span>
           </div>
           
           <div className="flex flex-col gap-1.5 md:border-l md:border-white/5 md:pl-4">

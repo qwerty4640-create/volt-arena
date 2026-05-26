@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { TrendingUp, BarChart3, Settings2, Info } from 'lucide-react';
+import { TrendingUp, BarChart3, Settings2, Info, BicepsFlexed, Navigation } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
 import { useWorkout } from '../contexts/WorkoutContext';
 import { filterDataByRange, getTacticalImpact } from '../utils/analyticsEngine';
@@ -67,12 +67,19 @@ const TacticalIntegration = ({ activeRange, onRangeChange }: { activeRange: stri
 
   return (
     <div className="h-full flex flex-col w-full">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4 w-full relative">
-        <div>
-          <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight">{t('analysis.tacticalIntegration')}</h2>
+      <div className="flex flex-col md:flex-row justify-between items-start mb-8 gap-4 w-full relative">
+        <div className="flex flex-col">
+          <div className="flex items-center gap-2 mb-4">
+            <Navigation className="text-volt" size={16} />
+            <span className="text-[10px] font-black uppercase tracking-widest text-volt">FIELD PROTOCOL</span>
+          </div>
+          <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight mb-2">{t('analysis.tacticalIntegration')}</h2>
+          <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed">
+            {t('analysis.tacticalIntegrationDesc')}
+          </p>
         </div>
 
-        <div className="flex gap-1 bg-void p-1 border border-white/5 flex-wrap md:flex-nowrap shrink-0">
+        <div className="flex gap-1 bg-void p-1 border border-white/5 flex-wrap md:flex-nowrap shrink-0 md:mt-0">
           {(['1M', '3M', '6M', 'ALL'] as const).map((tf) => (
             <button
               key={tf}
@@ -281,11 +288,22 @@ export const AnalyticsView = () => {
                   initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.1 }}
-                  className="glass-panel px-4 py-6 md:p-8 flex flex-col relative overflow-hidden min-w-0 vanguard-tour-strength-trend lg:col-span-2"
+                  className="glass-panel px-4 py-6 md:p-8 flex flex-col relative overflow-hidden min-w-0 group/module vanguard-tour-strength-trend lg:col-span-2"
                 >
+                  {/* Decorative corner elements for tactical feel */}
+                  <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-volt/40" />
+                  <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-volt/40" />
+                  <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-volt/40" />
+                  <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-volt/40" />
+                  <div className="absolute inset-0 opacity-[0.03] pointer-events-none group-hover/module:opacity-[0.05] transition-opacity duration-700"
+                    style={{ backgroundImage: 'radial-gradient(var(--primary-color) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
                   <div className="flex flex-col mb-12 w-full gap-8">
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 w-full">
+                    <div className="flex flex-col md:flex-row justify-between items-start gap-4 w-full">
                       <div className="flex flex-col">
+                        <div className="flex items-center gap-2 mb-4">
+                          <BicepsFlexed className="text-volt" size={16} />
+                          <span className="text-[10px] font-black uppercase tracking-widest text-volt">STRENGTH PROTOCOL</span>
+                        </div>
                         <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight mb-2">{t('analysis.strengthTrend')}</h2>
                         <p className="text-zinc-400 text-xs font-medium w-full leading-relaxed">
                           {t('analysis.strengthTrendDesc')}
@@ -293,7 +311,7 @@ export const AnalyticsView = () => {
                       </div>
 
                       {/* Dynamic Range Toggle on the top right */}
-                      <div className="flex gap-1 bg-void p-1 border border-white/5 flex-wrap sm:flex-nowrap shrink-0">
+                      <div className="flex gap-1 bg-void p-1 border border-white/5 flex-wrap sm:flex-nowrap shrink-0 md:mt-8">
                         {(['1M', '3M', '6M', 'ALL'] as TimeFrame[]).map((tf) => (
                           <button
                             key={tf}
@@ -376,6 +394,15 @@ export const AnalyticsView = () => {
                       </div>
                     )}
                   </div>
+
+                  <div className="mt-4 flex justify-between items-center px-1 opacity-60">
+                    <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">
+                      SYS_STATUS: CALIBRATED
+                    </span>
+                    <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">
+                      REF_ID: STR_TREND
+                    </span>
+                  </div>
                 </motion.div>
               );
 
@@ -391,12 +418,17 @@ export const AnalyticsView = () => {
                   initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.3 }}
-                  className="glass-panel px-4 py-6 md:p-8 relative overflow-hidden min-w-0 group/module vanguard-tour-estimated-1rm lg:col-span-2"
+                  className="glass-panel px-4 py-6 md:p-8 flex flex-col relative overflow-hidden min-w-0 group/module vanguard-tour-estimated-1rm lg:col-span-2"
                 >
+                  {/* Decorative corner elements for tactical feel */}
+                  <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-volt/40" />
+                  <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-volt/40" />
+                  <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-volt/40" />
+                  <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-volt/40" />
                   <div className="absolute inset-0 opacity-[0.03] pointer-events-none group-hover/module:opacity-[0.05] transition-opacity duration-700"
-                    style={{ backgroundImage: 'radial-gradient(var(--primary-color) 1px, transparent 1px)', backgroundSize: '15px 15px' }} />
+                    style={{ backgroundImage: 'radial-gradient(var(--primary-color) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
                   
-                  <div className="relative z-10 flex flex-col h-full">
+                  <div className="relative z-10 flex flex-col">
                     {(() => {
                       const latestE1RMs = liftOptions.map(lift => {
                         const liftHistory = history.filter(s => s.exercises.some(ex => {
@@ -517,8 +549,12 @@ export const AnalyticsView = () => {
  
                       return (<div className="flex flex-col gap-8 w-full">
                           {/* Header section with title and time range toggle */}
-                          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 w-full">
+                          <div className="flex flex-col md:flex-row justify-between items-start gap-4 w-full">
                             <div className="flex flex-col">
+                              <div className="flex items-center gap-2 mb-4">
+                                <BicepsFlexed className="text-volt" size={16} />
+                                <span className="text-[10px] font-black uppercase tracking-widest text-volt">STRENGTH PROTOCOL</span>
+                              </div>
                               <h3 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight">
                                 {t('Estimated 1rm')}
                               </h3>
@@ -528,7 +564,7 @@ export const AnalyticsView = () => {
                             </div>
 
                             {/* Time range toggle inside Estimated 1RM header */}
-                            <div className="flex gap-1 bg-void p-1 border border-white/5 flex-wrap sm:flex-nowrap shrink-0">
+                            <div className="flex gap-1 bg-void p-1 border border-white/5 flex-wrap sm:flex-nowrap shrink-0 md:mt-8">
                               {(['1M', '3M', '6M', 'ALL'] as TimeFrame[]).map((tf) => (
                                 <button
                                   key={tf}
@@ -759,8 +795,15 @@ export const AnalyticsView = () => {
                       );
                     })()}
 
+                  </div>
 
-
+                  <div className="mt-6 flex justify-between items-center px-1 opacity-60">
+                    <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">
+                      SYS_STATUS: STATISTICAL_ESTIMATE
+                    </span>
+                    <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">
+                      REF_ID: EST_1RM
+                    </span>
                   </div>
                 </motion.div>
               );
@@ -772,16 +815,30 @@ export const AnalyticsView = () => {
                   initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.4 }}
-                  className="glass-panel px-4 py-6 md:p-8 relative overflow-hidden min-w-0 group/module vanguard-tour-tactical-integration lg:col-span-2"
+                  className="glass-panel px-4 py-6 md:p-8 flex flex-col relative overflow-hidden min-w-0 group/module vanguard-tour-tactical-integration lg:col-span-2"
                 >
+                  {/* Decorative corner elements for tactical feel */}
+                  <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-volt/40" />
+                  <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-volt/40" />
+                  <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-volt/40" />
+                  <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-volt/40" />
                   <div className="absolute inset-0 opacity-[0.03] pointer-events-none group-hover/module:opacity-[0.05] transition-opacity duration-700"
                     style={{ backgroundImage: 'radial-gradient(var(--primary-color) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
                   
-                  <div className="relative z-10 h-full flex flex-col">
+                  <div className="relative z-10 flex flex-col">
                     <TacticalIntegration 
                       activeRange={timeFrame} 
                       onRangeChange={(tf) => setTimeFrame(tf)} 
                     />
+                  </div>
+
+                  <div className="mt-6 flex justify-between items-center px-1 opacity-60 relative z-10">
+                    <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">
+                      SYS_STATUS: INTEGRATED
+                    </span>
+                    <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">
+                      REF_ID: TAC_INT_MATRIX
+                    </span>
                   </div>
                 </motion.div>
               );

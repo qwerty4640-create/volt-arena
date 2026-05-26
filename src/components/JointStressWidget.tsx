@@ -189,6 +189,11 @@ export const JointStressWidget = ({ className }: { className?: string }) => {
       animate={{ y: 0, opacity: 1 }}
       className={cn("glass-panel px-4 py-6 md:p-8 flex flex-col relative overflow-hidden min-w-0 group/module", className)}
     >
+      {/* Decorative corner elements for tactical feel */}
+      <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-volt/40" />
+      <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-volt/40" />
+      <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-volt/40" />
+      <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-volt/40" />
       <div className="absolute inset-0 opacity-[0.03] pointer-events-none group-hover/module:opacity-[0.05] transition-opacity duration-700"
         style={{ backgroundImage: 'radial-gradient(var(--primary-color) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-12 gap-6">
@@ -283,6 +288,15 @@ export const JointStressWidget = ({ className }: { className?: string }) => {
             {latestStats.status.toUpperCase()}
           </span>
         </div>
+      </div>
+
+      <div className="mt-6 flex justify-between items-center px-1 opacity-60">
+        <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">
+          SYS_STATUS: CALIBRATED
+        </span>
+        <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">
+          REF_ID: JNT_STRESS
+        </span>
       </div>
     </motion.div>
   );

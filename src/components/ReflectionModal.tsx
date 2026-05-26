@@ -70,9 +70,9 @@ export const ReflectionModal = ({ session, onSave, onClose }: ReflectionModalPro
                 type="range" 
                 min="1" 
                 max="10" 
-                step="1"
+                step="0.5"
                 value={rpe}
-                onChange={(e) => setRpe(parseInt(e.target.value))}
+                onChange={(e) => setRpe(parseFloat(e.target.value))}
                 className="w-full h-2 bg-void appearance-none cursor-pointer accent-volt border border-white/5"
               />
             </div>
