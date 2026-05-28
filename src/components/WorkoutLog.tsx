@@ -22,7 +22,8 @@ import {
   Flame,
   ChevronDown,
   ChevronRight,
-  Timer
+  Timer,
+  GripVertical
 } from 'lucide-react';
 import { InfoTooltip } from './InfoTooltip';
 import { useSettings } from '../contexts/SettingsContext';
@@ -55,7 +56,13 @@ const RoutineCard = ({
   isSkipped: boolean;
   t: (key: string) => string;
 }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(!isCompleted);
+
+  useEffect(() => {
+    if (isCompleted) {
+      setIsExpanded(false);
+    }
+  }, [isCompleted]);
 
   if (isSkipped) return null;
 
@@ -151,7 +158,15 @@ const ExerciseAccordion = ({
   getExerciseHistory,
   weightUnit,
   t,
-  isDumbbell
+  isDumbbell,
+  onDragStart,
+  onDragEnd,
+  onDragOver,
+  onDragLeave,
+  onDrop,
+  draggingId,
+  draggedOverId,
+  draggingGroupId
 }: any) => {
   const { profile } = useSettings();
   const [isExpanded, setIsExpanded] = useState(true);
@@ -175,14 +190,48 @@ const ExerciseAccordion = ({
     return a.isWarmup ? -1 : 1;
   });
 
+  const isCurrentlyDragged = draggingId === exercise.id;
+  const isCurrentDragOver = draggedOverId === exercise.id && draggingGroupId === exercise.groupId && draggingId !== exercise.id;
+
   return (
-    <div id={`exercise-${exercise.id}`} className="glass-panel overflow-hidden bg-zinc-950 border border-white/5 shadow-lg">
+    <div
+      id={`exercise-${exercise.id}`}
+      draggable={!!exercise.groupId}
+      onDragStart={(e) => {
+        if (!exercise.groupId) return;
+        onDragStart?.(e, exercise.id);
+      }}
+      onDragEnd={onDragEnd}
+      onDragOver={(e) => {
+        if (!exercise.groupId || draggingGroupId !== exercise.groupId) return;
+        onDragOver?.(e, exercise.id);
+      }}
+      onDragLeave={onDragLeave}
+      onDrop={(e) => {
+        if (!exercise.groupId || draggingGroupId !== exercise.groupId) return;
+        onDrop?.(e, exercise.id);
+      }}
+      className={cn(
+        "glass-panel overflow-hidden bg-zinc-950 border transition-all duration-200 shadow-lg",
+        isCurrentlyDragged ? "opacity-35 scale-[0.98] border-dashed border-zinc-700" : "border-white/5",
+        isCurrentDragOver ? "border-volt ring-2 ring-volt/20 translate-y-1" : ""
+      )}
+    >
       <div
         onClick={() => { haptics.button(); setIsExpanded(!isExpanded); }}
-        className="flex items-center justify-between p-4 cursor-pointer hover:bg-white/5 transition-colors border-b border-white/5"
+        className="flex items-center justify-between p-6 cursor-pointer hover:bg-white/5 transition-colors border-b border-white/5"
       >
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-3">
+            {exercise.groupId && (
+              <div 
+                onClick={(e) => e.stopPropagation()}
+                className="text-zinc-500 hover:text-volt cursor-grab active:cursor-grabbing p-1 -ml-1 transition-colors shrink-0 flex items-center justify-center"
+                title="Drag to reorder within circuit"
+              >
+                <GripVertical size={16} />
+              </div>
+            )}
             <div className="w-8 h-8 md:w-10 md:h-10 bg-volt/10 flex items-center justify-center text-volt shrink-0">
               <Dumbbell size={16} className="md:w-5 md:h-5" />
             </div>
@@ -207,7 +256,7 @@ const ExerciseAccordion = ({
             exit={{ height: 0, opacity: 0 }}
             className="overflow-hidden"
           >
-            <div className="p-4 space-y-4">
+            <div className="p-4 space-y-4 md:p-6">
               <div className="flex gap-2 items-center">
                 <button
                   onClick={() => { haptics.button(); setSwappingExerciseId(exercise.id); }}
@@ -461,6 +510,60 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
   const [isAddExerciseOpen, setIsAddExerciseOpen] = useState(false);
   const [exerciseToRemove, setExerciseToRemove] = useState<string | null>(null);
   const [circuitToRemove, setCircuitToRemove] = useState<string | null>(null);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [draggedOverId, setDraggedOverId] = useState<string | null>(null);
+
+  const draggingExercise = currentSession?.exercises?.find(ex => ex.id === draggingId);
+  const draggingGroupId = draggingExercise?.groupId;
+
+  const handleDragStart = (e: React.DragEvent, id: string) => {
+    setDraggingId(id);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", id);
+    haptics.button();
+  };
+
+  const handleDragOver = (e: React.DragEvent, id: string) => {
+    e.preventDefault();
+    setDraggedOverId(id);
+  };
+
+  const handleDragLeave = () => {
+    // Reset draggedOverId if user moves focus away
+  };
+
+  const handleDrop = (e: React.DragEvent, targetId: string) => {
+    e.preventDefault();
+    const sourceId = e.dataTransfer.getData("text/plain") || draggingId;
+    
+    if (sourceId && sourceId !== targetId) {
+      const sourceEx = exercises.find(ex => ex.id === sourceId);
+      const targetEx = exercises.find(ex => ex.id === targetId);
+
+      // Only allow rearranging elements inside the SAME circuit/group
+      if (sourceEx && targetEx && sourceEx.groupId === targetEx.groupId && sourceEx.groupId) {
+        setExercises((prev) => {
+          const sourceIndex = prev.findIndex(ex => ex.id === sourceId);
+          const targetIndex = prev.findIndex(ex => ex.id === targetId);
+
+          if (sourceIndex === -1 || targetIndex === -1) return prev;
+
+          const result = [...prev];
+          const [removed] = result.splice(sourceIndex, 1);
+          result.splice(targetIndex, 0, removed);
+          return result;
+        });
+        haptics.success();
+      }
+    }
+    setDraggingId(null);
+    setDraggedOverId(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggingId(null);
+    setDraggedOverId(null);
+  };
   const [isAICoachOpen, setIsAICoachOpen] = useState(false);
   const [showIntensityWarning, setShowIntensityWarning] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -1001,7 +1104,7 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
           onBack={onBack}
         />
 
-        <div className="w-full max-w-5xl mx-auto md:px-8">
+        <div className="w-full max-w-5xl mx-auto">
           {/* Intensity Warning Banner */}
         <AnimatePresence>
           {showIntensityWarning && (
@@ -1065,7 +1168,7 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
               return (
                 <div key={isGrouped ? exercise.groupId : exercise.id} className={cn(
                   "space-y-6",
-                  isGrouped && "bg-volt/5 p-6 md:p-10 border border-volt/10"
+                  isGrouped && "bg-volt/5 p-6 border border-volt/10"
                 )}>
                   {isGrouped && (
                     <div className="flex items-center justify-between gap-3 mb-8">
@@ -1102,6 +1205,14 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
                         weightUnit={weightUnit}
                         t={t}
                         isDumbbell={isDumbbell}
+                        onDragStart={handleDragStart}
+                        onDragEnd={handleDragEnd}
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleDrop}
+                        draggingId={draggingId}
+                        draggedOverId={draggedOverId}
+                        draggingGroupId={draggingGroupId}
                       />
                     ))}
                   </div>

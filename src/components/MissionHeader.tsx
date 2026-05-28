@@ -54,9 +54,9 @@ export const MissionHeader = ({
 
           <button
             onClick={() => setIsExpanded(!isExpanded)}
-            className="ml-auto p-2 bg-surface-container-low hover:bg-surface-container-high text-zinc-400 hover:text-white transition-all border border-white/5"
+            className="ml-auto p-2.5 bg-surface-container-low hover:bg-surface-container-high text-zinc-400 hover:text-white transition-all flex items-center justify-center shrink-0 border border-white/5"
           >
-            <ChevronLeft className={isExpanded ? "rotate-90" : "-rotate-90"} size={16} />
+            <ChevronLeft className={isExpanded ? "rotate-90" : "-rotate-90"} size={20} />
           </button>
         </div>
 

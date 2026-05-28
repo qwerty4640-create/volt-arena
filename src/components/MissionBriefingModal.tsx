@@ -29,6 +29,8 @@ export const MissionBriefingModal: React.FC<MissionBriefingModalProps> = ({
 
   if (!session) return null;
 
+  const sessionRpe = session.targetRpe || calibration?.recommendedRpe || 7;
+
   const getRulesOfEngagement = (title: string): string => {
     const t = title.toLowerCase();
 
@@ -222,11 +224,11 @@ export const MissionBriefingModal: React.FC<MissionBriefingModalProps> = ({
                                         Set {sIdx + 1}
                                       </span>
                                       <span className="text-[10px] sm:text-xs font-black text-white">
-                                        {set.reps} Reps
+                                        {ex.isSquat || ex.isBench || ex.isDeadlift ? '?' : set.reps} Reps
                                       </span>
-                                      <span className="text-[8px] sm:text-[10px] font-black text-volt">
-                                        {displayWeight}
-                                        {weightUnit}
+                                      <span className="text-[8px] sm:text-[10px] font-black text-volt text-center">
+                                        {displayWeight}{weightUnit}
+                                        <span className="block text-zinc-500 mt-0.5">RPE {sessionRpe}</span>
                                       </span>
                                     </div>
                                   );

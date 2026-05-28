@@ -229,7 +229,8 @@ export const UpcomingMissionsView: React.FC<UpcomingMissionsViewProps> = ({ onBa
             const workoutTemplate = getWorkoutTemplate(absoluteWeek, dayInWeek);
             const primaryEx = workoutTemplate?.exercises?.[0];
             const actualSets = primaryEx?.sets?.filter(s => s.reps !== "1" || !s.id.includes("retention")).length || primaryEx?.sets?.length || blockForThisMission?.block.baseSets || 3;
-            const actualReps = primaryEx?.sets?.[0]?.reps || blockForThisMission?.block.baseReps || '8';
+            const isPrimaryLift = primaryEx?.isSquat || primaryEx?.isBench || primaryEx?.isDeadlift;
+            const actualReps = isPrimaryLift ? '?' : (primaryEx?.sets?.[0]?.reps || blockForThisMission?.block.baseReps || '8');
 
             return (
               <motion.div

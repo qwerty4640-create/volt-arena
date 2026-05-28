@@ -358,11 +358,12 @@ export const TrainingView = ({
     : currentTargetRaw;
 
   const currentReps = currentEx?.sets?.[currentSetIdx]?.reps || '0';
+  const isPrimaryLift = currentEx?.isSquat || currentEx?.isBench || currentEx?.isDeadlift;
 
   // Revert target/sets to reference current exercise for active tracking, but exName is main lift
   const displayTotalSets = (isActiveSession ? mainLift?.sets?.length : totalSets) || 5;
   const displayTargetWeight = (isActiveSession ? mainLift?.sets?.[0]?.weight : currentTargetWeight);
-  const displayTargetReps = (isActiveSession ? mainLift?.sets?.[0]?.reps : currentReps);
+  const displayTargetReps = isPrimaryLift ? '?' : (isActiveSession ? mainLift?.sets?.[0]?.reps : currentReps);
 
   const hasHistory = (history?.length || 0) > 0;
   const hasSubjective = !!calibration.subjectiveScores;
@@ -653,10 +654,10 @@ export const TrainingView = ({
             <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tighter line-clamp-none">{exName}</h2>
             <span aria-live="polite" className="text-zinc-400 text-[10px] md:text-xs font-medium uppercase tracking-widest block mt-1">
               {isActiveSession
-                ? <span aria-live="assertive">{t('analysis.setOfPattern', { current: currentSetIdx + 1, total: displayTotalSets, weight: displayTargetWeight, unit: weightUnit })}</span>
+                ? <span aria-live="assertive">{t('analysis.setOfPattern', { current: currentSetIdx + 1, total: displayTotalSets, weight: displayTargetWeight, unit: weightUnit })} RPE {sessionRpe}</span>
                 : (isTimedExercise(mainLift?.name || '')
-                  ? `${displayTotalSets} sets x ${displayTargetReps} sec @ ${displayTargetWeight}${weightUnit}`
-                  : t('analysis.repsAtPattern', { sets: displayTotalSets, reps: displayTargetReps, weight: displayTargetWeight, unit: weightUnit }))}
+                  ? `${displayTotalSets} sets x ${displayTargetReps} sec @ ${displayTargetWeight}${weightUnit} RPE ${sessionRpe}`
+                  : `${t('analysis.repsAtPattern', { sets: displayTotalSets, reps: displayTargetReps, weight: displayTargetWeight, unit: weightUnit })} RPE ${sessionRpe}`)}
             </span>
             <button
               onClick={() => setShowRoutineModal(true)}
@@ -768,7 +769,8 @@ export const TrainingView = ({
             const workoutTemplate = getWorkoutTemplate(weekForThisMission, dayForThisMission);
             const primaryEx = workoutTemplate?.exercises?.[0];
             const actualSets = primaryEx?.sets?.filter(s => s.reps !== "1" || !s.id.includes("retention")).length || primaryEx?.sets?.length || blockForThisMission?.block.baseSets || 3;
-            const actualReps = primaryEx?.sets?.[0]?.reps || blockForThisMission?.block.baseReps || '8';
+            const isPrimaryLift = primaryEx?.isSquat || primaryEx?.isBench || primaryEx?.isDeadlift;
+            const actualReps = isPrimaryLift ? '?' : (primaryEx?.sets?.[0]?.reps || blockForThisMission?.block.baseReps || '8');
 
             return (
               <div
