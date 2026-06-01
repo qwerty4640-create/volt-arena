@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { ListOrdered, X, RefreshCw } from "lucide-react";
 import { WorkoutSession } from "../contexts/WorkoutContext";
 import { useSettings } from "../contexts/SettingsContext";
-import { getExerciseName } from "../utils/workoutUtils";
+import { getExerciseName, isMainLiftMatch } from "../utils/workoutUtils";
 import { getWarmupForLift, COOL_DOWN_ROUTINE } from "../data/warmupLibrary";
 import { Portal } from "./Portal";
 
@@ -159,9 +159,6 @@ export const MissionBriefingModal: React.FC<MissionBriefingModalProps> = ({
                                 </div>
                                 <div className="space-y-4">
                                   <div className="space-y-1.5">
-                                    <p className="text-[10px] font-black text-volt uppercase tracking-[0.2em]">
-                                      Summary
-                                    </p>
                                     <p className="text-zinc-200 text-sm leading-relaxed font-medium pl-4 border-l border-volt/20">
                                       {item.description}
                                     </p>
@@ -187,9 +184,28 @@ export const MissionBriefingModal: React.FC<MissionBriefingModalProps> = ({
                           <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-3">
                               <div className="w-1 h-6 bg-volt" />
-                              <h4 className="text-lg font-black uppercase tracking-tighter text-white">
-                                {getExerciseName(ex, t)}
-                              </h4>
+                              {(() => {
+                                const rawName = getExerciseName(ex, t);
+                                const originalName = (typeof ex === 'string' ? ex : ex?.name || "Unknown").toUpperCase();
+                                const intentTag = ex.intent || (originalName.includes('HEAVY PRIMARY') ? 'HEAVY PRIMARY' : originalName.includes('HYPERTROPHY') ? 'HYPERTROPHY' : undefined);
+                                const cleanName = rawName.replace(/\[?HEAVY PRIMARY\]?|\[?HYPERTROPHY\]?/g, '').trim();
+                                return (
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <h4 className="text-lg font-black uppercase tracking-tighter text-white">
+                                      {cleanName}
+                                    </h4>
+                                    {intentTag && (
+                                      <span className={`px-2 py-0.5 text-[8px] font-black uppercase tracking-widest border rounded-none ${
+                                        intentTag.toUpperCase().includes("HEAVY PRIMARY") 
+                                          ? "bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/30" 
+                                          : "bg-volt/10 text-volt border-volt/30"
+                                      }`}>
+                                        {intentTag}
+                                      </span>
+                                    )}
+                                  </div>
+                                );
+                              })()}
                             </div>
                             {onSwapExercise && (
                               <button
@@ -204,36 +220,138 @@ export const MissionBriefingModal: React.FC<MissionBriefingModalProps> = ({
 
                           <div className="space-y-4">
                             <div className="space-y-1.5">
-                              <p className="text-[10px] font-black text-volt uppercase tracking-[0.2em]">
-                                Mission Protocol
-                              </p>
-                              <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 pl-4 border-l border-volt/20">
-                                {ex.sets?.map((set, sIdx) => {
-                                  const w = parseFloat(set.weight) || 0;
-                                  const displayWeight =
-                                    !isLifting && calibration.isRedline
-                                      ? Math.round((w * 0.75) / 5) * 5
-                                      : w;
+                              {(() => {
+                                const isPrimaryMainLiftEx = ex.isPrimaryMainLift || (
+                                  ex.name && (
+                                    isMainLiftMatch(ex.name, "Squat") ||
+                                    isMainLiftMatch(ex.name, "Bench Press") ||
+                                    isMainLiftMatch(ex.name, "Deadlift") ||
+                                    isMainLiftMatch(ex.name.replace(/\[?HEAVY PRIMARY\]?|\[?HYPERTROPHY\]?/g, '').trim(), "Squat") ||
+                                    isMainLiftMatch(ex.name.replace(/\[?HEAVY PRIMARY\]?|\[?HYPERTROPHY\]?/g, '').trim(), "Bench Press") ||
+                                    isMainLiftMatch(ex.name.replace(/\[?HEAVY PRIMARY\]?|\[?HYPERTROPHY\]?/g, '').trim(), "Deadlift")
+                                  )
+                                );
+                                const hasBackOff = ex.sets && ex.sets.length > 1;
+                                const isWeightOrRpeDrop = hasBackOff && (
+                                  parseFloat(ex.sets[0]?.rpe || "") > parseFloat(ex.sets[1]?.rpe || "") ||
+                                  parseFloat(ex.sets[0]?.weight || "") > parseFloat(ex.sets[1]?.weight || "")
+                                );
+                                const shouldGroup = hasBackOff && isPrimaryMainLiftEx && isWeightOrRpeDrop;
+
+                                if (shouldGroup) {
+                                  const topSet = ex.sets[0];
+                                  const backOffSets = ex.sets.slice(1);
 
                                   return (
-                                    <div
-                                      key={set.id || sIdx}
-                                      className="bg-void/40 border border-white/5 p-3 flex flex-col items-center justify-center"
-                                    >
-                                      <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest mb-1">
-                                        Set {sIdx + 1}
-                                      </span>
-                                      <span className="text-[10px] sm:text-xs font-black text-white">
-                                        {ex.isSquat || ex.isBench || ex.isDeadlift ? '?' : set.reps} Reps
-                                      </span>
-                                      <span className="text-[8px] sm:text-[10px] font-black text-volt text-center">
-                                        {displayWeight}{weightUnit}
-                                        <span className="block text-zinc-500 mt-0.5">RPE {sessionRpe}</span>
-                                      </span>
+                                    <div className="space-y-4 pl-4 border-l border-volt/20">
+                                      {/* Top Set */}
+                                      {topSet && (
+                                        <div className="space-y-1.5">
+                                          <div className="text-[9px] font-black uppercase tracking-widest text-volt flex items-center gap-1.5">
+                                            <span className="w-1.5 h-1.5 bg-volt" />
+                                            Top Set
+                                          </div>
+                                          <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                                            {(() => {
+                                              const w = parseFloat(topSet.weight) || 0;
+                                              const displayWeight =
+                                                !isLifting && calibration.isRedline
+                                                  ? Math.round((w * 0.75) / 5) * 5
+                                                  : w;
+                                              const setRpe = topSet.rpe || topSet.baseRpe || sessionRpe;
+
+                                              return (
+                                                <div className="bg-volt/5 border border-volt/30 p-3 flex flex-col items-center justify-center relative overflow-hidden">
+                                                  <div className="absolute top-0 right-0 w-2 h-2 bg-volt" />
+                                                  <span className="text-[8px] font-black text-volt uppercase tracking-widest mb-1">
+                                                    Set 1
+                                                  </span>
+                                                  <span className="text-[10px] sm:text-xs font-black text-white">
+                                                    {topSet.baseReps || topSet.reps || '?'} Reps
+                                                  </span>
+                                                  <span className="text-[8px] sm:text-[10px] font-black text-volt text-center">
+                                                    {displayWeight}{weightUnit}
+                                                    <span className="block text-zinc-400 mt-0.5">RPE {setRpe}</span>
+                                                  </span>
+                                                </div>
+                                              );
+                                            })()}
+                                          </div>
+                                        </div>
+                                      )}
+
+                                      {/* Back-Off Sets */}
+                                      {backOffSets.length > 0 && (
+                                        <div className="space-y-1.5">
+                                          <div className="text-[9px] font-black uppercase tracking-widest text-zinc-400 flex items-center gap-1.5">
+                                            <span className="w-1.5 h-1.5 bg-zinc-500" />
+                                            Back Off Sets
+                                          </div>
+                                          <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                                            {backOffSets.map((set, sIdx) => {
+                                              const w = parseFloat(set.weight) || 0;
+                                              const displayWeight =
+                                                !isLifting && calibration.isRedline
+                                                  ? Math.round((w * 0.75) / 5) * 5
+                                                  : w;
+                                              const setRpe = set.rpe || set.baseRpe || sessionRpe;
+
+                                              return (
+                                                <div
+                                                  key={set.id || `bo-${sIdx}`}
+                                                  className="bg-void/40 border border-white/5 p-3 flex flex-col items-center justify-center"
+                                                >
+                                                  <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest mb-1">
+                                                    Set {sIdx + 2}
+                                                  </span>
+                                                  <span className="text-[10px] sm:text-xs font-black text-zinc-300">
+                                                    {set.baseReps || set.reps || '?'} Reps
+                                                  </span>
+                                                  <span className="text-[8px] sm:text-[10px] font-black text-zinc-400 text-center">
+                                                    {displayWeight}{weightUnit}
+                                                    <span className="block text-zinc-500 mt-0.5">RPE {setRpe}</span>
+                                                  </span>
+                                                </div>
+                                              );
+                                            })}
+                                          </div>
+                                        </div>
+                                      )}
                                     </div>
                                   );
-                                })}
-                              </div>
+                                }
+
+                                return (
+                                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 pl-4 border-l border-volt/20">
+                                    {ex.sets?.map((set, sIdx) => {
+                                      const w = parseFloat(set.weight) || 0;
+                                      const displayWeight =
+                                        !isLifting && calibration.isRedline
+                                          ? Math.round((w * 0.75) / 5) * 5
+                                          : w;
+                                      const setRpe = set.rpe || set.baseRpe || sessionRpe;
+
+                                      return (
+                                        <div
+                                          key={set.id || sIdx}
+                                          className="bg-void/40 border border-white/5 p-3 flex flex-col items-center justify-center"
+                                        >
+                                          <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest mb-1">
+                                            Set {sIdx + 1}
+                                          </span>
+                                          <span className="text-[10px] sm:text-xs font-black text-white">
+                                            {set.baseReps || set.reps || '?'} Reps
+                                          </span>
+                                          <span className="text-[8px] sm:text-[10px] font-black text-volt text-center">
+                                            {displayWeight}{weightUnit}
+                                            <span className="block text-zinc-500 mt-0.5">RPE {setRpe}</span>
+                                          </span>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                );
+                              })()}
                             </div>
                           </div>
                         </div>
@@ -270,9 +388,6 @@ export const MissionBriefingModal: React.FC<MissionBriefingModalProps> = ({
                             </div>
                             <div className="space-y-4">
                               <div className="space-y-1.5">
-                                <p className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">
-                                  Summary
-                                </p>
                                 <p className="text-zinc-400 text-sm leading-relaxed font-medium pl-4 border-l border-zinc-800">
                                   {item.description}
                                 </p>

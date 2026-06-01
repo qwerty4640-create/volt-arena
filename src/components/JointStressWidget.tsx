@@ -244,8 +244,22 @@ export const JointStressWidget = ({ className }: { className?: string }) => {
                 hide
               />
               <Tooltip content={<CustomTooltip />} cursor={{ fill: '#ffffff05' }} />
-              <Bar dataKey="highImpact" stackId="a" fill="#FF8D7A" radius={[0, 0, 0, 0]} />
-              <Bar dataKey="lowImpact" stackId="a" fill="#10b981" radius={[0, 0, 0, 0]} />
+              <Bar 
+                dataKey="highImpact" 
+                stackId="a" 
+                fill="rgba(255, 141, 122, 0.08)" 
+                stroke="#FF8D7A" 
+                strokeWidth={1} 
+                radius={[0, 0, 0, 0]} 
+              />
+              <Bar 
+                dataKey="lowImpact" 
+                stackId="a" 
+                fill="rgba(16, 185, 129, 0.08)" 
+                stroke="#10b981" 
+                strokeWidth={1} 
+                radius={[0, 0, 0, 0]} 
+              />
             </BarChart>
           </ResponsiveContainer>
         ) : (

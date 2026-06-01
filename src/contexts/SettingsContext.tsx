@@ -131,6 +131,8 @@ interface SettingsContextType {
   isDeploymentModalOpen: boolean;
   setIsDeploymentModalOpen: (open: boolean) => void;
   t: (key: string, params?: Record<string, string | number>) => string;
+  isHeaderHidden: boolean;
+  setIsHeaderHidden: (hidden: boolean) => void;
 }
 
 
@@ -150,6 +152,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
     (localStorage.getItem('volt_fantasy_scheme') as FantasyColorScheme) || 'hud'
   );
   const [isVoiceActive, setIsVoiceActiveState] = useState(false);
+  const [isHeaderHidden, setIsHeaderHidden] = useState(false);
   const [immersionMode, setImmersionModeState] = useState<ImmersionMode>('immersive');
   const [showExperimentalMenus, setShowExperimentalMenusState] = useState(false);
   const [experimentalFeatures, setExperimentalFeaturesState] = useState(false);
@@ -513,6 +516,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
       lightColorScheme, setLightColorScheme,
       fantasyColorScheme, setFantasyColorScheme,
       isVoiceActive, setIsVoiceActive,
+      isHeaderHidden, setIsHeaderHidden,
       immersionMode, setImmersionMode,
       showExperimentalMenus, setShowExperimentalMenus,
       experimentalFeatures, setExperimentalFeatures,

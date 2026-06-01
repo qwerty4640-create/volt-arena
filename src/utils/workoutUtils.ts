@@ -21,7 +21,11 @@ export function isUnilateral(exName: string): boolean {
 }
 
 export function getExerciseName(ex: any, t?: any): string {
-  const nameStr = typeof ex === "string" ? ex : ex?.name || "Unknown";
+  let nameStr = typeof ex === "string" ? ex : ex?.name || "Unknown";
+
+  // Strip tags
+  nameStr = nameStr.replace(/HEAVY PRIMARY|HYPERTROPHY/gi, '').trim();
+
   if (!t) return nameStr;
 
   // Try dynamic key based on name

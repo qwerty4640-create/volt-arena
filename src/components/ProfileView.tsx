@@ -436,7 +436,7 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Performance Metrics */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
@@ -559,7 +559,7 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
               <div className="grid grid-cols-1 gap-3">
                 {[
                   { label: t('settings.oneMileGoal') || '1 Mile Time', value: profile.oneMileTime || '--:--', color: 'text-volt', glow: 'drop-shadow-[0_0_5px_var(--primary-glow)]' },
-                  { label: t('settings.fiveMileGoal') || '5 Mile Time', value: profile.fiveMileTime || '--:--', color: 'text-volt', glow: 'drop-shadow-[0_0_5px_var(--primary-glow)]' },
+                  { label: t('settings.fiveMileGoal') || '5K Time', value: profile.fiveMileTime || '--:--', color: 'text-volt', glow: 'drop-shadow-[0_0_5px_var(--primary-glow)]' },
                   { label: t('settings.halfMarathon') || 'Half Marathon', value: profile.halfMarathonTime || '--:--', color: 'text-volt', glow: 'drop-shadow-[0_0_5px_var(--primary-glow)]' },
                   { label: t('settings.fullMarathon') || 'Full Marathon', value: profile.fullMarathonTime || '--:--', color: 'text-volt', glow: 'drop-shadow-[0_0_5px_var(--primary-glow)]' },
                 ].map((item) => (
@@ -981,7 +981,7 @@ export const ProfileView = ({ onBack }: { onBack?: () => void }) => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-white">{t('settings.fiveMileGoal') || '5 Mile Time'}</label>
+                      <label className="text-[10px] font-black uppercase tracking-widest text-white">{t('settings.fiveMileGoal') || '5K Time'}</label>
                       <input
                         type="text"
                         placeholder="__:__"

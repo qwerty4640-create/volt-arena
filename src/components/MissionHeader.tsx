@@ -25,12 +25,17 @@ export const MissionHeader = ({
   calories,
   onBack,
 }: MissionHeaderProps) => {
-  const { t } = useSettings();
+  const { t, isHeaderHidden } = useSettings();
   const [isExpanded, setIsExpanded] = React.useState(true);
 
   return (
-    <div className="sticky top-0 z-40 bg-void border-b border-white/5 pb-2 -mx-4 md:-mx-8 px-4 md:px-8 pt-4 md:pt-8 transition-all duration-300">
-      <div className="max-w-5xl mx-auto flex flex-col gap-6">
+    <div className={cn(
+      "sticky top-0 z-40 bg-void border-b border-white/5 pb-2 -mx-[var(--app-gutter)] px-[var(--app-gutter)] w-[calc(100%+2*var(--app-gutter))] transition-all duration-300",
+      isHeaderHidden 
+        ? "pt-[calc(1rem+env(safe-area-inset-top))] md:pt-8" 
+        : "pt-4 md:pt-8"
+    )}>
+      <div className="w-full flex flex-col gap-6">
         {/* Breadcrumb & Title Area */}
         <div className="flex items-center gap-4 md:gap-6">
           <button
@@ -76,10 +81,10 @@ export const MissionHeader = ({
           
           <div className="flex flex-col gap-1.5 border-l border-white/5 pl-4">
             <span className="flex items-center gap-2 whitespace-nowrap">
-              Target RPE/sRPE <InfoTooltip term="sRPE" />
+              Target RPE <InfoTooltip term="RPE" />
             </span>
             <span className="font-black text-white text-xl md:text-2xl">
-              {prescribedRpe !== undefined ? `${prescribedRpe}/${targetRpe}` : `${targetRpe}/${targetRpe}`}
+              {targetRpe}
             </span>
           </div>
           

@@ -56,6 +56,7 @@ export interface Set {
   reps: string;
   baseReps?: string;
   rpe: string;
+  baseRpe?: string;
   actualRpe?: string;
   isCompleted: boolean;
   isWarmup?: boolean;
@@ -78,6 +79,7 @@ export interface Exercise {
   isSquat?: boolean;
   isBench?: boolean;
   isDeadlift?: boolean;
+  isPrimaryMainLift?: boolean;
   intent?: string;
 }
 
@@ -254,6 +256,7 @@ const FULL_BODY_TEMPLATES = [
       { pattern: "squat", weight: 60, reps: "8", sets: 3, impact: "high" },
       { pattern: "push_horizontal", weight: 50, reps: "8", sets: 3, impact: "high" },
       { pattern: "pull_vertical", weight: 0, reps: "10", sets: 3, impact: "medium" },
+      { pattern: "accessory", weight: 20, reps: "12", sets: 3, impact: "low" },
       { pattern: "core", weight: 0, reps: "1 min", sets: 2, impact: "low" },
     ],
   },
@@ -263,7 +266,7 @@ const FULL_BODY_TEMPLATES = [
       { pattern: "hinge", weight: 70, reps: "5", sets: 3, impact: "high" },
       { pattern: "push_vertical", weight: 40, reps: "8", sets: 3, impact: "high" },
       { pattern: "pull_horizontal", weight: 40, reps: "10", sets: 3, impact: "medium" },
-      { pattern: "accessory", weight: 10, reps: "15", sets: 2, impact: "low" },
+      { pattern: "accessory", weight: 10, reps: "15", sets: 3, impact: "low" },
     ],
   },
   {
@@ -283,6 +286,8 @@ const UPPER_LOWER_TEMPLATES = [
     slots: [
       { pattern: "squat", weight: 60, reps: "8", sets: 3, impact: "high" },
       { pattern: "hinge", weight: 50, reps: "10", sets: 3, impact: "medium" },
+      { pattern: "accessory", focus: "lower", weight: 20, reps: "12-15", sets: 4, impact: "low" },
+      { pattern: "accessory", focus: "lower", weight: 20, reps: "12-15", sets: 3, impact: "low" },
       { pattern: "core", weight: 0, reps: "1 min", sets: 3, impact: "low" },
     ],
   },
@@ -292,6 +297,8 @@ const UPPER_LOWER_TEMPLATES = [
       { pattern: "push_horizontal", weight: 60, reps: "8", sets: 3, impact: "high" },
       { pattern: "pull_vertical", weight: 0, reps: "8", sets: 3, impact: "high" },
       { pattern: "push_vertical", weight: 40, reps: "10", sets: 3, impact: "medium" },
+      { pattern: "accessory", focus: "upper", weight: 15, reps: "12-15", sets: 4, impact: "low" },
+      { pattern: "accessory", focus: "upper", weight: 15, reps: "12-15", sets: 3, impact: "low" },
     ],
   },
   {
@@ -299,6 +306,8 @@ const UPPER_LOWER_TEMPLATES = [
     slots: [
       { pattern: "hinge", weight: 70, reps: "6", sets: 3, impact: "high" },
       { pattern: "squat", weight: 50, reps: "10", sets: 3, impact: "medium" },
+      { pattern: "accessory", focus: "lower", weight: 30, reps: "10-12", sets: 4, impact: "low" },
+      { pattern: "accessory", focus: "lower", weight: 20, reps: "12-15", sets: 3, impact: "low" },
       { pattern: "core", weight: 0, reps: "1 min", sets: 3, impact: "low" },
     ],
   },
@@ -308,6 +317,8 @@ const UPPER_LOWER_TEMPLATES = [
       { pattern: "push_vertical", weight: 50, reps: "8", sets: 3, impact: "high" },
       { pattern: "pull_horizontal", weight: 50, reps: "8", sets: 3, impact: "high" },
       { pattern: "push_horizontal", weight: 40, reps: "10", sets: 3, impact: "medium" },
+      { pattern: "accessory", focus: "upper", weight: 20, reps: "10-12", sets: 4, impact: "low" },
+      { pattern: "accessory", focus: "upper", weight: 15, reps: "12-15", sets: 3, impact: "low" },
     ],
   },
 ];
@@ -319,6 +330,7 @@ const PPL_UL_TEMPLATES = [
       { pattern: "push_horizontal", weight: 60, reps: "8", sets: 3, impact: "high" },
       { pattern: "push_vertical", weight: 40, reps: "10", sets: 3, impact: "medium" },
       { pattern: "accessory", weight: 10, reps: "15", sets: 3, impact: "low" },
+      { pattern: "accessory", weight: 20, reps: "12", sets: 3, impact: "low" },
     ],
   },
   {
@@ -327,6 +339,7 @@ const PPL_UL_TEMPLATES = [
       { pattern: "pull_vertical", weight: 0, reps: "8", sets: 3, impact: "high" },
       { pattern: "pull_horizontal", weight: 40, reps: "10", sets: 3, impact: "medium" },
       { pattern: "accessory", weight: 15, reps: "15", sets: 3, impact: "low" },
+      { pattern: "accessory", weight: 25, reps: "12", sets: 3, impact: "low" },
     ],
   },
   {
@@ -334,6 +347,7 @@ const PPL_UL_TEMPLATES = [
     slots: [
       { pattern: "squat", weight: 60, reps: "8", sets: 3, impact: "high" },
       { pattern: "hinge", weight: 50, reps: "10", sets: 3, impact: "medium" },
+      { pattern: "accessory", weight: 0, reps: "15", sets: 3, impact: "low" },
       { pattern: "core", weight: 0, reps: "1 min", sets: 3, impact: "low" },
     ],
   },
@@ -343,6 +357,7 @@ const PPL_UL_TEMPLATES = [
       { pattern: "push_horizontal", weight: 50, reps: "10", sets: 3, impact: "medium" },
       { pattern: "pull_horizontal", weight: 50, reps: "10", sets: 3, impact: "medium" },
       { pattern: "accessory", weight: 15, reps: "12", sets: 3, impact: "low" },
+      { pattern: "push_vertical", weight: 30, reps: "12", sets: 3, impact: "low" },
     ],
   },
   {
@@ -350,6 +365,7 @@ const PPL_UL_TEMPLATES = [
     slots: [
       { pattern: "hinge", weight: 70, reps: "5", sets: 3, impact: "high" },
       { pattern: "squat", weight: 40, reps: "12", sets: 3, impact: "medium" },
+      { pattern: "accessory", weight: 20, reps: "15", sets: 3, impact: "low" },
       { pattern: "core", weight: 0, reps: "1 min", sets: 3, impact: "low" },
     ],
   },
@@ -1002,6 +1018,10 @@ const createSessionFromTemplate = (
   const finalIntensity = blockIntensity * readinessModifier * recoveryModifier;
   const retentionProtocol = getRetentionProtocol(profile);
 
+  // Initialize a set of chosen exercise IDs to prevent duplicates in the SAME session
+  const chosenIds = new Set<string>();
+  let hasPassedStrengthThreshold = false;
+
   return {
     id: `w${week}d${day}`,
     date: new Date().toLocaleDateString(),
@@ -1025,6 +1045,23 @@ const createSessionFromTemplate = (
         slot.pattern as any,
         selectedImpact,
       );
+
+      const slotFocus = (slot as any).focus;
+      if (slotFocus === "lower") {
+        const lowerKw = ["leg", "glute", "quad", "hamstring", "calf"];
+        const filtered = availableExercises.filter(e => 
+          lowerKw.some(kw => e.category?.toLowerCase().includes(kw)) || 
+          e.muscles?.some((m: string) => lowerKw.some(kw => m.toLowerCase().includes(kw)))
+        );
+        if (filtered.length > 0) availableExercises = filtered;
+      } else if (slotFocus === "upper") {
+        const upperKw = ["chest", "back", "shoulder", "arm", "bicep", "tricep", "row", "deltoid"];
+        const filtered = availableExercises.filter(e => 
+          upperKw.some(kw => e.category?.toLowerCase().includes(kw)) || 
+          e.muscles?.some((m: string) => upperKw.some(kw => m.toLowerCase().includes(kw)))
+        );
+        if (filtered.length > 0) availableExercises = filtered;
+      }
 
       // Filter by gym access
       if (profile?.hasFullGymAccess === false) {
@@ -1051,8 +1088,86 @@ const createSessionFromTemplate = (
         }
       }
 
-      // Select best fit exercise for the goal
-      let selectedExercise = availableExercises[0];
+      // Ultra-premium bodybuilding/powerbuilding prioritization of specific exercises
+      if (goals.includes("powerbuilding") || goals.includes("hypertrophy")) {
+        if (slot.pattern === "squat") {
+          if (slot.impact === "medium" || slot.impact === "low") {
+            const secondaryQuads = ["leg_press", "hack_squat", "front_squat", "goblet_squat"];
+            availableExercises = [
+              ...availableExercises.filter(e => secondaryQuads.includes(e.id)),
+              ...availableExercises.filter(e => !secondaryQuads.includes(e.id))
+            ];
+          }
+        } else if (slot.pattern === "hinge") {
+          if (slot.impact === "medium" || slot.impact === "low") {
+            const secondaryHinges = ["rdl", "db_rdl"];
+            availableExercises = [
+              ...availableExercises.filter(e => secondaryHinges.includes(e.id)),
+              ...availableExercises.filter(e => !secondaryHinges.includes(e.id))
+            ];
+          }
+        } else if (slot.pattern === "push_horizontal") {
+          if (slot.impact === "medium" || slot.impact === "low") {
+            const secondaryPress = ["incline_dumbbell_press", "dumbbell_press", "dips"];
+            availableExercises = [
+              ...availableExercises.filter(e => secondaryPress.includes(e.id)),
+              ...availableExercises.filter(e => !secondaryPress.includes(e.id))
+            ];
+          }
+        } else if (slot.pattern === "push_vertical") {
+          if (slot.impact === "medium" || slot.impact === "low") {
+            const secondaryVerticalPress = ["db_shoulder_press", "overhead_press"];
+            availableExercises = [
+              ...availableExercises.filter(e => secondaryVerticalPress.includes(e.id)),
+              ...availableExercises.filter(e => !secondaryVerticalPress.includes(e.id))
+            ];
+          }
+        } else if (slot.pattern === "accessory") {
+          if (slotFocus === "lower") {
+            const targetLowerAcc = ["leg_extension", "leg_curl_seated", "standing_calf_raise"];
+            availableExercises = [
+              ...availableExercises.filter(e => targetLowerAcc.includes(e.id)),
+              ...availableExercises.filter(e => !targetLowerAcc.includes(e.id))
+            ];
+          } else if (slotFocus === "upper") {
+            const targetUpperAcc = ["db_lateral_raise", "triceps_pushdowns", "db_bicep_curl", "incline_dumbbell_curls", "barbell_skullcrushers", "lateral_raise_db", "db_front_raise", "db_rear_delt_fly"];
+            availableExercises = [
+              ...availableExercises.filter(e => targetUpperAcc.includes(e.id)),
+              ...availableExercises.filter(e => !targetUpperAcc.includes(e.id))
+            ];
+          }
+        }
+      }
+
+      // Select best fit exercise for the goal, rotating through available exercises based on week, day and index to ensure variety per session
+      let rotationIndex = 0;
+      const stablePatterns = ['squat', 'hinge', 'push_horizontal', 'pull_vertical', 'push_vertical', 'pull_horizontal'];
+      
+      if (!stablePatterns.includes(slot.pattern as string)) {
+          // Give it high variety based on week, day, and index. Coprime multipliers 13, 17, 5 prevent cyclic collisions
+          rotationIndex = ((week - 1) * 13 + (day - 1) * 17 + i * 5) % Math.max(1, availableExercises.length);
+      } else if (i > 1 && !slot.weight) {
+          // If it's a main movement pattern but it's an unweighted secondary movement late in the workout, rotate it slightly
+          rotationIndex = ((week - 1) + (day - 1) + i) % Math.max(1, availableExercises.length);
+      }
+      
+      let selectedExercise = availableExercises[rotationIndex] || availableExercises[0];
+
+      // Prevent duplicates in the same session via linear probing
+      let probeOffset = 0;
+      while (
+        selectedExercise && 
+        chosenIds.has(selectedExercise.id) && 
+        probeOffset < availableExercises.length
+      ) {
+        probeOffset++;
+        const nextIndex = (rotationIndex + probeOffset) % availableExercises.length;
+        selectedExercise = availableExercises[nextIndex];
+      }
+      
+      if (selectedExercise) {
+        chosenIds.add(selectedExercise.id);
+      }
 
       // Safe fallback if no exercises are available for this pattern/impact combo
       if (!selectedExercise) {
@@ -1118,22 +1233,29 @@ const createSessionFromTemplate = (
       const isDeadliftPattern = slot.pattern === "hinge";
 
       const isSquat = !!(
-        isSquatPattern &&
         selectedExercise?.name &&
-        !selectedExercise.name.toLowerCase().includes("dumbbell") &&
-        !selectedExercise.name.toLowerCase().includes("goblet")
+        isMainLiftMatch(selectedExercise.name, "Squat")
       );
       const isBench = !!(
-        isBenchPattern &&
         selectedExercise?.name &&
-        !selectedExercise.name.toLowerCase().includes("dumbbell")
+        isMainLiftMatch(selectedExercise.name, "Bench Press")
       );
       const isDeadlift = !!(
-        isDeadliftPattern &&
         selectedExercise?.name &&
-        !selectedExercise.name.toLowerCase().includes("dumbbell")
+        isMainLiftMatch(selectedExercise.name, "Deadlift")
       );
       const isMainLift = isSquat || isBench || isDeadlift;
+      const subsequentNonMain = !isMainLift && hasPassedStrengthThreshold;
+      if (isMainLift) {
+        hasPassedStrengthThreshold = true;
+      }
+      const isPrimaryMainLift = i === 0 && !!(
+        selectedExercise?.name && (
+          isMainLiftMatch(selectedExercise.name, "Squat") ||
+          isMainLiftMatch(selectedExercise.name, "Bench Press") ||
+          isMainLiftMatch(selectedExercise.name, "Deadlift")
+        )
+      );
 
       const currentTier = profile
         ? calculateTier(
@@ -1299,6 +1421,16 @@ const createSessionFromTemplate = (
           // Keep base reps and sets to prevent accidental strength-zone loading
           dynamicReps = block.baseReps || "8";
           dynamicSets = block.baseSets || 2;
+        } else if (goals.includes("powerbuilding")) {
+          // Powerbuilding strictly mandates exactly 3 heavy working sets for the main lift
+          dynamicSets = 3;
+          if (adjustedIntensity < 0.75) {
+            dynamicReps = "6-8";
+          } else if (adjustedIntensity < 0.85) {
+            dynamicReps = "4-6";
+          } else {
+            dynamicReps = "3-4";
+          }
         } else if (isHypertrophyOriented) {
           if (adjustedIntensity < 0.65) {
             dynamicReps = "10-12";
@@ -1341,10 +1473,17 @@ const createSessionFromTemplate = (
             dynamicSets = 10;
           }
         }
+        dynamicSets = Math.min(dynamicSets, 5);
       }
 
       let reps = isMainLift ? dynamicReps : slot.reps;
       let sets = isMainLift ? dynamicSets : slot.sets;
+
+      if (!isMainLift && goals.includes("powerbuilding")) {
+        // Enforce purely hypertrophy focus for all accessories
+        reps = "10-15";
+        sets = Math.max(3, Number(sets) || 3);
+      }
 
       // Auto-Regulate the Intensity to prevent mechanical failure on high-readiness high-rep sets
       if (estimated1RM > 0) {
@@ -1377,8 +1516,8 @@ const createSessionFromTemplate = (
           weight = lastWeight;
           unmodifiedWeight = lastWeight;
         } else {
-          weight = "RPE 8";
-          unmodifiedWeight = "RPE 8";
+          weight = subsequentNonMain ? (isFinalWeek ? "9.0" : "8.5") : "RPE 8";
+          unmodifiedWeight = subsequentNonMain ? (isFinalWeek ? "9.0" : "8.5") : "RPE 8";
         }
       }
 
@@ -1429,6 +1568,15 @@ const createSessionFromTemplate = (
         sets = Math.max(1, sets);
       }
 
+      // User Spec: During strength block, primary squat/deadlift gets 3 sets, primary bench press gets 4 sets.
+      if (block.type === BlockType.STRENGTH && isPrimaryMainLift) {
+        if (isSquat || isDeadlift) {
+          sets = 3;
+        } else if (isBench) {
+          sets = 4;
+        }
+      }
+
       // Longevity: Tempo/Pause work instead of weight increase
       if (
         goals.includes("longevity") &&
@@ -1438,8 +1586,36 @@ const createSessionFromTemplate = (
         exerciseName = `${selectedExercise.name} (3s Tempo)`;
       }
 
+      const isBifurcatedBlock =
+        (block.type as any) === BlockType.STRENGTH ||
+        (block.type as any) === BlockType.MAX_EFFORT ||
+        (block.type as any) === BlockType.PEAKING;
+
       let intent: string | undefined;
-      if (!isMainLift) {
+      if (isMainLift) {
+        intent = "HEAVY PRIMARY";
+      } else if (isBifurcatedBlock) {
+        const isHybrid =
+          missionInfo.title.toLowerCase().includes("hybrid") ||
+          initialTemplate.title.toLowerCase().includes("hybrid");
+        const isRecovery =
+          missionInfo.title.toLowerCase().includes("restoration") ||
+          missionInfo.title.toLowerCase().includes("recovery") ||
+          initialTemplate.title.toLowerCase().includes("restoration") ||
+          block.type === BlockType.REGENERATION ||
+          goals.includes("longevity");
+        if (isRecovery) {
+          intent = "[ACTIVE RECOVERY]";
+        } else if (isHybrid) {
+          intent = "[MOVEMENT QUALITY]";
+        } else if (currentReadiness < 70) {
+          intent = "[BLOOD FLOW]";
+        } else {
+          intent = "HYPERTROPHY";
+        }
+      } else {
+        // Non-bifurcated blocks (Foundation, Hypertrophy, Deload, etc.)
+        // No heavy primary or strict hypertrophy flagging logic. Other intents like recovery/hybrid/blood flow can still hold if suitable.
         const isHybrid =
           missionInfo.title.toLowerCase().includes("hybrid") ||
           initialTemplate.title.toLowerCase().includes("hybrid");
@@ -1458,6 +1634,11 @@ const createSessionFromTemplate = (
         }
       }
 
+      // Automatically append certain high-priority intents to the display name
+      if (intent === "HEAVY PRIMARY" || intent === "HYPERTROPHY") {
+        exerciseName = `${exerciseName} ${intent}`;
+      }
+
       return {
         id: `e${i}`,
         exerciseId: selectedExercise.id,
@@ -1465,83 +1646,129 @@ const createSessionFromTemplate = (
         isSquat,
         isBench,
         isDeadlift,
+        isPrimaryMainLift,
         intent,
         restPeriod: constraintExercise.restPeriod || (isMainLift ? 180 : 90),
-        sets: [
-          ...Array.from({ length: sets }).map((_, j) => {
+        sets: (() => {
+          let topSetRpeNum = 0;
+          const mappedSets = Array.from({ length: sets }).map((_, j) => {
             let targetSetRpe = constraintExercise.targetRPE
               ? constraintExercise.targetRPE.toString()
               : "";
 
-            // Overwrite RPE Logic based on Goal if no constraint RPE
-            if (!targetSetRpe) {
-              if (isMainLift) {
-                if (
-                  block.type === BlockType.PEAKING ||
-                  block.type === BlockType.MAX_EFFORT ||
-                  block.type === BlockType.OVERREACH ||
-                  block.type === BlockType.COMPETITION
-                ) {
-                  if (goals.includes("pure_strength")) {
-                    targetSetRpe = isFinalWeek ? "10" : "9";
-                  } else if (goals.includes("hypertrophy")) {
-                    targetSetRpe = isFinalWeek ? "10" : "9.5";
-                  } else if (goals.includes("peaking")) {
-                    targetSetRpe = isFinalWeek ? "10" : "7";
-                  } else if (goals.includes("longevity")) {
-                    targetSetRpe = "7.5";
-                  } else {
-                    targetSetRpe = j === 0 ? "9" : "8"; // Top set vs Back-off sets (Powerbuilding fallback)
-                  }
+            // Force dynamic RPE override for main lifts, otherwise fallback to template constraints if supplied
+            if (subsequentNonMain) {
+              targetSetRpe = isFinalWeek ? "9.0" : "8.5";
+            } else if (isPrimaryMainLift) {
+               const isBifurcated =
+                (block.type as any) === BlockType.STRENGTH ||
+                (block.type as any) === BlockType.MAX_EFFORT ||
+                (block.type as any) === BlockType.PEAKING;
+
+              if (isBifurcated) {
+                if (goals.includes("pure_strength")) {
+                  targetSetRpe = j === 0 ? (isFinalWeek ? "10" : "9.5") : (isFinalWeek ? "9" : "8.5");
+                } else if (goals.includes("powerbuilding")) {
+                  targetSetRpe = j === 0 ? (isFinalWeek ? "9.5" : "9") : (isFinalWeek ? "8.5" : "8");
+                } else if (goals.includes("hypertrophy")) {
+                  targetSetRpe = j === 0 ? (isFinalWeek ? "9.5" : "9") : (isFinalWeek ? "8.5" : "8");
+                } else if (goals.includes("peaking")) {
+                  targetSetRpe = j === 0 ? (isFinalWeek ? "10" : "9") : (isFinalWeek ? "8.5" : "8");
                 } else if (goals.includes("longevity")) {
                   targetSetRpe = "7.5";
+                } else {
+                  targetSetRpe = j === 0 ? "9" : "8"; // Top set vs Back-off sets (Strength fallback)
                 }
               } else {
-                // Accessories
-                if (
-                  block.type === BlockType.OVERREACH ||
-                  block.type === BlockType.MAX_EFFORT
-                ) {
-                  if (goals.includes("hypertrophy")) {
-                    targetSetRpe = "9";
-                  } else if (
-                    goals.includes("powerbuilding") ||
-                    goals.includes("pure_strength")
-                  ) {
-                    targetSetRpe = "7.5";
-                  }
+                // Straight sets during foundation, hypertrophy, deload, etc. (no bifurcation RPE drop)
+                if (block.type === BlockType.DELOAD) {
+                  targetSetRpe = "7";
                 } else if (goals.includes("longevity")) {
-                  targetSetRpe = "7.0";
+                  targetSetRpe = "7.5";
+                } else if (block.type === BlockType.HYPERTROPHY || block.type === BlockType.FOUNDATION) {
+                  if (goals.includes("powerbuilding") || goals.includes("hypertrophy")) {
+                    targetSetRpe = isFinalWeek ? "9" : "8.5";
+                  } else {
+                    targetSetRpe = isFinalWeek ? "8.5" : "8";
+                  }
+                } else {
+                  targetSetRpe = isFinalWeek ? "8.5" : "8";
                 }
+              }
+            } else if (!targetSetRpe) {
+              // Accessories
+              if (
+                (block.type as any) === BlockType.OVERREACH ||
+                (block.type as any) === BlockType.MAX_EFFORT
+              ) {
+                if (goals.includes("hypertrophy") || goals.includes("powerbuilding")) {
+                  targetSetRpe = "9";
+                } else if (goals.includes("pure_strength")) {
+                  targetSetRpe = "7.5";
+                }
+              } else if (goals.includes("longevity")) {
+                targetSetRpe = "7.0";
+              } else if (goals.includes("powerbuilding") && ((block.type as any) === BlockType.STRENGTH || (block.type as any) === BlockType.MAX_EFFORT || (block.type as any) === BlockType.PEAKING)) {
+                // Strict bodybuilding rules for remaining back-offs/accessories
+                targetSetRpe = isFinalWeek ? "9" : "8.5";
+              } else {
+                targetSetRpe = goals.includes("hypertrophy") ? (isFinalWeek ? "9" : "8") : "7.5";
+              }
+            }
+
+            let setWeight = typeof weight === "number" ? weight : parseFloat(weight as string) || 0;
+            let setUnmodifiedWeight = typeof unmodifiedWeight === "number" ? unmodifiedWeight : parseFloat(unmodifiedWeight as string) || 0;
+
+            if (j === 0) {
+              topSetRpeNum = parseFloat(targetSetRpe) || 8;
+            } else if (j > 0 && targetSetRpe) {
+              const currentRpeNum = parseFloat(targetSetRpe) || 8;
+              const rpeDrop = topSetRpeNum - currentRpeNum;
+              const isBifurcated =
+                (block.type as any) === BlockType.STRENGTH ||
+                (block.type as any) === BlockType.MAX_EFFORT ||
+                (block.type as any) === BlockType.PEAKING;
+
+              if (rpeDrop > 0 && isPrimaryMainLift && isBifurcated) {
+                // Each point of RPE drop reduces weight by ~5% (0.05) to maintain the rep target
+                const dropFactor = 1 - (rpeDrop * 0.05);
+                setWeight = Math.round((setWeight * dropFactor) / 5) * 5;
+                setUnmodifiedWeight = Math.round((setUnmodifiedWeight * dropFactor) / 5) * 5;
               }
             }
 
             return {
               id: `s${i}-${j}`,
-              weight: weight.toString(),
-              baseWeight: unmodifiedWeight.toString(),
+              weight: setWeight.toString(),
+              baseWeight: setUnmodifiedWeight.toString(),
               reps: reps,
               baseReps: reps,
               rpe: targetSetRpe,
+              baseRpe: targetSetRpe,
               isCompleted: false,
             };
-          }),
-          ...(retentionProtocol.active && isMainLift
-            ? [
-                {
-                  id: `s${i}-retention`,
-                  weight: (Math.round(((weight as number) * 1.05) / 5) * 5).toString(),
-                  baseWeight: (
-                    Math.round(((unmodifiedWeight as number) * 1.05) / 5) * 5
-                  ).toString(),
-                  reps: "1",
-                  baseReps: "1",
-                  rpe: "9",
-                  isCompleted: false,
-                },
-              ]
-            : []),
-        ],
+          });
+
+          return [
+            ...mappedSets,
+            ...(retentionProtocol.active && isPrimaryMainLift
+              ? [
+                  {
+                    id: `s${i}-retention`,
+                    weight: (Math.round(((weight as number) * 1.05) / 5) * 5).toString(),
+                    baseWeight: (
+                      Math.round(((unmodifiedWeight as number) * 1.05) / 5) * 5
+                    ).toString(),
+                    reps: "1",
+                    baseReps: "1",
+                    rpe: "9",
+                    baseRpe: "9",
+                    isCompleted: false,
+                  },
+                ]
+              : []),
+          ];
+        })(),
       };
     }),
     currentExerciseIndex: 0,
@@ -2376,6 +2603,8 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({
         sets: (ex.sets || []).map((s) => ({
           ...s,
           baseWeight: s.baseWeight || s.weight,
+          baseRpe: s.baseRpe || s.rpe,
+          baseReps: s.baseReps || s.reps,
         })),
       }));
     } else {

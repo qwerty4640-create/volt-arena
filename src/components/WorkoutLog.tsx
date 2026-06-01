@@ -29,6 +29,7 @@ import { InfoTooltip } from './InfoTooltip';
 import { useSettings } from '../contexts/SettingsContext';
 import { cn, isDumbbell } from '../lib/utils';
 import { useWorkout, Exercise, Set as WorkoutSet, WorkoutSession } from '../contexts/WorkoutContext';
+import { BlockType } from '../constants/periodization';
 import { getExerciseName, isTimedExercise, isUnilateral } from '../utils/workoutUtils';
 import { useToast } from '../contexts/ToastContext';
 import { ConfirmationModal } from './ConfirmationModal';
@@ -169,6 +170,7 @@ const ExerciseAccordion = ({
   draggingGroupId
 }: any) => {
   const { profile } = useSettings();
+  const { currentSession } = useWorkout();
   const [isExpanded, setIsExpanded] = useState(true);
   const [showInfo, setShowInfo] = useState(false);
   const exerciseDefinition = EXERCISE_DATABASE.find(e => e.name === exercise.name);
@@ -178,6 +180,18 @@ const ExerciseAccordion = ({
   const weightLabel = showPerSide ? `${weightUnit} PER SIDE` : weightUnit;
   // Apply calisthenics label specifically if isCalisthenics is true
   const displayWeightLabel = exerciseDefinition?.isCalisthenics ? `${weightUnit} + Bodyweight` : weightLabel;
+
+  const isBifurcatedBlock = 
+    currentSession?.blockType === BlockType.STRENGTH ||
+    currentSession?.blockType === BlockType.MAX_EFFORT ||
+    currentSession?.blockType === BlockType.PEAKING ||
+    currentSession?.blockType?.toLowerCase() === 'strength' ||
+    currentSession?.blockType?.toLowerCase() === 'max effort' ||
+    currentSession?.blockType?.toLowerCase() === 'max_effort' ||
+    currentSession?.blockType?.toLowerCase() === 'peaking';
+
+  const isPrimaryMainLift = !!exercise.isPrimaryMainLift;
+  const showLabels = isBifurcatedBlock && isPrimaryMainLift;
 
   useEffect(() => {
     if (exercise.sets.every((set: any) => set.isCompleted)) {
@@ -239,7 +253,16 @@ const ExerciseAccordion = ({
           </div>
           {exercise.intent && (
             <div className="pl-[2.75rem] md:pl-[3.25rem]">
-              <span className="inline-block px-1.5 py-0.5 bg-zinc-800 text-zinc-400 border border-zinc-700 text-[9px] font-black uppercase tracking-widest">{exercise.intent}</span>
+              <span className={cn(
+                "inline-block px-1.5 py-0.5 text-[9px] font-black uppercase tracking-widest border rounded-none",
+                exercise.intent.toUpperCase().includes("HEAVY PRIMARY")
+                  ? "bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/30"
+                  : exercise.intent.toUpperCase().includes("HYPERTROPHY")
+                  ? "bg-volt/10 text-volt border-volt/30"
+                  : "bg-zinc-800 text-zinc-400 border border-zinc-700"
+              )}>
+                {exercise.intent}
+              </span>
             </div>
           )}
         </div>
@@ -299,7 +322,7 @@ const ExerciseAccordion = ({
               <div className="space-y-2 mt-4">
                 {/* Headers */}
                 <div className="flex items-center gap-1 sm:gap-2 px-1 sm:px-2 text-[10px] sm:text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1 text-center">
-                  <div className="w-8 sm:w-10 text-center">SET</div>
+                  <div className={cn(showLabels ? "w-16 sm:w-24 text-center shrink-0" : "w-8 sm:w-10 text-center shrink-0")}>SET</div>
                   <div className="flex-1 min-w-0 flex justify-center">{displayWeightLabel}</div>
                   <div className="w-10 sm:flex-1 min-w-0 text-center">REPS</div>
                   <div className="w-10 sm:w-12 text-center">RPE</div>
@@ -309,6 +332,7 @@ const ExerciseAccordion = ({
                 {sortedSets.map((set: any, idx: number) => {
                   const isWarmup = set.isWarmup;
                   let setLabel = '';
+                  let workIdx = -1;
                   
                   if (unilateral) {
                     if (isWarmup) {
@@ -319,7 +343,7 @@ const ExerciseAccordion = ({
                       setLabel = `${side}${setNum}`;
                     } else {
                       const workSets = sortedSets.filter(s => !s.isWarmup);
-                      const workIdx = workSets.findIndex(s => s.id === set.id);
+                      workIdx = workSets.findIndex(s => s.id === set.id);
                       const side = workIdx % 2 === 0 ? 'L' : 'R';
                       const setNum = Math.floor(workIdx / 2) + 1;
                       setLabel = `${side}${setNum}`;
@@ -329,7 +353,8 @@ const ExerciseAccordion = ({
                       const warmupIdx = sortedSets.filter((s:any) => s.isWarmup).findIndex((s:any) => s.id === set.id);
                       setLabel = `${warmupIdx + 1}`;
                     } else {
-                      const workIdx = sortedSets.filter((s:any) => !s.isWarmup).findIndex((s:any) => s.id === set.id);
+                      const workSets = sortedSets.filter((s:any) => !s.isWarmup);
+                      workIdx = workSets.findIndex((s:any) => s.id === set.id);
                       setLabel = `${workIdx + 1}`;
                     }
                   }
@@ -343,36 +368,49 @@ const ExerciseAccordion = ({
                          <></>
                       )}
                       <div className={cn(
-                        "w-8 sm:w-10 shrink-0 text-[10px] font-black uppercase flex items-center justify-center gap-0.5 sm:gap-1 break-keep whitespace-nowrap",
-                        isWarmup ? "text-zinc-500" : "text-zinc-500"
+                        showLabels ? "w-16 sm:w-24" : "w-8 sm:w-10",
+                        "shrink-0 text-[10px] font-black uppercase flex flex-col items-center justify-center gap-1 sm:gap-1.5 break-keep whitespace-nowrap",
+                        isWarmup ? "text-zinc-500" : "text-zinc-400"
                       )}>
-                        {isWarmup && <Flame size={10} className="shrink-0" />}
-                        <span>{setLabel}</span>
+                        <div className="flex items-center gap-1">
+                          {isWarmup && <Flame size={10} className="shrink-0" />}
+                          <span>{setLabel}</span>
+                        </div>
+                        {showLabels && !isWarmup && workIdx !== -1 && (
+                          <span className={cn(
+                            "text-[7px] sm:text-[8px] px-1 sm:px-1.5 py-0.5 font-bold tracking-tight border select-none transition-colors",
+                            workIdx === 0
+                              ? "bg-volt/10 text-volt border-volt/30"
+                              : "bg-zinc-900/50 text-zinc-500 border-zinc-800"
+                          )}>
+                            {workIdx === 0 ? "TOP SET" : "BACK OFF"}
+                          </span>
+                        )}
                       </div>
 
                   <div className="flex-1 min-w-0 flex flex-row items-center gap-1">
                       <input
-                        type="number"
+                        type="text"
                         inputMode="decimal"
                         value={String(set.weight) === '0' || String(set.weight) === '0.0' ? '' : set.weight}
-                        placeholder="0"
+                        placeholder={set.baseWeight && set.baseWeight !== '0' && set.baseWeight !== '0.0' ? set.baseWeight : '0'}
                         onChange={(e) => updateSet(exercise.id, set.id, 'weight', e.target.value)}
                         className="w-full bg-transparent border-b border-white/10 text-center text-sm md:text-lg font-black text-white focus:outline-none focus:border-volt/50 [-moz-appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       />
                     </div>
                       <input
-                        type="number"
-                        inputMode="decimal"
+                        type="text"
+                        inputMode="text"
                         value={String(set.reps) === '0' ? '' : set.reps}
-                        placeholder="0"
+                        placeholder={set.baseReps && set.baseReps !== '0' ? set.baseReps : '0'}
                         onChange={(e) => updateSet(exercise.id, set.id, 'reps', e.target.value)}
                         className="w-10 sm:flex-1 w-0 min-w-0 bg-transparent border-b border-white/10 text-center text-sm md:text-lg font-black text-white focus:outline-none focus:border-volt/50 [-moz-appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       />
                       <input
-                        type="number"
+                        type="text"
                         inputMode="decimal"
                         value={String(set.rpe) === '0' || String(set.rpe) === '0.0' ? '' : set.rpe}
-                        placeholder="0"
+                        placeholder={set.baseRpe && set.baseRpe !== '0' && set.baseRpe !== '0.0' ? set.baseRpe : '0'}
                         onChange={(e) => {
                           const val = e.target.value;
                           if (val === '' || /^\d+(\.\d+)?$/.test(val)) {
@@ -495,10 +533,26 @@ const LiveMissionHeader = ({
 };
 
 export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps) => {
-  const { t, unit, profile, lastVoiceCommand, experimentalFeatures } = useSettings();
+  const { t, unit, profile, lastVoiceCommand, experimentalFeatures, setIsHeaderHidden } = useSettings();
   const { showToast } = useToast();
   const { currentSession, updateCurrentSession, history, getCalibrationStatus, calculateProgramCalories, discardSession, activeRestTarget, setActiveRestTarget } = useWorkout();
   const weightUnit = unit === 'metric' ? t('workout.kg') : t('workout.lbs');
+
+  useEffect(() => {
+    const mainEl = document.querySelector('main');
+    if (!mainEl) return;
+    
+    const handleScroll = () => {
+       const scrollTop = mainEl.scrollTop;
+       setIsHeaderHidden(scrollTop > 50);
+    };
+    
+    mainEl.addEventListener('scroll', handleScroll);
+    return () => {
+        mainEl.removeEventListener('scroll', handleScroll);
+        setIsHeaderHidden(false); // Reset when leaving WorkoutLog
+    };
+  }, [setIsHeaderHidden]);
 
   const startRestTimer = (seconds: number) => {
     setActiveRestTarget(Date.now() + seconds * 1000);
@@ -1092,18 +1146,18 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
 
   return (
     <>
+      <div className="h-[calc(6rem+env(safe-area-inset-top))] md:hidden shrink-0 w-full" />
+      <LiveMissionHeader
+        currentSession={currentSession}
+        currentVolume={currentVolume}
+        onBack={onBack}
+      />
       <motion.div
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: -20 }}
         className="w-full h-full flex flex-col pt-0 md:pt-4 pb-12"
       >
-        <LiveMissionHeader
-          currentSession={currentSession}
-          currentVolume={currentVolume}
-          onBack={onBack}
-        />
-
         <div className="w-full max-w-5xl mx-auto">
           {/* Intensity Warning Banner */}
         <AnimatePresence>

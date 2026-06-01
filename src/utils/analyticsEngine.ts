@@ -25,6 +25,15 @@ export interface TacticalImpactOutput {
   chartData: TacticalChartDataPoint[];
 }
 
+const getMonday = (timestamp: number): Date => {
+  const d = new Date(timestamp);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  const monday = new Date(d.getFullYear(), d.getMonth(), diff);
+  monday.setHours(0, 0, 0, 0);
+  return monday;
+};
+
 export const getTacticalImpact = (activeRecoveryLogs: ActiveRecovery[]): TacticalImpactOutput => {
   const now = Date.now();
   const oneWeek = 7 * 24 * 60 * 60 * 1000;
@@ -32,7 +41,15 @@ export const getTacticalImpact = (activeRecoveryLogs: ActiveRecovery[]): Tactica
   let weeklyCumulativeScore = 0;
   const sortedLogs = [...activeRecoveryLogs].sort((a, b) => a.timestamp - b.timestamp);
   
-  const dailyMap = new Map<string, { dateMs: number; dateLabel: string; totalDuration: number; rpeProduct: number; cumulativeImpact: number; typeSet: Set<string> }>();
+  const weeklyMap = new Map<string, { 
+    dateMs: number; 
+    dateLabel: string; 
+    totalDuration: number; 
+    rpeProduct: number; 
+    cumulativeImpact: number; 
+    typeSet: Set<string>;
+    sessionCount: number;
+  }>();
 
   sortedLogs.forEach(log => {
     const factor = getFactor(log.type);
@@ -42,34 +59,36 @@ export const getTacticalImpact = (activeRecoveryLogs: ActiveRecovery[]): Tactica
       weeklyCumulativeScore += impactScore;
     }
     
-    const date = new Date(log.timestamp);
-    const dayKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
-    const shortDate = `${date.getMonth() + 1}/${date.getDate()}`; // M/D
+    const monday = getMonday(log.timestamp);
+    const weekKey = `${monday.getFullYear()}-${(monday.getMonth() + 1).toString().padStart(2, '0')}-${monday.getDate().toString().padStart(2, '0')}`;
+    const weekLabel = `Wk ${monday.getMonth() + 1}/${monday.getDate()}`;
 
-    if (!dailyMap.has(dayKey)) {
-      dailyMap.set(dayKey, {
-        dateMs: new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime(),
-        dateLabel: shortDate,
+    if (!weeklyMap.has(weekKey)) {
+      weeklyMap.set(weekKey, {
+        dateMs: monday.getTime(),
+        dateLabel: weekLabel,
         totalDuration: 0,
         rpeProduct: 0,
         cumulativeImpact: 0,
-        typeSet: new Set<string>()
+        typeSet: new Set<string>(),
+        sessionCount: 0
       });
     }
 
-    const dayData = dailyMap.get(dayKey)!;
-    dayData.totalDuration += log.durationMinutes;
-    dayData.rpeProduct += (log.rpe * log.durationMinutes);
-    dayData.cumulativeImpact += impactScore;
-    dayData.typeSet.add(log.type);
+    const weekData = weeklyMap.get(weekKey)!;
+    weekData.totalDuration += log.durationMinutes;
+    weekData.rpeProduct += (log.rpe * log.durationMinutes);
+    weekData.cumulativeImpact += impactScore;
+    weekData.typeSet.add(log.type);
+    weekData.sessionCount += 1;
   });
 
-  const chartData: TacticalChartDataPoint[] = Array.from(dailyMap.values()).map((data) => ({
+  const chartData: TacticalChartDataPoint[] = Array.from(weeklyMap.values()).map((data) => ({
     date: data.dateLabel,
     dateMs: data.dateMs,
-    totalDuration: data.totalDuration,
+    totalDuration: data.sessionCount > 0 ? Math.round(data.totalDuration / data.sessionCount) : 0,
     weightedAvgRpe: data.totalDuration > 0 ? (data.rpeProduct / data.totalDuration) : 0,
-    cumulativeImpact: data.cumulativeImpact,
+    cumulativeImpact: data.sessionCount > 0 ? (data.cumulativeImpact / data.sessionCount) : 0,
     types: Array.from(data.typeSet).join(', ')
   })).sort((a, b) => a.dateMs - b.dateMs);
  

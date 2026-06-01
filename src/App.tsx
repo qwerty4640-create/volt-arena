@@ -130,6 +130,7 @@ function AppContent() {
     t, language, setLanguage, 
     isVoiceActive, setIsVoiceActive, 
     immersionMode, setImmersionMode, 
+    isHeaderHidden,
     showExperimentalMenus, 
     experimentalFeatures,
     profile, updateProfile, isProfileLoading, 
@@ -1079,8 +1080,8 @@ function AppContent() {
 
       {/* Top App Bar Shell - Hidden on Desktop/Tablet */}
       <header className={cn(
-        "fixed top-0 left-0 right-0 z-50 flex md:hidden items-center justify-between px-6 bg-void/60 backdrop-blur-lg pt-safe pb-4 h-24 transition-all duration-500",
-        (activeView === 'fitness-test' && isCompetitionActive) ? "opacity-0 -translate-y-full pointer-events-none" : "opacity-100 translate-y-0"
+        "fixed top-0 left-0 right-0 z-[60] flex md:hidden items-center justify-between px-6 bg-void/60 backdrop-blur-lg pt-safe pb-4 h-24 transition-all duration-500",
+        ((activeView === 'fitness-test' && isCompetitionActive) || isHeaderHidden) ? "opacity-0 -translate-y-full pointer-events-none" : "opacity-100 translate-y-0"
       )}>
         <div className="w-10" />
         <div className="flex items-center justify-center w-[40vw]">
@@ -1396,7 +1397,9 @@ function AppContent() {
           "flex-1 w-full max-w-none relative h-full flex flex-col items-center transition-all duration-500",
           (activeView === 'berserker' || (activeView === 'fitness-test' && isCompetitionActive))
             ? "w-full ml-0 md:ml-0 md:w-full md:px-0 pb-0 pt-0 h-screen h-[100vh] overflow-hidden" 
-            : "px-4 md:px-[var(--app-gutter)] pt-[calc(6rem+env(safe-area-inset-top))] md:pt-0 pb-24 md:pb-12 overflow-x-hidden overflow-y-auto custom-scrollbar hud-widget-grid md:w-[calc(100%-260px)] ml-0 md:ml-[260px]"
+            : activeView === 'workout-log'
+              ? "px-4 md:px-[var(--app-gutter)] pt-0 pb-24 md:pb-12 overflow-x-hidden overflow-y-auto custom-scrollbar hud-widget-grid md:w-[calc(100%-260px)] ml-0 md:ml-[260px]"
+              : "px-4 md:px-[var(--app-gutter)] pt-[calc(6rem+env(safe-area-inset-top))] md:pt-0 pb-24 md:pb-12 overflow-x-hidden overflow-y-auto custom-scrollbar hud-widget-grid md:w-[calc(100%-260px)] ml-0 md:ml-[260px]"
         )}
       >
         <div className={cn(
@@ -1410,19 +1413,28 @@ function AppContent() {
           />
         </div>
         <AnimatePresence mode="wait">
-          <motion.div
-            key={activeView}
-            initial={{ opacity: 0, scale: 0.95, clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 100%)' }}
-            animate={{ opacity: 1, scale: 1, clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 100%)' }}
-            exit={{ opacity: 0, scale: 1.05, filter: 'blur(5px)' }}
-            transition={{ duration: 0.2, ease: [0.33, 1, 0.68, 1] }}
-            className={cn(
-              "w-full flex flex-col items-center min-w-0",
-              (activeView === 'fitness-test' && isCompetitionActive) ? "h-screen h-[100vh] justify-between" : "justify-start"
-            )}
-          >
-            {renderView()}
-          </motion.div>
+          {activeView === 'workout-log' ? (
+            <div
+              key="workout-log"
+              className="w-full flex flex-col items-center min-w-0 justify-start"
+            >
+              {renderView()}
+            </div>
+          ) : (
+            <motion.div
+              key={activeView}
+              initial={{ opacity: 0, scale: 0.95, clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 100%)' }}
+              animate={{ opacity: 1, scale: 1, clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 100%)' }}
+              exit={{ opacity: 0, scale: 1.05, filter: 'blur(5px)' }}
+              transition={{ duration: 0.2, ease: [0.33, 1, 0.68, 1] }}
+              className={cn(
+                "w-full flex flex-col items-center min-w-0",
+                (activeView === 'fitness-test' && isCompetitionActive) ? "h-screen h-[100vh] justify-between" : "justify-start"
+              )}
+            >
+              {renderView()}
+            </motion.div>
+          )}
         </AnimatePresence>
       </main>
 

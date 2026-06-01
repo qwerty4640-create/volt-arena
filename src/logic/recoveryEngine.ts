@@ -129,9 +129,23 @@ export const calculateSystemReadiness = (
         });
       });
 
-      const avgRpe = rpeCount > 0 ? rpeSum / rpeCount : (session.actualRpe || session.rpe || 7);
-      const intensityScale = unit === 'imperial' ? 4400 : 2000;
-      const normalizedIntensity = (volumeVal * avgRpe) / intensityScale;
+      let avgRpe = 7;
+      if (session.reflectionSaved && session.actualRpe !== undefined && session.actualRpe > 0) {
+        avgRpe = session.actualRpe;
+      } else if (session.rpe !== undefined && session.rpe > 0) {
+        avgRpe = session.rpe;
+      } else {
+        avgRpe = rpeCount > 0 ? rpeSum / rpeCount : 7;
+      }
+      
+      const rpeExertionFactor = Math.pow(avgRpe / 8, 2);
+      
+      // Sub-linear volume scaling: high volume shouldn't linearly destroy readiness.
+      // E.g., 30000^0.8 ≈ 3804. 10000^0.8 ≈ 1584.
+      const scaledVolume = Math.pow(volumeVal, 0.8);
+      
+      const intensityScale = unit === 'imperial' ? 1000 : 550;
+      const normalizedIntensity = (scaledVolume * avgRpe * rpeExertionFactor) / intensityScale;
       
       currentFatigue += normalizedIntensity * Math.exp(-k_fatigue * t);
     }
@@ -233,8 +247,18 @@ export const calculateSystemReadiness = (
             });
         });
 
-        const intensity = unit === 'imperial' ? 8000 : 3600;
-        const load = (sessionVolume * (session.rpe || 7)) / intensity;
+        let sessionAverageRpe = 7;
+        if (session.reflectionSaved && session.actualRpe !== undefined && session.actualRpe > 0) {
+            sessionAverageRpe = session.actualRpe;
+        } else if (session.rpe !== undefined && session.rpe > 0) {
+            sessionAverageRpe = session.rpe;
+        }
+        
+        const sessionScaledVolume = Math.pow(sessionVolume, 0.8);
+        const intensity = unit === 'imperial' ? 1000 : 550;
+        
+        const rpeExertion = Math.pow(sessionAverageRpe / 8, 2);
+        const load = (sessionScaledVolume * sessionAverageRpe * rpeExertion) / intensity;
 
         dailyVolume[time] = (dailyVolume[time] || 0) + load;
     });
@@ -261,8 +285,8 @@ export const calculateSystemReadiness = (
         ewmaRatio = ewmaChronic > 0 ? (ewmaAcute / ewmaChronic) : 1.0;
         ewmaRatio = Number(ewmaRatio.toFixed(2));
 
-        if (ewmaRatio > 1.6 || currentReadiness < 20) overtrainingRisk = 'critical';
-        else if (ewmaRatio > 1.3 || currentReadiness < 40) overtrainingRisk = 'warning';
+        if (ewmaRatio > 1.8 || currentReadiness < 20) overtrainingRisk = 'critical';
+        else if (ewmaRatio > 1.55 || currentReadiness < 40) overtrainingRisk = 'warning';
     }
   }
 

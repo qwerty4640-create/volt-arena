@@ -363,7 +363,9 @@ export const TrainingView = ({
   // Revert target/sets to reference current exercise for active tracking, but exName is main lift
   const displayTotalSets = (isActiveSession ? mainLift?.sets?.length : totalSets) || 5;
   const displayTargetWeight = (isActiveSession ? mainLift?.sets?.[0]?.weight : currentTargetWeight);
-  const displayTargetReps = isPrimaryLift ? '?' : (isActiveSession ? mainLift?.sets?.[0]?.reps : currentReps);
+  const displayTargetReps = isActiveSession
+    ? (mainLift?.sets?.[0]?.baseReps || mainLift?.sets?.[0]?.reps || '?')
+    : (currentEx?.sets?.[currentSetIdx]?.baseReps || currentEx?.sets?.[currentSetIdx]?.reps || currentReps || '?');
 
   const hasHistory = (history?.length || 0) > 0;
   const hasSubjective = !!calibration.subjectiveScores;
@@ -651,13 +653,68 @@ export const TrainingView = ({
             )}>
               {t('analysis.mainLift')}
             </span>
-            <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tighter line-clamp-none">{exName}</h2>
+            {(() => {
+              const rawName = exName;
+              const originalEx = isActiveSession ? mainLift : currentEx;
+              const originalName = (typeof originalEx === 'string' ? originalEx : originalEx?.name || "").toUpperCase();
+              const intentTag = (isActiveSession ? mainLift?.intent : currentEx?.intent) || 
+                (originalName.includes('HEAVY PRIMARY') ? 'HEAVY PRIMARY' : 
+                 originalName.includes('HYPERTROPHY') ? 'HYPERTROPHY' : undefined);
+              const cleanName = rawName.replace(/\[?HEAVY PRIMARY\]?|\[?HYPERTROPHY\]?/g, '').trim();
+              return (
+                <div className="flex flex-wrap items-center gap-2 mt-1 mb-2">
+                  <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tighter line-clamp-none">{cleanName}</h2>
+                  {intentTag && (
+                    <span className={`px-2 py-0.5 text-[8px] font-black uppercase tracking-widest border rounded-none ${
+                       intentTag === "HEAVY PRIMARY" 
+                        ? "bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/30" 
+                        : "bg-volt/10 text-volt border-volt/30"
+                    }`}>
+                      {intentTag}
+                    </span>
+                  )}
+                </div>
+              );
+            })()}
             <span aria-live="polite" className="text-zinc-400 text-[10px] md:text-xs font-medium uppercase tracking-widest block mt-1">
               {isActiveSession
                 ? <span aria-live="assertive">{t('analysis.setOfPattern', { current: currentSetIdx + 1, total: displayTotalSets, weight: displayTargetWeight, unit: weightUnit })} RPE {sessionRpe}</span>
-                : (isTimedExercise(mainLift?.name || '')
-                  ? `${displayTotalSets} sets x ${displayTargetReps} sec @ ${displayTargetWeight}${weightUnit} RPE ${sessionRpe}`
-                  : `${t('analysis.repsAtPattern', { sets: displayTotalSets, reps: displayTargetReps, weight: displayTargetWeight, unit: weightUnit })} RPE ${sessionRpe}`)}
+                : (() => {
+                    const l = mainLift || currentEx;
+                    if (!l) return '';
+                    const hasBackOff = l.sets && l.sets.length > 1;
+                    const isWeightOrRpeDrop = hasBackOff && (
+                      parseFloat(l.sets[0]?.rpe || "") > parseFloat(l.sets[1]?.rpe || "") ||
+                      parseFloat(l.sets[0]?.weight || "") > parseFloat(l.sets[1]?.weight || "")
+                    );
+                    const isPrimaryMainLiftEx = l.isPrimaryMainLift || (
+                      l.name && (
+                        isMainLiftMatch(l.name, "Squat") ||
+                        isMainLiftMatch(l.name, "Bench Press") ||
+                        isMainLiftMatch(l.name, "Deadlift") ||
+                        isMainLiftMatch(l.name.replace(/\[?HEAVY PRIMARY\]?|\[?HYPERTROPHY\]?/g, '').trim(), "Squat") ||
+                        isMainLiftMatch(l.name.replace(/\[?HEAVY PRIMARY\]?|\[?HYPERTROPHY\]?/g, '').trim(), "Bench Press") ||
+                        isMainLiftMatch(l.name.replace(/\[?HEAVY PRIMARY\]?|\[?HYPERTROPHY\]?/g, '').trim(), "Deadlift")
+                      )
+                    );
+                    const shouldGroup = hasBackOff && isPrimaryMainLiftEx && isWeightOrRpeDrop;
+                    if (shouldGroup && l.sets && l.sets.length > 1) {
+                      const topSet = l.sets[0];
+                      const backOffSets = l.sets.slice(1);
+                      const topReps = topSet.baseReps || topSet.reps;
+                      const topWeight = topSet.weight;
+                      const topRpe = topSet.rpe || topSet.baseRpe || sessionRpe;
+                      const backReps = backOffSets[0].baseReps || backOffSets[0].reps;
+                      const backWeight = backOffSets[0].weight;
+                      const backRpe = backOffSets[0].rpe || backOffSets[0].baseRpe;
+                      return `Top Set: 1x${topReps} @ ${topWeight}${weightUnit} (RPE ${topRpe}) + Back-Off: ${backOffSets.length}x${backReps} @ ${backWeight}${weightUnit} (RPE ${backRpe})`;
+                    }
+                    if (isTimedExercise(l.name || '')) {
+                      return `${displayTotalSets} sets x ${displayTargetReps} sec @ ${displayTargetWeight}${weightUnit} RPE ${sessionRpe}`;
+                    }
+                    return `${t('analysis.repsAtPattern', { sets: displayTotalSets, reps: displayTargetReps, weight: displayTargetWeight, unit: weightUnit })} RPE ${sessionRpe}`;
+                  })()
+              }
             </span>
             <button
               onClick={() => setShowRoutineModal(true)}
@@ -770,7 +827,7 @@ export const TrainingView = ({
             const primaryEx = workoutTemplate?.exercises?.[0];
             const actualSets = primaryEx?.sets?.filter(s => s.reps !== "1" || !s.id.includes("retention")).length || primaryEx?.sets?.length || blockForThisMission?.block.baseSets || 3;
             const isPrimaryLift = primaryEx?.isSquat || primaryEx?.isBench || primaryEx?.isDeadlift;
-            const actualReps = isPrimaryLift ? '?' : (primaryEx?.sets?.[0]?.reps || blockForThisMission?.block.baseReps || '8');
+            const actualReps = primaryEx?.sets?.[0]?.baseReps || primaryEx?.sets?.[0]?.reps || blockForThisMission?.block.baseReps || '8';
 
             return (
               <div
