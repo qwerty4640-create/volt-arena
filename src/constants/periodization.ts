@@ -52,7 +52,7 @@ export type HybridGoal = TrainingGoal | TrainingGoal[];
 export const BLOCK_TEMPLATES: Record<string, Partial<BlockDefinition>> = {
   [BlockType.FOUNDATION]: { type: BlockType.FOUNDATION, label: 'Foundation', baseIntensity: 0.60, baseReps: '12', baseSets: 3, intensityIncrementPerWeek: 0.02 },
   [BlockType.HYPERTROPHY]: { type: BlockType.HYPERTROPHY, label: 'Hypertrophy', baseIntensity: 0.68, baseReps: '10', baseSets: 3, intensityIncrementPerWeek: 0.02 },
-  [BlockType.STRENGTH]: { type: BlockType.STRENGTH, label: 'Strength', baseIntensity: 0.78, baseReps: '5', baseSets: 4, intensityIncrementPerWeek: 0.025 },
+  [BlockType.STRENGTH]: { type: BlockType.STRENGTH, label: 'Strength', baseIntensity: 0.78, baseReps: '5', baseSets: 4, intensityIncrementPerWeek: 0.03 },
   [BlockType.POWER]: { type: BlockType.POWER, label: 'Power', baseIntensity: 0.85, baseReps: '3', baseSets: 5, intensityIncrementPerWeek: 0.025 },
   [BlockType.CAPACITY]: { type: BlockType.CAPACITY, label: 'Capacity', baseIntensity: 0.65, baseReps: '15', baseSets: 3, intensityIncrementPerWeek: 0.015 },
   [BlockType.RESILIENCY]: { type: BlockType.RESILIENCY, label: 'Resiliency', baseIntensity: 0.72, baseReps: '10', baseSets: 4, intensityIncrementPerWeek: 0.015 },
@@ -62,7 +62,7 @@ export const BLOCK_TEMPLATES: Record<string, Partial<BlockDefinition>> = {
   [BlockType.PEAKING]: { type: BlockType.PEAKING, label: 'Peaking', baseIntensity: 0.90, baseReps: '1', baseSets: 5, intensityIncrementPerWeek: 0.03 },
   [BlockType.DELOAD]: { type: BlockType.DELOAD, label: 'Deload', baseIntensity: 0.50, baseReps: '8', baseSets: 2, intensityIncrementPerWeek: 0 },
   [BlockType.REGENERATION]: { type: BlockType.REGENERATION, label: 'Regeneration', baseIntensity: 0.55, baseReps: '12', baseSets: 3, intensityIncrementPerWeek: 0.01 },
-  [BlockType.MAX_EFFORT]: { type: BlockType.MAX_EFFORT, label: 'Max Effort', baseIntensity: 0.92, baseReps: '1-3', baseSets: 3, intensityIncrementPerWeek: 0.03 },
+  [BlockType.MAX_EFFORT]: { type: BlockType.MAX_EFFORT, label: 'Max Effort', baseIntensity: 0.94, baseReps: '1-3', baseSets: 3, intensityIncrementPerWeek: 0.03 },
   [BlockType.OVERREACH]: { type: BlockType.OVERREACH, label: 'Overreach', baseIntensity: 0.82, baseReps: '8', baseSets: 5, intensityIncrementPerWeek: 0.025 },
   [BlockType.COMPETITION]: { type: BlockType.COMPETITION, label: 'Competition', baseIntensity: 0.95, baseReps: '1', baseSets: 3, intensityIncrementPerWeek: 0 },
   [BlockType.PURE_STRENGTH]: { type: BlockType.PURE_STRENGTH as BlockType, label: 'Pure Strength', baseIntensity: 0.85, baseReps: '3', baseSets: 5, intensityIncrementPerWeek: 0.015 },

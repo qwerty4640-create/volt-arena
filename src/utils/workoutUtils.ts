@@ -53,19 +53,33 @@ export function isMainLiftMatch(
   exName: string,
   liftType: "Squat" | "Bench Press" | "Deadlift" | string,
 ): boolean {
-  const lowerName = exName.toLowerCase();
+  if (!exName) return false;
+  const lowerName = exName.trim().toLowerCase();
+  
   if (liftType === "Squat") {
-    return lowerName === "squat" || lowerName === "barbell squat";
+    return (
+      (lowerName.includes("squat") || lowerName === "squat") &&
+      !lowerName.includes("hack") &&
+      !lowerName.includes("jump") &&
+      !lowerName.includes("split") &&
+      !lowerName.includes("pistol") &&
+      !lowerName.includes("single-leg") &&
+      !lowerName.includes("single leg")
+    );
   }
   if (liftType === "Bench Press") {
     return (
-      lowerName === "bench press" ||
+      lowerName.includes("bench press") ||
       lowerName === "bench" ||
-      lowerName === "barbell bench press"
+      lowerName.includes("barbell bench press")
     );
   }
   if (liftType === "Deadlift") {
-    return lowerName === "deadlift" || lowerName === "barbell deadlift";
+    return (
+      lowerName.includes("deadlift") &&
+      !lowerName.includes("single-leg") &&
+      !lowerName.includes("single leg")
+    );
   }
   return false;
 }
@@ -83,12 +97,31 @@ export function calculateE1RM(
   // Heavily dampen RIR inflation on higher rep sets to prevent E1RM runaway
   // For reps > 8, RIR is notoriously unreliable for E1RM translation.
   let rirMultiplier = 1.0;
-  if (reps > 8) rirMultiplier = 0.25;
-  else if (reps > 5) rirMultiplier = 0.5;
+  if (reps >= 12) rirMultiplier = 0.25;
+  else if (reps >= 8) rirMultiplier = 0.5;
 
   let effectiveReps = reps + rir * rirMultiplier;
   const cappedReps = Math.min(effectiveReps, 12);
   return weight * (36 / (37 - cappedReps));
+}
+
+export function calculateWeightFromE1RM(
+  e1rm: number,
+  reps: number,
+  rpe?: number,
+): number {
+  if (e1rm <= 0 || reps <= 0) return 0;
+  let rir = 0;
+  if (rpe !== undefined && rpe > 0 && rpe < 10) {
+    rir = 10 - rpe;
+  }
+  let rirMultiplier = 1.0;
+  if (reps >= 12) rirMultiplier = 0.25;
+  else if (reps >= 8) rirMultiplier = 0.5;
+
+  let effectiveReps = reps + rir * rirMultiplier;
+  const cappedReps = Math.min(effectiveReps, 12);
+  return e1rm * ((37 - cappedReps) / 36);
 }
 
 export function isTimedExercise(exName: string): boolean {

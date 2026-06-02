@@ -9,6 +9,20 @@ import { haptics } from '../lib/haptics';
 import { InfoTooltip } from './InfoTooltip';
 import { cn } from '../lib/utils';
 
+export const isMuscleMatch = (m1: string, m2: string): boolean => {
+  const norm1 = m1.toLowerCase().trim();
+  const norm2 = m2.toLowerCase().trim();
+  const a = norm1.replace(/s$/, ''); // trim plural 's' at the end
+  const b = norm2.replace(/s$/, '');
+  
+  if (a === b) return true;
+  // Handle common muscle aliases
+  if ((a === 'quadricep' || a === 'quad') && (b === 'quadricep' || b === 'quad')) return true;
+  if ((a === 'glute' || a === 'butt') && (b === 'glute' || b === 'butt')) return true;
+  if ((a === 'calf' || a === 'calve') && (b === 'calf' || b === 'calve')) return true;
+  return false;
+};
+
 interface ExerciseSwapModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -34,18 +48,12 @@ export const ExerciseSwapModal: React.FC<ExerciseSwapModalProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [selectedMuscle, setSelectedMuscle] = useState<string>('All');
 
-  useEffect(() => {
-    if (isOpen) {
-      setSearchQuery('');
-      setSelectedCategory(currentExercise?.category || 'All');
-      setSelectedMuscle('All');
-    }
-  }, [isOpen, currentExercise]);
-
   const categories = useMemo(() => {
     const cats = new Set<string>();
     EXERCISE_DATABASE.forEach(ex => {
-      if (ex.category) cats.add(ex.category);
+      if (ex.category && ex.category.toLowerCase() !== 'accessory') {
+        cats.add(ex.category);
+      }
     });
     return Array.from(cats).sort();
   }, []);
@@ -59,6 +67,27 @@ export const ExerciseSwapModal: React.FC<ExerciseSwapModalProps> = ({
     });
     return Array.from(m).sort();
   }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      setSearchQuery('');
+      const initialCat = currentExercise?.category;
+      setSelectedCategory(initialCat && initialCat.toLowerCase() !== 'accessory' ? initialCat : 'All');
+      
+      // Auto-set the selected muscle group to the current exercise's primary muscle group
+      let muscleToSet = 'All';
+      if (currentExercise) {
+        const primaryMuscle = currentExercise.muscles?.[0] || currentExercise.targetMuscle;
+        if (primaryMuscle) {
+          const matched = muscles.find(m => isMuscleMatch(m, primaryMuscle));
+          if (matched) {
+            muscleToSet = matched;
+          }
+        }
+      }
+      setSelectedMuscle(muscleToSet);
+    }
+  }, [isOpen, currentExercise, muscles]);
 
   const filteredExercises = useMemo(() => {
     const searchTerms = searchQuery.toLowerCase().split(/\s+/).filter(Boolean);
@@ -78,7 +107,10 @@ export const ExerciseSwapModal: React.FC<ExerciseSwapModalProps> = ({
       });
 
       const matchCategory = selectedCategory === 'All' || ex.category === selectedCategory;
-      const matchMuscle = selectedMuscle === 'All' || (ex.muscles && ex.muscles.includes(selectedMuscle));
+      const matchMuscle = selectedMuscle === 'All' || (
+        (ex.muscles && ex.muscles.some(m => isMuscleMatch(m, selectedMuscle))) ||
+        (ex.targetMuscle && isMuscleMatch(ex.targetMuscle, selectedMuscle))
+      );
 
       return matchSearch && matchCategory && matchMuscle;
     }).sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));

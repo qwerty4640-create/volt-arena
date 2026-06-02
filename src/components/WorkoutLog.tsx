@@ -401,8 +401,32 @@ const ExerciseAccordion = ({
                       <input
                         type="text"
                         inputMode="text"
-                        value={String(set.reps) === '0' ? '' : set.reps}
-                        placeholder={set.baseReps && set.baseReps !== '0' ? set.baseReps : '0'}
+                        value={(() => {
+                          if (set.reps === '0') return '';
+                          if (!set.isCompleted) {
+                            if (set.reps === set.baseReps || !/^\d+(\.\d+)?$/.test(set.reps)) {
+                              return '';
+                            }
+                          }
+                          return set.reps;
+                        })()}
+                        placeholder={(() => {
+                          if (set.baseReps && set.baseReps !== '0') return set.baseReps;
+                          if (set.reps && set.reps !== '0') return set.reps;
+                          
+                          // Look for another set in this exercise with a valid reps value
+                          const otherSetWithReps = exercise.sets?.find((s: any) => s.baseReps && s.baseReps !== '0')
+                            || exercise.sets?.find((s: any) => s.reps && s.reps !== '0');
+                          if (otherSetWithReps) {
+                            return otherSetWithReps.baseReps || otherSetWithReps.reps;
+                          }
+                          
+                          // Default fallback based on block type
+                          const isStrength = currentSession?.blockType?.toLowerCase().includes('strength') || 
+                                             currentSession?.blockType?.toLowerCase().includes('power') ||
+                                             currentSession?.blockType?.toLowerCase().includes('peak');
+                          return isStrength ? "4-6" : "10-15";
+                        })()}
                         onChange={(e) => updateSet(exercise.id, set.id, 'reps', e.target.value)}
                         className="w-10 sm:flex-1 w-0 min-w-0 bg-transparent border-b border-white/10 text-center text-sm md:text-lg font-black text-white focus:outline-none focus:border-volt/50 [-moz-appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       />
@@ -413,7 +437,7 @@ const ExerciseAccordion = ({
                         placeholder={set.baseRpe && set.baseRpe !== '0' && set.baseRpe !== '0.0' ? set.baseRpe : '0'}
                         onChange={(e) => {
                           const val = e.target.value;
-                          if (val === '' || /^\d+(\.\d+)?$/.test(val)) {
+                          if (val === '' || /^\d*\.?\d*$/.test(val)) {
                             updateSet(exercise.id, set.id, 'rpe', val);
                           }
                         }}
@@ -839,6 +863,17 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
 
     const groupId = groupTitle ? Math.random().toString(36).substr(2, 9) : undefined;
 
+    const isStrengthBlock = 
+      currentSession?.blockType === BlockType.STRENGTH ||
+      currentSession?.blockType === BlockType.MAX_EFFORT ||
+      currentSession?.blockType === BlockType.PEAKING ||
+      currentSession?.blockType?.toLowerCase() === 'strength' ||
+      currentSession?.blockType?.toLowerCase() === 'max effort' ||
+      currentSession?.blockType?.toLowerCase() === 'max_effort' ||
+      currentSession?.blockType?.toLowerCase() === 'peaking';
+    
+    const defaultReps = isStrengthBlock ? "4-6" : "10-15";
+
     const newExercises: Exercise[] = newExs.map(exInfo => ({
       id: Math.random().toString(36).substr(2, 9),
       exerciseId: exInfo.id,
@@ -850,8 +885,11 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
         {
           id: Math.random().toString(36).substr(2, 9),
           weight: '0',
-          reps: '0',
+          baseWeight: '0',
+          reps: defaultReps,
+          baseReps: defaultReps,
           rpe: '0',
+          baseRpe: '0',
           isCompleted: false
         }
       ]
@@ -883,8 +921,11 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
         const newSet = {
           id: Math.random().toString(36).substr(2, 9),
           weight: lastSet?.weight || '0',
+          baseWeight: lastSet?.baseWeight || lastSet?.weight || '0',
           reps: lastSet?.reps || '0',
+          baseReps: lastSet?.baseReps || lastSet?.reps || '0',
           rpe: lastSet?.rpe || '0',
+          baseRpe: lastSet?.baseRpe || lastSet?.rpe || '0',
           isCompleted: false
         };
 
@@ -919,8 +960,11 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
         
         const baseWarmupSet = {
           weight: lastWarmup?.weight || '0',
+          baseWeight: lastWarmup?.baseWeight || lastWarmup?.weight || '0',
           reps: lastWarmup?.reps || '0',
+          baseReps: lastWarmup?.baseReps || lastWarmup?.reps || '0',
           rpe: lastWarmup?.rpe || '0',
+          baseRpe: lastWarmup?.baseRpe || lastWarmup?.rpe || '0',
           isCompleted: false,
           isWarmup: true
         };

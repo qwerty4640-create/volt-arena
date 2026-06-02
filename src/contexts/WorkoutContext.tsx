@@ -1280,9 +1280,12 @@ const createSessionFromTemplate = (
       // Secondary Compound scaling: If it is a main lift pattern but programmed in a medium impact slot,
       // it is a secondary lift for the day (e.g., Day 1 Trap Bar Deadlift / Squat variation).
       // Scale its intensity down by 15% (multiplier of 0.85) to manage fatigue and prevent high axial loading on repeated patterns.
+      // NOTE: Squat, Bench Press, and Deadlift are heavy primary movements and always high impact. Do not scale down their intensity.
+      /*
       if (isMainLift && slot.impact === "medium") {
         adjustedIntensity *= 0.85;
       }
+      */
 
       let estimated1RM = 0;
       let dynamicPR = 0;
@@ -1299,6 +1302,24 @@ const createSessionFromTemplate = (
           .sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
 
         if (sessionsWithEx.length > 0) {
+          // Calculate max E1RM all-time for Autoregulation
+          const allE1RMs = sessionsWithEx.flatMap(session => {
+            const ex = session.exercises.find(
+              (e) => e.name && e.name.toLowerCase() === selectedExercise.name.toLowerCase()
+            );
+            if (!ex || !ex.sets) return [];
+            return ex.sets.map((set: any) => calculateE1RM(
+              parseFloat(set.weight) || 0,
+              parseInt(set.reps) || 0,
+              parseFloat(set.rpe || set.actualRpe || "")
+            ));
+          }).filter(val => val > 0);
+
+          if (allE1RMs.length > 0) {
+            dynamicPR = Math.max(...allE1RMs);
+          }
+
+          // Get last weight for progression continuity
           const latestSession = sessionsWithEx[0];
           const targetEx = latestSession.exercises.find(
             (ex) =>
@@ -1309,19 +1330,6 @@ const createSessionFromTemplate = (
             const validSets = targetEx.sets.filter((s:any) => parseFloat(s.weight) > 0);
             if (validSets.length > 0) {
               lastWeight = parseFloat(validSets[0].weight);
-            }
-            
-            const e1rms = targetEx.sets
-              .map((set: any) =>
-                calculateE1RM(
-                  parseFloat(set.weight) || 0,
-                  parseInt(set.reps) || 0,
-                  parseFloat(set.rpe || set.actualRpe || ""),
-                ),
-              )
-              .filter((val) => val > 0);
-            if (e1rms.length > 0) {
-              dynamicPR = Math.max(...e1rms);
             }
           }
         }
@@ -1335,7 +1343,7 @@ const createSessionFromTemplate = (
         if (isBench) profilePR = profile.benchPR || 0;
         if (isDeadlift) profilePR = profile.deadliftPR || 0;
 
-        // Autoregulation: heavily prioritize the E1RM generated from the LAST session, falling back to static profile PR.
+        // Autoregulation: prioritize the highest historical E1RM generated from past sessions, falling back to static profile PR.
         let pr = dynamicPR > 0 ? dynamicPR : profilePR;
 
         if (pr > 0) {
@@ -1391,9 +1399,12 @@ const createSessionFromTemplate = (
         adjustedBaseIntensity += constraintExercise.intensityBoost;
 
       // Secondary Compound scaling for base intensity
+      // NOTE: Squat, Bench Press, and Deadlift are heavy primary movements and always high impact. Do not scale down their base intensity.
+      /*
       if (isMainLift && slot.impact === "medium") {
         adjustedBaseIntensity *= 0.85;
       }
+      */
 
       // Phase 2: Autoregulatory Set & Rep Generation (Undulating Periodization)
       // Adapting Prilepin's Chart principles to maintain high-quality volume without excessive CNS/mechanical failure.
@@ -1428,8 +1439,10 @@ const createSessionFromTemplate = (
             dynamicReps = "6-8";
           } else if (adjustedIntensity < 0.85) {
             dynamicReps = "4-6";
-          } else {
+          } else if (adjustedIntensity < 0.90 && (block.type as any) !== BlockType.MAX_EFFORT && (block.type as any) !== BlockType.PEAKING) {
             dynamicReps = "3-4";
+          } else {
+            dynamicReps = "1-3"; // Max effort / true peaking zone safety cap
           }
         } else if (isHypertrophyOriented) {
           if (adjustedIntensity < 0.65) {
@@ -1473,6 +1486,24 @@ const createSessionFromTemplate = (
             dynamicSets = 10;
           }
         }
+
+        const isStrengthBlock = [
+          BlockType.STRENGTH,
+          BlockType.POWER,
+          BlockType.PEAKING,
+          BlockType.MAX_EFFORT,
+          BlockType.PURE_STRENGTH,
+          BlockType.STRENGTH_RETENTION,
+        ].includes(block.type as BlockType);
+
+        if (isStrengthBlock) {
+          if (dynamicReps === "6-8" || dynamicReps === "6" || dynamicReps === "8") {
+            dynamicReps = "4-6";
+          } else if (dynamicReps === "8-10" || dynamicReps === "8-12" || dynamicReps === "10-12") {
+            dynamicReps = "5";
+          }
+        }
+
         dynamicSets = Math.min(dynamicSets, 5);
       }
 
@@ -1493,11 +1524,15 @@ const createSessionFromTemplate = (
         let effectiveReps = parsedMinReps + (10 - targetRpeCeiling);
         let safeIntensityLimit = (37 - Math.min(effectiveReps, 12)) / 36;
 
+        // We remove the hard mathematical clamping on intensity 
+        // to allow periodization (e.g. strength blocks) to function
+        // unmodified while relying on natural target RPE to dictate stress.
         if (adjustedIntensity > safeIntensityLimit) {
-          adjustedIntensity = safeIntensityLimit;
+          // Soften the intensity bump over safe limits instead of flat-capping
+          adjustedIntensity = safeIntensityLimit + (adjustedIntensity - safeIntensityLimit) * 0.5;
         }
         if (adjustedBaseIntensity > safeIntensityLimit) {
-          adjustedBaseIntensity = safeIntensityLimit;
+          adjustedBaseIntensity = safeIntensityLimit + (adjustedBaseIntensity - safeIntensityLimit) * 0.5;
         }
       }
 
@@ -1804,7 +1839,39 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({
     const savedSession = localStorage.getItem("berserker_current_session");
     if (savedSession) {
       try {
-        setCurrentSession(JSON.parse(savedSession));
+        let parsed = JSON.parse(savedSession) as WorkoutSession;
+        
+        // Auto-correct any legacy or incorrect 6-8 reps on main lifts during Strength blocks
+        const isStrengthBlock = [
+          BlockType.STRENGTH,
+          BlockType.POWER,
+          BlockType.PEAKING,
+          BlockType.MAX_EFFORT,
+          BlockType.PURE_STRENGTH,
+          BlockType.STRENGTH_RETENTION,
+        ].includes(parsed.blockType as BlockType) || (parsed.title && parsed.title.includes("W7"));
+
+        if (isStrengthBlock && parsed.exercises) {
+          parsed.exercises = parsed.exercises.map(ex => {
+            const isMain = ex.isSquat || ex.isBench || ex.isDeadlift || 
+              (ex.name && (ex.name.toLowerCase().includes("squat") || ex.name.toLowerCase().includes("bench") || ex.name.toLowerCase().includes("deadlift")));
+            
+            if (isMain && ex.sets) {
+              const has6to8 = ex.sets.some(s => s.reps === "6-8" || s.baseReps === "6-8");
+              if (has6to8) {
+                ex.sets = ex.sets.map(s => {
+                  if (s.reps === "6-8" || s.reps === "8" || s.reps === "6") {
+                    return { ...s, reps: "4-6", baseReps: "4-6" };
+                  }
+                  return s;
+                });
+              }
+            }
+            return ex;
+          });
+        }
+
+        setCurrentSession(parsed);
       } catch (e) {
         console.error("Failed to parse saved session", e);
         localStorage.removeItem("berserker_current_session");
