@@ -43,6 +43,7 @@ export function PageHeader({ activeView, onBack, subtitle }: PageHeaderProps) {
       case 'upcoming-missions': return t('analysis.upcomingMissions');
       case 'berserker': return t('hud.berserkerState').replace('_', ' ');
       case 'fitness-test': return t('nav.fitnessTest');
+      case 'library': return t('nav.library');
       default: return view;
     }
   };
@@ -69,7 +70,12 @@ export function PageHeader({ activeView, onBack, subtitle }: PageHeaderProps) {
           </div>
 
           <div className="flex items-center gap-3">
-            <h1 className="font-headline text-3xl sm:text-5xl font-black uppercase tracking-tight text-white m-0 leading-none">
+            <h1 className={cn(
+              "font-headline text-3xl sm:text-5xl text-white m-0 leading-none",
+              ["analysis", "analytics", "training", "deployment", "fitness-test", "settings", "library"].includes(activeView)
+                ? "font-semibold uppercase tracking-widest"
+                : "font-black uppercase tracking-tight"
+            )}>
               {title}
             </h1>
           </div>

@@ -156,14 +156,14 @@ export const ExerciseSwapModal: React.FC<ExerciseSwapModalProps> = ({
                 {t('workout.swapDesc').replace('{exercise}', currentExercise?.name || currentExerciseId)}
               </p>
 
-              <div className="relative mb-4 shrink-0">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
+              <div className="relative mb-4 shrink-0 group">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-volt transition-colors" size={18} />
                 <input
                   type="text"
                   placeholder={t('workout.searchPlaceholder')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-surface-container-lowest border border-zinc-800 py-3 pl-12 pr-4 text-xs text-white placeholder:text-zinc-600 focus:border-volt/50 outline-none transition-all rounded-none"
+                  className="w-full bg-surface-container-lowest border border-zinc-800 py-3 pl-12 pr-4 text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-volt focus:ring-1 focus:ring-volt transition-all rounded-none"
                 />
               </div>
 

@@ -6,6 +6,7 @@ import { useSettings } from "../contexts/SettingsContext";
 import { getExerciseName, isMainLiftMatch } from "../utils/workoutUtils";
 import { getWarmupForLift, COOL_DOWN_ROUTINE } from "../data/warmupLibrary";
 import { Portal } from "./Portal";
+import { InfoTooltip } from "./InfoTooltip";
 
 interface MissionBriefingModalProps {
   isOpen: boolean;
@@ -149,7 +150,7 @@ export const MissionBriefingModal: React.FC<MissionBriefingModalProps> = ({
                                 <div className="flex items-center justify-between mb-4">
                                   <div className="flex items-center gap-3">
                                     <div className="w-1 h-6 bg-volt" />
-                                    <h4 className="text-lg font-black uppercase tracking-tighter text-white">
+                                    <h4 className="text-lg font-semibold uppercase tracking-tighter text-white">
                                       {item.name}
                                     </h4>
                                   </div>
@@ -187,21 +188,45 @@ export const MissionBriefingModal: React.FC<MissionBriefingModalProps> = ({
                               {(() => {
                                 const rawName = getExerciseName(ex, t);
                                 const originalName = (typeof ex === 'string' ? ex : ex?.name || "Unknown").toUpperCase();
-                                const intentTag = ex.intent || (originalName.includes('HEAVY PRIMARY') ? 'HEAVY PRIMARY' : originalName.includes('HYPERTROPHY') ? 'HYPERTROPHY' : undefined);
+                                let intentTag = ex.intent || (originalName.includes('HEAVY PRIMARY') ? 'HEAVY PRIMARY' : originalName.includes('HYPERTROPHY') ? 'HYPERTROPHY' : undefined);
                                 const cleanName = rawName.replace(/\[?HEAVY PRIMARY\]?|\[?HYPERTROPHY\]?/g, '').trim();
+
+                                const isS = isMainLiftMatch(cleanName, "Squat");
+                                const isB = isMainLiftMatch(cleanName, "Bench Press");
+                                const isD = isMainLiftMatch(cleanName, "Deadlift");
+                                const isMain = isS || isB || isD;
+
+                                if (!isMain && intentTag?.toUpperCase().includes("HEAVY PRIMARY")) {
+                                  intentTag = "HYPERTROPHY";
+                                }
+
+                                const isHeavyPrimary = intentTag?.toUpperCase().includes("HEAVY PRIMARY");
+                                const isHypertrophy = intentTag?.toUpperCase().includes("HYPERTROPHY");
+                                const isBloodFlow = intentTag?.toUpperCase().includes("BLOOD FLOW");
+
+                                let tooltipTerm: 'HeavyPrimary' | 'Hypertrophy' | 'BloodFlow' | undefined = undefined;
+                                if (isHeavyPrimary) tooltipTerm = 'HeavyPrimary';
+                                else if (isHypertrophy) tooltipTerm = 'Hypertrophy';
+                                else if (isBloodFlow) tooltipTerm = 'BloodFlow';
+
                                 return (
                                   <div className="flex flex-wrap items-center gap-2">
-                                    <h4 className="text-lg font-black uppercase tracking-tighter text-white">
+                                    <h4 className="text-lg font-semibold uppercase tracking-tighter text-white">
                                       {cleanName}
                                     </h4>
                                     {intentTag && (
-                                      <span className={`px-2 py-0.5 text-[8px] font-black uppercase tracking-widest border rounded-none ${
-                                        intentTag.toUpperCase().includes("HEAVY PRIMARY") 
-                                          ? "bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/30" 
-                                          : "bg-volt/10 text-volt border-volt/30"
-                                      }`}>
-                                        {intentTag}
-                                      </span>
+                                      <div className="flex items-center gap-1">
+                                        <span className={`px-2 py-0.5 text-[8px] font-black uppercase tracking-widest border rounded-none ${
+                                          isHeavyPrimary 
+                                            ? "bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/30" 
+                                            : "bg-volt/10 text-volt border-volt/30"
+                                        }`}>
+                                          {intentTag}
+                                        </span>
+                                        {tooltipTerm && (
+                                          <InfoTooltip term={tooltipTerm} className="ml-0 cursor-pointer text-[10px]" />
+                                        )}
+                                      </div>
                                     )}
                                   </div>
                                 );
@@ -378,7 +403,7 @@ export const MissionBriefingModal: React.FC<MissionBriefingModalProps> = ({
                             <div className="flex items-center justify-between mb-4">
                               <div className="flex items-center gap-3">
                                 <div className="w-1 h-6 bg-zinc-500" />
-                                <h4 className="text-lg font-black uppercase tracking-tighter text-white">
+                                <h4 className="text-lg font-semibold uppercase tracking-tighter text-white">
                                   {item.name}
                                 </h4>
                               </div>

@@ -119,11 +119,6 @@ export const ActiveRecoveryWidget = () => {
 
   return (
     <div className="w-full glass-panel px-4 py-6 md:p-8 flex flex-col relative group/module overflow-hidden h-full vanguard-tour-active-recovery">
-      {/* Decorative corner elements for tactical feel */}
-      <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-volt/40" />
-      <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-volt/40" />
-      <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-volt/40" />
-      <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-volt/40" />
       <div className="absolute inset-0 opacity-[0.03] pointer-events-none group-hover/module:opacity-[0.05] transition-opacity duration-700"
         style={{ backgroundImage: 'radial-gradient(var(--primary-color) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
       <div className="flex items-center justify-between relative z-10 mb-6 w-full">

@@ -32,7 +32,8 @@ import {
   X,
   SunMoon,
   Scale,
-  Target
+  Target,
+  BookSearch
 } from 'lucide-react';
 import { DeploymentIcon } from './components/DeploymentIcon';
 import { VanguardLogo } from './components/VanguardLogo';
@@ -45,6 +46,7 @@ import { FitnessTestView } from './components/FitnessTestView';
 import { getFitnessTestInfo } from './utils/fitnessTestUtils';
 import { SportShoeIcon } from './components/SportShoeIcon';
 import { TrainingView } from './components/TrainingView';
+import { LibraryView } from './components/LibraryView';
 import { BerserkerHUD } from './components/BerserkerHUD';
 import { ConfirmationModal } from './components/ConfirmationModal';
 import { SettingsView } from './components/SettingsView';
@@ -110,6 +112,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'training', label: 'nav.training', icon: DeploymentIcon },
   { id: 'deployment', label: 'nav.deployment', icon: MissionIcon },
   { id: 'fitness-test', label: 'nav.fitnessTest', icon: SportShoeIcon, isExperimental: true },
+  { id: 'library', label: 'nav.library', icon: BookSearch },
   { id: 'settings', label: 'nav.settings', icon: Settings },
 ];
 
@@ -947,6 +950,10 @@ function AppContent() {
         onAddActivity={() => setIsRecoveryModalOpen(true)}
         onViewUpcomingMissions={() => setActiveView('upcoming-missions')}
         onNavigateToFitnessTest={() => setActiveView('fitness-test')}
+        onStartCustomSession={() => {
+          setIsLifting(true);
+          setActiveView('workout-log');
+        }}
         onContinueSession={() => {
           if (!currentSession) {
             setShowReadinessCheck(true);
@@ -960,6 +967,7 @@ function AppContent() {
         }} 
       />;
       case 'analytics': return <AnalyticsView />;
+      case 'library': return <LibraryView />;
       case 'deployment': return <DeploymentView />;
       case 'upcoming-missions': return <UpcomingMissionsView 
         onBack={() => {

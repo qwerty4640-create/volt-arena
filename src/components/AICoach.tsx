@@ -268,7 +268,7 @@ export const AICoach = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
                     onChange={(e) => setInputText(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSend(inputText)}
                     placeholder={t('coach.awaiting')}
-                    className="w-full bg-void border border-white/10 px-4 py-3 pr-10 text-xs text-white placeholder:text-zinc-700 focus:border-volt outline-none transition-all"
+                    className="w-full bg-void border border-white/10 px-4 py-3 pr-10 text-xs text-white placeholder:text-zinc-700 focus:outline-none focus:border-volt focus:ring-1 focus:ring-volt transition-all"
                   />
                   <button 
                     onClick={toggleListening}

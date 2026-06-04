@@ -98,6 +98,7 @@ export interface WorkoutSession {
   targetRpe?: number;
   prescribedRpe?: number;
   actualRpe?: number; // Post-session reflection
+  isCustom?: boolean;
   reflectionSaved?: boolean;
   readiness?: number;
   sleep?: number;
@@ -680,11 +681,22 @@ const calculateFallback1RM = (
 export const getDailyMissionTitleAndDesc = (
   blockType: string,
   day: number,
+  frequency: number = 3
 ): { title: string; desc: string; rulesOfEngagement: string } => {
   const normBlock = (blockType || "").toLowerCase();
 
-  // Decide the day index (normally we have days 1, 2, 3)
-  const dIndex = ((day - 1) % 3) + 1;
+  // Decide the day index based on frequency mapping
+  let dIndex = 1;
+  if (frequency === 4) {
+    if (day === 1 || day === 2 || day === 3) dIndex = 1;
+    else dIndex = 2; // Day 4 is often secondary variation like overhead press
+  } else if (frequency === 5) {
+    if (day <= 3) dIndex = 1;
+    else if (day === 4) dIndex = 2;
+    else dIndex = 3;
+  } else {
+    dIndex = ((day - 1) % 3) + 1;
+  }
 
   if (
     normBlock.includes("foundation") ||
@@ -857,9 +869,10 @@ const createSessionFromTemplate = (
 
   // --- PHASE 1: INITIAL TEMPLATE SELECTION ---
   const currentPhaseStr = (block.type as string).toLowerCase();
-  const missionInfo = getDailyMissionTitleAndDesc(block.type, day);
 
   const frequency = profile?.trainingFrequency || 3;
+  const missionInfo = getDailyMissionTitleAndDesc(block.type, day, frequency);
+
   let templatePool = UPPER_LOWER_TEMPLATES;
   
   if (
@@ -951,6 +964,26 @@ const createSessionFromTemplate = (
     else if (currentReadiness < 50) readinessModifier = 0.8;
   }
 
+  // Calculate readiness RPE limit according to sum of drains / readiness logic
+  let readinessRpeLimit = 7.5;
+  if (currentReadiness >= 95) readinessRpeLimit = 9.5;
+  else if (currentReadiness >= 90) readinessRpeLimit = 9.0;
+  else if (currentReadiness >= 80) readinessRpeLimit = 8.5;
+  else if (currentReadiness >= 70) readinessRpeLimit = 8.0;
+  else if (currentReadiness >= 60) readinessRpeLimit = 7.5;
+  else if (currentReadiness >= 50) readinessRpeLimit = 7.0;
+  else readinessRpeLimit = 6.0;
+
+  if (isNextWorkout && lastSession && lastSession.completedAt) {
+    const hoursSinceLast = (Date.now() - lastSession.completedAt) / 3600000;
+    if (hoursSinceLast < 36) {
+      readinessRpeLimit = Math.min(readinessRpeLimit, 8.5);
+    }
+    if (hoursSinceLast < 12) {
+      readinessRpeLimit = Math.min(readinessRpeLimit, 7.5);
+    }
+  }
+
   // 3. Recovery Adjustment
   let recoveryModifier = 1.0;
   if (isNextWorkout && lastSession) {
@@ -1034,6 +1067,7 @@ const createSessionFromTemplate = (
     description: missionInfo.desc,
     rulesOfEngagement: missionInfo.rulesOfEngagement,
     startTime: Date.now(),
+    targetRpe: readinessRpeLimit,
     blockType: block.type,
     blockLabel: block.label,
     weekInBlock,
@@ -1291,12 +1325,15 @@ const createSessionFromTemplate = (
       let dynamicPR = 0;
       let lastWeight = 0;
       if (history && history.length > 0 && selectedExercise?.name) {
+        const cleanName = (name: string) => name.replace(/\[?HEAVY PRIMARY\]?|\[?HYPERTROPHY\]?|\[?ACTIVE RECOVERY\]?|\[?MOVEMENT QUALITY\]?|\[?BLOOD FLOW\]?/gi, '').trim().toLowerCase();
+        const searchTargetName = cleanName(selectedExercise.name);
+
         const sessionsWithEx = history
           .filter((s) =>
             s.exercises.some(
               (ex) =>
                 ex.name &&
-                ex.name.toLowerCase() === selectedExercise.name.toLowerCase(),
+                cleanName(ex.name) === searchTargetName,
             ),
           )
           .sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
@@ -1305,7 +1342,7 @@ const createSessionFromTemplate = (
           // Calculate max E1RM all-time for Autoregulation
           const allE1RMs = sessionsWithEx.flatMap(session => {
             const ex = session.exercises.find(
-              (e) => e.name && e.name.toLowerCase() === selectedExercise.name.toLowerCase()
+              (e) => e.name && cleanName(e.name) === searchTargetName
             );
             if (!ex || !ex.sets) return [];
             return ex.sets.map((set: any) => calculateE1RM(
@@ -1324,7 +1361,7 @@ const createSessionFromTemplate = (
           const targetEx = latestSession.exercises.find(
             (ex) =>
               ex.name &&
-              ex.name.toLowerCase() === selectedExercise.name.toLowerCase(),
+              cleanName(ex.name) === searchTargetName,
           );
           if (targetEx && targetEx.sets) {
             const validSets = targetEx.sets.filter((s:any) => parseFloat(s.weight) > 0);
@@ -1644,7 +1681,7 @@ const createSessionFromTemplate = (
         } else if (isHybrid) {
           intent = "[MOVEMENT QUALITY]";
         } else if (currentReadiness < 70) {
-          intent = "[BLOOD FLOW]";
+          intent = "BLOOD FLOW";
         } else {
           intent = "HYPERTROPHY";
         }
@@ -1665,7 +1702,9 @@ const createSessionFromTemplate = (
         } else if (isHybrid) {
           intent = "[MOVEMENT QUALITY]";
         } else if (currentReadiness < 70) {
-          intent = "[BLOOD FLOW]";
+          intent = "BLOOD FLOW";
+        } else {
+          intent = "HYPERTROPHY";
         }
       }
 
@@ -1748,6 +1787,37 @@ const createSessionFromTemplate = (
                 targetSetRpe = isFinalWeek ? "9" : "8.5";
               } else {
                 targetSetRpe = goals.includes("hypertrophy") ? (isFinalWeek ? "9" : "8") : "7.5";
+              }
+            }
+
+            if (targetSetRpe) {
+              let rpeVal = parseFloat(targetSetRpe);
+              if (!isNaN(rpeVal)) {
+                const isBifurcated =
+                  (block.type as any) === BlockType.STRENGTH ||
+                  (block.type as any) === BlockType.MAX_EFFORT ||
+                  (block.type as any) === BlockType.PEAKING;
+
+                if (isPrimaryMainLift && isBifurcated) {
+                  if (j === 0) {
+                    rpeVal = Math.min(rpeVal, readinessRpeLimit);
+                  } else {
+                    let originalTopSetRpe = 9;
+                    if (goals.includes("pure_strength") || goals.includes("peaking")) {
+                      originalTopSetRpe = isFinalWeek ? 10 : 9.5;
+                    } else if (goals.includes("powerbuilding") || goals.includes("hypertrophy")) {
+                      originalTopSetRpe = isFinalWeek ? 9.5 : 9;
+                    }
+                    const originalValue = rpeVal;
+                    const dropFromTop = Math.max(0, originalTopSetRpe - originalValue);
+                    const cappedTop = Math.min(originalTopSetRpe, readinessRpeLimit);
+                    rpeVal = Math.min(originalValue, cappedTop - dropFromTop);
+                  }
+                } else {
+                  rpeVal = Math.min(rpeVal, readinessRpeLimit);
+                }
+                rpeVal = Math.max(5, rpeVal);
+                targetSetRpe = rpeVal.toString();
               }
             }
 
@@ -2491,13 +2561,13 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({
     };
   };
 
-  const getNextWorkoutTemplate = useCallback(() => {
-    let filteredHistory = history;
+  const getNextWorkoutTemplate = useCallback((overrideReadinessScore?: number) => {
+    let filteredHistory = history.filter(s => !(s as any).isCustom);
 
     // Mitigate bugged backfills: if programResetAt exists but wipes ALL history
     // when we clearly have history, it's likely a bugged timestamp. Ignore it.
     if (profile?.programResetAt) {
-      const tempFiltered = history.filter(
+      const tempFiltered = filteredHistory.filter(
         (s) => (s.completedAt || 0) > profile.programResetAt!,
       );
       if (tempFiltered.length > 0) {
@@ -2515,7 +2585,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({
 
     const lastSession = filteredHistory.length > 0 ? filteredHistory[0] : null;
     const calibration = getCalibrationStatus();
-    const currentReadiness = calibration.readiness;
+    const currentReadiness = overrideReadinessScore !== undefined ? overrideReadinessScore : calibration.readiness;
     const hasAerobicInterference = calibration.hasAerobicInterference;
 
     if (filteredHistory.length === 0) {
@@ -2573,9 +2643,9 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const getWorkoutTemplate = useCallback(
     (week: number, day: number) => {
-      let filteredHistory = history;
+      let filteredHistory = history.filter(s => !(s as any).isCustom);
       if (profile?.programResetAt) {
-        const tempFiltered = history.filter(
+        const tempFiltered = filteredHistory.filter(
           (s) => (s.completedAt || 0) > profile.programResetAt!,
         );
         if (tempFiltered.length > 0) {
@@ -2612,7 +2682,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({
       const isNextWorkout = week === startWeek && day === nextDay;
 
       const calibration = getCalibrationStatus();
-      const currentReadiness = isNextWorkout ? calibration.readiness : 100;
+      const finalReadinessToUse = isNextWorkout ? calibration.readiness : 100;
       const hasAerobicInterference = calibration.hasAerobicInterference;
 
       return createSessionFromTemplate(
@@ -2621,7 +2691,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({
         profile,
         unit,
         lastSession,
-        currentReadiness,
+        finalReadinessToUse,
         hasAerobicInterference,
         history,
         isNextWorkout,
@@ -2675,11 +2745,12 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({
         })),
       }));
     } else {
-      session = getNextWorkoutTemplate();
+      session = getNextWorkoutTemplate(readinessScore);
       session.startTime = Date.now();
       // Clear overrides when session starts
       setNextWorkoutOverrides(null);
       localStorage.removeItem("berserker_template_overrides");
+
 
       session.penaltyApplied = false;
       session.currentExerciseIndex = 0;
@@ -2695,47 +2766,127 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({
     }
 
     session.prescribedRpe = calibration.recommendedRpe;
-    if (session.targetRpe === undefined) {
-      session.targetRpe = targetRpe || calibration.recommendedRpe;
+    if (targetRpe !== undefined) {
+      session.targetRpe = targetRpe;
+      
+      session.exercises = (session.exercises || []).map((ex) => ({
+        ...ex,
+        sets: (ex.sets || []).map((s) => {
+          let updatedRpeStr = s.rpe;
+          let rpeVal = parseFloat(String(s.rpe));
+          let setWeight = parseFloat(String(s.weight)) || 0;
+          let baseSetWeight = parseFloat(String(s.baseWeight)) || setWeight;
+          
+          if (!isNaN(rpeVal) && rpeVal > targetRpe) {
+            const rpeDrop = rpeVal - targetRpe;
+            if (rpeDrop > 0 && ex.isPrimaryMainLift && setWeight > 0) {
+              const dropFactor = 1 - (rpeDrop * 0.05);
+              setWeight = Math.round((setWeight * dropFactor) / 5) * 5;
+              baseSetWeight = Math.round((baseSetWeight * dropFactor) / 5) * 5;
+            }
+            updatedRpeStr = Math.max(5, targetRpe).toString();
+          }
+          return {
+            ...s,
+            rpe: updatedRpeStr,
+            baseRpe: updatedRpeStr,
+            weight: setWeight > 0 ? setWeight.toString() : String(s.weight),
+            baseWeight: baseSetWeight > 0 ? baseSetWeight.toString() : String(s.baseWeight)
+          };
+        }),
+      }));
+    } else if (session.targetRpe === undefined) {
+      session.targetRpe = calibration.recommendedRpe;
     }
 
     if (
       !calibration.isRedline &&
-      readinessScore !== undefined &&
-      readinessModifier !== undefined
+      readinessScore !== undefined
     ) {
       session.readiness = readinessScore;
-      session.targetRpe = targetRpe || calibration.recommendedRpe;
-
-      // Apply the modifier to the weights
-      session.exercises = (session.exercises || []).map((ex) => {
-        const isMainLift =
-          isMainLiftMatch(ex.name || "", "Squat") ||
-          isMainLiftMatch(ex.name || "", "Bench Press") ||
-          isMainLiftMatch(ex.name || "", "Deadlift");
-
-        let updatedSets = ex.sets || [];
-
-        // Cut accessory volume if red light (modifier < 1.0)
-        if (!isMainLift && readinessModifier < 1.0 && updatedSets.length > 2) {
-          updatedSets = updatedSets.slice(0, updatedSets.length - 1);
-        }
-
-        return {
-          ...ex,
-          sets: updatedSets.map((set) => {
-            const baseValue = parseFloat(set.baseWeight || set.weight) || 0;
-            return {
-              ...set,
-              weight: (
-                Math.round((baseValue * readinessModifier) / 5) * 5
-              ).toString(),
-              baseWeight: baseValue.toString(),
-            };
-          }),
-        };
-      });
     }
+
+    const activeRpeLimit = session.targetRpe || 8.0;
+    const goals = profile?.trainingObjectives || (profile?.trainingGoal ? [profile.trainingGoal] : ["powerbuilding"]);
+
+    // Unified weight and prefilled RPE adjuster based on daily readiness limit
+    session.exercises = (session.exercises || []).map((ex) => {
+      const isMainLift =
+        isMainLiftMatch(ex.name || "", "Squat") ||
+        isMainLiftMatch(ex.name || "", "Bench Press") ||
+        isMainLiftMatch(ex.name || "", "Deadlift");
+
+      const isPrimaryMainLift = ex.isPrimaryMainLift !== false && isMainLift;
+
+      let updatedSets = ex.sets || [];
+
+      // Cut accessory volume if red light (modifier < 1.0)
+      if (
+        readinessModifier !== undefined &&
+        !isMainLift &&
+        readinessModifier < 1.0 &&
+        updatedSets.length > 2
+      ) {
+        updatedSets = updatedSets.slice(0, updatedSets.length - 1);
+      }
+
+      const totalSetsNum = updatedSets.length;
+
+      return {
+        ...ex,
+        sets: updatedSets.map((set, j) => {
+          const baseValue = parseFloat(set.baseWeight || set.weight) || 0;
+          let weightVal = baseValue;
+
+          if (readinessModifier !== undefined) {
+            weightVal = Math.round((baseValue * readinessModifier) / 5) * 5;
+          }
+
+          let setRpe = set.baseRpe || set.rpe || "8";
+          let rpeVal = parseFloat(setRpe);
+
+          if (!isNaN(rpeVal)) {
+            const isBifurcated =
+              (session.title || "").toLowerCase().includes("strength") ||
+              (session.title || "").toLowerCase().includes("effort") ||
+              (session.title || "").toLowerCase().includes("peaking") ||
+              goals.includes("pure_strength") ||
+              goals.includes("powerbuilding");
+
+            if (isPrimaryMainLift && isBifurcated && totalSetsNum > 1) {
+              if (j === 0) {
+                rpeVal = Math.min(rpeVal, activeRpeLimit);
+              } else {
+                // Maintain bifurcation drop
+                const isFinalWeek = session.weekInBlock === 4;
+                let originalTopSetRpe = 9.0;
+                if (goals.includes("pure_strength") || goals.includes("peaking")) {
+                  originalTopSetRpe = isFinalWeek ? 10.0 : 9.5;
+                } else if (goals.includes("powerbuilding") || goals.includes("hypertrophy")) {
+                  originalTopSetRpe = isFinalWeek ? 9.5 : 9.0;
+                }
+                const originalValue = rpeVal;
+                const dropFromTop = Math.max(0, originalTopSetRpe - originalValue);
+                const cappedTop = Math.min(originalTopSetRpe, activeRpeLimit);
+                rpeVal = Math.min(originalValue, cappedTop - dropFromTop);
+              }
+            } else {
+              rpeVal = Math.min(rpeVal, activeRpeLimit);
+            }
+            rpeVal = Math.max(5, rpeVal);
+            setRpe = rpeVal.toString();
+          }
+
+          return {
+            ...set,
+            weight: weightVal.toString(),
+            baseWeight: baseValue.toString(),
+            rpe: setRpe,
+            baseRpe: setRpe,
+          };
+        }),
+      };
+    });
 
     // Engineering Update: Applied penalized weights at birth if safety triggers active
     session = applyIntensityModifications(session);
@@ -2817,7 +2968,13 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({
           );
           const avgActualRpe = totalActualRpe / completedSets.length;
 
-          const targetRpe = parseFloat(String(sessionToSave.targetRpe || "7"));
+          const totalTargetRpe = completedSets.reduce(
+            (sum, s) =>
+              sum + (parseFloat(String(s.baseRpe || s.rpe || "")) || 0),
+            0,
+          );
+          const targetRpe = totalTargetRpe > 0 ? totalTargetRpe / completedSets.length : parseFloat(String(sessionToSave.targetRpe || "7"));
+
 
           const isHybridOrRecovery =
             sessionToSave.title.toLowerCase().includes("hybrid") ||

@@ -74,7 +74,7 @@ export interface UserProfile {
 
 export type Theme = 'light' | 'dark' | 'fantasy';
 export type LightColorScheme = 'default' | 'ocean' | 'neon' | 'solar' | 'monochrome';
-export type FantasyColorScheme = 'hud' | 'sovereign' | 'stained' | 'helios' | 'blues' | 'grays' | 'peerless';
+export type FantasyColorScheme = 'hud' | 'sovereign' | 'stained' | 'helios' | 'blues' | 'grays' | 'peerless' | 'solaris';
 
 export const THEME_LOCKS: Record<string, string[]> = {
   untrained: ['sovereign', 'peerless', 'blues', 'grays', 'stained'],

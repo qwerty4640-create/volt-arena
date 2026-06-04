@@ -55,6 +55,7 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
 
   const activeFantasySchemes = [
     { id: 'hud', label: 'Tactical HUD', minTier: 'Untrained' },
+    { id: 'solaris', label: 'Tactical Solaris', minTier: 'Untrained' },
     { id: 'helios', label: 'Helios Prime', minTier: 'Untrained' },
     { id: 'stained', label: 'Stained Glass', minTier: 'Intermediate' },
     { id: 'blues', label: 'Colbalt Blues', minTier: 'Intermediate' },
@@ -142,11 +143,6 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
           transition={{ delay: 0.12 }}
           className="glass-panel dot-grid-bg px-4 py-6 md:p-8 flex flex-col md:col-span-2 border-b border-white/5 vanguard-tour-visual-output relative overflow-hidden"
         >
-          {/* Decorative corner elements for tactical feel */}
-          <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-volt/40" />
-          <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-volt/40" />
-          <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-volt/40" />
-          <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-volt/40" />
           <div className="flex items-center gap-3 mb-6 md:mb-8">
             <SunMoon className="text-volt" size={20} />
             <h3 className="font-sans text-sm font-bold uppercase tracking-widest text-white">Visual Output</h3>
@@ -298,11 +294,6 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
           transition={{ delay: 0.1 }}
           className="glass-panel dot-grid-bg px-4 py-6 md:p-8 flex flex-col vanguard-tour-unit-measure relative overflow-hidden"
         >
-          {/* Decorative corner elements for tactical feel */}
-          <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-volt/40" />
-          <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-volt/40" />
-          <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-volt/40" />
-          <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-volt/40" />
           <div className="flex items-center gap-3 mb-6 md:mb-8">
             <Scale className="text-volt" size={20} />
             <h3 className="font-sans text-sm font-bold uppercase tracking-widest text-white">{t('settings.unit')}</h3>
@@ -423,11 +414,6 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
           transition={{ delay: 0.18 }}
           className="glass-panel dot-grid-bg px-4 py-6 md:p-8 flex flex-col vanguard-tour-reset-program relative overflow-hidden"
         >
-          {/* Decorative corner elements for tactical feel */}
-          <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-volt/40" />
-          <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-volt/40" />
-          <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-volt/40" />
-          <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-volt/40" />
           <div className="flex items-center gap-3 mb-6 md:mb-8">
             <Target className="text-volt" size={20} />
             <h3 className="font-sans text-sm font-bold uppercase tracking-widest text-white">{t('settings.programManagement')}</h3>
@@ -486,11 +472,6 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
           transition={{ delay: 0.2 }}
           className="glass-panel dot-grid-bg px-4 py-6 md:p-8 flex flex-col md:col-span-2 relative overflow-hidden"
         >
-          {/* Decorative corner elements for tactical feel */}
-          <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-volt/40" />
-          <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-volt/40" />
-          <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-volt/40" />
-          <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-volt/40" />
           <div className="flex items-center gap-3 mb-6 md:mb-8">
             <Settings className="text-volt" size={20} />
             <h3 className="font-sans text-sm font-bold uppercase tracking-widest text-white">{t('settings.systemOps')}</h3>
@@ -548,11 +529,6 @@ export const SettingsView = ({ onExit, onNavigateToProfile }: { onExit?: () => v
           transition={{ delay: 0.2 }}
           className="glass-panel dot-grid-bg px-4 py-6 md:p-8 border-none relative overflow-hidden"
         >
-          {/* Decorative corner elements for tactical feel */}
-          <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-volt/40" />
-          <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-volt/40" />
-          <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-volt/40" />
-          <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-volt/40" />
           <div className="flex items-center gap-3 mb-6 md:mb-8">
             <Terminal className="text-volt" size={20} />
             <h3 className="font-sans text-sm font-bold uppercase tracking-widest text-white">{t('settings.devTools')}</h3>

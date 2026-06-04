@@ -237,7 +237,7 @@ export const ExerciseSelectorModal = ({ isOpen, onClose, onSelect }: ExerciseSel
                     placeholder={t('workout.circuitTitlePlaceholder')}
                     value={circuitTitle}
                     onChange={(e) => setCircuitTitle(e.target.value)}
-                    className="flex-1 bg-surface-container-lowest border-none py-3 px-4 text-xs text-white placeholder:text-zinc-600 focus:border-volt/50 outline-none transition-all"
+                    className="flex-1 bg-surface-container-lowest border border-white/5 py-3 px-4 text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-volt focus:ring-1 focus:ring-volt transition-all"
                   />
                   <button 
                     onClick={handleSaveCircuit}
@@ -250,14 +250,14 @@ export const ExerciseSelectorModal = ({ isOpen, onClose, onSelect }: ExerciseSel
               </div>
             )}
 
-            <div className="relative mb-4 shrink-0">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
+            <div className="relative mb-4 shrink-0 group">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-volt transition-colors" size={18} />
               <input
                 type="text"
                 placeholder={t('workout.searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-surface-container-lowest border-none py-4 pl-12 pr-4 text-sm text-white placeholder:text-zinc-600 focus:border-volt/50 outline-none transition-all"
+                className="w-full bg-surface-container-lowest border border-white/5 py-4 pl-12 pr-4 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-volt focus:ring-1 focus:ring-volt transition-all"
               />
             </div>
 

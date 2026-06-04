@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=Share+Tech+Mono&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500;600;700;900&family=Orbitron:wght@400;500;700;900&family=Space+Grotesk:wght@300;400;500;600;700&family=Syncopate:wght@400;700&family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -733,6 +733,133 @@
   --primary-gradient: linear-gradient(135deg, #E6C556 0%, #B89626 100%) !important;
 }
 
+/* Sci-Fi Scheme Variables */
+:root[data-theme="fantasy"][data-fantasy-scheme="crt"] {
+  --theme-void: #0A0F0D;
+  --theme-surface: #121A16;
+  --theme-surface-container-lowest: #050807;
+  --theme-surface-container-low: #0A0F0D;
+  --theme-surface-container-high: #1A2620;
+  --theme-surface-container-highest: #24352D;
+  --theme-surface-variant: #16201B;
+
+  --theme-white: #E6FFF0;
+  --theme-black: #000000;
+  --theme-crimson: #FFB300; /* Secondary Accent = Amber Warning */
+
+  --theme-zinc-50: #e6fff0;
+  --theme-zinc-100: #ccffdd;
+  --theme-zinc-200: #99ffb3;
+  --theme-zinc-300: #7ae391;
+  --theme-zinc-400: #5A7365; /* Muted Mappings desaturated matrix gray-green */
+  --theme-zinc-500: #4a5e52;
+  --theme-zinc-600: #3c4d43;
+  --theme-zinc-700: #2d3b32;
+  --theme-zinc-800: #1f2a22;
+  --theme-zinc-900: #121A16;
+  --theme-zinc-950: #0A0F0D;
+
+  --theme-tier-advanced: #FFB300; /* Secondary Accent = Amber Warning */
+  --theme-tier-elite: #33FF66; /* Phosphor Green */
+}
+
+:root[data-theme="fantasy"][data-fantasy-scheme="crt"],
+[data-theme="fantasy"][data-fantasy-scheme="crt"] [data-tier],
+[data-theme="fantasy"][data-fantasy-scheme="crt"] .tier-untrained,
+[data-theme="fantasy"][data-fantasy-scheme="crt"] .tier-novice,
+[data-theme="fantasy"][data-fantasy-scheme="crt"] .tier-newbie,
+[data-theme="fantasy"][data-fantasy-scheme="crt"] .tier-intermediate,
+[data-theme="fantasy"][data-fantasy-scheme="crt"] .tier-advanced,
+[data-theme="fantasy"][data-fantasy-scheme="crt"] .tier-elite {
+  --primary-color: #33FF66 !important;
+  --primary-glow: rgba(51, 255, 102, 0.5) !important;
+  --primary-gradient: linear-gradient(135deg, #33FF66 0%, #11CC44 100%) !important;
+}
+
+:root[data-theme="fantasy"][data-fantasy-scheme="scifi"] {
+  --theme-void: #0D0C1F;
+  --theme-surface: #16152B;
+  --theme-surface-container-lowest: #060512;
+  --theme-surface-container-low: #0D0C1F;
+  --theme-surface-container-high: #1E1B3D;
+  --theme-surface-container-highest: #282552;
+  --theme-surface-variant: #1B1A36;
+
+  --theme-white: #E1E0FF;
+  --theme-black: #000000;
+  --theme-crimson: #FF0055; /* Secondary Accent = Laser Magenta */
+
+  --theme-zinc-50: #e6f7ff;
+  --theme-zinc-100: #ccf1ff;
+  --theme-zinc-200: #99e1ff;
+  --theme-zinc-300: #66ccff;
+  --theme-zinc-400: #636185; /* Muted Mappings desaturated dusk lavender gray */
+  --theme-zinc-500: #555375;
+  --theme-zinc-600: #464461;
+  --theme-zinc-700: #36354c;
+  --theme-zinc-800: #26253b;
+  --theme-zinc-900: #16152B;
+  --theme-zinc-950: #0D0C1F;
+
+  --theme-tier-advanced: #FF0055; /* Secondary Accent = Laser Magenta */
+  --theme-tier-elite: #00F0FF; /* Primary Accent = Cyber Cyan */
+}
+
+:root[data-theme="fantasy"][data-fantasy-scheme="scifi"],
+[data-theme="fantasy"][data-fantasy-scheme="scifi"] [data-tier],
+[data-theme="fantasy"][data-fantasy-scheme="scifi"] .tier-untrained,
+[data-theme="fantasy"][data-fantasy-scheme="scifi"] .tier-novice,
+[data-theme="fantasy"][data-fantasy-scheme="scifi"] .tier-newbie,
+[data-theme="fantasy"][data-fantasy-scheme="scifi"] .tier-intermediate,
+[data-theme="fantasy"][data-fantasy-scheme="scifi"] .tier-advanced,
+[data-theme="fantasy"][data-fantasy-scheme="scifi"] .tier-elite {
+  --primary-color: #00F0FF !important;
+  --primary-glow: rgba(0, 240, 255, 0.5) !important;
+  --primary-gradient: linear-gradient(135deg, #00F0FF 0%, #00B6FF 100%) !important;
+}
+
+:root[data-theme="fantasy"][data-fantasy-scheme="solaris"] {
+  --theme-void: #141210;
+  --theme-surface: #1C1916;
+  --theme-surface-container-lowest: #0B0A09;
+  --theme-surface-container-low: #141210;
+  --theme-surface-container-high: #24201D;
+  --theme-surface-container-highest: #2E2925;
+  --theme-surface-variant: #221F1B;
+
+  --theme-white: #FFF9F5;
+  --theme-black: #000000;
+  --theme-crimson: #E52E4D; /* Semantic Red */
+
+  --theme-zinc-50: #fff9f5;
+  --theme-zinc-100: #ffecd9;
+  --theme-zinc-200: #ffdcb3;
+  --theme-zinc-300: #ffbb8c;
+  --theme-zinc-400: #8C827A; /* Muted Mappings desaturated industrial clay gray */
+  --theme-zinc-500: #736b64;
+  --theme-zinc-600: #5a534e;
+  --theme-zinc-700: #423d39;
+  --theme-zinc-800: #2a2724;
+  --theme-zinc-900: #1C1916;
+  --theme-zinc-950: #141210;
+
+  --theme-tier-advanced: #00E5A3; /* Secondary Accent = Capsule Mint */
+  --theme-tier-elite: #FF5500; /* Primary Accent = Solar Orange */
+}
+
+:root[data-theme="fantasy"][data-fantasy-scheme="solaris"],
+[data-theme="fantasy"][data-fantasy-scheme="solaris"] [data-tier],
+[data-theme="fantasy"][data-fantasy-scheme="solaris"] .tier-untrained,
+[data-theme="fantasy"][data-fantasy-scheme="solaris"] .tier-novice,
+[data-theme="fantasy"][data-fantasy-scheme="solaris"] .tier-newbie,
+[data-theme="fantasy"][data-fantasy-scheme="solaris"] .tier-intermediate,
+[data-theme="fantasy"][data-fantasy-scheme="solaris"] .tier-advanced,
+[data-theme="fantasy"][data-fantasy-scheme="solaris"] .tier-elite {
+  --primary-color: #FF5500 !important;
+  --primary-glow: rgba(255, 85, 0, 0.5) !important;
+  --primary-gradient: linear-gradient(135deg, #FF5500 0%, #CC4400 100%) !important;
+}
+
 /* Primary Button Global Overrides for Light Themes */
 :root[data-theme="light"] .btn-primary,
 :root[data-theme="light"] button.bg-volt,
@@ -912,6 +1039,246 @@
   background-image: 
     repeating-linear-gradient(135deg, rgba(155, 27, 27, 0.1) 0, rgba(155, 27, 27, 0.1) 2px, transparent 2px, transparent 30px),
     repeating-linear-gradient(45deg, rgba(212, 175, 55, 0.05) 0, rgba(212, 175, 55, 0.05) 1px, transparent 1px, transparent 60px);
+}
+
+/* CRT Scheme Patterns & Overrides */
+[data-theme="fantasy"][data-fantasy-scheme="crt"] {
+  --font-primary: "Plus Jakarta Sans", "Inter", sans-serif !important;
+}
+
+[data-theme="fantasy"][data-fantasy-scheme="crt"] body {
+  font-family: "Plus Jakarta Sans", "Inter", sans-serif !important;
+  background-color: #0A0F0D !important;
+  background-image: 
+    linear-gradient(rgba(51, 255, 102, 0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(51, 255, 102, 0.015) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+[data-theme="fantasy"][data-fantasy-scheme="crt"] body::before {
+  content: " ";
+  display: block;
+  position: fixed;
+  top: 0; left: 0; bottom: 0; right: 0;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.08) 50%), linear-gradient(90deg, rgba(51, 255, 102, 0.02), rgba(0, 0, 0, 0.01), rgba(51, 255, 102, 0.02));
+  z-index: 9999;
+  background-size: 100% 4px, 4px 100%;
+  pointer-events: none;
+  opacity: 0.3;
+}
+
+[data-theme="fantasy"][data-fantasy-scheme="crt"] h1,
+[data-theme="fantasy"][data-fantasy-scheme="crt"] h2,
+[data-theme="fantasy"][data-fantasy-scheme="crt"] h3,
+[data-theme="fantasy"][data-fantasy-scheme="crt"] h4,
+[data-theme="fantasy"][data-fantasy-scheme="crt"] h5,
+[data-theme="fantasy"][data-fantasy-scheme="crt"] h6,
+[data-theme="fantasy"][data-fantasy-scheme="crt"] .font-headline,
+[data-theme="fantasy"][data-fantasy-scheme="crt"] .font-display,
+[data-theme="fantasy"][data-fantasy-scheme="crt"] .font-mono {
+  font-family: "Share Tech Mono", "JetBrains Mono", monospace !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+}
+
+[data-theme="fantasy"][data-fantasy-scheme="crt"] .glass-panel {
+  background-color: rgba(18, 26, 22, 0.85) !important;
+  backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(51, 255, 102, 0.2) !important;
+  box-shadow: 
+    inset 0 1px 1px rgba(51, 255, 102, 0.15),
+    0 8px 32px rgba(0, 0, 0, 0.5),
+    0 0 10px rgba(51, 255, 102, 0.03) !important;
+}
+
+[data-theme="fantasy"][data-fantasy-scheme="crt"] .glass-panel:hover {
+  border-color: rgba(51, 255, 102, 0.45) !important;
+  box-shadow: 
+    inset 0 1px 2px rgba(51, 255, 102, 0.25),
+    0 8px 32px rgba(0, 0, 0, 0.6),
+    0 0 18px rgba(51, 255, 102, 0.08) !important;
+}
+
+[data-theme="fantasy"][data-fantasy-scheme="crt"] .hud-widget-grid {
+  background-image: 
+    radial-gradient(circle, rgba(51, 255, 102, 0.1) 1px, transparent 1px),
+    linear-gradient(rgba(51, 255, 102, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(51, 255, 102, 0.04) 1px, transparent 1px);
+  background-size: 40px 40px, 20px 20px, 20px 20px;
+}
+
+[data-theme="fantasy"][data-fantasy-scheme="crt"] .btn-primary {
+  background-color: #33FF66 !important;
+  color: #0A0F0D !important;
+  box-shadow: 0 0 12px rgba(51, 255, 102, 0.4) !important;
+  border: 1px solid #33FF66 !important;
+}
+
+[data-theme="fantasy"][data-fantasy-scheme="crt"] .btn-primary:hover {
+  background-color: #55ee7f !important;
+  box-shadow: 0 0 20px rgba(51, 255, 102, 0.7) !important;
+}
+
+/* Sci-Fi Scheme Patterns & Overrides */
+[data-theme="fantasy"][data-fantasy-scheme="scifi"] {
+  --font-primary: "Space Grotesk", "Inter", sans-serif !important;
+}
+
+[data-theme="fantasy"][data-fantasy-scheme="scifi"] body {
+  font-family: "Space Grotesk", "Inter", sans-serif !important;
+  background-color: #0D0C1F !important;
+  background-image: 
+    linear-gradient(rgba(0, 240, 255, 0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 240, 255, 0.015) 1px, transparent 1px);
+  background-size: 30px 30px;
+}
+
+[data-theme="fantasy"][data-fantasy-scheme="scifi"] body::before {
+  content: " ";
+  display: block;
+  position: fixed;
+  top: 0; left: 0; bottom: 0; right: 0;
+  background: 
+    linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%),
+    linear-gradient(90deg, rgba(0, 240, 255, 0.03), rgba(0, 0, 0, 0.01), rgba(255, 0, 85, 0.03));
+  z-index: 9999;
+  background-size: 100% 4px, 4px 100%;
+  pointer-events: none;
+  opacity: 0.4;
+}
+
+[data-theme="fantasy"][data-fantasy-scheme="scifi"] h1,
+[data-theme="fantasy"][data-fantasy-scheme="scifi"] h2,
+[data-theme="fantasy"][data-fantasy-scheme="scifi"] h3,
+[data-theme="fantasy"][data-fantasy-scheme="scifi"] h4,
+[data-theme="fantasy"][data-fantasy-scheme="scifi"] h5,
+[data-theme="fantasy"][data-fantasy-scheme="scifi"] h6,
+[data-theme="fantasy"][data-fantasy-scheme="scifi"] .font-headline,
+[data-theme="fantasy"][data-fantasy-scheme="scifi"] .font-display,
+[data-theme="fantasy"][data-fantasy-scheme="scifi"] .font-mono {
+  font-family: "Orbitron", "Syncopate", monospace !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+  font-weight: 700 !important;
+}
+
+[data-theme="fantasy"][data-fantasy-scheme="scifi"] .glass-panel {
+  background-color: rgba(22, 21, 43, 0.75) !important;
+  backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(0, 240, 255, 0.25) !important;
+  box-shadow: 
+    inset 0 1px 1px rgba(0, 240, 255, 0.15),
+    0 8px 32px rgba(0, 0, 0, 0.6),
+    0 0 12px rgba(0, 240, 255, 0.04) !important;
+}
+
+[data-theme="fantasy"][data-fantasy-scheme="scifi"] .glass-panel:hover {
+  border-color: rgba(0, 240, 255, 0.5) !important;
+  box-shadow: 
+    inset 0 1px 2px rgba(0, 240, 255, 0.25),
+    0 8px 32px rgba(0, 0, 0, 0.7),
+    0 0 22px rgba(0, 240, 255, 0.1) !important;
+}
+
+[data-theme="fantasy"][data-fantasy-scheme="scifi"] .hud-widget-grid {
+  background-image: 
+    radial-gradient(circle, rgba(0, 240, 255, 0.1) 1px, transparent 1px),
+    linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
+  background-size: 50px 50px, 25px 25px, 25px 25px;
+}
+
+[data-theme="fantasy"][data-fantasy-scheme="scifi"] .btn-primary {
+  background-color: #00F0FF !important;
+  color: #0D0C1F !important;
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.4) !important;
+  border: 1px solid #00F0FF !important;
+}
+
+[data-theme="fantasy"][data-fantasy-scheme="scifi"] .btn-primary:hover {
+  background-color: #33f3ff !important;
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.7) !important;
+}
+
+/* Solaris Scheme Patterns & Overrides */
+[data-theme="fantasy"][data-fantasy-scheme="solaris"] {
+  --font-primary: "DM Sans", "Inter", sans-serif !important;
+}
+
+[data-theme="fantasy"][data-fantasy-scheme="solaris"] body {
+  font-family: "DM Sans", "Inter", sans-serif !important;
+  background-color: #141210 !important;
+  background-image: 
+    linear-gradient(rgba(255, 85, 0, 0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 85, 0, 0.015) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+[data-theme="fantasy"][data-fantasy-scheme="solaris"] body::before {
+  content: " ";
+  display: block;
+  position: fixed;
+  top: 0; left: 0; bottom: 0; right: 0;
+  background: 
+    linear-gradient(rgba(20, 18, 16, 0) 50%, rgba(0, 0, 0, 0.08) 50%),
+    linear-gradient(90deg, rgba(255, 85, 0, 0.02), rgba(0, 0, 0, 0.01), rgba(0, 229, 163, 0.02));
+  z-index: 9999;
+  background-size: 100% 4px, 4px 100%;
+  pointer-events: none;
+  opacity: 0.35;
+}
+
+[data-theme="fantasy"][data-fantasy-scheme="solaris"] h1,
+[data-theme="fantasy"][data-fantasy-scheme="solaris"] h2,
+[data-theme="fantasy"][data-fantasy-scheme="solaris"] h3,
+[data-theme="fantasy"][data-fantasy-scheme="solaris"] h4,
+[data-theme="fantasy"][data-fantasy-scheme="solaris"] h5,
+[data-theme="fantasy"][data-fantasy-scheme="solaris"] h6,
+[data-theme="fantasy"][data-fantasy-scheme="solaris"] .font-headline,
+[data-theme="fantasy"][data-fantasy-scheme="solaris"] .font-display,
+[data-theme="fantasy"][data-fantasy-scheme="solaris"] .font-mono {
+  font-family: "Space Mono", "JetBrains Mono", monospace !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase !important;
+  font-weight: 700 !important;
+}
+
+[data-theme="fantasy"][data-fantasy-scheme="solaris"] .glass-panel {
+  background-color: rgba(28, 25, 22, 0.85) !important;
+  backdrop-filter: blur(24px) !important;
+  border: 1px solid rgba(255, 85, 0, 0.22) !important;
+  box-shadow: 
+    inset 0 1px 1px rgba(255, 85, 0, 0.12),
+    0 8px 32px rgba(0, 0, 0, 0.7),
+    0 0 12px rgba(255, 85, 0, 0.03) !important;
+}
+
+[data-theme="fantasy"][data-fantasy-scheme="solaris"] .glass-panel:hover {
+  border-color: rgba(255, 85, 0, 0.45) !important;
+  box-shadow: 
+    inset 0 1px 2px rgba(255, 85, 0, 0.22),
+    0 8px 32px rgba(0, 0, 0, 0.8),
+    0 0 20px rgba(255, 85, 0, 0.08) !important;
+}
+
+[data-theme="fantasy"][data-fantasy-scheme="solaris"] .hud-widget-grid {
+  background-image: 
+    radial-gradient(circle, rgba(255, 85, 0, 0.08) 1px, transparent 1px),
+    linear-gradient(rgba(255, 85, 0, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 85, 0, 0.02) 1px, transparent 1px);
+  background-size: 48px 48px, 24px 24px, 24px 24px;
+}
+
+[data-theme="fantasy"][data-fantasy-scheme="solaris"] .btn-primary {
+  background-color: #FF5500 !important;
+  color: #141210 !important;
+  box-shadow: 0 0 12px rgba(255, 85, 0, 0.4) !important;
+  border: 1px solid #FF5500 !important;
+}
+
+[data-theme="fantasy"][data-fantasy-scheme="solaris"] .btn-primary:hover {
+  background-color: #ff6e24 !important;
+  box-shadow: 0 0 22px rgba(255, 85, 0, 0.75) !important;
 }
 
 /* Visual Degradation: Glitch Effect */

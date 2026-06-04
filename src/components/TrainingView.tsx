@@ -29,6 +29,7 @@ import { calculateTier } from '../lib/strength';
 import { MissionBriefingModal } from './MissionBriefingModal';
 import { ExerciseSwapModal } from './ExerciseSwapModal';
 import { ExerciseInfoModal } from './ExerciseInfoModal';
+import { InfoTooltip } from './InfoTooltip';
 import { getWarmupForLift, COOL_DOWN_ROUTINE } from '../data/warmupLibrary';
 import { getSwappableExercises, EXERCISE_DATABASE, ExerciseDefinition } from '../constants/exercises';
 import { getBlockForWeek } from '../constants/periodization';
@@ -43,6 +44,7 @@ interface TrainingViewProps {
   onAddActivity?: () => void;
   onViewUpcomingMissions?: () => void;
   onNavigateToFitnessTest?: () => void;
+  onStartCustomSession?: () => void;
 }
 
 const MissionTimer = ({ startTime, isActiveSession, estDuration }: { startTime?: number, isActiveSession: boolean, estDuration: number }) => {
@@ -85,7 +87,8 @@ export const TrainingView = ({
   onViewHistory, 
   onAddActivity,
   onViewUpcomingMissions,
-  onNavigateToFitnessTest
+  onNavigateToFitnessTest,
+  onStartCustomSession
 }: TrainingViewProps) => {
   const { t, unit, profile } = useSettings();
   const {
@@ -115,13 +118,24 @@ export const TrainingView = ({
     const newDef = EXERCISE_DATABASE.find(e => e.id === newId || e.name.toLowerCase() === newId.toLowerCase());
     if (!newDef) return;
     
+    const isS = isMainLiftMatch(newDef.name, 'Squat');
+    const isB = isMainLiftMatch(newDef.name, 'Bench Press');
+    const isD = isMainLiftMatch(newDef.name, 'Deadlift');
+    const isMain = isS || isB || isD;
+
+    let newIntent = oldExercise.intent;
+    if (!isMain && oldExercise.intent === "HEAVY PRIMARY") {
+      newIntent = "HYPERTROPHY";
+    }
+
     const updatedExercise: Exercise = {
       ...oldExercise,
       exerciseId: newDef.id,
       name: newDef.name,
-      isSquat: newDef.pattern === 'squat',
-      isBench: newDef.pattern === 'push_horizontal',
-      isDeadlift: newDef.pattern === 'hinge'
+      isSquat: isS,
+      isBench: isB,
+      isDeadlift: isD,
+      intent: newIntent
     };
 
     if (isActiveSession) {
@@ -142,84 +156,7 @@ export const TrainingView = ({
   const [selectedMission, setSelectedMission] = useState<WorkoutSession | null>(null);
   const [currentPRIndex, setCurrentPRIndex] = useState(0);
 
-  // Mission Library states & filter computations
-  const [librarySearch, setLibrarySearch] = useState('');
-  const [libraryCategory, setLibraryCategory] = useState('All');
-  const [libraryMuscle, setLibraryMuscle] = useState('All');
-  const [libraryPattern, setLibraryPattern] = useState('All');
-  const [libraryInfoExercise, setLibraryInfoExercise] = useState<ExerciseDefinition | null>(null);
-
-  const libraryCategories = React.useMemo(() => {
-    const cats = new Set<string>();
-    EXERCISE_DATABASE.forEach(ex => {
-      if (ex.category) cats.add(ex.category);
-    });
-    return Array.from(cats).sort();
-  }, []);
-
-  const libraryMuscles = React.useMemo(() => {
-    const m = new Set<string>();
-    EXERCISE_DATABASE.forEach(ex => {
-      if (ex.muscles) {
-        ex.muscles.forEach(muscle => m.add(muscle));
-      }
-    });
-    return Array.from(m).sort();
-  }, []);
-
-  const libraryPatterns = React.useMemo(() => {
-    const p = new Set<string>();
-    EXERCISE_DATABASE.forEach(ex => {
-      if (ex.pattern) p.add(ex.pattern);
-    });
-    return Array.from(p).sort();
-  }, []);
-
-  const filteredLibrary = React.useMemo(() => {
-    const searchTerms = librarySearch.toLowerCase().split(/\s+/).filter(Boolean);
-    return EXERCISE_DATABASE.filter(ex => {
-      const matchSearch = searchTerms.length === 0 || searchTerms.every(term => {
-        const searchableString = [
-          ex.name.toLowerCase(),
-          ex.category.toLowerCase(),
-          ex.pattern.toLowerCase(),
-          ...(ex.muscles?.map(m => m.toLowerCase()) || []),
-          ...(ex.description ? [ex.description.toLowerCase()] : [])
-        ].join(' ');
-        return searchableString.includes(term);
-      });
-
-      const matchCategory = libraryCategory === 'All' || ex.category === libraryCategory;
-      const matchPattern = libraryPattern === 'All' || ex.pattern === libraryPattern;
-      const matchMuscle = libraryMuscle === 'All' || (ex.muscles && ex.muscles.includes(libraryMuscle));
-
-      return matchSearch && matchCategory && matchPattern && matchMuscle;
-    }).sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
-  }, [librarySearch, libraryCategory, libraryPattern, libraryMuscle]);
-
-  // Tactical Field Manual states & filter computations
-  const [manualSearch, setManualSearch] = useState('');
-
-  const filteredManualTerms = React.useMemo(() => {
-    const searchTerms = manualSearch.toLowerCase().split(/\s+/).filter(Boolean);
-    const allTerms = Object.entries(TRAINING_TERMS);
-
-    return allTerms.filter(([key]) => {
-      if (searchTerms.length === 0) return true;
-      const titleTrans = t(`tooltip.${key}.title`);
-      const shortTrans = t(`tooltip.${key}.short`);
-      const longTrans = t(`tooltip.${key}.long`);
-
-      const searchableString = [
-        key.toLowerCase(),
-        titleTrans.toLowerCase(),
-        shortTrans.toLowerCase(),
-        longTrans.toLowerCase()
-      ].join(' ');
-
-      return searchTerms.every(term => searchableString.includes(term));
-    });
-  }, [manualSearch, t]);
+// Intentionally leaving out Library states and info exercise state to remove tactical library imports
 
   useEffect(() => {
     setMounted(true);
@@ -657,21 +594,50 @@ export const TrainingView = ({
               const rawName = exName;
               const originalEx = isActiveSession ? mainLift : currentEx;
               const originalName = (typeof originalEx === 'string' ? originalEx : originalEx?.name || "").toUpperCase();
-              const intentTag = (isActiveSession ? mainLift?.intent : currentEx?.intent) || 
+              let intentTag = (isActiveSession ? mainLift?.intent : currentEx?.intent) || 
                 (originalName.includes('HEAVY PRIMARY') ? 'HEAVY PRIMARY' : 
                  originalName.includes('HYPERTROPHY') ? 'HYPERTROPHY' : undefined);
               const cleanName = rawName.replace(/\[?HEAVY PRIMARY\]?|\[?HYPERTROPHY\]?/g, '').trim();
+
+              const isS = isMainLiftMatch(cleanName, "Squat");
+              const isB = isMainLiftMatch(cleanName, "Bench Press");
+              const isD = isMainLiftMatch(cleanName, "Deadlift");
+              const isMain = isS || isB || isD;
+
+              if (!isMain && intentTag?.toUpperCase().includes("HEAVY PRIMARY")) {
+                intentTag = "HYPERTROPHY";
+              }
+
+              const isHeavyPrimary = intentTag?.toUpperCase().includes("HEAVY PRIMARY");
+              const isHypertrophy = intentTag?.toUpperCase().includes("HYPERTROPHY");
+              const isBloodFlow = intentTag?.toUpperCase().includes("BLOOD FLOW");
+
+              let tooltipTerm: 'HeavyPrimary' | 'Hypertrophy' | 'BloodFlow' | undefined = undefined;
+              if (isHeavyPrimary) tooltipTerm = 'HeavyPrimary';
+              else if (isHypertrophy) tooltipTerm = 'Hypertrophy';
+              else if (isBloodFlow) tooltipTerm = 'BloodFlow';
+
               return (
                 <div className="flex flex-wrap items-center gap-2 mt-1 mb-2">
-                  <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tighter line-clamp-none">{cleanName}</h2>
+                  <h2 className={cn(
+                    "font-headline text-2xl md:text-3xl uppercase tracking-tighter line-clamp-none",
+                    isMainLiftMatch(cleanName, "Deadlift") ? "font-semibold" : "font-black"
+                  )}>
+                    {cleanName}
+                  </h2>
                   {intentTag && (
-                    <span className={`px-2 py-0.5 text-[8px] font-black uppercase tracking-widest border rounded-none ${
-                       intentTag === "HEAVY PRIMARY" 
-                        ? "bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/30" 
-                        : "bg-volt/10 text-volt border-volt/30"
-                    }`}>
-                      {intentTag}
-                    </span>
+                    <div className="flex items-center gap-1">
+                      <span className={`px-2 py-0.5 text-[8px] font-black uppercase tracking-widest border rounded-none ${
+                        isHeavyPrimary 
+                          ? "bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/30" 
+                          : "bg-volt/10 text-volt border-volt/30"
+                      }`}>
+                        {intentTag}
+                      </span>
+                      {tooltipTerm && (
+                        <InfoTooltip term={tooltipTerm} className="ml-0 cursor-pointer text-[10px]" />
+                      )}
+                    </div>
                   )}
                 </div>
               );
@@ -803,11 +769,6 @@ export const TrainingView = ({
         transition={{ delay: 0.2 }}
         className="col-span-1 md:col-span-2 lg:col-span-3 shrink-0 glass-panel dot-grid-bg p-4 md:p-8 flex flex-col w-full relative overflow-hidden vanguard-tour-upcoming-missions"
       >
-        {/* Decorative corner elements for tactical feel */}
-        <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-volt/40 px-0 py-0" />
-        <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-volt/40 px-0 py-0" />
-        <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-volt/40 px-0 py-0" />
-        <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-volt/40 px-0 py-0" />
 
         <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight mb-2 relative z-10">{t('analysis.upcomingMissions')}</h2>
         <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed mb-8">
@@ -833,7 +794,7 @@ export const TrainingView = ({
               <div
                 key={missionNum}
                 onClick={() => setSelectedMission(workoutTemplate)}
-                className="p-4 bg-void/50 border border-white/5 group hover:border-volt/30 transition-all cursor-pointer flex flex-col justify-between h-full"
+                className="p-4 bg-void/50 border border-white/5 group hover:bg-white/5 hover:border-volt/30 transition-all duration-300 cursor-pointer flex flex-col justify-between h-full"
               >
                 <div>
                   <div className="flex justify-between items-start mb-4">
@@ -846,7 +807,7 @@ export const TrainingView = ({
                   <div className="space-y-3">
                     <div>
                       <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest mb-1">Objective</p>
-                      <p className="text-xs md:text-sm font-bold text-white uppercase tracking-tight">
+                      <p className="text-xs md:text-sm font-bold text-white uppercase tracking-tight group-hover:text-volt transition-colors">
                         {blockForThisMission?.block.label || 'TBD'}
                       </p>
                     </div>
@@ -880,122 +841,42 @@ export const TrainingView = ({
           </span>
         </div>
       </motion.div>
-
-      {/* My PRs Module */}
+      
+      {/* Custom Mission Module */}
       <motion.div
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        exit={{ opacity: 0, y: -20 }}
         transition={{ delay: 0.3 }}
-        className="col-span-1 md:col-span-2 lg:col-span-3 shrink-0 glass-panel dot-grid-bg p-4 md:p-8 flex flex-col w-full relative overflow-hidden vanguard-tour-prs"
+        className="col-span-1 md:col-span-2 lg:col-span-3 shrink-0 glass-panel border border-white/5 bg-void p-4 md:p-8 flex flex-col md:flex-row justify-between items-center w-full relative overflow-hidden group cursor-pointer hover:bg-white/5 hover:border-volt/30 transition-all duration-300"
+        onClick={() => {
+          const date = new Date().toISOString().split('T')[0];
+          const customSession = {
+            id: `custom_${Date.now()}`,
+            uid: profile?.id || 'guest',
+            date,
+            time: new Date().toTimeString().split(' ')[0],
+            title: `Custom Mission - ${date}`,
+            description: "Self-directed tactical operation. Does not advance standard deployment tracks.",
+            exercises: [],
+            isCustom: true // ensures it doesn't bump W/D metrics
+          };
+          startNewSession(customSession);
+          onStartCustomSession?.();
+        }}
       >
-        {/* Decorative corner elements for tactical feel */}
-        <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-volt/40 px-0 py-0" />
-        <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-volt/40 px-0 py-0" />
-        <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-volt/40 px-0 py-0" />
-        <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-volt/40 px-0 py-0" />
-
-        <div className="flex items-center gap-3 relative z-10">
-          <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight mb-2">{t('analysis.myPRs')}</h2>
-
+        <div className="flex flex-col z-10 w-full mb-4 md:mb-0">
+          <h2 className="font-headline text-xl md:text-2xl font-black uppercase tracking-tight text-white group-hover:text-volt transition-colors mb-2">
+            Make My Own
+          </h2>
+          <p className="text-zinc-500 text-[10px] md:text-xs font-bold uppercase tracking-widest leading-relaxed max-w-sm">
+            Launch a blank canvas operation. Select your own parameters. Recorded to history, isolated from main schedule.
+          </p>
         </div>
-        <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed mb-6 md:mb-12">Personal records measured per set.</p>
-
-        {hasHistory ? (
-          <div className="flex flex-col items-center gap-8 w-full max-w-4xl mx-auto">
-            <div className="relative h-[240px] md:h-[320px] w-full max-w-2xl flex items-center justify-center">
-              {[
-                { lift: t('stage.squat'), weight: squatPR.weight, date: squatPR.date, workoutId: squatPR.workoutId, image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=1000' },
-                { lift: t('stage.benchPress'), weight: benchPR.weight, date: benchPR.date, workoutId: benchPR.workoutId, image: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?q=80&w=1000' },
-                { lift: t('stage.deadlift'), weight: deadliftPR.weight, date: deadliftPR.date, workoutId: deadliftPR.workoutId, image: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=1000' }
-              ].map((pr, i) => {
-                // Calculate relative index based on currentPRIndex
-                const relativeIdx = (i - currentPRIndex + 3) % 3;
-                const isFront = relativeIdx === 0;
-
-                return (
-                  <motion.div
-                    key={i}
-                    style={{ zIndex: 3 - relativeIdx }}
-                    animate={{
-                      x: relativeIdx * 20,
-                      y: relativeIdx * -10,
-                      scale: 1 - relativeIdx * 0.05,
-                      opacity: 1,
-                    }}
-                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                    onClick={() => !isFront ? setCurrentPRIndex(i) : undefined}
-                    className={cn(
-                      "absolute inset-0 bg-zinc-950 p-6 border border-white/5 group overflow-hidden transition-all flex flex-col h-full cursor-pointer",
-                      isFront ? "shadow-2xl shadow-void/80 ring-1 ring-white/10" : "pointer-events-none"
-                    )}
-                  >
-                    {/* Background Image */}
-                    <img
-                      src={pr.image}
-                      alt={`${pr.lift} PR`}
-                      className="absolute inset-0 w-full h-full object-cover opacity-10 group-hover:opacity-20 transition-all duration-700"
-                      referrerPolicy="no-referrer"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/80 to-transparent" />
-
-                    <span className="block text-xs md:text-sm font-black uppercase tracking-widest text-zinc-500 mb-4 md:mb-6 relative z-10">{pr.lift}</span>
-
-                    <div className="flex items-baseline gap-2 mb-4 md:mb-6 relative z-10">
-                      <span className="text-5xl md:text-7xl font-black tracking-tighter text-white">{pr.weight}</span>
-                      <span className="text-sm md:text-lg font-black uppercase text-volt">{weightUnit}</span>
-                    </div>
-
-                    <div className="flex items-center justify-between mt-auto relative z-10">
-                      <span className="text-xs md:text-sm font-medium text-zinc-500">{pr.date}</span>
-
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onViewHistory?.(pr.workoutId || undefined);
-                        }} 
-                        className="flex items-center gap-2 bg-white/5 hover:bg-volt hover:text-void transition-colors px-6 py-3 border border-white/5 group/btn backdrop-blur-sm pointer-events-auto"
-                      >
-                        <span className="text-[10px] md:text-xs font-black uppercase tracking-widest">{t('analysis.viewLog')}</span>
-                        <ArrowRight size={14} className="text-volt group-hover/btn:text-void transition-colors" />
-                      </button>
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </div>
-
-            <div className="flex items-center gap-4 relative z-10">
-              <button 
-                onClick={() => setCurrentPRIndex((currentPRIndex - 1 + 3) % 3)}
-                className="p-4 bg-white/5 border border-white/10 hover:bg-volt hover:text-void transition-all min-h-[44px] min-w-[44px]"
-                aria-label="Previous PR"
-              >
-                <ChevronLeft size={20} />
-              </button>
-              
-              <button 
-                onClick={() => setCurrentPRIndex((currentPRIndex + 1) % 3)}
-                className="p-4 bg-white/5 border border-white/10 hover:bg-volt hover:text-void transition-all min-h-[44px] min-w-[44px]"
-                aria-label="Next PR"
-              >
-                <ChevronRight size={20} />
-              </button>
-            </div>
+        
+        <div className="flex items-center justify-center shrink-0 w-full md:w-auto">
+          <div className="h-10 w-10 md:h-12 md:w-12 bg-white/5 flex items-center justify-center text-zinc-400 group-hover:text-white transition-colors">
+            <ArrowRight size={20} className="group-hover:translate-x-1 group-hover:text-volt transition-all" />
           </div>
-        ) : (
-          <div className="flex-1 flex flex-col items-center justify-center border-none bg-void/20 p-8 md:p-12 text-center">
-            <span className="text-4xl md:text-6xl font-black text-zinc-800 mb-4">–</span>
-            <h3 className="text-lg md:text-xl font-black uppercase tracking-tight mb-2 text-zinc-500">{t('analysis.noRecordsYet')}</h3>
-            <p className="text-[10px] md:text-xs font-bold text-zinc-600 uppercase tracking-widest max-w-xs leading-relaxed">
-              {t('analysis.startLiftingToTrack')}
-            </p>
-          </div>
-        )}
-
-        <div className="mt-4 flex justify-between items-center px-1 opacity-60">
-          <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">{t('analysis.prDatabaseSynced')}</span>
-          <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">{t('analysis.recordsCount', { count: prCount })}</span>
         </div>
       </motion.div>
 
@@ -1006,11 +887,6 @@ export const TrainingView = ({
         transition={{ delay: 0.4 }}
         className="col-span-1 md:col-span-2 lg:col-span-3 shrink-0 glass-panel dot-grid-bg p-4 md:p-8 flex flex-col w-full relative overflow-hidden vanguard-tour-past-missions"
       >
-        {/* Decorative corner elements for tactical feel */}
-        <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-volt/40 px-0 py-0" />
-        <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-volt/40 px-0 py-0" />
-        <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-volt/40 px-0 py-0" />
-        <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-volt/40 px-0 py-0" />
 
         <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight mb-2 relative z-10">{t('analysis.missionLogs')}</h2>
         <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed mb-8">{t('analysis.missionLogsDesc')}</p>
@@ -1022,7 +898,7 @@ export const TrainingView = ({
                 <button
                   key={log.id}
                   onClick={() => onViewHistory?.(log.id)}
-                  className="bg-void/40 p-3 md:p-6 border border-white/5 relative group overflow-hidden transition-all hover:bg-white/5 flex flex-col h-full text-left"
+                  className="bg-void/40 p-3 md:p-6 border border-white/5 relative group overflow-hidden transition-all duration-300 hover:bg-white/5 hover:border-volt/30 flex flex-col h-full text-left cursor-pointer"
                 >
                   <div className="flex justify-between items-start mb-2 relative z-10 w-full">
                     <div className="flex flex-col">
@@ -1069,239 +945,9 @@ export const TrainingView = ({
         </div>
       </motion.div>
 
-      {/* Mission Library Module */}
-      <motion.div
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.45 }}
-        className="col-span-1 md:col-span-2 lg:col-span-3 shrink-0 glass-panel dot-grid-bg p-4 md:p-8 flex flex-col w-full relative overflow-hidden"
-      >
-        {/* Decorative corner elements for tactical feel */}
-        <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-volt/40 px-0 py-0" />
-        <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-volt/40 px-0 py-0" />
-        <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-volt/40 px-0 py-0" />
-        <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-volt/40 px-0 py-0" />
 
-        <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight mb-2 relative z-10">{t('analysis.missionLibrary')}</h2>
-        <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed mb-8">{t('analysis.missionLibraryDesc')}</p>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 bg-void/30 p-4 border border-white/5">
-          {/* Advanced Search Input */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
-            <input
-              type="text"
-              placeholder="SEARCH CODEX..."
-              value={librarySearch}
-              onChange={(e) => setLibrarySearch(e.target.value)}
-              className="w-full bg-surface p-3 pl-10 border border-white/5 text-white font-mono text-xs uppercase focus:outline-none focus:border-volt/50 transition-colors placeholder:text-zinc-600 tracking-wider"
-              style={{ borderRadius: 0 }}
-            />
-            {librarySearch && (
-              <button
-                onClick={() => setLibrarySearch('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white"
-              >
-                <X size={14} />
-              </button>
-            )}
-          </div>
 
-          {/* Category Filter */}
-          <div>
-            <select
-              value={libraryCategory}
-              onChange={(e) => setLibraryCategory(e.target.value)}
-              className="w-full bg-surface p-3 border border-white/5 text-white font-mono text-xs uppercase focus:outline-none focus:border-volt/50 transition-colors tracking-wider"
-              style={{ borderRadius: 0 }}
-            >
-              <option value="All">ALL CATEGORIES</option>
-              {libraryCategories.map(cat => (
-                <option key={cat} value={cat}>{cat.toUpperCase()}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Movement Pattern Filter */}
-          <div>
-            <select
-              value={libraryPattern}
-              onChange={(e) => setLibraryPattern(e.target.value)}
-              className="w-full bg-surface p-3 border border-white/5 text-white font-mono text-xs uppercase focus:outline-none focus:border-volt/50 transition-colors tracking-wider"
-              style={{ borderRadius: 0 }}
-            >
-              <option value="All">ALL PATTERNS</option>
-              {libraryPatterns.map(pattern => (
-                <option key={pattern} value={pattern}>{pattern.replace('_', ' ').toUpperCase()}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Muscle Target Filter */}
-          <div>
-            <select
-              value={libraryMuscle}
-              onChange={(e) => setLibraryMuscle(e.target.value)}
-              className="w-full bg-surface p-3 border border-white/5 text-white font-mono text-xs uppercase focus:outline-none focus:border-volt/50 transition-colors tracking-wider"
-              style={{ borderRadius: 0 }}
-            >
-              <option value="All">ALL MUSCLES</option>
-              {libraryMuscles.map(m => (
-                <option key={m} value={m}>{m.toUpperCase()}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {filteredLibrary.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
-            {filteredLibrary.map((ex) => (
-              <div
-                key={ex.id}
-                onClick={() => {
-                  haptics.button();
-                  setLibraryInfoExercise(ex);
-                }}
-                className="bg-void/40 p-4 border border-white/5 hover:border-volt/20 hover:bg-white/5 cursor-pointer transition-all flex flex-col h-full group"
-              >
-                <div className="space-y-1 mb-3">
-                  <span className="text-[9px] font-black uppercase tracking-widest text-zinc-500">
-                    {ex.category}
-                  </span>
-                  <h3 className="font-headline text-sm font-black uppercase tracking-tight text-white group-hover:text-volt transition-colors">
-                    {ex.name}
-                  </h3>
-                </div>
-
-                <div className="flex-grow mb-4">
-                  <p className="text-[11px] text-zinc-400 line-clamp-2 leading-relaxed">
-                    {ex.description || 'No description available for this mission module.'}
-                  </p>
-                </div>
-
-                <div className="flex flex-wrap gap-1.5 pt-3 border-t border-white/5">
-                  <span className="text-[8px] font-black uppercase tracking-widest text-volt bg-volt/10 px-1.5 py-0.5">
-                    Pattern: {ex.pattern.replace('_', ' ')}
-                  </span>
-                  {ex.muscles?.slice(0, 2).map((muscle, idx) => (
-                    <span key={idx} className="text-[8px] font-black uppercase tracking-widest text-zinc-400 bg-white/5 px-1.5 py-0.5 whitespace-nowrap">
-                      {muscle}
-                    </span>
-                  ))}
-                  {(ex.muscles?.length || 0) > 2 && (
-                    <span className="text-[8px] font-black text-zinc-500">+{ex.muscles!.length - 2}</span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center py-12 text-center bg-void/20 border border-white/5">
-            <span className="text-3xl font-black text-zinc-800 mb-2">—</span>
-            <h3 className="text-sm font-black uppercase tracking-tight text-zinc-500">No matching search results</h3>
-            <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest max-w-xs leading-relaxed mt-1">
-              Refine your filters or queries to locate available exercise entries
-            </p>
-          </div>
-        )}
-
-        <div className="mt-6 flex justify-between items-center px-1 opacity-40">
-          <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">ENCYCLOPEDIA INDEXING TERMINATION</span>
-          <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">RECORDS RENDERED: {filteredLibrary.length} / {EXERCISE_DATABASE.length}</span>
-        </div>
-      </motion.div>
-
-      {/* Tactical Field Manual Module */}
-      <motion.div
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.5 }}
-        className="col-span-1 md:col-span-2 lg:col-span-3 shrink-0 glass-panel dot-grid-bg p-4 md:p-8 flex flex-col w-full relative overflow-hidden"
-      >
-        {/* Decorative corner elements for tactical feel */}
-        <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-volt/40 px-0 py-0" />
-        <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-volt/40 px-0 py-0" />
-        <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-volt/40 px-0 py-0" />
-        <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-volt/40 px-0 py-0" />
-
-        <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight mb-2 relative z-10">{t('settings.fieldManual')}</h2>
-        <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed mb-8">{t('analysis.fieldManualDesc')}</p>
-
-        <div className="grid grid-cols-1 gap-4 mb-6 bg-void/30 p-4 border border-white/5">
-          {/* Search Input */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
-            <input
-              type="text"
-              placeholder="SEARCH TERMINOLOGY..."
-              value={manualSearch}
-              onChange={(e) => setManualSearch(e.target.value)}
-              className="w-full bg-surface p-3 pl-10 border border-white/5 text-white font-mono text-xs uppercase focus:outline-none focus:border-volt/50 transition-colors placeholder:text-zinc-600 tracking-wider"
-              style={{ borderRadius: 0 }}
-            />
-            {manualSearch && (
-              <button
-                onClick={() => setManualSearch('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white"
-              >
-                <X size={14} />
-              </button>
-            )}
-          </div>
-        </div>
-
-        {filteredManualTerms.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
-            {filteredManualTerms.map(([key]) => {
-              const title = t(`tooltip.${key}.title`);
-              const shortDesc = t(`tooltip.${key}.short`);
-              const longDesc = t(`tooltip.${key}.long`);
-
-              return (
-                <div
-                  key={key}
-                  className="bg-void/40 p-4 border border-white/5 hover:border-volt/20 hover:bg-white/5 transition-all flex flex-col h-full group"
-                >
-                  <div className="mb-4">
-                    <h3 className="font-headline text-sm font-black uppercase tracking-tight text-white group-hover:text-volt transition-colors">
-                      {title}
-                    </h3>
-                  </div>
-
-                  <div className="flex-grow mb-4">
-                    <p className="text-zinc-200 text-[11px] leading-relaxed font-medium pl-2.5 border-l border-volt/20">
-                      {shortDesc}
-                    </p>
-                  </div>
-
-                  <div className="pt-3 border-t border-white/5">
-                    <p className="text-[9px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-1 flex items-center gap-1.5">
-                      <span className="w-1 h-1 bg-zinc-700" />
-                      {t('fieldManual.doctrine')}
-                    </p>
-                    <p className="text-zinc-400 text-[11px] leading-relaxed pl-2.5 border-l border-zinc-800 line-clamp-4 group-hover:line-clamp-none transition-all">
-                      {longDesc}
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center py-12 text-center bg-void/20 border border-white/5">
-            <span className="text-3xl font-black text-zinc-800 mb-2">—</span>
-            <h3 className="text-sm font-black uppercase tracking-tight text-zinc-500">No matching terminologies</h3>
-            <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest max-w-xs leading-relaxed mt-1">
-              Refine your query to locate field manual tactical concepts
-            </p>
-          </div>
-        )}
-
-        <div className="mt-6 flex justify-between items-center px-1 opacity-40">
-          <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">MANUAL INDEXING TERMINATION</span>
-          <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">RECORDS RENDERED: {filteredManualTerms.length} / {Object.keys(TRAINING_TERMS).length}</span>
-        </div>
-      </motion.div>
 
       {/* Routine Detail Modal */}
       <MissionBriefingModal
@@ -1324,13 +970,6 @@ export const TrainingView = ({
         currentExerciseId={swappingExerciseIdx !== null ? (activeOrNext?.exercises[swappingExerciseIdx]?.exerciseId || activeOrNext?.exercises[swappingExerciseIdx]?.name || '') : ''}
       />
 
-      {libraryInfoExercise && (
-        <ExerciseInfoModal
-          exercise={libraryInfoExercise}
-          isOpen={!!libraryInfoExercise}
-          onClose={() => setLibraryInfoExercise(null)}
-        />
-      )}
     </div>
   );
 };

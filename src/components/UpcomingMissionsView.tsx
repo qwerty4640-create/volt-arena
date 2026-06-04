@@ -239,8 +239,8 @@ export const UpcomingMissionsView: React.FC<UpcomingMissionsViewProps> = ({ onBa
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: i * 0.05 }}
                 onClick={() => setSelectedMission(workoutTemplate)}
-                className={`glass-panel p-4 border transition-all cursor-pointer flex flex-col justify-between ${
- isCompleted ? 'bg-zinc-900/50 border-white/5 opacity-50 grayscale' : 'bg-void/50 border-white/5 group hover:border-volt/30' }`}
+                className={`glass-panel p-4 border transition-all duration-300 cursor-pointer flex flex-col justify-between ${
+                  isCompleted ? 'bg-zinc-900/50 border-white/5 opacity-50 grayscale' : 'bg-void/50 border-white/5 group hover:bg-white/5 hover:border-volt/30' }`}
               >
                 <div>
                   <div className="flex justify-between items-start mb-4">
@@ -262,7 +262,7 @@ export const UpcomingMissionsView: React.FC<UpcomingMissionsViewProps> = ({ onBa
                   <div className="space-y-3">
                     <div>
                       <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">Objective</p>
-                      <p className="text-xs md:text-sm font-black font-headline text-white uppercase tracking-tight">
+                      <p className="text-xs md:text-sm font-black font-headline text-white uppercase tracking-tight group-hover:text-volt transition-colors">
                         {blockForThisMission?.block.label || 'TBD'}
                       </p>
                     </div>

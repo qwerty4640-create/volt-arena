@@ -54,31 +54,58 @@ export function isMainLiftMatch(
   liftType: "Squat" | "Bench Press" | "Deadlift" | string,
 ): boolean {
   if (!exName) return false;
-  const lowerName = exName.trim().toLowerCase();
+  
+  // Clean off heavy primary label if appended
+  let nameStr = exName.replace(/\[?HEAVY PRIMARY\]?|\[?HYPERTROPHY\]?/g, '').trim();
+  const lowerName = nameStr.toLowerCase();
   
   if (liftType === "Squat") {
     return (
-      (lowerName.includes("squat") || lowerName === "squat") &&
-      !lowerName.includes("hack") &&
-      !lowerName.includes("jump") &&
-      !lowerName.includes("split") &&
-      !lowerName.includes("pistol") &&
-      !lowerName.includes("single-leg") &&
-      !lowerName.includes("single leg")
+      (lowerName === "squat" || 
+       lowerName === "barbell squat" || 
+       lowerName === "back squat" ||
+       lowerName === "squat (high bar)" ||
+       lowerName === "squat (low bar)" ||
+       lowerName === "low bar squat" ||
+       lowerName === "high bar squat" ||
+       lowerName === "front squat" ||
+       lowerName === "safety bar squat" ||
+       lowerName === "sbb squat") &&
+       !lowerName.includes("goblet") &&
+       !lowerName.includes("db") &&
+       !lowerName.includes("dumbbell") &&
+       !lowerName.includes("split") &&
+       !lowerName.includes("pistol") &&
+       !lowerName.includes("hack") &&
+       !lowerName.includes("bodyweight")
     );
   }
   if (liftType === "Bench Press") {
     return (
-      lowerName.includes("bench press") ||
-      lowerName === "bench" ||
-      lowerName.includes("barbell bench press")
+      (lowerName === "bench press" ||
+       lowerName === "bench" ||
+       lowerName === "barbell bench press" ||
+       lowerName === "flat barbell bench press" ||
+       lowerName === "close grip bench press" ||
+       lowerName === "close-grip bench press") &&
+       !lowerName.includes("db") &&
+       !lowerName.includes("dumbbell") &&
+       !lowerName.includes("incline") &&
+       !lowerName.includes("decline")
     );
   }
   if (liftType === "Deadlift") {
     return (
-      lowerName.includes("deadlift") &&
-      !lowerName.includes("single-leg") &&
-      !lowerName.includes("single leg")
+      (lowerName === "deadlift" ||
+       lowerName === "barbell deadlift" ||
+       lowerName === "conventional deadlift" ||
+       lowerName === "sumo deadlift") &&
+       !lowerName.includes("romanian") &&
+       !lowerName.includes("rdl") &&
+       !lowerName.includes("single-leg") &&
+       !lowerName.includes("single leg") &&
+       !lowerName.includes("db") &&
+       !lowerName.includes("dumbbell")
     );
   }
   return false;
@@ -175,7 +202,7 @@ export function calculateVolume(
         if (redlineScale) {
           w = Math.round((w * 0.75) / 5) * 5;
         }
-        total += w * (parseInt(s.reps) || 0);
+        total += w * (parseFloat(s.reps) || 0);
       }
     });
   });

@@ -168,14 +168,14 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
         </div>
 
         <div className="flex items-center gap-2 md:gap-4">
-          <div className="relative flex-1 md:flex-none">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600" size={16} />
+          <div className="relative flex-1 md:flex-none group">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600 group-focus-within:text-volt transition-colors" size={16} />
             <input
               type="text"
               placeholder={t('analysis.searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-white/5 border-none py-2.5 md:py-3 pl-10 md:pl-12 pr-4 md:pr-6 text-xs md:text-sm focus:outline-none transition-all w-full md:w-64"
+              className="bg-white/5 border border-transparent py-2.5 md:py-3 pl-10 md:pl-12 pr-4 md:pr-6 text-zinc-300 placeholder-zinc-600 text-xs md:text-sm focus:outline-none focus:border-volt focus:ring-1 focus:ring-volt transition-all w-full md:w-64"
             />
           </div>
           <button
@@ -323,9 +323,9 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
                       }
                     }}
                     className={cn(
-                      "glass-panel p-4 md:p-8 border-white/5 cursor-pointer group transition-all duration-300",
-                      isWorkout ? (selectedWorkout?.id === log.id ? "border-volt/50 bg-volt/5" : "hover:bg-white/5")
-                        : (selectedWorkout?.id === log.id ? "border-zinc-500/50 bg-zinc-500/5" : "hover:bg-white/5 border-l-4 border-l-zinc-800")
+                      "glass-panel p-4 md:p-8 border border-white/5 cursor-pointer group transition-all duration-300",
+                      isWorkout ? (selectedWorkout?.id === log.id ? "border-volt/50 bg-volt/5" : "hover:bg-white/5 hover:border-volt/30")
+                        : (selectedWorkout?.id === log.id ? "border-zinc-500/50 bg-zinc-500/5" : "hover:bg-white/5 hover:border-volt/30 border-l-4 border-l-zinc-800")
                     )}
                   >
                     <div className="flex justify-between items-start mb-2">

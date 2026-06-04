@@ -30,7 +30,7 @@ import { useSettings } from '../contexts/SettingsContext';
 import { cn, isDumbbell } from '../lib/utils';
 import { useWorkout, Exercise, Set as WorkoutSet, WorkoutSession } from '../contexts/WorkoutContext';
 import { BlockType } from '../constants/periodization';
-import { getExerciseName, isTimedExercise, isUnilateral } from '../utils/workoutUtils';
+import { getExerciseName, isTimedExercise, isUnilateral, isMainLiftMatch } from '../utils/workoutUtils';
 import { useToast } from '../contexts/ToastContext';
 import { ConfirmationModal } from './ConfirmationModal';
 import { getSwappableExercises, EXERCISE_DATABASE } from '../constants/exercises';
@@ -180,6 +180,7 @@ const ExerciseAccordion = ({
   const weightLabel = showPerSide ? `${weightUnit} PER SIDE` : weightUnit;
   // Apply calisthenics label specifically if isCalisthenics is true
   const displayWeightLabel = exerciseDefinition?.isCalisthenics ? `${weightUnit} + Bodyweight` : weightLabel;
+  const isTimed = isTimedExercise(exercise.name);
 
   const isBifurcatedBlock = 
     currentSession?.blockType === BlockType.STRENGTH ||
@@ -251,20 +252,43 @@ const ExerciseAccordion = ({
             </div>
             <h3 className="font-sans text-xl md:text-2xl font-black uppercase tracking-tight">{getExerciseName(exercise, t)}</h3>
           </div>
-          {exercise.intent && (
-            <div className="pl-[2.75rem] md:pl-[3.25rem]">
-              <span className={cn(
-                "inline-block px-1.5 py-0.5 text-[9px] font-black uppercase tracking-widest border rounded-none",
-                exercise.intent.toUpperCase().includes("HEAVY PRIMARY")
-                  ? "bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/30"
-                  : exercise.intent.toUpperCase().includes("HYPERTROPHY")
-                  ? "bg-volt/10 text-volt border-volt/30"
-                  : "bg-zinc-800 text-zinc-400 border border-zinc-700"
-              )}>
-                {exercise.intent}
-              </span>
-            </div>
-          )}
+          {(() => {
+            const isS = isMainLiftMatch((exercise as any).name || "", "Squat");
+            const isB = isMainLiftMatch((exercise as any).name || "", "Bench Press");
+            const isD = isMainLiftMatch((exercise as any).name || "", "Deadlift");
+            const isMain = isS || isB || isD;
+            let displayIntent = exercise.intent;
+            if (displayIntent && displayIntent.toUpperCase().includes("HEAVY PRIMARY") && !isMain) {
+              displayIntent = "HYPERTROPHY";
+            }
+
+            const isHeavyPrimary = displayIntent?.toUpperCase().includes("HEAVY PRIMARY");
+            const isHypertrophy = displayIntent?.toUpperCase().includes("HYPERTROPHY");
+            const isBloodFlow = displayIntent?.toUpperCase().includes("BLOOD FLOW");
+
+            let tooltipTerm: 'HeavyPrimary' | 'Hypertrophy' | 'BloodFlow' | undefined = undefined;
+            if (isHeavyPrimary) tooltipTerm = 'HeavyPrimary';
+            else if (isHypertrophy) tooltipTerm = 'Hypertrophy';
+            else if (isBloodFlow) tooltipTerm = 'BloodFlow';
+
+            return displayIntent && (
+              <div className="pl-[2.75rem] md:pl-[3.25rem] flex items-center gap-1.5 mt-1">
+                <span className={cn(
+                  "inline-block px-1.5 py-0.5 text-[9px] font-black uppercase tracking-widest border rounded-none",
+                  isHeavyPrimary
+                    ? "bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/30"
+                    : isHypertrophy
+                    ? "bg-volt/10 text-volt border-volt/30"
+                    : "bg-zinc-800 text-zinc-400 border border-zinc-700"
+                )}>
+                  {displayIntent}
+                </span>
+                {tooltipTerm && (
+                  <InfoTooltip term={tooltipTerm} className="ml-0 cursor-pointer text-[10px]" />
+                )}
+              </div>
+            );
+          })()}
         </div>
         <div className="text-zinc-500">
           <ChevronDown size={20} className={cn("transition-transform duration-300", isExpanded && "rotate-180")} />
@@ -321,10 +345,12 @@ const ExerciseAccordion = ({
 
               <div className="space-y-2 mt-4">
                 {/* Headers */}
-                <div className="flex items-center gap-1 sm:gap-2 px-1 sm:px-2 text-[10px] sm:text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1 text-center">
+                <div className="flex items-center gap-1 sm:gap-2 px-1 sm:px-2 text-[10px] sm:text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1 text-center font-sans">
                   <div className={cn(showLabels ? "w-16 sm:w-24 text-center shrink-0" : "w-8 sm:w-10 text-center shrink-0")}>SET</div>
                   <div className="flex-1 min-w-0 flex justify-center">{displayWeightLabel}</div>
-                  <div className="w-10 sm:flex-1 min-w-0 text-center">REPS</div>
+                  <div className={cn(isTimed ? "w-20" : "w-10 sm:flex-1", "min-w-0 text-center text-[10px] font-bold text-zinc-500 uppercase tracking-widest transition-all")}>
+                    {isTimed ? "TIME (Min)" : "REPS"}
+                  </div>
                   <div className="w-10 sm:w-12 text-center">RPE</div>
                   <div className="w-20 sm:w-28 shrink-0 text-center">ACTIONS</div>
                 </div>
@@ -400,16 +426,9 @@ const ExerciseAccordion = ({
                     </div>
                       <input
                         type="text"
-                        inputMode="text"
-                        value={(() => {
-                          if (set.reps === '0') return '';
-                          if (!set.isCompleted) {
-                            if (set.reps === set.baseReps || !/^\d+(\.\d+)?$/.test(set.reps)) {
-                              return '';
-                            }
-                          }
-                          return set.reps;
-                        })()}
+                        inputMode={isTimed ? "decimal" : "numeric"}
+                        pattern={isTimed ? undefined : "[0-9]*"}
+                        value={set.reps === '0' ? '' : set.reps}
                         placeholder={(() => {
                           if (set.baseReps && set.baseReps !== '0') return set.baseReps;
                           if (set.reps && set.reps !== '0') return set.reps;
@@ -422,13 +441,22 @@ const ExerciseAccordion = ({
                           }
                           
                           // Default fallback based on block type
+                          if (isTimed) return "1.5";
                           const isStrength = currentSession?.blockType?.toLowerCase().includes('strength') || 
                                              currentSession?.blockType?.toLowerCase().includes('power') ||
                                              currentSession?.blockType?.toLowerCase().includes('peak');
                           return isStrength ? "4-6" : "10-15";
                         })()}
-                        onChange={(e) => updateSet(exercise.id, set.id, 'reps', e.target.value)}
-                        className="w-10 sm:flex-1 w-0 min-w-0 bg-transparent border-b border-white/10 text-center text-sm md:text-lg font-black text-white focus:outline-none focus:border-volt/50 [-moz-appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (!isTimed || val === '' || /^\d*\.?\d*$/.test(val)) {
+                            updateSet(exercise.id, set.id, 'reps', val);
+                          }
+                        }}
+                        className={cn(
+                          isTimed ? "w-20" : "w-12 sm:flex-1",
+                          "min-w-0 bg-transparent border-b border-white/10 text-center text-sm md:text-lg font-black text-white focus:outline-none focus:border-volt/50 [-moz-appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-all"
+                        )}
                       />
                       <input
                         type="text"
@@ -753,7 +781,7 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
           const weight = parseFloat(set.weight) || 0;
           const bodyWeight = profile?.weight || 0;
           const calculatedWeight = isCalisthenics ? (weight + bodyWeight) : weight;
-          volume += calculatedWeight * (parseInt(set.reps) || 0);
+          volume += calculatedWeight * (parseFloat(set.reps) || 0);
         }
       });
     });
@@ -794,13 +822,24 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
     
     setExercises(prev => prev.map(ex => {
       if (ex.id === sessionExerciseId) {
+        const isS = newDef?.name ? isMainLiftMatch(newDef.name, "Squat") : false;
+        const isB = newDef?.name ? isMainLiftMatch(newDef.name, "Bench Press") : false;
+        const isD = newDef?.name ? isMainLiftMatch(newDef.name, "Deadlift") : false;
+        const isMain = isS || isB || isD;
+
+        let newIntent = ex.intent;
+        if (!isMain && ex.intent === "HEAVY PRIMARY") {
+          newIntent = "HYPERTROPHY";
+        }
+
         return { 
           ...ex, 
           exerciseId: templateExerciseId,
           name: newDef?.name || templateExerciseId,
-          isSquat: newDef?.pattern === 'squat',
-          isBench: newDef?.pattern === 'push_horizontal',
-          isDeadlift: newDef?.pattern === 'hinge'
+          isSquat: isS,
+          isBench: isB,
+          isDeadlift: isD,
+          intent: newIntent
         };
       }
       return ex;
@@ -810,22 +849,25 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
   };
 
   const getExerciseHistory = (exerciseName: string) => {
+    const cleanName = (name: string) => name.replace(/\[?HEAVY PRIMARY\]?|\[?HYPERTROPHY\]?|\[?ACTIVE RECOVERY\]?|\[?MOVEMENT QUALITY\]?|\[?BLOOD FLOW\]?/gi, '').trim().toLowerCase();
+    const cleanTargetName = cleanName(exerciseName);
+
     const lastSession = history.find(session =>
-      session.exercises?.some(ex => ex.name.toLowerCase() === exerciseName.toLowerCase())
+      session.exercises?.some(ex => cleanName(ex.name) === cleanTargetName)
     );
     if (!lastSession) return null;
 
-    const lastEx = lastSession.exercises?.find(ex => ex.name === exerciseName);
+    const lastEx = lastSession.exercises?.find(ex => cleanName(ex.name) === cleanTargetName);
     if (!lastEx || !lastEx.sets || lastEx.sets.length === 0) return null;
 
     // Find best set by volume
     const bestSet = lastEx.sets.reduce((best, current) => {
-      const bestVol = (parseFloat(best.weight) || 0) * (parseInt(best.reps) || 0);
-      const currentVol = (parseFloat(current.weight) || 0) * (parseInt(current.reps) || 0);
+      const bestVol = (parseFloat(best.weight) || 0) * (parseFloat(best.reps) || 0);
+      const currentVol = (parseFloat(current.weight) || 0) * (parseFloat(current.reps) || 0);
       return currentVol > bestVol ? current : best;
     }, lastEx.sets[0]);
 
-    return `${bestSet.weight}${weightUnit} x ${bestSet.reps}${isTimedExercise(exerciseName) ? ' sec' : ''}`;
+    return `${bestSet.weight}${weightUnit} x ${bestSet.reps}${isTimedExercise(exerciseName) ? ' min' : ''}`;
   };
 
   const setExercises = (updater: (prev: Exercise[]) => Exercise[], extraSessionUpdates?: Partial<WorkoutSession>) => {

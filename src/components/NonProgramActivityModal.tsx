@@ -227,9 +227,9 @@ export const NonProgramActivityModal = ({ isOpen, onClose, initialData }: NonPro
 
               {/* Activity Selection Area */}
               <div className="space-y-4">
-                <div className="relative">
+                <div className="relative group">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Search className="h-5 w-5 text-zinc-500" />
+                    <Search className="h-5 w-5 text-zinc-500 group-focus-within:text-volt transition-colors" />
                   </div>
                   <input
                     type="text"
@@ -393,7 +393,7 @@ export const NonProgramActivityModal = ({ isOpen, onClose, initialData }: NonPro
                       value={performedAt}
                       max={new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16)}
                       onChange={(e) => setPerformedAt(e.target.value)}
-                      className="w-full max-w-full bg-black border border-zinc-800 p-3 text-[11px] font-black uppercase tracking-widest text-white focus:border-volt outline-none transition-all [color-scheme:dark] rounded-none"
+                      className="w-full max-w-full bg-black border border-zinc-800 p-3 text-[11px] font-black uppercase tracking-widest text-white focus:outline-none focus:border-volt focus:ring-1 focus:ring-volt transition-all [color-scheme:dark] rounded-none"
                     />
                   </div>
                 </div>
@@ -405,7 +405,7 @@ export const NonProgramActivityModal = ({ isOpen, onClose, initialData }: NonPro
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
                     placeholder={t('nonProgram.notesPlaceholder')}
-                    className="w-full bg-black border border-zinc-800 p-4 text-xs text-white placeholder:text-zinc-700 focus:border-volt outline-none transition-all h-[54px] resize-none rounded-none font-sans"
+                    className="w-full bg-black border border-zinc-800 p-4 text-xs text-white placeholder:text-zinc-700 focus:outline-none focus:border-volt focus:ring-1 focus:ring-volt transition-all h-[54px] resize-none rounded-none font-sans"
                   />
                 </div>
               </div>

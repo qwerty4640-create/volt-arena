@@ -705,7 +705,7 @@ export const AnalyticsView = () => {
                                     className="flex items-center gap-2 px-2 py-1 border text-[10px] font-black uppercase tracking-widest font-mono select-none"
                                   >
                                     <span style={{ color }}>●</span>
-                                    <span className="text-zinc-300">{lift}</span>
+                                    <span className="text-[#fff]">{lift}</span>
                                     <button 
                                       onClick={() => setCustomLifts(prev => prev.filter(l => l !== lift))}
                                       className="text-zinc-500 hover:text-crimson transition-colors ml-1 font-sans text-xs font-bold"

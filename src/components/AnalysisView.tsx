@@ -215,11 +215,6 @@ const ReadinessTrendWidget = () => {
 
     return (
         <div className="w-full glass-panel px-4 py-6 md:p-8 flex flex-col relative group/module overflow-hidden h-full vanguard-tour-readiness-trend">
-            {/* Decorative corner elements for tactical feel */}
-            <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-volt/40" />
-            <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-volt/40" />
-            <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-volt/40" />
-            <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-volt/40" />
             <div className="absolute inset-0 opacity-[0.03] pointer-events-none group-hover/module:opacity-[0.05] transition-opacity duration-700"
                 style={{ backgroundImage: 'radial-gradient(var(--primary-color) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6 relative z-10">
@@ -647,142 +642,147 @@ export const ReadinessAnalysisWidget = () => {
                             </div>
                         )}
 
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mt-2 items-start w-full">
-                            <div className="flex flex-col items-start lg:col-span-1">
-                                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-4 block w-full">
-                                    {t('analysis.readiness')}
-                                    <InfoTooltip term="Readiness" />
-                                </span>
-                                <div className="flex flex-col items-start gap-4">
-                                    <div className="flex items-baseline gap-2">
-                                        <span 
-                                            className={cn(
-                                            'text-5xl md:text-7xl lg:text-8xl font-black  tracking-tighter leading-none vanguard-tour-readiness',
-                                            readinessScore !== null ? statusColor : 'text-zinc-600'
-                                        )}>
-                                            {readinessScore !== null ? readinessScore : '–'}
-                                        </span>
-                                        {readinessScore !== null && <span className="text-xl md:text-2xl font-black text-zinc-600"> %</span>}
+                        {/* Solid Lighter Background Card for Metrics */}
+                        <div className="w-full bg-surface-container-lowest border border-white/5 p-6 md:p-8 mt-6 relative z-10 flex flex-col gap-8" style={{ borderRadius: '0px' }}>
+                            {/* Top grid (Readiness & EWMA) */}
+                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 items-start w-full">
+                                <div className="flex flex-col items-start lg:col-span-1">
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-4 block w-full">
+                                        {t('analysis.readiness')}
+                                        <InfoTooltip term="Readiness" />
+                                    </span>
+                                    <div className="flex flex-col items-start gap-4">
+                                        <div className="flex items-baseline gap-2">
+                                            <span 
+                                                className={cn(
+                                                'text-5xl md:text-7xl lg:text-8xl font-black  tracking-tighter leading-none vanguard-tour-readiness',
+                                                readinessScore !== null ? statusColor : 'text-zinc-600'
+                                            )}>
+                                                {readinessScore !== null ? readinessScore : '–'}
+                                            </span>
+                                            {readinessScore !== null && <span className="text-xl md:text-2xl font-black text-zinc-600"> %</span>}
+                                        </div>
                                     </div>
+                                </div>
+
+                                {/* EWMA Widget */}
+                                <div className="flex flex-col items-start lg:col-span-1 lg:col-start-2 md:border-l md:border-white/5 pl-4 lg:pl-6">
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-4 block w-full">
+                                        EWMA
+                                        <InfoTooltip term="EWMA" />
+                                    </span>
+                                    {ewmaRatio !== null && ewmaRatio !== undefined ? (
+                                        <div className="flex flex-col h-full items-start">
+                                            <div className="flex items-baseline gap-2 mb-2">
+                                                <span className="text-3xl md:text-4xl font-black tracking-tighter leading-none text-white">
+                                                    {ewmaRatio.toFixed(2)}
+                                                </span>
+                                            </div>
+                                            <span className={cn(
+                                                "font-headline text-[10px] font-black uppercase tracking-widest border-l-2 pl-3 block mb-4 text-zinc-600 border-zinc-800",
+                                                ewmaRatio > 1.5 ? "text-crimson" : ewmaRatio >= 0.8 && ewmaRatio <= 1.3 ? "text-volt" : "text-zinc-400"
+                                            )}>
+                                                {ewmaRatio > 1.5 ? "Elevated" : ewmaRatio >= 0.8 && ewmaRatio <= 1.3 ? "Optimal" : "Monitor"}
+                                            </span>
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-baseline gap-2 mb-2">
+                                            <span className="text-3xl md:text-4xl font-black tracking-tighter leading-none text-zinc-600">–</span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
-                            {/* EWMA Widget */}
-                            <div className="flex flex-col items-start lg:col-span-1 lg:col-start-2 md:border-l md:border-white/5 pl-4 lg:pl-6">
-                                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-4 block w-full">
-                                    EWMA
-                                    <InfoTooltip term="EWMA" />
-                                </span>
-                                {ewmaRatio !== null && ewmaRatio !== undefined ? (
-                                    <div className="flex flex-col h-full items-start">
-                                        <div className="flex items-baseline gap-2 mb-2">
-                                            <span className="text-3xl md:text-4xl font-black tracking-tighter leading-none text-white">
-                                                {ewmaRatio.toFixed(2)}
-                                            </span>
-                                        </div>
+                            {/* Calibration Warning banner if active */}
+                            {calibration.overtrainingRisk !== 'none' && (
+                                <div className={cn(
+                                    "p-4 border flex items-start gap-4 animate-pulse-slow relative z-10 w-full",
+                                    calibration.overtrainingRisk === 'critical' ? "bg-crimson/10 border-crimson/30" : "bg-amber-500/10 border-amber-500/30"
+                                )}>
+                                    <AlertTriangle className={calibration.overtrainingRisk === 'critical' ? "text-crimson shrink-0" : "text-amber-500 shrink-0"} size={18} />
+                                    <div className="flex flex-col gap-1">
                                         <span className={cn(
-                                            "font-headline text-[10px] font-black uppercase tracking-widest border-l-2 pl-3 block mb-4 text-zinc-600 border-zinc-800",
-                                            ewmaRatio > 1.5 ? "text-crimson" : ewmaRatio >= 0.8 && ewmaRatio <= 1.3 ? "text-volt" : "text-zinc-400"
+                                            "text-[10px] font-black uppercase tracking-widest",
+                                            calibration.overtrainingRisk === 'critical' ? "text-crimson" : "text-amber-500"
                                         )}>
-                                            {ewmaRatio > 1.5 ? "Elevated" : ewmaRatio >= 0.8 && ewmaRatio <= 1.3 ? "Optimal" : "Monitor"}
+                                            {calibration.overtrainingRisk === 'critical' ? "CRITICAL OVERTRAINING RISK" : "FATIGUE DECAY OUTPACED"}
                                         </span>
+                                        <p className="text-[9px] font-bold uppercase tracking-wider text-zinc-400 leading-[1.4]">
+                                            {calibration.overtrainingRisk === 'critical'
+                                                ? "YOUR CURRENT ACUTE LOAD IS >1.6X CHRONIC BASELINE. RECOVERY FAIL RISK IS HIGH."
+                                                : "DAILY STRAIN IS TRENDING ABOVE RECOVERY CAPACITY. MONITOR PERFORMANCE CLOSELY."}
+                                        </p>
                                     </div>
-                                ) : (
-                                    <div className="flex items-baseline gap-2 mb-2">
-                                        <span className="text-3xl md:text-4xl font-black tracking-tighter leading-none text-zinc-600">–</span>
+                                </div>
+                            )}
+
+                            {/* 4-column grid: Fatigue | Sleep | Stress | Volume */}
+                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 relative z-10 w-full">
+                                {/* Fatigue */}
+                                <FactorColumn
+                                    label={t('analysis.fatigue')}
+                                    displayVal={String(fatigueDisplay)}
+                                    fillVal={fatigueDisplay}
+                                    goodness={100 - fatigueDisplay}
+                                    tooltip="CNS"
+                                    noData={!hasSubjectiveData && !hasHistory}
+                                />
+
+                                {/* Sleep Deficit */}
+                                <div className="border-l border-white/5 pl-4 lg:pl-6">
+                                    <FactorColumn
+                                        label={t('analysis.sleep')}
+                                        displayVal={String(sleepDisplay)}
+                                        fillVal={sleepDisplay}
+                                        goodness={100 - sleepDisplay}
+                                        tooltip="Sleep"
+                                        noData={!hasSubjectiveData}
+                                    />
+                                </div>
+
+                                {/* Stress */}
+                                <div className="lg:border-l lg:border-white/5 lg:pl-6">
+                                    <FactorColumn
+                                        label={t('analysis.stress')}
+                                        displayVal={String(stressDisplay)}
+                                        fillVal={stressDisplay}
+                                        goodness={100 - stressDisplay}
+                                        tooltip="Stress"
+                                        noData={!hasSubjectiveData}
+                                    />
+                                </div>
+
+                                {/* Volume */}
+                                <div className="flex flex-col h-full text-left justify-start items-start border-l border-white/5 pl-4 lg:pl-6">
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-4 block w-full">
+                                        {t('Volume')}
+                                        <InfoTooltip term="Volume" />
+                                    </span>
+                                    <div className="flex items-baseline gap-2 mb-2 justify-start w-full">
+                                        <span className="text-3xl md:text-4xl font-black tracking-tighter leading-none text-white">
+                                            {hasHistory ? orderedVolumeData.reduce((a, d) => a + d.displayVal, 0).toLocaleString() : '–'}
+                                        </span>
+                                        {hasHistory && <span className="text-lg font-black text-zinc-600 mb-0.5">{unit === 'metric' ? 'kg' : 'lbs'}</span>}
                                     </div>
-                                )}
+                                    <span className="font-headline text-[10px] font-black uppercase tracking-widest border-l-2 pl-3 block mb-4 text-zinc-600 border-zinc-800">
+                                        {hasHistory ? t('analysis.7dayLoad') : t('analysis.awaitingData')}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Calibration Status Footer */}
+                            <div className="mt-4 flex justify-between items-center px-1 opacity-60 w-full z-10 pt-4 border-t border-white/5">
+                                <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em] text-zinc-500">
+                                    SYS_STATUS: CALIBRATED
+                                </span>
+                                <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em] text-zinc-500">
+                                    REF_ID: RDNS_ANALYSIS
+                                </span>
                             </div>
                         </div>
-
-                {calibration.overtrainingRisk !== 'none' && (
-                    <div className={cn(
-                        "mb-6 p-4 border flex items-start gap-4 animate-pulse-slow relative z-10",
-                        calibration.overtrainingRisk === 'critical' ? "bg-crimson/10 border-crimson/30" : "bg-amber-500/10 border-amber-500/30"
-                    )}>
-                        <AlertTriangle className={calibration.overtrainingRisk === 'critical' ? "text-crimson shrink-0" : "text-amber-500 shrink-0"} size={18} />
-                        <div className="flex flex-col gap-1">
-                            <span className={cn(
-                                "text-[10px] font-black uppercase tracking-widest",
-                                calibration.overtrainingRisk === 'critical' ? "text-crimson" : "text-amber-500"
-                            )}>
-                                {calibration.overtrainingRisk === 'critical' ? "CRITICAL OVERTRAINING RISK" : "FATIGUE DECAY OUTPACED"}
-                            </span>
-                            <p className="text-[9px] font-bold uppercase tracking-wider text-zinc-400 leading-[1.4]">
-                                {calibration.overtrainingRisk === 'critical'
-                                    ? "YOUR CURRENT ACUTE LOAD IS >1.6X CHRONIC BASELINE. RECOVERY FAIL RISK IS HIGH."
-                                    : "DAILY STRAIN IS TRENDING ABOVE RECOVERY CAPACITY. MONITOR PERFORMANCE CLOSELY."}
-                            </p>
-                        </div>
                     </div>
-                )}
-
-                {/* 4-column grid: Fatigue | Sleep | Stress | Volume */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mt-10 md:mt-16 lg:mt-24 relative z-10 w-full flex-1">
-
-                    {/* Fatigue */}
-                    <FactorColumn
-                        label={t('analysis.fatigue')}
-                        displayVal={String(fatigueDisplay)}
-                        fillVal={fatigueDisplay}
-                        goodness={100 - fatigueDisplay}
-                        tooltip="CNS"
-                        noData={!hasSubjectiveData && !hasHistory}
-                    />
-
-                    {/* Sleep Deficit */}
-                    <div className="border-l border-white/5 pl-4 lg:pl-6">
-                        <FactorColumn
-                            label={t('analysis.sleep')}
-                            displayVal={String(sleepDisplay)}
-                            fillVal={sleepDisplay}
-                            goodness={100 - sleepDisplay}
-                            tooltip="Sleep"
-                            noData={!hasSubjectiveData}
-                        />
-                    </div>
-
-                    {/* Stress */}
-                    <div className="lg:border-l lg:border-white/5 lg:pl-6">
-                        <FactorColumn
-                            label={t('analysis.stress')}
-                            displayVal={String(stressDisplay)}
-                            fillVal={stressDisplay}
-                            goodness={100 - stressDisplay}
-                            tooltip="Stress"
-                            noData={!hasSubjectiveData}
-                        />
-                    </div>
-
-                    {/* Volume */}
-                    <div className="flex flex-col h-full text-left justify-start items-start border-l border-white/5 pl-4 lg:pl-6">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-4 block w-full">
-                            {t('Volume')}
-                            <InfoTooltip term="Volume" />
-                        </span>
-                        <div className="flex items-baseline gap-2 mb-2 justify-start w-full">
-                            <span className="text-3xl md:text-4xl font-black tracking-tighter leading-none text-white">
-                                {hasHistory ? orderedVolumeData.reduce((a, d) => a + d.displayVal, 0).toLocaleString() : '–'}
-                            </span>
-                            {hasHistory && <span className="text-lg font-black text-zinc-600 mb-0.5">{unit === 'metric' ? 'kg' : 'lbs'}</span>}
-                        </div>
-                        <span className="font-headline text-[10px] font-black uppercase tracking-widest border-l-2 pl-3 block mb-4 text-zinc-600 border-zinc-800">
-                            {hasHistory ? t('analysis.7dayLoad') : t('analysis.awaitingData')}
-                        </span>
-                    </div>
-                </div>
-
-            <div className="mt-6 flex justify-between items-center px-1 opacity-60 w-full z-10">
-                <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em] text-zinc-500">
-                    SYS_STATUS: CALIBRATED
-                </span>
-                <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em] text-zinc-500">
-                    REF_ID: RDNS_ANALYSIS
-                </span>
-            </div>
-        </div>
-    );
-};
+                );
+            };
 
 export const RecoveryWidget = () => {
     const { t } = useSettings();
