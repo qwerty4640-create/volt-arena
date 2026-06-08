@@ -1043,6 +1043,38 @@ function AppContent() {
     }
   };
 
+  const handleStartMission = () => {
+    if (!currentSession) {
+      setShowReadinessCheck(true);
+    } else {
+      setIsLifting(true);
+      const exercises = currentSession.exercises || [];
+      const allCompleted = exercises.length > 0 && 
+                         exercises.every(ex => (ex.sets || []).every(s => s.isCompleted));
+      setActiveView(allCompleted ? 'post-workout' : 'workout-log');
+    }
+  };
+
+  const handleMakeMyOwn = () => {
+    const date = new Date().toISOString().split('T')[0];
+    const customSession = {
+      id: `custom_${Date.now()}`,
+      uid: (profile as any)?.uid || (profile as any)?.id || 'guest',
+      date,
+      time: new Date().toTimeString().split(' ')[0],
+      title: `Custom Mission - ${date}`,
+      description: "Self-directed tactical operation. Does not advance standard deployment tracks.",
+      exercises: [],
+      isCustom: true,
+      currentExerciseIndex: 0,
+      currentSetIndex: 0,
+      completed: false
+    } as any;
+    startNewSession(customSession);
+    setIsLifting(true);
+    setActiveView('workout-log');
+  };
+
   return (
     <div className={cn(
       "relative h-screen w-screen bg-void text-white font-sans overflow-hidden flex transition-colors duration-1000",
@@ -1418,6 +1450,8 @@ function AppContent() {
             activeView={activeView} 
             onBack={handlePageBack} 
             subtitle={activeView === 'training' ? (currentSession?.title || getNextWorkoutTemplate()?.title) : currentSession?.title} 
+            onStartMission={handleStartMission}
+            onMakeMyOwn={handleMakeMyOwn}
           />
         </div>
         <AnimatePresence mode="wait">

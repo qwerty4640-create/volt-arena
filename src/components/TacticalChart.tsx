@@ -32,7 +32,7 @@ const CustomTooltip = ({ active, payload, label }: TooltipProps) => {
         
         <div className="space-y-1">
           <div className="flex justify-between items-center text-[10px]">
-            <span className="text-zinc-500 uppercase tracking-widest font-bold">Avg Duration:</span>
+            <span className="text-zinc-500 uppercase tracking-widest font-bold">Total Duration:</span>
             <span className="font-black text-white">{dataPoint.totalDuration}m</span>
           </div>
           <div className="flex justify-between items-center text-[10px]">
@@ -40,7 +40,7 @@ const CustomTooltip = ({ active, payload, label }: TooltipProps) => {
             <span className="font-black text-crimson">{dataPoint.weightedAvgRpe.toFixed(1)}</span>
           </div>
           <div className="flex justify-between items-center text-[10px] pt-1 mt-1 border-t border-white/10">
-            <span className="text-zinc-500 uppercase tracking-widest font-bold">Avg Interference:</span>
+            <span className="text-zinc-500 uppercase tracking-widest font-bold">Total Interference:</span>
             <span className="font-black text-volt">{dataPoint.cumulativeImpact.toFixed(1)}</span>
           </div>
         </div>

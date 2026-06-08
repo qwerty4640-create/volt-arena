@@ -1,16 +1,24 @@
 import React from 'react';
 import { ViewType } from '../types';
 import { useSettings } from '../contexts/SettingsContext';
-import { ChevronRight, ChevronLeft, Settings2, Zap } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Settings2, Zap, Play, Plus } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 interface PageHeaderProps {
   activeView: ViewType;
   onBack?: () => void;
   subtitle?: string;
+  onStartMission?: () => void;
+  onMakeMyOwn?: () => void;
 }
 
-export function PageHeader({ activeView, onBack, subtitle }: PageHeaderProps) {
+export function PageHeader({ 
+  activeView, 
+  onBack, 
+  subtitle,
+  onStartMission,
+  onMakeMyOwn
+}: PageHeaderProps) {
   const { t, isCustomizeModalOpen, setIsCustomizeModalOpen, isDeploymentModalOpen, setIsDeploymentModalOpen } = useSettings();
 
   const getBreadcrumbs = (view: ViewType): string | null => {
@@ -72,7 +80,7 @@ export function PageHeader({ activeView, onBack, subtitle }: PageHeaderProps) {
           <div className="flex items-center gap-3">
             <h1 className={cn(
               "font-headline text-3xl sm:text-5xl text-white m-0 leading-none",
-              ["analysis", "analytics", "training", "deployment", "fitness-test", "settings", "library"].includes(activeView)
+              ["analysis", "analytics", "training", "deployment", "fitness-test", "settings", "library", "upcoming-missions"].includes(activeView)
                 ? "font-semibold uppercase tracking-widest"
                 : "font-black uppercase tracking-tight"
             )}>
@@ -81,25 +89,46 @@ export function PageHeader({ activeView, onBack, subtitle }: PageHeaderProps) {
           </div>
         </div>
 
-        {(activeView === 'analysis' || activeView === 'analytics') && (
-          <button 
-            onClick={() => setIsCustomizeModalOpen(true)}
-            className="hidden md:flex items-center gap-2 px-6 py-3 btn-primary font-headline text-[10px] font-black uppercase tracking-widest transition-all group vanguard-tour-customize-dashboard"
-          >
-            <Settings2 size={14} />
-            {t('analysis.customizeDashboard')}
-          </button>
-        )}
+        <div className="hidden md:flex items-center gap-3">
+          {activeView === 'training' && onStartMission && onMakeMyOwn && (
+            <>
+              <button 
+                onClick={onStartMission}
+                className="flex items-center gap-2 px-6 py-3 btn-primary font-headline text-[10px] font-black uppercase tracking-widest transition-all group"
+              >
+                <Play size={10} className="fill-current" />
+                <span>Start Mission</span>
+              </button>
+              <button 
+                onClick={onMakeMyOwn}
+                className="flex items-center gap-2 px-6 py-3 btn-secondary font-headline text-[10px] font-black uppercase tracking-widest transition-all group"
+              >
+                <Plus size={12} className="text-white" />
+                <span>Make My Own</span>
+              </button>
+            </>
+          )}
 
-        {activeView === 'deployment' && (
-          <button 
-            onClick={() => setIsDeploymentModalOpen(true)}
-            className="hidden md:flex items-center gap-2 px-6 py-3 btn-primary font-headline text-[10px] font-black uppercase tracking-widest transition-all group vanguard-tour-recalibrate-deployment"
-          >
-            <Zap size={14} />
-            <span>Recalibrate Deployment</span>
-          </button>
-        )}
+          {(activeView === 'analysis' || activeView === 'analytics') && (
+            <button 
+              onClick={() => setIsCustomizeModalOpen(true)}
+              className="flex items-center gap-2 px-6 py-3 btn-primary font-headline text-[10px] font-black uppercase tracking-widest transition-all group vanguard-tour-customize-dashboard"
+            >
+              <Settings2 size={14} />
+              {t('analysis.customizeDashboard')}
+            </button>
+          )}
+
+          {activeView === 'deployment' && (
+            <button 
+              onClick={() => setIsDeploymentModalOpen(true)}
+              className="flex items-center gap-2 px-6 py-3 btn-primary font-headline text-[10px] font-black uppercase tracking-widest transition-all group vanguard-tour-recalibrate-deployment"
+            >
+              <Zap size={14} />
+              <span>Recalibrate Deployment</span>
+            </button>
+          )}
+        </div>
       </div>
     </header>
   );

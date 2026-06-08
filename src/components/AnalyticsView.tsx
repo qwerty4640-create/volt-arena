@@ -121,9 +121,14 @@ const TacticalIntegration = ({ activeRange, onRangeChange }: { activeRange: stri
             </span>
             <InfoTooltip term="ProgramImpact" />
           </div>
-          <span className={`text-xl sm:text-2xl lg:text-3xl font-black uppercase ${impactColor}`}>
-            {impactLabel} <span className="text-white text-lg sm:text-xl lg:text-2xl ml-1">({weeklyCumulativeScore.toFixed(1)})</span>
-          </span>
+          <div className="flex items-end gap-1">
+            <span className="text-2xl sm:text-3xl lg:text-4xl font-black text-white">
+              {weeklyCumulativeScore.toFixed(1)}
+            </span>
+          </div>
+          <p className={`text-[10px] font-bold uppercase mt-1 ${impactColor}`}>
+            {impactLabel}
+          </p>
         </div>
       </div>
 
@@ -204,25 +209,30 @@ export const AnalyticsView = () => {
 
     // 2. Extract Max Weights for Selected Lifts
     return timeFilteredHistory.map(session => {
+      const dateVal = session.completedAt || session.date || Date.now();
+      const parsedDate = new Date(dateVal);
+      const safeDate = isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
+
       const dataPoint: any = {
-        date: session.date,
-        title: session.title,
-        timestamp: session.completedAt || new Date(session.date).getTime(),
-        displayDate: new Date(session.completedAt || session.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        fullDate: new Date(session.completedAt || session.date).toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' }),
-        rpe: session.rpe
+        date: session.date || '',
+        title: session.title || '',
+        timestamp: safeDate.getTime(),
+        displayDate: safeDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        fullDate: safeDate.toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' }),
+        rpe: session.rpe || 0
       };
 
       selectedLifts.forEach(lift => {
-        const exercise = session.exercises.find((ex: any) => isMainLiftMatch(ex.name, lift));
+        const exercise = session.exercises?.find((ex: any) => ex?.name && isMainLiftMatch(ex.name, lift));
         if (exercise) {
-          const maxWeight = Math.max(...exercise.sets.map((s: any) => parseFloat(s.weight) || 0));
+          const sMap = (exercise.sets || []).map((s: any) => parseFloat(s.weight) || 0);
+          const maxWeight = sMap.length > 0 ? Math.max(...sMap) : 0;
           dataPoint[lift] = maxWeight > 0 ? maxWeight : null;
         }
       });
 
       return dataPoint;
-    }).filter(dp => selectedLifts.some(lift => dp[lift] !== undefined));
+    }).filter(dp => selectedLifts.some(lift => dp[lift] !== undefined && dp[lift] !== null));
   }, [history, timeFrame, selectedLifts]);
 
 
@@ -431,18 +441,18 @@ export const AnalyticsView = () => {
                   <div className="relative z-10 flex flex-col">
                     {(() => {
                       const latestE1RMs = liftOptions.map(lift => {
-                        const liftHistory = history.filter(s => s.exercises.some(ex => {
+                        const liftHistory = history.filter(s => s.exercises?.some(ex => {
                           if (['Squat', 'Bench Press', 'Deadlift'].includes(lift.id)) {
                             return isMainLiftMatch(ex.name, lift.id);
                           }
                           return ex.name.toLowerCase() === lift.id.toLowerCase();
-                        }));
-                        const e1rms = liftHistory.flatMap(s => s.exercises.find(ex => {
+                        }) || false);
+                        const e1rms = liftHistory.flatMap(s => s.exercises?.find(ex => {
                           if (['Squat', 'Bench Press', 'Deadlift'].includes(lift.id)) {
                             return isMainLiftMatch(ex.name, lift.id);
                           }
                           return ex.name.toLowerCase() === lift.id.toLowerCase();
-                        })?.sets.map(set => calculateE1RM(parseFloat(set.weight) || 0, parseInt(set.reps) || 0, parseFloat(set.rpe || set.actualRpe || ''))) || []);
+                        })?.sets?.map(set => calculateE1RM(parseFloat(set.weight) || 0, parseInt(set.reps) || 0, parseFloat(set.rpe || set.actualRpe || ''))) || []);
                         return e1rms.length > 0 ? Math.round(Math.max(...e1rms)) : 0;
                       });
                       const sqMax = latestE1RMs[0] || 0;
@@ -454,36 +464,44 @@ export const AnalyticsView = () => {
  
                       // Calculate E1RM history data points
                       const sortedSessions = [...history]
-                        .filter(s => s.completedAt || s.date)
+                        .filter(s => {
+                          if (!s) return false;
+                          const dateVal = s.completedAt || s.date;
+                          if (!dateVal) return false;
+                          return !isNaN(new Date(dateVal).getTime());
+                        })
                         .sort((a, b) => {
-                          const timeA = a.completedAt || new Date(a.date).getTime();
-                          const timeB = b.completedAt || new Date(b.date).getTime();
+                          const timeA = a.completedAt || (a.date ? new Date(a.date).getTime() : 0);
+                          const timeB = b.completedAt || (b.date ? new Date(b.date).getTime() : 0);
                           return timeA - timeB;
                         });
  
                       const filteredSessionsByRange = filterDataByRange(sortedSessions, timeFrame);
 
                       const getLiftE1RM = (session: typeof history[0], liftName: string) => {
-                        const ex = session.exercises.find(e => {
+                        const ex = session.exercises?.find(e => {
                           if (['Squat', 'Bench Press', 'Deadlift'].includes(liftName)) {
                             return isMainLiftMatch(e.name, liftName);
                           }
                           return e.name.toLowerCase() === liftName.toLowerCase();
                         });
                         if (!ex) return null;
-                        const e1rms = ex.sets.map(set => calculateE1RM(parseFloat(set.weight) || 0, parseInt(set.reps) || 0, parseFloat(set.rpe || set.actualRpe || '')));
+                        const e1rms = (ex.sets || []).map(set => calculateE1RM(parseFloat(set.weight) || 0, parseInt(set.reps) || 0, parseFloat(set.rpe || set.actualRpe || '')));
                         const valid = e1rms.filter(v => v > 0);
                         return valid.length > 0 ? Math.round(Math.max(...valid)) : null;
                       };
  
                       const chartPoints = filteredSessionsByRange.map(session => {
-                        const displayDate = new Date(session.completedAt || session.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                        const fullDate = new Date(session.completedAt || session.date).toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+                        const dateVal = session.completedAt || session.date || Date.now();
+                        const parsedDate = new Date(dateVal);
+                        const safeDate = isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
+                        const displayDate = safeDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                        const fullDate = safeDate.toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
                         
                         const point: any = {
                           date: displayDate,
                           fullDate,
-                          title: session.title,
+                          title: session.title || '',
                           'Squat': getLiftE1RM(session, 'Squat'),
                           'Bench Press': getLiftE1RM(session, 'Bench Press'),
                           'Deadlift': getLiftE1RM(session, 'Deadlift'),
@@ -599,8 +617,8 @@ export const AnalyticsView = () => {
                               <span className="text-sm font-black text-volt font-mono">{totalSBD > 0 ? `${totalSBD} ${weightUnit}` : '–'}</span>
                             </div>
                             {customLifts.map((lift, idx) => {
-                              const liftHistory = history.filter(s => s.exercises.some(e => e.name.toLowerCase() === lift.toLowerCase()));
-                              const e1rms = liftHistory.flatMap(s => s.exercises.find(e => e.name.toLowerCase() === lift.toLowerCase())?.sets.map(set => calculateE1RM(parseFloat(set.weight) || 0, parseInt(set.reps) || 0, parseFloat(set.rpe || set.actualRpe || ''))) || []);
+                              const liftHistory = history.filter(s => s.exercises?.some(e => e.name?.toLowerCase() === lift.toLowerCase()) || false);
+                              const e1rms = liftHistory.flatMap(s => s.exercises?.find(e => e.name?.toLowerCase() === lift.toLowerCase())?.sets?.map(set => calculateE1RM(parseFloat(set.weight) || 0, parseInt(set.reps) || 0, parseFloat(set.rpe || set.actualRpe || ''))) || []);
                               const maxVal = e1rms.length > 0 ? Math.round(Math.max(...e1rms)) : 0;
                               const color = customColors[idx % customColors.length];
                               const isFirstCol = idx % 4 === 0;

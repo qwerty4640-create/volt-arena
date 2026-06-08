@@ -232,6 +232,15 @@ export const TrainingView = ({
     ? currentSession.exercises[currentExIdx]
     : activeOrNext?.exercises?.[0];
 
+  const activeExDef = currentEx ? EXERCISE_DATABASE.find(e => e.id === currentEx.exerciseId || e.name === currentEx.name || e.name.toLowerCase() === currentEx.name?.toLowerCase()) : undefined;
+  const isEnduranceMode = activeExDef?.category === "Endurance" || 
+                          activeExDef?.pattern === "impact" || 
+                          currentEx?.name?.toLowerCase().includes("rowing") || 
+                          currentEx?.name?.toLowerCase().includes("running") || 
+                          currentEx?.name?.toLowerCase().includes("cycling") || 
+                          currentEx?.name?.toLowerCase().includes("rucking") ||
+                          currentEx?.sets?.some(s => s.phaseName !== undefined);
+
   const exName = (isActiveSession ? (mainLift ? getExerciseName(mainLift, t) : '') : (currentEx ? getExerciseName(currentEx, t) : '')) || t('analysis.barbellSquat');
 
   const getAbsoluteMissionNum = (title: string) => {
@@ -301,7 +310,10 @@ export const TrainingView = ({
   const displayTotalSets = (isActiveSession ? mainLift?.sets?.length : totalSets) || 5;
   const displayTargetWeight = (isActiveSession ? mainLift?.sets?.[0]?.weight : currentTargetWeight);
   const displayTargetReps = isActiveSession
-    ? (mainLift?.sets?.[0]?.baseReps || mainLift?.sets?.[0]?.reps || '?')
+    ? (isEnduranceMode 
+        ? (currentEx?.sets?.[currentSetIdx]?.baseReps || currentEx?.sets?.[currentSetIdx]?.reps || '?')
+        : (mainLift?.sets?.[0]?.baseReps || mainLift?.sets?.[0]?.reps || '?')
+      )
     : (currentEx?.sets?.[currentSetIdx]?.baseReps || currentEx?.sets?.[currentSetIdx]?.reps || currentReps || '?');
 
   const hasHistory = (history?.length || 0) > 0;
@@ -644,10 +656,17 @@ export const TrainingView = ({
             })()}
             <span aria-live="polite" className="text-zinc-400 text-[10px] md:text-xs font-medium uppercase tracking-widest block mt-1">
               {isActiveSession
-                ? <span aria-live="assertive">{t('analysis.setOfPattern', { current: currentSetIdx + 1, total: displayTotalSets, weight: displayTargetWeight, unit: weightUnit })} RPE {sessionRpe}</span>
+                ? (isEnduranceMode ? (
+                    <span aria-live="assertive">Phase {currentSetIdx + 1} of {displayTotalSets} • {displayTargetReps}</span>
+                  ) : (
+                    <span aria-live="assertive">{t('analysis.setOfPattern', { current: currentSetIdx + 1, total: displayTotalSets, weight: displayTargetWeight, unit: weightUnit })} RPE {sessionRpe}</span>
+                  ))
                 : (() => {
                     const l = mainLift || currentEx;
                     if (!l) return '';
+                    if (isEnduranceMode) {
+                      return `${displayTotalSets} sets x ${displayTargetReps}`;
+                    }
                     const hasBackOff = l.sets && l.sets.length > 1;
                     const isWeightOrRpeDrop = hasBackOff && (
                       parseFloat(l.sets[0]?.rpe || "") > parseFloat(l.sets[1]?.rpe || "") ||
@@ -770,7 +789,7 @@ export const TrainingView = ({
         className="col-span-1 md:col-span-2 lg:col-span-3 shrink-0 glass-panel dot-grid-bg p-4 md:p-8 flex flex-col w-full relative overflow-hidden vanguard-tour-upcoming-missions"
       >
 
-        <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight mb-2 relative z-10">{t('analysis.upcomingMissions')}</h2>
+        <h2 className="font-headline text-2xl md:text-3xl font-semibold uppercase tracking-widest mb-2 relative z-10">{t('analysis.upcomingMissions')}</h2>
         <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed mb-8">
           Preview upcoming mission details before next mission. Mission details can be changed depending on individual deployment progression.
         </p>
@@ -852,14 +871,17 @@ export const TrainingView = ({
           const date = new Date().toISOString().split('T')[0];
           const customSession = {
             id: `custom_${Date.now()}`,
-            uid: profile?.id || 'guest',
+            uid: (profile as any)?.uid || (profile as any)?.id || 'guest',
             date,
             time: new Date().toTimeString().split(' ')[0],
             title: `Custom Mission - ${date}`,
             description: "Self-directed tactical operation. Does not advance standard deployment tracks.",
             exercises: [],
-            isCustom: true // ensures it doesn't bump W/D metrics
-          };
+            isCustom: true, // ensures it doesn't bump W/D metrics
+            currentExerciseIndex: 0,
+            currentSetIndex: 0,
+            completed: false
+          } as any;
           startNewSession(customSession);
           onStartCustomSession?.();
         }}

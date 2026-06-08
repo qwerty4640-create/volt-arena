@@ -167,7 +167,9 @@ export const expandPlan = (plan: BlockDefinition[], isCustom = false): BlockDefi
   return expanded;
 };
 
-export const getPlanForDuration = (totalWeeks: number, goalOrGoals: HybridGoal = 'powerbuilding'): BlockDefinition[] => {
+import { calculateRetentionProtocol } from '../logic/retentionEngine';
+
+export const getPlanForDuration = (totalWeeks: number, goalOrGoals: HybridGoal = 'powerbuilding', profile?: any): BlockDefinition[] => {
   const goalArray: TrainingGoal[] = Array.isArray(goalOrGoals) ? goalOrGoals : [goalOrGoals];
   // Ensure we use the lowercase versions for lookup
   const goals = goalArray.map(g => (g?.toLowerCase() || 'powerbuilding') as TrainingGoal);
@@ -193,34 +195,24 @@ export const getPlanForDuration = (totalWeeks: number, goalOrGoals: HybridGoal =
     let duration = isLast ? remaining : weeksPerGoal;
     
     // Insert Retention Protocol between distinct goal transitions
-    let retentionWeeks = 0;
     if (idx > 0) {
       const prevGoalRaw = goals[idx - 1];
-      const prevGoal = baseGoalBlocks[prevGoalRaw]?.type as BlockType || BlockType.POWERBUILDING;
-      const currGoal = baseGoalBlocks[goal]?.type as BlockType || BlockType.POWERBUILDING;
       
-      const strengthGroup = [BlockType.STRENGTH, BlockType.PURE_STRENGTH, BlockType.POWER, BlockType.POWERBUILDING, BlockType.EXPLOSIVENESS];
-      const enduranceGroup = [BlockType.ENDURANCE, BlockType.AEROBIC_BASE, BlockType.CAPACITY, BlockType.VO2_MAX, BlockType.THRESHOLD];
+      const decision = calculateRetentionProtocol(prevGoalRaw, goal, totalWeeks, profile);
 
-      let retentionBlockType = BlockType.RETENTION;
-      let template = BLOCK_TEMPLATES[BlockType.RETENTION]!;
-
-      if (strengthGroup.includes(prevGoal) && enduranceGroup.includes(currGoal)) {
-        retentionBlockType = BlockType.STRENGTH_RETENTION;
-        template = BLOCK_TEMPLATES[BlockType.STRENGTH_RETENTION]!;
-      } else if (enduranceGroup.includes(prevGoal) && strengthGroup.includes(currGoal)) {
-        retentionBlockType = BlockType.ENDURANCE_RETENTION;
-        template = BLOCK_TEMPLATES[BlockType.ENDURANCE_RETENTION]!;
-      }
-
-      retentionWeeks = Math.min(2, Math.floor(duration * 0.2)); // up to 2 weeks of retention
-      if (retentionWeeks > 0) {
-        duration -= retentionWeeks;
-        plan.push({
-          ...template,
-          durationWeeks: retentionWeeks
-        } as BlockDefinition);
-        remaining -= retentionWeeks;
+      if (decision.method === 'STATIC_BLOCK' && decision.suggestedBlockType) {
+        let template = BLOCK_TEMPLATES[decision.suggestedBlockType] || BLOCK_TEMPLATES[BlockType.RETENTION]!;
+        
+        const retentionWeeks = decision.durationWeeks || Math.min(2, Math.floor(duration * 0.2));
+        if (retentionWeeks > 0) {
+          duration -= retentionWeeks;
+          plan.push({
+            ...template,
+            ...(decision.customBlockPayload || {}),
+            durationWeeks: retentionWeeks
+          } as BlockDefinition);
+          remaining -= retentionWeeks;
+        }
       }
     }
 
@@ -426,21 +418,45 @@ export const analyzeSequenceConflicts = (customProgramBlocks: any[]): SequenceAd
   return advisories;
 };
 
-export const getRetentionProtocol = (profile: any) => {
-  const frequency = profile?.trainingFrequency || 3;
-  const period = parseInt(profile?.missionPeriod || '3') || 3;
-  
-  // Requirement: if frequency < 3 or period > 6M, trigger retention sets
-  if (frequency < 3 || period >= 6) {
-    return {
-      active: true,
-      reason: frequency < 3 ? 'LOW_FREQUENCY' : 'LONG_HORIZON',
-      description: "Retention Sets active: Maintaining baseline force production during volume-sparse periods.",
-      setsToInject: 1, // 1 set per primary lift
-      type: 'intensity_retention'
-    };
+export const getRetentionProtocol = (profile: any, currentBlock?: BlockDefinition, previousBlock?: BlockDefinition) => {
+  if (previousBlock && currentBlock) {
+    // If we have full block transition context, use the engine
+    const decision = calculateRetentionProtocol(
+      previousBlock.type,
+      currentBlock.type,
+      12, // Assume fallback typical horizon or derive from period
+      profile
+    );
+
+    if (decision.method === 'MED_INJECTION') {
+      return {
+        active: true,
+        reason: decision.reason,
+        description: decision.reason,
+        setsToInject: decision.setsToInject || 1,
+        type: 'intensity_retention',
+        medPayload: decision.medPayload
+      };
+    }
+  } else {
+    // Fallback blockless evaluation using profile constraints
+    const frequency = profile?.trainingFrequency || 3;
+    const period = parseInt(profile?.missionPeriod || '3') || 3;
+    
+    // Check if frequency/horizon triggers MED standalone
+    const standaloneDecision = calculateRetentionProtocol(null, currentBlock?.type || 'any', period * 4, profile);
+    if (standaloneDecision.method === 'MED_INJECTION') {
+      return {
+        active: true,
+        reason: standaloneDecision.reason,
+        description: standaloneDecision.reason,
+        setsToInject: standaloneDecision.setsToInject || 1,
+        type: 'intensity_retention',
+        medPayload: standaloneDecision.medPayload
+      };
+    }
   }
-  
+
   return { active: false };
 };
 

@@ -6,6 +6,7 @@ export interface ExerciseDefinition {
   tips?: string[];
   instructions?: string[];
   muscles?: string[];
+  jointStress?: string[];
   // Phase 1 Tags
   pattern: 'squat' | 'hinge' | 'push_horizontal' | 'push_vertical' | 'pull_horizontal' | 'pull_vertical' | 'core' | 'accessory' | 'impact' | 'plyometric' | 'mobility';
   impact: 'low' | 'medium' | 'high';
@@ -26,6 +27,54 @@ export interface ExerciseDefinition {
 
 export const EXERCISE_DATABASE: ExerciseDefinition[] = [
 
+  {
+    "id": "sissy_squat",
+    "name": "Sissy Squat",
+    "category": "Accessory",
+    "pattern": "accessory",
+    "impact": "low",
+    "velocity": "medium",
+    "description": "Isolation movement for the quadriceps without external weight.",
+    "instructions": [
+      "Stand with feet shoulder-width.",
+      "Keep knees tight, push them forward.",
+      "Lean back, keeping torso aligned with thighs.",
+      "Return to upright."
+    ],
+    "tips": [
+      "Hold on to support.",
+      "Keep knees forward.",
+      "Maintain upright torso alignment."
+    ],
+    "muscles": [
+      "Quads"
+    ],
+    "isCalisthenics": true
+  },
+  {
+    "id": "reverse_nordic_curl",
+    "name": "Reverse Nordic Curl",
+    "category": "Accessory",
+    "pattern": "accessory",
+    "impact": "low",
+    "velocity": "slow",
+    "description": "Bodyweight isolation for the quadriceps using a reverse knee-dominant movement.",
+    "instructions": [
+      "Kneel on a soft surface.",
+      "Keep torso, hips, and thighs aligned.",
+      "Lean backward slowly while keeping core braced.",
+      "Use quads to return to upright position."
+    ],
+    "tips": [
+      "Brace core tightly.",
+      "Keep movement slow and controlled.",
+      "Don't hyper-extend the lower back."
+    ],
+    "muscles": [
+      "Quads"
+    ],
+    "isCalisthenics": true
+  },
   {
     "id": "box_jumps",
     "name": "Box Jumps",
@@ -2976,6 +3025,80 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Hamstrings",
       "Calves",
       "Core"
+    ]
+  },
+  {
+    "id": "running_intervals",
+    "name": "Running (Intervals)",
+    "category": "Endurance",
+    "pattern": "impact",
+    "impact": "medium",
+    "velocity": "fast",
+    "description": "High-intensity aerobic intervals.",
+    "instructions": [
+      "Push pace during work intervals.",
+      "Recover during rest intervals."
+    ],
+    "energySystem": "anaerobic_lactic",
+    "axialFatigueScore": 2,
+    "connectiveTissueStressScore": 3,
+    "muscles": [
+      "quadriceps",
+      "hamstrings",
+      "calves"
+    ],
+    "jointStress": [
+      "knee",
+      "ankle"
+    ]
+  },
+  {
+    "id": "rowing_intervals",
+    "name": "Rowing (Intervals)",
+    "category": "Endurance",
+    "pattern": "impact",
+    "impact": "low",
+    "velocity": "fast",
+    "description": "High-intensity rowing intervals.",
+    "instructions": [
+      "Push pace during work intervals.",
+      "Recover during rest intervals."
+    ],
+    "energySystem": "anaerobic_lactic",
+    "axialFatigueScore": 1,
+    "connectiveTissueStressScore": 2,
+    "muscles": [
+      "latissimus_dorsi",
+      "quadriceps",
+      "hamstrings"
+    ],
+    "jointStress": [
+      "knee",
+      "hip"
+    ]
+  },
+  {
+    "id": "cycling_intervals",
+    "name": "Cycling (Intervals)",
+    "category": "Endurance",
+    "pattern": "impact",
+    "impact": "low",
+    "velocity": "fast",
+    "description": "High-intensity cycling intervals.",
+    "instructions": [
+      "Maintain high RPM during work intervals.",
+      "Recover during rest intervals."
+    ],
+    "energySystem": "anaerobic_lactic",
+    "axialFatigueScore": 0,
+    "connectiveTissueStressScore": 1,
+    "muscles": [
+      "quadriceps",
+      "hamstrings",
+      "calves"
+    ],
+    "jointStress": [
+      "knee"
     ]
   },
   {

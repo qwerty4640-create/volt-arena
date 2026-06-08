@@ -141,6 +141,7 @@ const ReadinessTrendWidget = () => {
 
         timeFilteredHistory.forEach(session => {
             const date = new Date(session.completedAt || session.date);
+            if (isNaN(date.getTime())) return;
             // Get start of week (Sunday)
             const weekStart = new Date(date);
             weekStart.setDate(date.getDate() - date.getDay());
@@ -1211,9 +1212,14 @@ export const ExternalActivityWidget = ({ externalTimeFrame, onTimeFrameChange }:
                         </span>
                         <InfoTooltip term="ProgramImpact" />
                     </div>
-                    <span className={`text-xl sm:text-2xl lg:text-3xl font-black uppercase ${impactColor}`}>
-                        {impactLabel} <span className="text-white text-lg sm:text-xl lg:text-2xl ml-1">({weeklyCumulativeScore.toFixed(1)})</span>
-                    </span>
+                    <div className="flex items-end gap-1">
+                        <span className="text-2xl sm:text-3xl lg:text-4xl font-black text-white">
+                            {weeklyCumulativeScore.toFixed(1)}
+                        </span>
+                    </div>
+                    <p className={`text-[10px] font-bold uppercase mt-1 ${impactColor}`}>
+                        {impactLabel}
+                    </p>
                 </div>
             </div>
 

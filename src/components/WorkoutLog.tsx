@@ -191,6 +191,7 @@ const ExerciseAccordion = ({
     currentSession?.blockType?.toLowerCase() === 'max_effort' ||
     currentSession?.blockType?.toLowerCase() === 'peaking';
 
+  const isEnduranceMode = exerciseDefinition?.category === "Endurance" || exerciseDefinition?.pattern === "impact";
   const isPrimaryMainLift = !!exercise.isPrimaryMainLift;
   const showLabels = isBifurcatedBlock && isPrimaryMainLift;
 
@@ -346,10 +347,16 @@ const ExerciseAccordion = ({
               <div className="space-y-2 mt-4">
                 {/* Headers */}
                 <div className="flex items-center gap-1 sm:gap-2 px-1 sm:px-2 text-[10px] sm:text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1 text-center font-sans">
-                  <div className={cn(showLabels ? "w-16 sm:w-24 text-center shrink-0" : "w-8 sm:w-10 text-center shrink-0")}>SET</div>
-                  <div className="flex-1 min-w-0 flex justify-center">{displayWeightLabel}</div>
-                  <div className={cn(isTimed ? "w-20" : "w-10 sm:flex-1", "min-w-0 text-center text-[10px] font-bold text-zinc-500 uppercase tracking-widest transition-all")}>
-                    {isTimed ? "TIME (Min)" : "REPS"}
+                  <div className={cn(
+                    isEnduranceMode ? "w-24 sm:w-32 text-left shrink-0 font-black text-volt" :
+                    showLabels ? "w-16 sm:w-24 text-center shrink-0" : 
+                    "w-8 sm:w-10 text-center shrink-0"
+                  )}>
+                    {isEnduranceMode ? "PHASE" : "SET"}
+                  </div>
+                  {!isEnduranceMode && <div className="flex-1 min-w-0 flex justify-center">{displayWeightLabel}</div>}
+                  <div className={cn(isEnduranceMode ? "flex-1 min-w-0 text-center text-left" : isTimed ? "w-20" : "w-10 sm:flex-1", "text-[10px] font-bold text-zinc-500 uppercase tracking-widest transition-all")}>
+                    {isEnduranceMode ? "TARGET PROTOCOL (PACE / HR / TIME)" : isTimed ? "TIME (Min)" : "REPS"}
                   </div>
                   <div className="w-10 sm:w-12 text-center">RPE</div>
                   <div className="w-20 sm:w-28 shrink-0 text-center">ACTIONS</div>
@@ -385,6 +392,10 @@ const ExerciseAccordion = ({
                     }
                   }
 
+                  if (isEnduranceMode && set.phaseName) {
+                    setLabel = set.phaseName;
+                  }
+
                   return (
                     <div key={set.id} className={cn(
                       "flex items-center gap-1 sm:gap-2 p-1 sm:p-2 relative rounded",
@@ -394,15 +405,17 @@ const ExerciseAccordion = ({
                          <></>
                       )}
                       <div className={cn(
-                        showLabels ? "w-16 sm:w-24" : "w-8 sm:w-10",
-                        "shrink-0 text-[10px] font-black uppercase flex flex-col items-center justify-center gap-1 sm:gap-1.5 break-keep whitespace-nowrap",
+                        isEnduranceMode ? "w-24 sm:w-32 text-left" :
+                        showLabels ? "w-16 sm:w-24 text-center" : 
+                        "w-8 sm:w-10 text-center",
+                        "shrink-0 text-[10px] font-black uppercase flex flex-col items-start justify-center gap-1 sm:gap-1.5 break-keep whitespace-nowrap",
                         isWarmup ? "text-zinc-500" : "text-zinc-400"
                       )}>
                         <div className="flex items-center gap-1">
                           {isWarmup && <Flame size={10} className="shrink-0" />}
                           <span>{setLabel}</span>
                         </div>
-                        {showLabels && !isWarmup && workIdx !== -1 && (
+                        {showLabels && !isWarmup && workIdx !== -1 && !isEnduranceMode && (
                           <span className={cn(
                             "text-[7px] sm:text-[8px] px-1 sm:px-1.5 py-0.5 font-bold tracking-tight border select-none transition-colors",
                             workIdx === 0
@@ -414,7 +427,8 @@ const ExerciseAccordion = ({
                         )}
                       </div>
 
-                  <div className="flex-1 min-w-0 flex flex-row items-center gap-1">
+                  {!isEnduranceMode && (
+                    <div className="flex-1 min-w-0 flex flex-row items-center gap-1">
                       <input
                         type="text"
                         inputMode="decimal"
@@ -424,10 +438,11 @@ const ExerciseAccordion = ({
                         className="w-full bg-transparent border-b border-white/10 text-center text-sm md:text-lg font-black text-white focus:outline-none focus:border-volt/50 [-moz-appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       />
                     </div>
+                  )}
                       <input
                         type="text"
-                        inputMode={isTimed ? "decimal" : "numeric"}
-                        pattern={isTimed ? undefined : "[0-9]*"}
+                        inputMode={isEnduranceMode ? "text" : isTimed ? "decimal" : "numeric"}
+                        pattern={isEnduranceMode || isTimed ? undefined : "[0-9]*"}
                         value={set.reps === '0' ? '' : set.reps}
                         placeholder={(() => {
                           if (set.baseReps && set.baseReps !== '0') return set.baseReps;
@@ -449,13 +464,13 @@ const ExerciseAccordion = ({
                         })()}
                         onChange={(e) => {
                           const val = e.target.value;
-                          if (!isTimed || val === '' || /^\d*\.?\d*$/.test(val)) {
+                          if (isEnduranceMode || !isTimed || val === '' || /^\d*\.?\d*$/.test(val)) {
                             updateSet(exercise.id, set.id, 'reps', val);
                           }
                         }}
                         className={cn(
-                          isTimed ? "w-20" : "w-12 sm:flex-1",
-                          "min-w-0 bg-transparent border-b border-white/10 text-center text-sm md:text-lg font-black text-white focus:outline-none focus:border-volt/50 [-moz-appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-all"
+                          isEnduranceMode ? "flex-1 text-left px-2" : isTimed ? "w-20" : "w-12 sm:flex-1 text-center",
+                          "min-w-0 bg-transparent border-b border-white/10 text-sm md:text-lg font-black text-white focus:outline-none focus:border-volt/50 [-moz-appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-all"
                         )}
                       />
                       <input

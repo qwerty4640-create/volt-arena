@@ -134,8 +134,7 @@ export const MissionBriefingModal: React.FC<MissionBriefingModalProps> = ({
                     <div className="space-y-6">
                       <div className="flex items-baseline gap-3 border-b border-white/10 pb-2">
                         <h3 className="font-headline text-lg font-black uppercase tracking-tight text-volt">
-                          0. Warm-Up:{" "}
-                          {getWarmupForLift(session.exercises[0].name).title}
+                          Warm-Up: {getWarmupForLift(session.exercises[0].name).title}
                         </h3>
                       </div>
                       <div className="grid grid-cols-1 gap-4">
@@ -174,8 +173,14 @@ export const MissionBriefingModal: React.FC<MissionBriefingModalProps> = ({
                   )}
 
                   {/* Main Exercises Section */}
-                  <div className="grid grid-cols-1 gap-6">
-                    {session.exercises?.map((ex, exIdx) => (
+                  <div className="space-y-6">
+                    <div className="flex items-baseline gap-3 border-b border-white/10 pb-2">
+                      <h3 className="font-headline text-lg font-black uppercase tracking-tight text-white">
+                        Main Exercises
+                      </h3>
+                    </div>
+                    <div className="grid grid-cols-1 gap-6">
+                      {session.exercises?.map((ex, exIdx) => (
                       <div
                         key={ex.id || exIdx}
                         className="relative p-3 md:p-6 glass-panel border-white/5 hover:border-volt/30 transition-all duration-300 bg-void/50 group"
@@ -212,6 +217,7 @@ export const MissionBriefingModal: React.FC<MissionBriefingModalProps> = ({
                                 return (
                                   <div className="flex flex-wrap items-center gap-2">
                                     <h4 className="text-lg font-semibold uppercase tracking-tighter text-white">
+                                      <span className="text-volt/60 mr-2">{(exIdx + 1).toString().padStart(2, "0")}.</span>
                                       {cleanName}
                                     </h4>
                                     {intentTag && (
@@ -346,8 +352,18 @@ export const MissionBriefingModal: React.FC<MissionBriefingModalProps> = ({
                                   );
                                 }
 
+                                const isEnduranceEx = ex.intent === "AEROBIC CAPACITY" ||
+                                                      ex.name?.toLowerCase().includes("rowing") ||
+                                                      ex.name?.toLowerCase().includes("running") ||
+                                                      ex.name?.toLowerCase().includes("cycling") ||
+                                                      ex.name?.toLowerCase().includes("rucking") ||
+                                                      ex.sets?.some(s => s.phaseName !== undefined);
+
                                 return (
-                                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 pl-4 border-l border-volt/20">
+                                  <div className={isEnduranceEx
+                                    ? "flex flex-col sm:flex-row gap-3 pl-4 border-l border-volt/20 w-full"
+                                    : "grid grid-cols-3 sm:grid-cols-5 gap-2 pl-4 border-l border-volt/20"
+                                  }>
                                     {ex.sets?.map((set, sIdx) => {
                                       const w = parseFloat(set.weight) || 0;
                                       const displayWeight =
@@ -359,17 +375,22 @@ export const MissionBriefingModal: React.FC<MissionBriefingModalProps> = ({
                                       return (
                                         <div
                                           key={set.id || sIdx}
-                                          className="bg-void/40 border border-white/5 p-3 flex flex-col items-center justify-center"
+                                          className={`bg-void/40 border border-white/5 p-4 flex flex-col items-center justify-center text-center ${
+                                            isEnduranceEx ? "flex-1 min-w-0" : ""
+                                          }`}
                                         >
-                                          <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest mb-1">
-                                            Set {sIdx + 1}
+                                          <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest mb-2">
+                                            {isEnduranceEx ? (set.phaseName || `Phase ${sIdx + 1}`) : `Set ${sIdx + 1}`}
                                           </span>
-                                          <span className="text-[10px] sm:text-xs font-black text-white">
-                                            {set.baseReps || set.reps || '?'} Reps
+                                          <span className="text-[11px] sm:text-xs font-black text-white leading-relaxed max-w-xs px-2 break-words">
+                                            {set.baseReps || set.reps || '?'}
+                                            {!isEnduranceEx && " Reps"}
                                           </span>
-                                          <span className="text-[8px] sm:text-[10px] font-black text-volt text-center">
-                                            {displayWeight}{weightUnit}
-                                            <span className="block text-zinc-500 mt-0.5">RPE {setRpe}</span>
+                                          <span className="text-[8px] sm:text-[10px] font-black text-volt text-center mt-2">
+                                            {!isEnduranceEx && `${displayWeight}${weightUnit}`}
+                                            <span className={isEnduranceEx ? "text-zinc-500 font-bold block" : "block text-zinc-500 mt-0.5"}>
+                                              RPE {setRpe}
+                                            </span>
                                           </span>
                                         </div>
                                       );
@@ -383,13 +404,13 @@ export const MissionBriefingModal: React.FC<MissionBriefingModalProps> = ({
                       </div>
                     ))}
                   </div>
+                </div>
 
                   {/* Cool-down Section */}
                   <div className="space-y-6">
                     <div className="flex items-baseline gap-3 border-b border-white/10 pb-2">
                       <h3 className="font-headline text-lg font-black uppercase tracking-tight text-zinc-500">
-                        {(session.exercises?.length || 0) + 1}. Cool-Down
-                        Protocol
+                        Cool-Down Protocol
                       </h3>
                     </div>
                     <div className="grid grid-cols-1 gap-4 opacity-70">
