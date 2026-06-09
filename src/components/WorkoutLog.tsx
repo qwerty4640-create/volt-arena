@@ -173,6 +173,7 @@ const ExerciseAccordion = ({
   const { currentSession } = useWorkout();
   const [isExpanded, setIsExpanded] = useState(true);
   const [showInfo, setShowInfo] = useState(false);
+  const [expandedNotes, setExpandedNotes] = useState<Record<string, boolean>>({});
   const exerciseDefinition = EXERCISE_DATABASE.find(e => e.name === exercise.name);
   const unilateral = isUnilateral(exercise.name);
   const dumbbell = isDumbbell(exercise.name);
@@ -359,7 +360,7 @@ const ExerciseAccordion = ({
                     {isEnduranceMode ? "TARGET PROTOCOL (PACE / HR / TIME)" : isTimed ? "TIME (Min)" : "REPS"}
                   </div>
                   <div className="w-10 sm:w-12 text-center">RPE</div>
-                  <div className="w-20 sm:w-28 shrink-0 text-center">ACTIONS</div>
+                  <div className="w-16 sm:w-24 shrink-0 text-center">ACTIONS</div>
                 </div>
                 
                 {sortedSets.map((set: any, idx: number) => {
@@ -398,113 +399,128 @@ const ExerciseAccordion = ({
 
                   return (
                     <div key={set.id} className={cn(
-                      "flex items-center gap-1 sm:gap-2 p-1 sm:p-2 relative rounded",
-                      set.isCompleted ? "bg-emerald-500/10" : "bg-white/5"
+                      "flex flex-col p-1 sm:p-2 relative rounded-none border border-white/5",
+                      set.isCompleted ? "bg-emerald-500/10 border-emerald-500/25" : "bg-white/5"
                     )}>
-                      {isWarmup && (
-                         <></>
-                      )}
-                      <div className={cn(
-                        isEnduranceMode ? "w-24 sm:w-32 text-left" :
-                        showLabels ? "w-16 sm:w-24 text-center" : 
-                        "w-8 sm:w-10 text-center",
-                        "shrink-0 text-[10px] font-black uppercase flex flex-col items-start justify-center gap-1 sm:gap-1.5 break-keep whitespace-nowrap",
-                        isWarmup ? "text-zinc-500" : "text-zinc-400"
-                      )}>
-                        <div className="flex items-center gap-1">
-                          {isWarmup && <Flame size={10} className="shrink-0" />}
-                          <span>{setLabel}</span>
-                        </div>
-                        {showLabels && !isWarmup && workIdx !== -1 && !isEnduranceMode && (
-                          <span className={cn(
-                            "text-[7px] sm:text-[8px] px-1 sm:px-1.5 py-0.5 font-bold tracking-tight border select-none transition-colors",
-                            workIdx === 0
-                              ? "bg-volt/10 text-volt border-volt/30"
-                              : "bg-zinc-900/50 text-zinc-500 border-zinc-800"
-                          )}>
-                            {workIdx === 0 ? "TOP SET" : "BACK OFF"}
-                          </span>
+                      <div className="flex items-center gap-1 sm:gap-2 w-full">
+                        {isWarmup && (
+                           <></>
                         )}
+                        <div className={cn(
+                          isEnduranceMode ? "w-24 sm:w-32 text-left" :
+                          showLabels ? "w-16 sm:w-24 text-center" : 
+                          "w-8 sm:w-10 text-center",
+                          "shrink-0 text-[10px] font-black uppercase flex flex-col items-start justify-center gap-1 sm:gap-1.5 break-keep whitespace-nowrap",
+                          isWarmup ? "text-zinc-500" : "text-zinc-400"
+                        )}>
+                          <div className="flex items-center gap-1">
+                            {isWarmup && <Flame size={10} className="shrink-0" />}
+                            <span>{setLabel}</span>
+                          </div>
+                          {showLabels && !isWarmup && workIdx !== -1 && !isEnduranceMode && (
+                            <span className={cn(
+                              "text-[7px] sm:text-[8px] px-1 sm:px-1.5 py-0.5 font-bold tracking-tight border select-none transition-colors",
+                              workIdx === 0
+                                ? "bg-volt/10 text-volt border-volt/30"
+                                : "bg-zinc-900/50 text-zinc-500 border-zinc-800"
+                            )}>
+                              {workIdx === 0 ? "TOP SET" : "BACK OFF"}
+                            </span>
+                          )}
+                        </div>
+
+                    {!isEnduranceMode && (
+                      <div className="flex-1 min-w-0 flex flex-row items-center gap-1">
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          value={String(set.weight) === '0' || String(set.weight) === '0.0' ? '' : set.weight}
+                          placeholder={set.baseWeight && set.baseWeight !== '0' && set.baseWeight !== '0.0' ? set.baseWeight : '0'}
+                          onChange={(e) => updateSet(exercise.id, set.id, 'weight', e.target.value)}
+                          className="w-full bg-transparent border-b border-white/10 text-center text-sm md:text-lg font-black text-white focus:outline-none focus:border-volt/50 [-moz-appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        />
+                      </div>
+                    )}
+                        <input
+                          type="text"
+                          inputMode={isEnduranceMode ? "text" : isTimed ? "decimal" : "numeric"}
+                          pattern={isEnduranceMode || isTimed ? undefined : "[0-9]*"}
+                          value={set.reps === '0' ? '' : set.reps}
+                          placeholder={(() => {
+                            if (set.baseReps && set.baseReps !== '0') return set.baseReps;
+                            if (set.reps && set.reps !== '0') return set.reps;
+                            
+                            // Look for another set in this exercise with a valid reps value
+                            const otherSetWithReps = exercise.sets?.find((s: any) => s.baseReps && s.baseReps !== '0')
+                              || exercise.sets?.find((s: any) => s.reps && s.reps !== '0');
+                            if (otherSetWithReps) {
+                              return otherSetWithReps.baseReps || otherSetWithReps.reps;
+                            }
+                            
+                            // Default fallback based on block type
+                            if (isTimed) return "1.5";
+                            const isStrength = currentSession?.blockType?.toLowerCase().includes('strength') || 
+                                               currentSession?.blockType?.toLowerCase().includes('power') ||
+                                               currentSession?.blockType?.toLowerCase().includes('peak');
+                            return isStrength ? "4-6" : "10-15";
+                          })()}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (isEnduranceMode || !isTimed || val === '' || /^\d*\.?\d*$/.test(val)) {
+                              updateSet(exercise.id, set.id, 'reps', val);
+                            }
+                          }}
+                          className={cn(
+                            isEnduranceMode ? "flex-1 text-left px-2" : isTimed ? "w-20" : "w-12 sm:flex-1 text-center",
+                            "min-w-0 bg-transparent border-b border-white/10 text-sm md:text-lg font-black text-white focus:outline-none focus:border-volt/50 [-moz-appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-all"
+                          )}
+                        />
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          value={String(set.rpe) === '0' || String(set.rpe) === '0.0' ? '' : set.rpe}
+                          placeholder={set.baseRpe && set.baseRpe !== '0' && set.baseRpe !== '0.0' ? set.baseRpe : '0'}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                              updateSet(exercise.id, set.id, 'rpe', val);
+                            }
+                          }}
+                          className="w-10 sm:w-12 min-w-0 bg-transparent border-b border-white/10 text-center text-sm md:text-lg font-black text-white focus:outline-none focus:border-volt/50 shrink-0 [-moz-appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        />
+                        <div className="w-16 sm:w-24 shrink-0 flex items-center justify-center gap-1 sm:gap-1.5">
+                          <button
+                            onClick={() => { haptics.button(); toggleSetCompletion(exercise.id, set.id); }}
+                            className={cn(
+                              "w-7 sm:w-9 h-7 sm:h-9 shrink-0 flex items-center justify-center transition-colors border border-white/10 rounded-none",
+                              set.isCompleted
+                                ? "bg-emerald-500 text-void border-emerald-500"
+                                : "bg-zinc-900 text-zinc-400 hover:text-white"
+                            )}
+                            title="Complete Set"
+                          >
+                            <Check size={13} className="sm:w-3.5 sm:h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => { haptics.button(); removeSet(exercise.id, set.id); }}
+                            className="w-7 sm:w-9 h-7 sm:h-9 shrink-0 flex items-center justify-center text-zinc-500 hover:text-red-500 hover:bg-red-500/10 bg-zinc-900 rounded-none border border-white/10 transition-colors"
+                            title={t('workout.remove')}
+                          >
+                            <Trash2 size={13} className="sm:w-3.5 sm:h-3.5" />
+                          </button>
+                        </div>
                       </div>
 
-                  {!isEnduranceMode && (
-                    <div className="flex-1 min-w-0 flex flex-row items-center gap-1">
-                      <input
-                        type="text"
-                        inputMode="decimal"
-                        value={String(set.weight) === '0' || String(set.weight) === '0.0' ? '' : set.weight}
-                        placeholder={set.baseWeight && set.baseWeight !== '0' && set.baseWeight !== '0.0' ? set.baseWeight : '0'}
-                        onChange={(e) => updateSet(exercise.id, set.id, 'weight', e.target.value)}
-                        className="w-full bg-transparent border-b border-white/10 text-center text-sm md:text-lg font-black text-white focus:outline-none focus:border-volt/50 [-moz-appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                      />
-                    </div>
-                  )}
-                      <input
-                        type="text"
-                        inputMode={isEnduranceMode ? "text" : isTimed ? "decimal" : "numeric"}
-                        pattern={isEnduranceMode || isTimed ? undefined : "[0-9]*"}
-                        value={set.reps === '0' ? '' : set.reps}
-                        placeholder={(() => {
-                          if (set.baseReps && set.baseReps !== '0') return set.baseReps;
-                          if (set.reps && set.reps !== '0') return set.reps;
-                          
-                          // Look for another set in this exercise with a valid reps value
-                          const otherSetWithReps = exercise.sets?.find((s: any) => s.baseReps && s.baseReps !== '0')
-                            || exercise.sets?.find((s: any) => s.reps && s.reps !== '0');
-                          if (otherSetWithReps) {
-                            return otherSetWithReps.baseReps || otherSetWithReps.reps;
-                          }
-                          
-                          // Default fallback based on block type
-                          if (isTimed) return "1.5";
-                          const isStrength = currentSession?.blockType?.toLowerCase().includes('strength') || 
-                                             currentSession?.blockType?.toLowerCase().includes('power') ||
-                                             currentSession?.blockType?.toLowerCase().includes('peak');
-                          return isStrength ? "4-6" : "10-15";
-                        })()}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          if (isEnduranceMode || !isTimed || val === '' || /^\d*\.?\d*$/.test(val)) {
-                            updateSet(exercise.id, set.id, 'reps', val);
-                          }
-                        }}
-                        className={cn(
-                          isEnduranceMode ? "flex-1 text-left px-2" : isTimed ? "w-20" : "w-12 sm:flex-1 text-center",
-                          "min-w-0 bg-transparent border-b border-white/10 text-sm md:text-lg font-black text-white focus:outline-none focus:border-volt/50 [-moz-appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-all"
-                        )}
-                      />
-                      <input
-                        type="text"
-                        inputMode="decimal"
-                        value={String(set.rpe) === '0' || String(set.rpe) === '0.0' ? '' : set.rpe}
-                        placeholder={set.baseRpe && set.baseRpe !== '0' && set.baseRpe !== '0.0' ? set.baseRpe : '0'}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          if (val === '' || /^\d*\.?\d*$/.test(val)) {
-                            updateSet(exercise.id, set.id, 'rpe', val);
-                          }
-                        }}
-                        className="w-10 sm:w-12 min-w-0 bg-transparent border-b border-white/10 text-center text-sm md:text-lg font-black text-white focus:outline-none focus:border-volt/50 shrink-0 [-moz-appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                      />
-                      <div className="w-20 sm:w-28 shrink-0 flex items-center justify-center gap-1 sm:gap-2">
-                        <button
-                          onClick={() => { haptics.button(); toggleSetCompletion(exercise.id, set.id); }}
-                          className={cn(
-                            "w-8 sm:w-10 h-8 sm:h-10 shrink-0 flex items-center justify-center rounded transition-colors border border-white/20",
-                            set.isCompleted
-                              ? "bg-emerald-500 text-void border-emerald-500"
-                              : "bg-surface-container text-zinc-400 hover:text-white"
-                          )}
-                        >
-                          <Check size={14} className="sm:w-4 sm:h-4" />
-                        </button>
-                        <button
-                          onClick={() => { haptics.button(); removeSet(exercise.id, set.id); }}
-                          className="w-8 sm:w-10 h-8 sm:h-10 shrink-0 flex items-center justify-center text-zinc-500 hover:text-crimson bg-surface-container rounded border border-white/20 transition-colors"
-                          title={t('workout.remove')}
-                        >
-                          <Trash2 size={14} className="sm:w-4 sm:h-4" />
-                        </button>
+                      {/* Display Note input area at all times */}
+                      <div className="w-full mt-1.5 px-3 py-1.5 border-t border-white/5 bg-zinc-950/45 flex items-center gap-2">
+                        <ClipboardList size={11} className="text-volt shrink-0" />
+                        <input
+                          type="text"
+                          value={set.notes || ''}
+                          onChange={(e) => updateSet(exercise.id, set.id, 'notes', e.target.value)}
+                          placeholder="Enter set log note..."
+                          className="flex-1 bg-transparent text-[10px] sm:text-xs font-mono font-medium tracking-wider text-white border-none outline-none placeholder-zinc-650 focus:ring-0 focus:outline-none"
+                        />
                       </div>
                     </div>
                   );

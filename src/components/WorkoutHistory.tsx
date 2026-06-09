@@ -27,7 +27,7 @@ import { useWorkout, WorkoutSession, ActiveRecovery, Exercise } from '../context
 import { BlockType } from '../constants/periodization';
 import { ConfirmationModal } from './ConfirmationModal';
 import { ExerciseSelectorModal } from './ExerciseSelectorModal';
-import { isTimedExercise } from '../utils/workoutUtils';
+import { isTimedExercise, isUnilateral } from '../utils/workoutUtils';
 
 type HistoryLog =
   | (WorkoutSession & { logType: 'workout' })
@@ -608,12 +608,25 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
                                 <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{ex.sets?.length || 0} {t('analysis.sets')}</span>
                               </div>
                               <div className="space-y-2 pl-11">
-                                {ex.sets?.map((set, sIdx) => (
-                                  <div key={sIdx} className="flex justify-between items-center text-[10px] font-sans">
-                                    <span className="text-zinc-500">{t('workout.set')} {sIdx + 1}</span>
-                                    <span className="font-bold text-zinc-300">{set.weight}{unit === 'metric' ? 'kg' : 'LBS'} x {set.reps}{isTimedExercise(ex.name) ? ' sec' : ''} @ RPE {set.rpe}</span>
-                                  </div>
-                                ))}
+                                {ex.sets?.map((set, sIdx) => {
+                                  const isUnilateralEx = isUnilateral(ex.name);
+                                  const setLabel = isUnilateralEx
+                                    ? `${sIdx % 2 === 0 ? 'L' : 'R'}${Math.floor(sIdx / 2) + 1}`
+                                    : `${t('workout.set')} ${sIdx + 1}`;
+                                  return (
+                                    <div key={sIdx} className="flex flex-col gap-1 text-[10px] font-sans border-b border-white/5 pb-2 last:border-b-0 last:pb-0">
+                                      <div className="flex justify-between items-center">
+                                        <span className="text-zinc-500">{setLabel}</span>
+                                        <span className="font-bold text-zinc-300">{set.weight}{unit === 'metric' ? 'kg' : 'LBS'} x {set.reps}{isTimedExercise(ex.name) ? ' sec' : ''} @ RPE {set.rpe}</span>
+                                      </div>
+                                      {set.notes && (
+                                        <div className="text-[9px] text-volt italic font-mono pl-3 border-l-2 border-volt/50 py-0.5 tracking-wider">
+                                          Note: {set.notes}
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
                               </div>
                             </div>
                           ))}
@@ -771,66 +784,101 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
                               <div className="col-span-1 text-right">{t('analysis.action')}</div>
                             </div>
 
-                            {ex.sets.map((set, setIdx) => (
-                              <div key={set.id} className="grid grid-cols-5 gap-4 items-center bg-surface-container-high/40 p-3 border-none">
-                                <div className="text-[10px] font-black text-zinc-600 pl-1">#{setIdx + 1}</div>
-                                <input
-                                  type="number"
-                                  value={set.weight}
-                                  onChange={(e) => {
-                                    const newExercises = [...editWorkout.exercises];
-                                    newExercises[exIdx].sets[setIdx].weight = e.target.value;
-                                    setEditWorkout({ ...editWorkout, exercises: newExercises });
-                                  }}
-                                  className="bg-transparent border-none text-sm font-black text-white focus:text-volt outline-none"
-                                />
-                                <input
-                                  type="number"
-                                  value={set.reps}
-                                  onChange={(e) => {
-                                    const newExercises = [...editWorkout.exercises];
-                                    newExercises[exIdx].sets[setIdx].reps = e.target.value;
-                                    setEditWorkout({ ...editWorkout, exercises: newExercises });
-                                  }}
-                                  className="bg-transparent border-none text-sm font-black text-white focus:text-volt outline-none"
-                                />
-                                <input
-                                  type="number"
-                                  step="0.5"
-                                  value={set.rpe}
-                                  onChange={(e) => {
-                                    const newExercises = [...editWorkout.exercises];
-                                    newExercises[exIdx].sets[setIdx].rpe = e.target.value;
-                                    setEditWorkout({ ...editWorkout, exercises: newExercises });
-                                  }}
-                                  className="bg-transparent border-none text-sm font-black text-volt outline-none"
-                                />
-                                <div className="flex justify-end">
-                                  <button
-                                    onClick={() => {
+                            {ex.sets.map((set, setIdx) => {
+                              const isUnilateralEx = isUnilateral(ex.name);
+                              const setLabel = isUnilateralEx
+                                ? `${setIdx % 2 === 0 ? 'L' : 'R'}${Math.floor(setIdx / 2) + 1}`
+                                : `#${setIdx + 1}`;
+                              return (
+                                <div key={set.id} className="space-y-2 bg-surface-container-high/40 p-3 border-none">
+                                  <div className="grid grid-cols-5 gap-4 items-center">
+                                    <div className="text-[10px] font-black text-zinc-600 pl-1">{setLabel}</div>
+                                  <input
+                                    type="number"
+                                    value={set.weight}
+                                    onChange={(e) => {
                                       const newExercises = [...editWorkout.exercises];
-                                      newExercises[exIdx].sets = newExercises[exIdx].sets.filter((_, i) => i !== setIdx);
+                                      newExercises[exIdx].sets[setIdx].weight = e.target.value;
                                       setEditWorkout({ ...editWorkout, exercises: newExercises });
                                     }}
-                                    className="text-zinc-700 hover:text-crimson transition-colors"
-                                  >
-                                    <X size={14} />
-                                  </button>
+                                    className="bg-transparent border-none text-sm font-black text-white focus:text-volt outline-none"
+                                  />
+                                  <input
+                                    type="number"
+                                    value={set.reps}
+                                    onChange={(e) => {
+                                      const newExercises = [...editWorkout.exercises];
+                                      newExercises[exIdx].sets[setIdx].reps = e.target.value;
+                                      setEditWorkout({ ...editWorkout, exercises: newExercises });
+                                    }}
+                                    className="bg-transparent border-none text-sm font-black text-white focus:text-volt outline-none"
+                                  />
+                                  <input
+                                    type="number"
+                                    step="0.5"
+                                    value={set.rpe}
+                                    onChange={(e) => {
+                                      const newExercises = [...editWorkout.exercises];
+                                      newExercises[exIdx].sets[setIdx].rpe = e.target.value;
+                                      setEditWorkout({ ...editWorkout, exercises: newExercises });
+                                    }}
+                                    className="bg-transparent border-none text-sm font-black text-volt outline-none"
+                                  />
+                                  <div className="flex justify-end">
+                                    <button
+                                      onClick={() => {
+                                        const newExercises = [...editWorkout.exercises];
+                                        newExercises[exIdx].sets = newExercises[exIdx].sets.filter((_, i) => i !== setIdx);
+                                        setEditWorkout({ ...editWorkout, exercises: newExercises });
+                                      }}
+                                      className="text-zinc-700 hover:text-crimson transition-colors"
+                                    >
+                                      <X size={14} />
+                                    </button>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2 pl-6 pt-1 border-t border-white/5">
+                                  <span className="text-[8px] font-black text-zinc-600 uppercase tracking-wider font-mono">Note:</span>
+                                  <input
+                                    type="text"
+                                    value={set.notes || ''}
+                                    placeholder="Enter performance note..."
+                                    onChange={(e) => {
+                                      const newExercises = [...editWorkout.exercises];
+                                      newExercises[exIdx].sets[setIdx].notes = e.target.value;
+                                      setEditWorkout({ ...editWorkout, exercises: newExercises });
+                                    }}
+                                    className="flex-1 bg-transparent text-[10px] font-mono font-medium tracking-wider text-white border-none outline-none placeholder-zinc-700 focus:ring-0"
+                                  />
                                 </div>
                               </div>
-                            ))}
+                            );
+                            })}
 
                             <button
                               onClick={() => {
                                 const newExercises = [...editWorkout.exercises];
                                 const lastSet = ex.sets[ex.sets.length - 1];
-                                newExercises[exIdx].sets.push({
+                                if (isUnilateral(ex.name)) {
+                                  const baseSet = {
+                                    weight: lastSet?.weight || '0',
+                                    reps: lastSet?.reps || '0',
+                                    rpe: lastSet?.rpe || '7',
+                                    isCompleted: true
+                                  };
+                                  newExercises[exIdx].sets.push(
+                                    { ...baseSet, id: Math.random().toString(36).substring(2, 11) },
+                                    { ...baseSet, id: Math.random().toString(36).substring(2, 11) }
+                                  );
+                                } else {
+                                  newExercises[exIdx].sets.push({
                                   id: Math.random().toString(36).substr(2, 9),
                                   weight: lastSet?.weight || '0',
                                   reps: lastSet?.reps || '0',
                                   rpe: lastSet?.rpe || '7',
                                   isCompleted: true
-                                });
+                                  });
+                                }
                                 setEditWorkout({ ...editWorkout, exercises: newExercises });
                               }}
                               className="w-full py-3 bg-surface-container-high/20 border border-dashed border-white/5 text-[9px] font-black uppercase tracking-widest text-zinc-600 hover:text-volt hover:border-volt/30 transition-all flex items-center justify-center gap-2"

@@ -202,7 +202,7 @@ export const JointStressWidget = ({ className }: { className?: string }) => {
             <ShieldCheck className="text-volt" size={16} />
             <span className="text-[10px] font-black uppercase tracking-widest text-volt">{t('analysis.longevityProtocol')}</span>
           </div>
-          <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight mb-2">{t('analysis.jointStress')}</h2>
+          <h2 className="text-2xl md:text-3xl font-semibold uppercase tracking-widest text-white mb-2">{t('analysis.jointStress')}</h2>
           <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed">
             {t('analysis.jointStressDesc')}
           </p>

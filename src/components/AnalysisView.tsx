@@ -220,7 +220,7 @@ const ReadinessTrendWidget = () => {
                 style={{ backgroundImage: 'radial-gradient(var(--primary-color) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6 relative z-10">
                 <div>
-                    <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight mb-2">{t('analysis.readinessTrend')}</h2>
+                    <h2 className="text-2xl md:text-3xl font-semibold uppercase tracking-widest text-white mb-2">{t('analysis.readinessTrend')}</h2>
                     <p className="text-zinc-400 text-xs font-medium max-w-md mb-8 leading-relaxed">
                         {t('analysis.readinessTrendDesc')}
                     </p>
@@ -549,7 +549,7 @@ export const ReadinessAnalysisWidget = () => {
             {/* Header: title + readiness score + recalibrate button */}
             <div className="flex items-start justify-between mb-8 md:mb-12 relative z-10 w-full gap-4">
                 <div className="flex flex-col">
-                    <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight mb-2">
+                    <h2 className="text-2xl md:text-3xl font-semibold uppercase tracking-widest text-white mb-2">
                         {t('analysis.recoveryAnalysis')}
                     </h2>
                     <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed">

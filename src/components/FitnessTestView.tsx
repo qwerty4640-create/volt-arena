@@ -1128,7 +1128,7 @@ export const FitnessTestView = ({ immersionMode = 'immersive', isVoiceActive = f
             {isUnlocked ? <Activity size={32} /> : <Lock size={32} />}
           </div>
           <div>
-            <h2 className="font-sans text-2xl font-black uppercase tracking-widest text-white mb-2">
+            <h2 className="font-sans text-2xl font-semibold uppercase tracking-widest text-white mb-2">
               {isUnlocked ? "Ready to Level Up?" : (t('nav.fitnessTest') || 'TESTING BLOCKED')}
             </h2>
             <p className="text-zinc-400 text-sm font-medium leading-relaxed">

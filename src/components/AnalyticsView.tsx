@@ -73,7 +73,7 @@ const TacticalIntegration = ({ activeRange, onRangeChange }: { activeRange: stri
             <Navigation className="text-volt" size={16} />
             <span className="text-[10px] font-black uppercase tracking-widest text-volt">FIELD PROTOCOL</span>
           </div>
-          <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight mb-2">{t('analysis.tacticalIntegration')}</h2>
+          <h2 className="text-2xl md:text-3xl font-semibold uppercase tracking-widest text-white mb-2">{t('analysis.tacticalIntegration')}</h2>
           <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed">
             {t('analysis.tacticalIntegrationDesc')}
           </p>
@@ -314,7 +314,7 @@ export const AnalyticsView = () => {
                           <BicepsFlexed className="text-volt" size={16} />
                           <span className="text-[10px] font-black uppercase tracking-widest text-volt">STRENGTH PROTOCOL</span>
                         </div>
-                        <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight mb-2">{t('analysis.strengthTrend')}</h2>
+                        <h2 className="text-2xl md:text-3xl font-semibold uppercase tracking-widest text-white mb-2">{t('analysis.strengthTrend')}</h2>
                         <p className="text-zinc-400 text-xs font-medium w-full leading-relaxed">
                           {t('analysis.strengthTrendDesc')}
                         </p>
@@ -573,7 +573,7 @@ export const AnalyticsView = () => {
                                 <BicepsFlexed className="text-volt" size={16} />
                                 <span className="text-[10px] font-black uppercase tracking-widest text-volt">STRENGTH PROTOCOL</span>
                               </div>
-                              <h3 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight">
+                              <h3 className="text-2xl md:text-3xl font-semibold uppercase tracking-widest text-white">
                                 {t('Estimated 1rm')}
                               </h3>
                               <div className="text-zinc-400 text-xs font-medium leading-relaxed mt-1">

@@ -78,12 +78,7 @@ export function PageHeader({
           </div>
 
           <div className="flex items-center gap-3">
-            <h1 className={cn(
-              "font-headline text-3xl sm:text-5xl text-white m-0 leading-none",
-              ["analysis", "analytics", "training", "deployment", "fitness-test", "settings", "library", "upcoming-missions"].includes(activeView)
-                ? "font-semibold uppercase tracking-widest"
-                : "font-black uppercase tracking-tight"
-            )}>
+            <h1 className="font-headline text-3xl sm:text-5xl text-white m-0 leading-none font-black uppercase tracking-tight">
               {title}
             </h1>
           </div>

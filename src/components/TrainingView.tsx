@@ -459,7 +459,7 @@ export const TrainingView = ({
                 </div>
               )}
             </div>
-            <h1 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight mb-2">{displayTitle}</h1>
+            <h1 className="text-2xl md:text-3xl font-semibold uppercase tracking-widest text-white mb-2">{displayTitle}</h1>
             <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed">
               {focusText}
             </p>
@@ -861,56 +861,15 @@ export const TrainingView = ({
         </div>
       </motion.div>
       
-      {/* Custom Mission Module */}
-      <motion.div
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.3 }}
-        className="col-span-1 md:col-span-2 lg:col-span-3 shrink-0 glass-panel border border-white/5 bg-void p-4 md:p-8 flex flex-col md:flex-row justify-between items-center w-full relative overflow-hidden group cursor-pointer hover:bg-white/5 hover:border-volt/30 transition-all duration-300"
-        onClick={() => {
-          const date = new Date().toISOString().split('T')[0];
-          const customSession = {
-            id: `custom_${Date.now()}`,
-            uid: (profile as any)?.uid || (profile as any)?.id || 'guest',
-            date,
-            time: new Date().toTimeString().split(' ')[0],
-            title: `Custom Mission - ${date}`,
-            description: "Self-directed tactical operation. Does not advance standard deployment tracks.",
-            exercises: [],
-            isCustom: true, // ensures it doesn't bump W/D metrics
-            currentExerciseIndex: 0,
-            currentSetIndex: 0,
-            completed: false
-          } as any;
-          startNewSession(customSession);
-          onStartCustomSession?.();
-        }}
-      >
-        <div className="flex flex-col z-10 w-full mb-4 md:mb-0">
-          <h2 className="font-headline text-xl md:text-2xl font-black uppercase tracking-tight text-white group-hover:text-volt transition-colors mb-2">
-            Make My Own
-          </h2>
-          <p className="text-zinc-500 text-[10px] md:text-xs font-bold uppercase tracking-widest leading-relaxed max-w-sm">
-            Launch a blank canvas operation. Select your own parameters. Recorded to history, isolated from main schedule.
-          </p>
-        </div>
-        
-        <div className="flex items-center justify-center shrink-0 w-full md:w-auto">
-          <div className="h-10 w-10 md:h-12 md:w-12 bg-white/5 flex items-center justify-center text-zinc-400 group-hover:text-white transition-colors">
-            <ArrowRight size={20} className="group-hover:translate-x-1 group-hover:text-volt transition-all" />
-          </div>
-        </div>
-      </motion.div>
-
       {/* Recent Logs Module */}
       <motion.div
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.4 }}
+        transition={{ delay: 0.3 }}
         className="col-span-1 md:col-span-2 lg:col-span-3 shrink-0 glass-panel dot-grid-bg p-4 md:p-8 flex flex-col w-full relative overflow-hidden vanguard-tour-past-missions"
       >
 
-        <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight mb-2 relative z-10">{t('analysis.missionLogs')}</h2>
+        <h2 className="text-2xl md:text-3xl font-semibold uppercase tracking-widest text-white mb-2 relative z-10">{t('analysis.missionLogs')}</h2>
         <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed mb-8">{t('analysis.missionLogsDesc')}</p>
 
         {hasHistory ? (
@@ -923,7 +882,7 @@ export const TrainingView = ({
                   className="bg-void/40 p-3 md:p-6 border border-white/5 relative group overflow-hidden transition-all duration-300 hover:bg-white/5 hover:border-volt/30 flex flex-col h-full text-left cursor-pointer"
                 >
                   <div className="flex justify-between items-start mb-2 relative z-10 w-full">
-                    <div className="flex flex-col">
+                     <div className="flex flex-col">
                       <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">{log.date}</span>
                       <h3 className="font-headline text-xs md:text-sm font-black uppercase tracking-tight text-white group-hover:text-volt transition-colors">{log.title}</h3>
                     </div>
@@ -964,6 +923,47 @@ export const TrainingView = ({
         <div className="mt-6 flex justify-between items-center px-1 opacity-40">
           <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">{t('analysis.logStreamActive')}</span>
           <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">{t('analysis.totalRecordsCount', { count: history.length })}</span>
+        </div>
+      </motion.div>
+
+      {/* Custom Mission Module */}
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.4 }}
+        className="col-span-1 md:col-span-2 lg:col-span-3 shrink-0 glass-panel border border-white/5 bg-void p-4 md:p-8 flex flex-col md:flex-row justify-between items-center w-full relative overflow-hidden group cursor-pointer hover:bg-white/5 hover:border-volt/30 transition-all duration-300"
+        onClick={() => {
+          const date = new Date().toISOString().split('T')[0];
+          const customSession = {
+            id: `custom_${Date.now()}`,
+            uid: (profile as any)?.uid || (profile as any)?.id || 'guest',
+            date,
+            time: new Date().toTimeString().split(' ')[0],
+            title: `Custom Mission - ${date}`,
+            description: "Self-directed tactical operation. Does not advance standard deployment tracks.",
+            exercises: [],
+            isCustom: true, // ensures it doesn't bump W/D metrics
+            currentExerciseIndex: 0,
+            currentSetIndex: 0,
+            completed: false
+          } as any;
+          startNewSession(customSession);
+          onStartCustomSession?.();
+        }}
+      >
+        <div className="flex flex-col z-10 w-full mb-4 md:mb-0">
+          <h2 className="text-xl md:text-2xl font-semibold uppercase tracking-widest text-white group-hover:text-volt transition-colors mb-2">
+            Make My Own
+          </h2>
+          <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed">
+            Launch a blank canvas operation. Select your own parameters. Recorded to history, isolated from main schedule.
+          </p>
+        </div>
+        
+        <div className="flex items-center justify-center shrink-0 w-full md:w-auto">
+          <div className="h-10 w-10 md:h-12 md:w-12 bg-white/5 flex items-center justify-center text-zinc-400 group-hover:text-white transition-colors">
+            <ArrowRight size={20} className="group-hover:translate-x-1 group-hover:text-volt transition-all" />
+          </div>
         </div>
       </motion.div>
 

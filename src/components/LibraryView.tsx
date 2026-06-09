@@ -113,7 +113,7 @@ export const LibraryView = () => {
           animate={{ y: 0, opacity: 1 }}
           className="col-span-1 shrink-0 glass-panel dot-grid-bg p-4 md:p-8 flex flex-col w-full relative overflow-hidden"
         >
-          <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight mb-2 relative z-10">
+          <h2 className="text-2xl md:text-3xl font-semibold uppercase tracking-widest text-white mb-2 relative z-10">
             {t("analysis.missionLibrary")}
           </h2>
           <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed mb-8">
@@ -251,7 +251,7 @@ export const LibraryView = () => {
           transition={{ delay: 0.1 }}
           className="col-span-1 shrink-0 glass-panel dot-grid-bg p-4 md:p-8 flex flex-col w-full relative overflow-hidden"
         >
-          <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight mb-2 relative z-10">
+          <h2 className="text-2xl md:text-3xl font-semibold uppercase tracking-widest text-white mb-2 relative z-10">
             {t("settings.fieldManual")}
           </h2>
           <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed mb-8">

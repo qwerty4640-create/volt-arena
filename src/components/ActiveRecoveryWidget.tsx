@@ -123,7 +123,7 @@ export const ActiveRecoveryWidget = () => {
         style={{ backgroundImage: 'radial-gradient(var(--primary-color) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
       <div className="flex items-center justify-between relative z-10 mb-6 w-full">
         <div className="flex flex-col">
-          <h2 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight">
+          <h2 className="text-2xl md:text-3xl font-semibold uppercase tracking-widest text-white">
             {t('recovery.title')}
           </h2>
           <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed mt-2">

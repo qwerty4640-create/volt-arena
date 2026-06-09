@@ -1725,9 +1725,6 @@ export const createSessionFromTemplate = (
 
       const unilateral =
         selectedExercise.isUnilateral || (slot as any).isUnilateral;
-      if (unilateral) {
-        sets = sets * 2;
-      }
 
       let slotVolumeModifier = volumeModifier;
       
@@ -1757,6 +1754,12 @@ export const createSessionFromTemplate = (
         } else if (isBench) {
           sets = 4;
         }
+      }
+
+      // Defer unilateral sets calculation until all volume adjustments and overriding is done
+      // ensuring that L1/R1, L2/R2 ... matches the calculated bilateral sets.
+      if (unilateral) {
+        sets = sets * 2;
       }
 
       // Longevity: Tempo/Pause work instead of weight increase

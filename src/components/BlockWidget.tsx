@@ -335,7 +335,7 @@ export const BlockWidget = ({}: BlockWidgetProps) => {
 
       <div className="flex flex-col mb-6 md:mb-8 relative z-10">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-headline text-2xl md:text-3xl font-black uppercase tracking-tight vanguard-tour-deployment-progress">
+          <h3 className="text-2xl md:text-3xl font-semibold uppercase tracking-widest text-white vanguard-tour-deployment-progress">
             {t("Deployment Progress")}
           </h3>
         </div>
