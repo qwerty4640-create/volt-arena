@@ -17,6 +17,7 @@ export interface Set {
   heart_rate_avg?: number;
   pain_scale?: number;
   rom_quality?: "restricted" | "fluid";
+  notes?: string;
 }
 
 export interface Exercise {
