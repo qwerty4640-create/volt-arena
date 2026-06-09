@@ -72,7 +72,8 @@
                     "reps": { "type": "string" },
                     "baseReps": { "type": "string" },
                     "rpe": { "type": "string" },
-                    "isCompleted": { "type": "boolean" }
+                    "isCompleted": { "type": "boolean" },
+                    "notes": { "type": "string" }
                   }
                 }
               }
