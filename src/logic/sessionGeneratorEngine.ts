@@ -1009,7 +1009,7 @@ export const createSessionFromTemplate = (
   // 2. Readiness Adjustment
   let readinessModifier = 1.0;
   if (isNextWorkout) {
-    if (currentReadiness >= 90) readinessModifier = 1.05;
+    if (currentReadiness >= 90) readinessModifier = 1.05; 
     else if (currentReadiness < 70 && currentReadiness >= 50)
       readinessModifier = 0.9;
     else if (currentReadiness < 50) readinessModifier = 0.8;
@@ -1548,6 +1548,8 @@ export const createSessionFromTemplate = (
           BlockType.POWERBUILDING,
         ].includes(block.type as BlockType);
 
+        const targetIntensityForReps = isPrimaryMainLift ? blockIntensity : adjustedIntensity;
+
         const isDeloadOrRetention = [
           BlockType.DELOAD,
           BlockType.RETENTION,
@@ -1562,26 +1564,26 @@ export const createSessionFromTemplate = (
         } else if (goals.includes("powerbuilding")) {
           // Powerbuilding strictly mandates exactly 3 heavy working sets for the main lift
           dynamicSets = 3;
-          if (adjustedIntensity < 0.75) {
+          if (targetIntensityForReps < 0.75) {
             dynamicReps = "6-8";
-          } else if (adjustedIntensity < 0.85) {
+          } else if (targetIntensityForReps < 0.85) {
             dynamicReps = "4-6";
-          } else if (adjustedIntensity < 0.90 && (block.type as any) !== BlockType.MAX_EFFORT && (block.type as any) !== BlockType.PEAKING) {
+          } else if (targetIntensityForReps < 0.90 && (block.type as any) !== BlockType.MAX_EFFORT && (block.type as any) !== BlockType.PEAKING) {
             dynamicReps = "3-4";
           } else {
             dynamicReps = "1-3"; // Max effort / true peaking zone safety cap
           }
         } else if (isHypertrophyOriented) {
-          if (adjustedIntensity < 0.65) {
+          if (targetIntensityForReps < 0.65) {
             dynamicReps = "10-12";
             dynamicSets = 3;
-          } else if (adjustedIntensity < 0.72) {
+          } else if (targetIntensityForReps < 0.72) {
             dynamicReps = "8-12";
             dynamicSets = 4;
-          } else if (adjustedIntensity < 0.78) {
+          } else if (targetIntensityForReps < 0.78) {
             dynamicReps = "8-10";
             dynamicSets = 4;
-          } else if (adjustedIntensity < 0.83) {
+          } else if (targetIntensityForReps < 0.83) {
             dynamicReps = "6-8";
             dynamicSets = 4;
           } else {
@@ -1590,22 +1592,22 @@ export const createSessionFromTemplate = (
           }
         } else {
           // Standard strength / peaking block mapping
-          if (adjustedIntensity < 0.65) {
+          if (targetIntensityForReps < 0.65) {
             dynamicReps = "8-10";
             dynamicSets = 3;
-          } else if (adjustedIntensity < 0.75) {
+          } else if (targetIntensityForReps < 0.75) {
             dynamicReps = "6-8";
             dynamicSets = 4;
-          } else if (adjustedIntensity < 0.80) {
+          } else if (targetIntensityForReps < 0.80) {
             dynamicReps = "4-6";
             dynamicSets = 5;
-          } else if (adjustedIntensity < 0.85) {
+          } else if (targetIntensityForReps < 0.85) {
             dynamicReps = "3-4";
             dynamicSets = 6;
-          } else if (adjustedIntensity < 0.90) {
+          } else if (targetIntensityForReps < 0.90) {
             dynamicReps = "2-3";
             dynamicSets = 7;
-          } else if (adjustedIntensity < 0.95) {
+          } else if (targetIntensityForReps < 0.95) {
             dynamicReps = "1-2";
             dynamicSets = 8;
           } else {
@@ -1634,8 +1636,8 @@ export const createSessionFromTemplate = (
         dynamicSets = Math.min(dynamicSets, 5);
       }
 
-      let reps = isMainLift ? dynamicReps : slot.reps;
-      let sets = isMainLift ? dynamicSets : slot.sets;
+      let reps = isPrimaryMainLift ? dynamicReps : slot.reps;
+      let sets = isPrimaryMainLift ? dynamicSets : slot.sets;
 
       // Progressive Volume For Endurance (Increase duration by 10% per week in block)
       if (["endurance", "aerobic base", "capacity", "vo2 max", "threshold", "endurance retention"].includes(currentPhaseStr)) {
@@ -1684,8 +1686,8 @@ export const createSessionFromTemplate = (
         unmodifiedWeight = Math.round((estimated1RM * adjustedBaseIntensity) / 5) * 5;
         weight = Math.round((estimated1RM * adjustedIntensity) / 5) * 5;
 
-        // Apply penalty for high-intensity aerobic activity before lower body days
-        if (hasAerobicInterference && (isSquat || isDeadlift)) {
+        // Apply penalty for high-intensity aerobic activity before major lifts
+        if (hasAerobicInterference && (isSquat || isBench || isDeadlift)) {
           weight = Math.round((weight * 0.85) / 5) * 5;
           unmodifiedWeight = Math.round((unmodifiedWeight * 0.85) / 5) * 5;
         }
@@ -1972,7 +1974,7 @@ export const createSessionFromTemplate = (
                 (block.type as any) === BlockType.MAX_EFFORT ||
                 (block.type as any) === BlockType.PEAKING;
 
-              if (rpeDrop > 0 && isPrimaryMainLift && isBifurcated) {
+              if (rpeDrop > 0 && isMainLift && isBifurcated) {
                 // Each point of RPE drop reduces weight by ~5% (0.05) to maintain the rep target
                 const dropFactor = 1 - (rpeDrop * 0.05);
                 setWeight = Math.round((setWeight * dropFactor) / 5) * 5;
