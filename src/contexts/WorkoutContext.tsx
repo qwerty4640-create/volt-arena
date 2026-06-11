@@ -807,8 +807,8 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({
 
     const lastSession = filteredHistory.length > 0 ? filteredHistory[0] : null;
     const calibration = getCalibrationStatus();
-    const currentReadiness = overrideReadinessScore !== undefined ? overrideReadinessScore : calibration.readiness;
-    const hasAerobicInterference = calibration.hasAerobicInterference;
+    const currentReadiness = overrideReadinessScore !== undefined ? overrideReadinessScore : 85;
+    const hasAerobicInterference = overrideReadinessScore !== undefined ? calibration.hasAerobicInterference : false;
 
     if (filteredHistory.length === 0) {
       const startWeek = 1 + (profile?.trainingWeekOffset || 0);
@@ -904,8 +904,8 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({
       const isNextWorkout = week === startWeek && day === nextDay;
 
       const calibration = getCalibrationStatus();
-      const finalReadinessToUse = isNextWorkout ? calibration.readiness : 100;
-      const hasAerobicInterference = calibration.hasAerobicInterference;
+      const finalReadinessToUse = 85;
+      const hasAerobicInterference = false;
 
       return createSessionFromTemplate(
         week,

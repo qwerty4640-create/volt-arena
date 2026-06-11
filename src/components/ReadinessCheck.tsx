@@ -221,7 +221,7 @@ export const ReadinessCheck = ({
 
   const scenario = getScenario();
 
-  const handleAnalyze = async () => {
+  const handleAnalyze = () => {
     // Log the HMS data for AI context and persistence immediately so that context calibration updates
     const biometrics = {
       sleep: scores.sleep,
@@ -231,11 +231,10 @@ export const ReadinessCheck = ({
       mood: scores.mood,
     };
 
-    try {
-      await logDailyHealthCheck(biometrics);
-    } catch (e) {
-      console.error("Failed to log daily health check:", e);
-    }
+    // Fire and forget to prevent UI block if network/Firebase hangs on iPad
+    logDailyHealthCheck(biometrics).catch((e) => {
+      console.error("Failed to log daily health check background:", e);
+    });
 
     setShowResult(true);
   };
@@ -256,7 +255,7 @@ export const ReadinessCheck = ({
   // Scroll to top when view changes
   React.useEffect(() => {
     if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTo({ top: 0 });
+      scrollContainerRef.current.scrollTop = 0;
     }
     window.scrollTo(0, 0);
   }, [showResult]);

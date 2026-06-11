@@ -450,15 +450,40 @@ const ExerciseAccordion = ({
                             if (set.baseReps && set.baseReps !== '0') return set.baseReps;
                             if (set.reps && set.reps !== '0') return set.reps;
                             
-                            // Look for another set in this exercise with a valid reps value
-                            const otherSetWithReps = exercise.sets?.find((s: any) => s.baseReps && s.baseReps !== '0')
-                              || exercise.sets?.find((s: any) => s.reps && s.reps !== '0');
-                            if (otherSetWithReps) {
-                              return otherSetWithReps.baseReps || otherSetWithReps.reps;
+                            // Look for another set of the SAME type (warmup vs working)
+                            const isThisWarmup = !!set.isWarmup;
+                            const sameTypeWithBaseReps = exercise.sets?.find((s: any) => !!s.isWarmup === isThisWarmup && s.baseReps && s.baseReps !== '0');
+                            const sameTypeWithReps = exercise.sets?.find((s: any) => !!s.isWarmup === isThisWarmup && s.reps && s.reps !== '0');
+                            
+                            if (sameTypeWithBaseReps) return sameTypeWithBaseReps.baseReps;
+                            if (sameTypeWithReps) return sameTypeWithReps.reps;
+                            
+                            // If this is a warmup set, it is okay to inherit from working sets as a hint
+                            if (isThisWarmup) {
+                              const workSetWithBaseReps = exercise.sets?.find((s: any) => !s.isWarmup && s.baseReps && s.baseReps !== '0');
+                              const workSetWithReps = exercise.sets?.find((s: any) => !s.isWarmup && s.reps && s.reps !== '0');
+                              if (workSetWithBaseReps) return workSetWithBaseReps.baseReps;
+                              if (workSetWithReps) return workSetWithReps.reps;
                             }
                             
-                            // Default fallback based on block type
+                            // Default fallback based on block type and intent
                             if (isTimed) return "1.5";
+                            
+                            const isS = isMainLiftMatch((exercise as any).name || "", "Squat");
+                            const isB = isMainLiftMatch((exercise as any).name || "", "Bench Press");
+                            const isD = isMainLiftMatch((exercise as any).name || "", "Deadlift");
+                            const isMain = isS || isB || isD;
+                            let computedIntent = exercise.intent;
+                            if (computedIntent && computedIntent.toUpperCase().includes("HEAVY PRIMARY") && !isMain) {
+                              computedIntent = "HYPERTROPHY";
+                            }
+                            
+                            const isHyper = computedIntent?.toUpperCase().includes("HYPERTROPHY");
+                            const isBloodFlow = computedIntent?.toUpperCase().includes("BLOOD FLOW");
+                            
+                            if (isBloodFlow) return "15-20";
+                            if (isHyper) return "10-15";
+
                             const isStrength = currentSession?.blockType?.toLowerCase().includes('strength') || 
                                                currentSession?.blockType?.toLowerCase().includes('power') ||
                                                currentSession?.blockType?.toLowerCase().includes('peak');
@@ -1155,23 +1180,6 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
     setExercises(prev => prev.map(ex => {
       if (ex.id === exerciseId) {
         let updatedSets = ex.sets.map(s => s.id === setId ? { ...s, [field]: value } : s);
-        
-        // Carry over weight and reps to future uncompleted sets
-        const setIndex = updatedSets.findIndex(s => s.id === setId);
-        if (setIndex !== -1 && (field === 'weight' || field === 'reps')) {
-          const currentIsWarmup = ex.sets[setIndex].isWarmup;
-          updatedSets = updatedSets.map((s, idx) => {
-            if (idx >= setIndex && !s.isCompleted && s.isWarmup === currentIsWarmup) {
-              return { 
-                ...s, 
-                [field]: value,
-                ...(field === 'weight' ? { baseWeight: value } : {}),
-                ...(field === 'reps' ? { baseReps: value } : {})
-              };
-            }
-            return s;
-          });
-        }
 
         // Apply Autoregulation logic
         const { nextExercises, willAutoRegulate } = getAutoregulatedExercises(
