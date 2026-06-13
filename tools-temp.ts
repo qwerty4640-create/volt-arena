@@ -1,5 +1,22 @@
-import * as fs from 'fs';
-const content = fs.readFileSync('src/contexts/WorkoutContext.tsx', 'utf8');
-const lines = content.split('\n');
-const funcLines = lines.slice(918, 2160);
-fs.appendFileSync('src/logic/sessionGeneratorEngine.ts', '\nexport ' + funcLines.join('\n') + '\n');
+import fs from 'fs';
+import path from 'path';
+
+function listAll(dir: string) {
+  if (!fs.existsSync(dir)) {
+    console.log(`Directory does not exist: ${dir}`);
+    return;
+  }
+  const files = fs.readdirSync(dir);
+  for (const f of files) {
+    const full = path.join(dir, f);
+    const stat = fs.statSync(full);
+    if (stat.isDirectory()) {
+      console.log(`DIR: ${full}`);
+      listAll(full);
+    } else {
+      console.log(`FILE: ${full} (${stat.size} bytes)`);
+    }
+  }
+}
+
+listAll('.');
