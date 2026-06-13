@@ -34,7 +34,10 @@ export const PostWorkoutSummary = ({
 }: PostWorkoutSummaryProps) => {
   const { t, profile } = useSettings();
   const { currentSession } = useWorkout();
-  const [rpe, setRpe] = useState(initialRpe || 1);
+  const [rpe, setRpe] = useState(() => {
+    const raw = initialRpe || 1;
+    return Math.round(raw * 2) / 2;
+  });
   const [note, setNote] = useState("");
   const [prevReadiness] = useState(82); // Mocking previous readiness from AnalysisView
   const [estimatedReadiness, setEstimatedReadiness] = useState(82);
@@ -122,7 +125,7 @@ export const PostWorkoutSummary = ({
                     Actual
                   </span>
                   <span className="text-2xl md:text-3xl font-black text-volt">
-                    {rpe}
+                    {rpe.toFixed(1)}
                   </span>
                 </div>
               </div>

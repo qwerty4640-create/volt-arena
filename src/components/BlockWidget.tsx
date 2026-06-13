@@ -214,16 +214,24 @@ export const BlockWidget = ({}: BlockWidgetProps) => {
         let weightSetCount = 0;
         if (session.exercises) {
           session.exercises.forEach((ex) => {
-            (ex.sets || []).forEach((s) => {
-              if (s.isCompleted && !s.isWarmup) {
-                const actW = parseFloat(s.weight) || 0;
-                const prsW = parseFloat(s.baseWeight || s.weight) || 0;
-                if (prsW > 0) {
-                  weightRatioSum += actW / prsW;
-                  weightSetCount += 1;
+            // Only aggregate intensity based on main lifts, 
+            // as accessory baseWeights are often stored as RPE strings (e.g. "8.5") 
+            // causing major math errors if the user inputs actual weights (e.g. 30 lbs / 8.5 ratio = 3.53).
+            if (ex.isPrimaryMainLift || ex.isSquat || ex.isBench || ex.isDeadlift) {
+              (ex.sets || []).forEach((s) => {
+                if (s.isCompleted && !s.isWarmup) {
+                  const actW = parseFloat(s.weight) || 0;
+                  // Handle history records that might not have baseWeight yet
+                  const fallbackWeight = typeof s.weight === "string" && s.weight.includes("RPE") ? "0" : s.weight;
+                  const prsW = parseFloat(s.baseWeight || fallbackWeight) || 0;
+                  
+                  if (prsW > 10) {
+                    weightRatioSum += actW / prsW;
+                    weightSetCount += 1;
+                  }
                 }
-              }
-            });
+              });
+            }
           });
         }
         const weightRatio =

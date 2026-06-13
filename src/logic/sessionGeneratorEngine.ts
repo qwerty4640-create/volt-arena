@@ -1454,9 +1454,19 @@ export const createSessionFromTemplate = (
               cleanName(ex.name) === searchTargetName,
           );
           if (targetEx && targetEx.sets) {
-            const validSets = targetEx.sets.filter((s:any) => parseFloat(s.weight) > 0);
-            if (validSets.length > 0) {
-              lastWeight = parseFloat(validSets[0].weight);
+            // Screen out warm-up sets if there are any working sets, and find the maximum working weight
+            const workingSets = targetEx.sets.filter((s: any) => 
+              parseFloat(s.weight) > 0 && 
+              !s.isWarmup && 
+              s.isCompleted !== false && 
+              s.completed !== false
+            );
+            const candidateSets = workingSets.length > 0 
+              ? workingSets 
+              : targetEx.sets.filter((s: any) => parseFloat(s.weight) > 0);
+            if (candidateSets.length > 0) {
+              const weights = candidateSets.map((s: any) => parseFloat(s.weight) || 0);
+              lastWeight = Math.max(...weights);
             }
           }
         }
@@ -1548,7 +1558,13 @@ export const createSessionFromTemplate = (
           BlockType.POWERBUILDING,
         ].includes(block.type as BlockType);
 
-        const targetIntensityForReps = isPrimaryMainLift ? blockIntensity : adjustedIntensity;
+        // Deadlift specific Rep adjustment based on Shimano et al. (2006).
+        // Deadlifts inherently possess a steeper physiological drop-off curve at higher percentages compared to squats/bench.
+        // Therefore, we determine its rep targets using the fully adjusted prescribed weight (adjustedIntensity)
+        // rather than the static block intensity, ensuring dynamic 1.05x readiness jumps properly reduce the target reps.
+        const targetIntensityForReps = (isPrimaryMainLift && !isDeadlift) 
+          ? blockIntensity 
+          : adjustedIntensity;
 
         const isDeloadOrRetention = [
           BlockType.DELOAD,

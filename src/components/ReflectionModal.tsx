@@ -13,7 +13,10 @@ interface ReflectionModalProps {
 }
 
 export const ReflectionModal = ({ session, onSave, onClose }: ReflectionModalProps) => {
-  const [rpe, setRpe] = useState(session.rpe || 7);
+  const [rpe, setRpe] = useState(() => {
+    const raw = session.rpe || 7;
+    return Math.round(raw * 2) / 2;
+  });
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSaveReflection = async () => {
@@ -62,7 +65,7 @@ export const ReflectionModal = ({ session, onSave, onClose }: ReflectionModalPro
                 <span className="text-[10px] font-black uppercase tracking-widest">Actual Mission RPE</span>
                 <InfoTooltip term="sRPE" />
               </div>
-              <span className="text-3xl font-black text-volt">{rpe}</span>
+              <span className="text-3xl font-black text-volt">{rpe.toFixed(1)}</span>
             </div>
             
             <div className="relative h-12 flex items-center">

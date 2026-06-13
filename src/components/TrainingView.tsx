@@ -128,6 +128,98 @@ export const TrainingView = ({
       newIntent = "HYPERTROPHY";
     }
 
+    const cleanName = (name: string) => name.replace(/\[?HEAVY PRIMARY\]?|\[?HYPERTROPHY\]?|\[?ACTIVE RECOVERY\]?|\[?MOVEMENT QUALITY\]?|\[?BLOOD FLOW\]?/gi, '').trim().toLowerCase();
+    const searchTargetName = cleanName(newDef.name);
+
+    let lastWeight = 0;
+    if (history && history.length > 0) {
+      const sessionsWithEx = history
+        .filter((s) =>
+          s.exercises?.some(
+            (ex) =>
+              ex.name &&
+              cleanName(ex.name) === searchTargetName,
+          ),
+        )
+        .sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
+
+      if (sessionsWithEx.length > 0) {
+        const latestSession = sessionsWithEx[0];
+        const targetEx = latestSession.exercises?.find(
+          (ex) =>
+            ex.name &&
+            cleanName(ex.name) === searchTargetName,
+        );
+        if (targetEx && targetEx.sets) {
+          // Screen out warm-up sets if there are any working sets, and find the maximum working weight
+          const workingSets = targetEx.sets.filter((s: any) => 
+            parseFloat(s.weight) > 0 && 
+            !s.isWarmup && 
+            s.isCompleted !== false && 
+            s.completed !== false
+          );
+          const candidateSets = workingSets.length > 0 
+            ? workingSets 
+            : targetEx.sets.filter((s: any) => parseFloat(s.weight) > 0);
+          if (candidateSets.length > 0) {
+            const weights = candidateSets.map((s: any) => parseFloat(s.weight) || 0);
+            lastWeight = Math.max(...weights);
+          }
+        }
+      }
+    }
+
+    let updatedSets = oldExercise.sets ? [...oldExercise.sets] : [];
+    if (lastWeight > 0) {
+      updatedSets = updatedSets.map(s => ({
+        ...s,
+        weight: lastWeight.toString(),
+        baseWeight: lastWeight.toString(),
+      }));
+    } else if (isMain && profile) {
+      let pr = 0;
+      if (isS) pr = profile.squatPR || 0;
+      if (isB) pr = profile.benchPR || 0;
+      if (isD) pr = profile.deadliftPR || 0;
+      if (pr > 0) {
+        const calculatedWeight = Math.round((pr * 0.75) / 5) * 5;
+        updatedSets = updatedSets.map(s => ({
+          ...s,
+          weight: calculatedWeight.toString(),
+          baseWeight: calculatedWeight.toString(),
+        }));
+      }
+    } else {
+      const isFinalWeek = activeOrNext.title?.toLowerCase().includes("w8") || activeOrNext.title?.toLowerCase().includes("final");
+      const defaultWeightStr = !isMain ? (isFinalWeek ? "9.0" : "8.5") : "RPE 8";
+      updatedSets = updatedSets.map(s => ({
+        ...s,
+        weight: defaultWeightStr,
+        baseWeight: defaultWeightStr,
+      }));
+    }
+
+    const isCalisthenic =
+      newDef.isCalisthenics ||
+      [
+        "bodyweight_squat",
+        "plank",
+        "bicycle_crunch",
+        "mountain_climbers",
+        "flutter_kicks",
+        "leg_raises_floor",
+        "toe_touches",
+        "side_plank",
+      ].includes(newDef.id);
+
+    if (isCalisthenic) {
+      updatedSets = updatedSets.map(s => ({
+        ...s,
+        weight: "0",
+        baseWeight: "0",
+      }));
+    }
+
     const updatedExercise: Exercise = {
       ...oldExercise,
       exerciseId: newDef.id,
@@ -135,7 +227,8 @@ export const TrainingView = ({
       isSquat: isS,
       isBench: isB,
       isDeadlift: isD,
-      intent: newIntent
+      intent: newIntent,
+      sets: updatedSets
     };
 
     if (isActiveSession) {
