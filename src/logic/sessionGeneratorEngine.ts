@@ -356,6 +356,42 @@ export const RETENTION_STRUCTURAL_AEROBIC_TEMPLATES = [
   },
 ];
 
+export const getMuscleDominance = (exercise: any): "quads" | "hamstrings" | "calves" | "other" => {
+  if (!exercise) return "other";
+  const nameLower = (exercise.name || "").toLowerCase();
+  const descLower = (exercise.description || "").toLowerCase();
+  const muscles = (exercise.muscles || []).map((m: string) => m.toLowerCase());
+  
+  if (
+    muscles.includes("quads") || 
+    muscles.includes("quadriceps") || 
+    nameLower.includes("extension") || 
+    nameLower.includes("sissy") || 
+    nameLower.includes("hack squat") || 
+    nameLower.includes("leg press")
+  ) {
+    return "quads";
+  }
+  if (
+    muscles.includes("hamstrings") || 
+    muscles.includes("hamstring") || 
+    nameLower.includes("curl") || 
+    nameLower.includes("rdl") || 
+    nameLower.includes("good morning") ||
+    exercise.pattern === "hinge"
+  ) {
+    return "hamstrings";
+  }
+  if (
+    muscles.includes("calves") || 
+    muscles.includes("calf") || 
+    nameLower.includes("calf")
+  ) {
+    return "calves";
+  }
+  return "other";
+};
+
 export const calculateFallback1RM = (
   exercise: ExerciseDefinition | undefined,
   bodyweight: number | undefined,
@@ -1105,6 +1141,7 @@ export const createSessionFromTemplate = (
   // Initialize a set of chosen exercise IDs to prevent duplicates in the SAME session
   const chosenIds = new Set<string>();
   let hasPassedStrengthThreshold = false;
+  const lowerBodySelections: Array<{ id: string; target: "quads" | "hamstrings" | "calves" | "other" }> = [];
 
   return {
     id: `w${week}d${day}`,
@@ -1263,6 +1300,25 @@ export const createSessionFromTemplate = (
       }
 
       // Select best fit exercise for the goal, rotating through available exercises based on week, day and index to ensure variety per session
+      const isLowerBodySlot = slot.pattern === "squat" || slot.pattern === "hinge" || (slot.pattern === "accessory" && slotFocus === "lower");
+      if (isLowerBodySlot && lowerBodySelections.length > 0) {
+        const lastLower = lowerBodySelections[lowerBodySelections.length - 1];
+        const lastDominance = lastLower.target;
+        let preferredDominance: "quads" | "hamstrings" | "calves" | null = null;
+        if (lastDominance === "quads") {
+          preferredDominance = "hamstrings";
+        } else if (lastDominance === "hamstrings") {
+          preferredDominance = "quads";
+        }
+        if (preferredDominance) {
+          const matchingPreferred = availableExercises.filter(e => getMuscleDominance(e) === preferredDominance);
+          const others = availableExercises.filter(e => getMuscleDominance(e) !== preferredDominance);
+          if (matchingPreferred.length > 0) {
+            availableExercises = [...matchingPreferred, ...others];
+          }
+        }
+      }
+
       let rotationIndex = 0;
       const stablePatterns = ['squat', 'hinge', 'push_horizontal', 'pull_vertical', 'push_vertical', 'pull_horizontal'];
       
@@ -1291,6 +1347,12 @@ export const createSessionFromTemplate = (
       
       if (selectedExercise) {
         chosenIds.add(selectedExercise.id);
+        if (isLowerBodySlot) {
+          const target = getMuscleDominance(selectedExercise);
+          if (target === "quads" || target === "hamstrings" || target === "calves") {
+            lowerBodySelections.push({ id: selectedExercise.id, target });
+          }
+        }
       }
 
       // Safe fallback if no exercises are available for this pattern/impact combo

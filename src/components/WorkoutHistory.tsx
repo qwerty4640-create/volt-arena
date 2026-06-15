@@ -43,11 +43,14 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
   const { history, recoveryHistory, updateHistoryWorkout, deleteHistoryWorkout, deleteActiveRecovery } = useWorkout();
 
   const getExerciseName = (exName: string, isSquat?: boolean, isBench?: boolean, isDeadlift?: boolean) => {
-    const name = exName.toLowerCase();
+    const cleanPattern = /\[?HEAVY PRIMARY\]?|\[?HYPERTROPHY\]?|\[?ACTIVE RECOVERY\]?|\[?MOVEMENT QUALITY\]?|\[?BLOOD FLOW\]?/gi;
+    const stripped = exName.replace(cleanPattern, '').replace(/\s+/g, ' ').trim();
+
+    const name = stripped.toLowerCase();
     if (name === 'squat' || name === 'barbell squat') return t('onboarding.squat');
     if (name === 'bench' || name === 'bench press' || name === 'barbell bench press') return t('onboarding.bench');
     if (name === 'deadlift' || name === 'barbell deadlift') return t('onboarding.deadlift');
-    return exName;
+    return stripped;
   };
 
   const [searchQuery, setSearchQuery] = useState('');

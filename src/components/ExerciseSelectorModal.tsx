@@ -7,7 +7,8 @@ import {
   Check,
   Plus,
   X,
-  Info
+  Info,
+  ChevronDown
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useSettings } from '../contexts/SettingsContext';
@@ -15,6 +16,7 @@ import { EXERCISE_DATABASE, ExerciseDefinition } from '../constants/exercises';
 import { ExerciseInfoModal } from './ExerciseInfoModal';
 import { haptics } from '../lib/haptics';
 import { InfoTooltip } from './InfoTooltip';
+import { LibraryDropdown } from './LibraryDropdown';
 
 import { useWorkout } from '../contexts/WorkoutContext';
 import { db, auth, handleFirestoreError, OperationType } from '../firebase';
@@ -43,6 +45,8 @@ export const ExerciseSelectorModal = ({ isOpen, onClose, onSelect }: ExerciseSel
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [selectedMuscle, setSelectedMuscle] = useState<string>('All');
+  const [isCatDropdownOpen, setIsCatDropdownOpen] = useState(false);
+  const [isMuscleDropdownOpen, setIsMuscleDropdownOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [savedCircuits, setSavedCircuits] = useState<SavedCircuit[]>([]);
 
@@ -60,7 +64,14 @@ export const ExerciseSelectorModal = ({ isOpen, onClose, onSelect }: ExerciseSel
   }, []);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      setIsCatDropdownOpen(false);
+      setIsMuscleDropdownOpen(false);
+      return;
+    }
+    
+    setIsCatDropdownOpen(false);
+    setIsMuscleDropdownOpen(false);
 
     const loadCircuits = async () => {
       const local = localStorage.getItem('volt_saved_circuits');
@@ -177,7 +188,7 @@ export const ExerciseSelectorModal = ({ isOpen, onClose, onSelect }: ExerciseSel
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="relative w-full max-w-md glass-panel p-4 md:p-8 border-volt/20 shadow-[0_0_50px_var(--primary-glow)] flex flex-col max-h-[80vh]"
+            className="relative w-full max-w-md md:max-w-4xl glass-panel p-4 md:p-8 border-volt/20 shadow-[0_0_50px_var(--primary-glow)] flex flex-col max-h-[80vh]"
           >
             <div className="flex items-center justify-between mb-6 shrink-0">
               <div className="flex flex-col">
@@ -261,56 +272,45 @@ export const ExerciseSelectorModal = ({ isOpen, onClose, onSelect }: ExerciseSel
               />
             </div>
 
-            <div className="mb-4 space-y-2 shrink-0">
-              <div className="flex gap-2 overflow-x-auto custom-scrollbar pb-1">
-                <button
-                  onClick={() => setSelectedCategory('All')}
-                  className={cn(
-                    "px-3 py-1.5 text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-colors border border-zinc-800",
-                    selectedCategory === 'All' ? 'bg-volt/20 text-volt border-volt/30' : 'bg-black text-zinc-500 hover:text-zinc-300'
-                  )}
-                >
-                  All Categories
-                </button>
-                {categories.map(cat => (
-                  <button
-                    key={cat}
-                    onClick={() => setSelectedCategory(cat)}
-                    className={cn(
-                      "px-3 py-1.5 text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-colors border border-zinc-800",
-                      selectedCategory === cat ? 'bg-volt/20 text-volt border-volt/30' : 'bg-black text-zinc-500 hover:text-zinc-300'
-                    )}
-                  >
-                    {cat}
-                  </button>
-                ))}
+            <div className="mb-4 grid grid-cols-2 gap-3 shrink-0">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[9px] font-black uppercase tracking-widest text-zinc-500">
+                  Category
+                </label>
+                <LibraryDropdown
+                  label="All Categories"
+                  value={selectedCategory}
+                  options={categories}
+                  isOpen={isCatDropdownOpen}
+                  onChange={(val) => setSelectedCategory(val)}
+                  onToggle={() => {
+                    setIsCatDropdownOpen(!isCatDropdownOpen);
+                    setIsMuscleDropdownOpen(false);
+                  }}
+                  onClose={() => setIsCatDropdownOpen(false)}
+                />
               </div>
-              <div className="flex gap-2 overflow-x-auto custom-scrollbar pb-1">
-                <button
-                  onClick={() => setSelectedMuscle('All')}
-                  className={cn(
-                    "px-3 py-1.5 text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-colors border border-zinc-800",
-                    selectedMuscle === 'All' ? 'bg-volt/20 text-volt border-volt/30' : 'bg-black text-zinc-500 hover:text-zinc-300'
-                  )}
-                >
-                  All Muscles
-                </button>
-                {muscles.map(mus => (
-                  <button
-                    key={mus}
-                    onClick={() => setSelectedMuscle(mus)}
-                    className={cn(
-                      "px-3 py-1.5 text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-colors border border-zinc-800",
-                      selectedMuscle === mus ? 'bg-volt/20 text-volt border-volt/30' : 'bg-black text-zinc-500 hover:text-zinc-300'
-                    )}
-                  >
-                    {mus}
-                  </button>
-                ))}
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[9px] font-black uppercase tracking-widest text-zinc-500">
+                  Muscle Group
+                </label>
+                <LibraryDropdown
+                  label="All Muscles"
+                  value={selectedMuscle}
+                  options={muscles}
+                  isOpen={isMuscleDropdownOpen}
+                  onChange={(val) => setSelectedMuscle(val)}
+                  onToggle={() => {
+                    setIsMuscleDropdownOpen(!isMuscleDropdownOpen);
+                    setIsCatDropdownOpen(false);
+                  }}
+                  onClose={() => setIsMuscleDropdownOpen(false)}
+                />
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-2 min-h-[200px]">
+            <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 min-h-[200px] grid grid-cols-1 md:grid-cols-2 gap-3 content-start">
               <>
                 {filteredExercises.map((ex) => {
                   const isSelected = selectedCircuitExercises.some(s => s.id === (ex.id || ex.name));
@@ -353,7 +353,7 @@ export const ExerciseSelectorModal = ({ isOpen, onClose, onSelect }: ExerciseSel
                           <div className="flex-1">
                             <div className="flex items-center gap-2 flex-wrap">
                               <div className={cn(
-                                "font-headline text-lg font-black uppercase tracking-tight transition-colors",
+                                "font-headline text-lg font-semibold uppercase tracking-tight transition-colors",
                                 isSelected ? "text-volt" : "group-hover:text-volt text-white"
                               )}>
                                 {ex.name}

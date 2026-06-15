@@ -174,7 +174,12 @@ const ExerciseAccordion = ({
   const [isExpanded, setIsExpanded] = useState(true);
   const [showInfo, setShowInfo] = useState(false);
   const [expandedNotes, setExpandedNotes] = useState<Record<string, boolean>>({});
-  const exerciseDefinition = EXERCISE_DATABASE.find(e => e.name === exercise.name);
+  const exerciseDefinition = EXERCISE_DATABASE.find(e => {
+    if (exercise.exerciseId && e.id === exercise.exerciseId) return true;
+    if (e.name === exercise.name) return true;
+    const cleanStr = (s: string) => s.replace(/\[?HEAVY PRIMARY\]?|\[?HYPERTROPHY\]?|\[?ACTIVE RECOVERY\]?|\[?MOVEMENT QUALITY\]?|\[?BLOOD FLOW\]?/gi, '').trim().toLowerCase();
+    return cleanStr(e.name) === cleanStr(exercise.name);
+  });
   const unilateral = isUnilateral(exercise.name);
   const dumbbell = isDumbbell(exercise.name);
   const showPerSide = unilateral || dumbbell;
