@@ -115,6 +115,7 @@ export function calculateE1RM(
   weight: number,
   reps: number,
   rpe?: number,
+  exName?: string,
 ): number {
   if (weight <= 0 || reps <= 0) return 0;
   let rir = 0;
@@ -128,14 +129,36 @@ export function calculateE1RM(
   else if (reps >= 8) rirMultiplier = 0.5;
 
   let effectiveReps = reps + rir * rirMultiplier;
-  const cappedReps = Math.min(effectiveReps, 12);
-  return weight * (36 / (37 - cappedReps));
+
+  let isPrimary = false;
+  if (exName) {
+    isPrimary =
+      isMainLiftMatch(exName, "Squat") ||
+      isMainLiftMatch(exName, "Bench Press") ||
+      isMainLiftMatch(exName, "Deadlift");
+  }
+
+  let e1rm: number;
+
+  // Use the Wathen equation for primary lifts with high reps (> 5).
+  // Scientifically validated (Wathen, 1994) to better account for non-linear exponential
+  // fatigue at higher rep ranges compared to the linear Brzycki formula.
+  if (isPrimary && effectiveReps > 5) {
+    e1rm = (100 * weight) / (48.8 + 53.8 * Math.exp(-0.075 * effectiveReps));
+  } else {
+    // Standard Brzycki formula for low reps or non-primary accessories
+    const cappedReps = Math.min(effectiveReps, 12);
+    e1rm = weight * (36 / (37 - cappedReps));
+  }
+
+  return e1rm;
 }
 
 export function calculateWeightFromE1RM(
   e1rm: number,
   reps: number,
   rpe?: number,
+  exName?: string,
 ): number {
   if (e1rm <= 0 || reps <= 0) return 0;
   let rir = 0;
@@ -147,8 +170,27 @@ export function calculateWeightFromE1RM(
   else if (reps >= 8) rirMultiplier = 0.5;
 
   let effectiveReps = reps + rir * rirMultiplier;
-  const cappedReps = Math.min(effectiveReps, 12);
-  return e1rm * ((37 - cappedReps) / 36);
+  
+  let isPrimary = false;
+  if (exName) {
+    isPrimary =
+      isMainLiftMatch(exName, "Squat") ||
+      isMainLiftMatch(exName, "Bench Press") ||
+      isMainLiftMatch(exName, "Deadlift");
+  }
+
+  let targetWeight: number;
+
+  // Use the inverse Wathen equation for primary lifts with high reps (> 5).
+  if (isPrimary && effectiveReps > 5) {
+    targetWeight = (e1rm * (48.8 + 53.8 * Math.exp(-0.075 * effectiveReps))) / 100;
+  } else {
+    // Standard inverse Brzycki formula
+    const cappedReps = Math.min(effectiveReps, 12);
+    targetWeight = e1rm * ((37 - cappedReps) / 36);
+  }
+
+  return targetWeight;
 }
 
 export function isTimedExercise(exName: string): boolean {
