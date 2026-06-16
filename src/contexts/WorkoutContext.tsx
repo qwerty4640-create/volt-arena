@@ -1226,11 +1226,20 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({
               completedSets[0].baseReps || completedSets[0].reps;
             const targetRepsParsed = parseInt(targetRepsStr.split("-")[0]) || 5;
 
-            const totalActualReps = completedSets.reduce(
-              (sum, s) => sum + (parseInt(s.reps) || 0),
-              0,
-            );
-            const avgActualReps = totalActualReps / completedSets.length;
+            let maxMissedReps = 0;
+            completedSets.forEach((set) => {
+              const setTargetStr = set.baseReps || set.reps;
+              const setTarget = parseInt(setTargetStr.split("-")[0]) || 5;
+              const setActual = parseInt(set.reps) || 0;
+              if (setActual < setTarget) {
+                const missed = setTarget - setActual;
+                if (missed > maxMissedReps) {
+                  maxMissedReps = missed;
+                }
+              }
+            });
+
+            const avgActualReps = targetRepsParsed - maxMissedReps;
 
             const weightUsed = parseFloat(completedSets[0].weight) || 0;
 
@@ -1262,6 +1271,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({
                 weightUsed,
                 avgActualReps,
                 avgActualRpe,
+                ex.name
               );
               if (calculatedMax > 0) {
                 if (isSquat) squatPRUpdate = calculatedMax;

@@ -182,6 +182,65 @@ export const AnalyticsView = () => {
     }
   }, [customLifts]);
 
+  const getDecayedE1RMFromHistory = (liftHistory: typeof history, liftId: string) => {
+    const sortedLiftHistory = [...liftHistory].sort((a, b) => {
+      const timeA = a.completedAt || (a.date ? new Date(a.date).getTime() : 0);
+      const timeB = b.completedAt || (b.date ? new Date(b.date).getTime() : 0);
+      return timeA - timeB;
+    });
+
+    let rollingMax = 0;
+    sortedLiftHistory.forEach(s => {
+      const ex = s.exercises?.find(e => {
+        if (['Squat', 'Bench Press', 'Deadlift'].includes(liftId)) {
+          return isMainLiftMatch(e.name, liftId);
+        }
+        return e.name.toLowerCase() === liftId.toLowerCase();
+      });
+      if (!ex || !ex.sets) return;
+
+      const sessionE1RMs = ex.sets.map(set => calculateE1RM(
+        parseFloat(set.weight) || 0,
+        parseInt(set.reps) || 0,
+        parseFloat(set.rpe || set.actualRpe || ''),
+        ex.name
+      )).filter(v => v > 0);
+
+      if (sessionE1RMs.length > 0) {
+        const sessionMax = Math.max(...sessionE1RMs);
+        if (sessionMax > rollingMax) {
+          rollingMax = sessionMax;
+        }
+      }
+
+      // Decay logic for missed reps
+      const workingSets = ex.sets.filter((st: any) => 
+        !st.isWarmup && 
+        st.isCompleted !== false && 
+        st.completed !== false
+      );
+      if (workingSets.length > 0) {
+        let maxMissedReps = 0;
+        workingSets.forEach((set: any) => {
+          const setTargetStr = set.baseReps || set.reps;
+          const setTarget = parseInt(setTargetStr.split("-")[0]) || 5;
+          const setActual = parseInt(set.reps) || 0;
+          if (setActual < setTarget) {
+            const missed = setTarget - setActual;
+            if (missed > maxMissedReps) {
+              maxMissedReps = missed;
+            }
+          }
+        });
+
+        if (maxMissedReps > 0) {
+          rollingMax = rollingMax * (1 - maxMissedReps * 0.02);
+        }
+      }
+    });
+    return rollingMax;
+  };
+
   const allExercisesInHistory = useMemo(() => {
     if (!history) return [];
     const names = new Set<string>();
@@ -447,13 +506,7 @@ export const AnalyticsView = () => {
                           }
                           return ex.name.toLowerCase() === lift.id.toLowerCase();
                         }) || false);
-                        const e1rms = liftHistory.flatMap(s => s.exercises?.find(ex => {
-                          if (['Squat', 'Bench Press', 'Deadlift'].includes(lift.id)) {
-                            return isMainLiftMatch(ex.name, lift.id);
-                          }
-                          return ex.name.toLowerCase() === lift.id.toLowerCase();
-                        })?.sets?.map(set => calculateE1RM(parseFloat(set.weight) || 0, parseInt(set.reps) || 0, parseFloat(set.rpe || set.actualRpe || ''))) || []);
-                        return e1rms.length > 0 ? Math.round(Math.max(...e1rms)) : 0;
+                        return Math.round(getDecayedE1RMFromHistory(liftHistory, lift.id));
                       });
                       const sqMax = latestE1RMs[0] || 0;
                       const bpMax = latestE1RMs[1] || 0;
@@ -486,7 +539,7 @@ export const AnalyticsView = () => {
                           return e.name.toLowerCase() === liftName.toLowerCase();
                         });
                         if (!ex) return null;
-                        const e1rms = (ex.sets || []).map(set => calculateE1RM(parseFloat(set.weight) || 0, parseInt(set.reps) || 0, parseFloat(set.rpe || set.actualRpe || '')));
+                        const e1rms = (ex.sets || []).map(set => calculateE1RM(parseFloat(set.weight) || 0, parseInt(set.reps) || 0, parseFloat(set.rpe || set.actualRpe || ''), ex.name));
                         const valid = e1rms.filter(v => v > 0);
                         return valid.length > 0 ? Math.round(Math.max(...valid)) : null;
                       };
@@ -618,8 +671,7 @@ export const AnalyticsView = () => {
                             </div>
                             {customLifts.map((lift, idx) => {
                               const liftHistory = history.filter(s => s.exercises?.some(e => e.name?.toLowerCase() === lift.toLowerCase()) || false);
-                              const e1rms = liftHistory.flatMap(s => s.exercises?.find(e => e.name?.toLowerCase() === lift.toLowerCase())?.sets?.map(set => calculateE1RM(parseFloat(set.weight) || 0, parseInt(set.reps) || 0, parseFloat(set.rpe || set.actualRpe || ''))) || []);
-                              const maxVal = e1rms.length > 0 ? Math.round(Math.max(...e1rms)) : 0;
+                              const maxVal = Math.round(getDecayedE1RMFromHistory(liftHistory, lift));
                               const color = customColors[idx % customColors.length];
                               const isFirstCol = idx % 4 === 0;
                               return (

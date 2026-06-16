@@ -1491,22 +1491,54 @@ export const createSessionFromTemplate = (
           .sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
 
         if (sessionsWithEx.length > 0) {
-          // Calculate max E1RM all-time for Autoregulation
-          const allE1RMs = sessionsWithEx.flatMap(session => {
+          // Calculate dynamic PR with 2% reactive missed-rep decay across chronological history chain (oldest to newest)
+          const chronologicalSessions = [...sessionsWithEx].reverse();
+          chronologicalSessions.forEach(session => {
             const ex = session.exercises.find(
               (e) => e.name && cleanName(e.name) === searchTargetName
             );
-            if (!ex || !ex.sets) return [];
-            return ex.sets.map((set: any) => calculateE1RM(
+            if (!ex || !ex.sets) return;
+
+            const sessionE1RMs = ex.sets.map((set: any) => calculateE1RM(
               parseFloat(set.weight) || 0,
               parseInt(set.reps) || 0,
-              parseFloat(set.rpe || set.actualRpe || "")
-            ));
-          }).filter(val => val > 0);
+              parseFloat(set.rpe || set.actualRpe || ""),
+              ex.name
+            )).filter(val => val > 0);
 
-          if (allE1RMs.length > 0) {
-            dynamicPR = Math.max(...allE1RMs);
-          }
+            if (sessionE1RMs.length > 0) {
+              const sessionMaxE1RM = Math.max(...sessionE1RMs);
+              if (sessionMaxE1RM > dynamicPR) {
+                dynamicPR = sessionMaxE1RM;
+              }
+            }
+
+            // Check if there are missed reps on completed working sets in this session
+            const workingSets = ex.sets.filter((s: any) => 
+              !s.isWarmup && 
+              s.isCompleted !== false && 
+              s.completed !== false
+            );
+            if (workingSets.length > 0) {
+              let maxMissedReps = 0;
+              workingSets.forEach((set: any) => {
+                const setTargetStr = set.baseReps || set.reps;
+                const setTarget = parseInt(setTargetStr.split("-")[0]) || 5;
+                const setActual = parseInt(set.reps) || 0;
+                if (setActual < setTarget) {
+                  const missed = setTarget - setActual;
+                  if (missed > maxMissedReps) {
+                    maxMissedReps = missed;
+                  }
+                }
+              });
+
+              if (maxMissedReps > 0) {
+                // Apply 2% reduction per missed rep to dynamicPR reactively to simulate decay
+                dynamicPR = dynamicPR * (1 - maxMissedReps * 0.02);
+              }
+            }
+          });
 
           // Get last weight for progression continuity
           const latestSession = sessionsWithEx[0];
