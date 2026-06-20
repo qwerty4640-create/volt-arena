@@ -188,8 +188,10 @@ export const calculateSystemReadiness = (
 
   let readinessModifier = 1.0;
   if (currentReadiness >= 90) readinessModifier = 1.05;
-  else if (currentReadiness < 70 && currentReadiness >= 50) readinessModifier = 0.90;
-  else if (currentReadiness < 50) readinessModifier = 0.80;
+  else if (currentReadiness >= 80) readinessModifier = 1.00;
+  else if (currentReadiness >= 70) readinessModifier = 0.95;
+  else if (currentReadiness >= 50) readinessModifier = 0.90;
+  else readinessModifier = 0.80;
 
   const isRedline = cumulativeFatigueScore >= 18;
   let recommendedRpe = 7.5;

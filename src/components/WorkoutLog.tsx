@@ -786,23 +786,25 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
     const actualReps = parseInt(updatedReps ?? currentSet.reps ?? '0') || 0;
     
     const isCompleted = currentSet.isCompleted;
+    const prescribedReps = parseInt(currentSet.baseReps || currentSet.reps) || 0;
+    const isRepFailure = actualReps < prescribedReps && actualReps > 0;
+    const isRpeOvershoot = !isNaN(actualRpe) && actualRpe > targetRpe;
 
-    // Trigger only if completed AND RPE > targetRpe (Overshoot protection)
-    if (!isCompleted || isNaN(actualRpe) || actualRpe <= targetRpe) {
+    // Trigger auto-regulation either on overshoot OR if we fail the rep target
+    if (!isCompleted || (!isRpeOvershoot && !isRepFailure)) {
       return { nextExercises: exercises, willAutoRegulate: false };
     }
 
-    const prescribedReps = parseInt(currentSet.baseReps || currentSet.reps) || 0;
-    
     let repFactor = 1;
     if (prescribedReps > 0 && actualReps > 0) repFactor = 1 + (actualReps - prescribedReps) * 0.03;
 
-    const rpeDiff = actualRpe - targetRpe;
+    const rpeDiff = isNaN(actualRpe) ? 0 : Math.max(0, actualRpe - targetRpe);
     const adjustmentFactor = 1 - (rpeDiff * 0.05); // 5% drop per RPE point over
     let totalFactor = repFactor * adjustmentFactor;
 
-    const isRepFailure = actualReps < prescribedReps && actualReps > 0;
-    if (isRepFailure && rpeDiff >= 0) totalFactor *= 0.95;
+    if (isRepFailure) {
+      totalFactor *= 0.95; // default 5% drop on rep failure
+    }
     if (rpeDiff >= 2) totalFactor *= 0.90;
 
     // Only apply if it's a downward regulation
@@ -1226,7 +1228,15 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
         const { nextExercises, willAutoRegulate } = getAutoregulatedExercises(exerciseId, setId, updatedExercises);
         
         if (willAutoRegulate) {
-          showToast(t('toast.autoReg', { direction: t('workout.decreased' as any), rpe: (currentSession.targetRpe || 7) }), 5000, 'warning');
+          const actualReps = parseInt(newlyCompletedSet.reps || '0') || 0;
+          const prescribedReps = parseInt(newlyCompletedSet.baseReps || newlyCompletedSet.reps || '0') || 0;
+          const isRepFailure = actualReps < prescribedReps && actualReps > 0;
+          
+          let msg = t('toast.autoReg', { direction: t('workout.decreased' as any), rpe: (currentSession.targetRpe || 7) });
+          if (isRepFailure) {
+            msg = "RECOVERY CEILING HIT. BACK-OFF INTENSITY AUTO-REGULATED TO PREVENT SYSTEM FAILURE.";
+          }
+          showToast(msg, 5000, 'warning');
         }
 
         // Auto-scroll logic

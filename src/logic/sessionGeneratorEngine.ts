@@ -1046,9 +1046,10 @@ export const createSessionFromTemplate = (
   let readinessModifier = 1.0;
   if (isNextWorkout) {
     if (currentReadiness >= 90) readinessModifier = 1.05; 
-    else if (currentReadiness < 70 && currentReadiness >= 50)
-      readinessModifier = 0.9;
-    else if (currentReadiness < 50) readinessModifier = 0.8;
+    else if (currentReadiness >= 80) readinessModifier = 1.0;
+    else if (currentReadiness >= 70) readinessModifier = 0.95;
+    else if (currentReadiness >= 50) readinessModifier = 0.9;
+    else readinessModifier = 0.8;
   }
 
   // Calculate readiness RPE limit according to sum of drains / readiness logic
