@@ -967,7 +967,13 @@ function AppContent() {
         }} 
       />;
       case 'analytics': return <AnalyticsView />;
-      case 'library': return <LibraryView />;
+      case 'library': return <LibraryView 
+        onViewHistory={(sessionId) => {
+          setLastView('library');
+          setSelectedHistoryWorkoutId(sessionId || null);
+          setActiveView('workout-history');
+        }}
+      />;
       case 'deployment': return <DeploymentView />;
       case 'upcoming-missions': return <UpcomingMissionsView 
         onBack={() => {

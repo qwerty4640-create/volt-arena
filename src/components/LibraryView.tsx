@@ -3,13 +3,30 @@ import { motion, AnimatePresence } from "motion/react";
 import { useSettings } from "../contexts/SettingsContext";
 import { EXERCISE_DATABASE, ExerciseDefinition } from "../constants/exercises";
 import { TRAINING_TERMS } from "../data/trainingTerms";
-import { Search, Info, Settings2, X, AlertOctagon, ChevronDown } from "lucide-react";
+import { Search, Info, Settings2, X, AlertOctagon, ChevronDown, ArrowRight } from "lucide-react";
 import { cn } from "../lib/utils";
 import { ExerciseInfoModal } from "./ExerciseInfoModal";
 import { LibraryDropdown } from "./LibraryDropdown";
+import { useWorkout } from "../contexts/WorkoutContext";
+import { getExerciseName } from "../utils/workoutUtils";
 
-export const LibraryView = () => {
+interface LibraryViewProps {
+  onViewHistory?: (sessionId?: string) => void;
+}
+
+export const LibraryView = ({ onViewHistory }: LibraryViewProps) => {
   const { t } = useSettings();
+  const { history } = useWorkout();
+  const hasHistory = (history?.length || 0) > 0;
+
+  const recentSevenDaysMissions = useMemo(() => {
+    const sevenDaysAgo = Date.now() - 7 * 24 * 3600 * 1000;
+    return (history || [])
+      .filter((log) => log.completedAt && log.completedAt >= sevenDaysAgo)
+      .sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
+  }, [history]);
+
+  const hasRecentHistory = recentSevenDaysMissions.length > 0;
 
   // Mission Library states & filter computations
   const [librarySearch, setLibrarySearch] = useState("");
@@ -107,6 +124,81 @@ export const LibraryView = () => {
   return (
     <div className="w-full max-w-7xl mx-auto space-y-6 md:space-y-12">
       <div className="grid grid-cols-1 gap-6 md:gap-12 pb-24 lg:pb-12">
+        {/* Recent Logs Module / Past Missions */}
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.1 }}
+          className="col-span-1 shrink-0 glass-panel dot-grid-bg p-4 md:p-8 flex flex-col w-full relative overflow-hidden vanguard-tour-past-missions"
+        >
+          <h2 className="text-2xl md:text-3xl font-semibold uppercase tracking-widest text-white mb-2 relative z-10">{t('analysis.missionLogs')}</h2>
+          <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed mb-8">{t('analysis.missionLogsDesc')}</p>
+
+          {hasRecentHistory ? (
+            <div className="flex flex-col gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                {recentSevenDaysMissions.map((log) => (
+                  <button
+                    key={log.id}
+                    onClick={() => onViewHistory?.(log.id)}
+                    className="bg-void/40 p-3 md:p-6 border border-white/5 relative group overflow-hidden transition-all duration-300 hover:bg-white/5 hover:border-volt/30 flex flex-col h-full text-left cursor-pointer"
+                  >
+                    <div className="flex justify-between items-start mb-2 relative z-10 w-full">
+                       <div className="flex flex-col">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">{log.date}</span>
+                        <h3 className="font-headline text-xs md:text-sm font-semibold uppercase tracking-widest text-white group-hover:text-volt transition-colors">{log.title}</h3>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-2 relative z-10">
+                      <div className="flex flex-wrap gap-1.5">
+                        {log.exercises?.slice(0, 3).map((ex, idx) => (
+                          <span key={idx} className="text-[8px] font-black uppercase tracking-widest text-zinc-600 bg-white/5 px-1.5 py-0.5 whitespace-nowrap">
+                            {getExerciseName(ex, t)}
+                          </span>
+                        ))}
+                        {(log.exercises?.length || 0) > 3 && <span className="text-[8px] font-black text-zinc-600">+{log.exercises.length - 3}</span>}
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={() => onViewHistory?.()}
+                className="w-full btn-secondary py-4"
+              >
+                <span>{t('analysis.viewFullHistory')}</span>
+                <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform text-volt" />
+              </button>
+            </div>
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center border-none bg-void/20 p-8 md:p-12 text-center">
+              <span className="text-4xl md:text-6xl font-black text-zinc-800 mb-4">–</span>
+              <h3 className="text-lg md:text-xl font-black uppercase tracking-tight mb-2 text-zinc-500">
+                {hasHistory ? "No Missions in Past 7 Days" : t('analysis.noHistory')}
+              </h3>
+              <p className="text-[10px] md:text-xs font-bold text-zinc-600 uppercase tracking-widest max-w-xs leading-relaxed text-zinc-500">
+                {hasHistory ? "Your recent operations are quiet. Log a workout or view your full history below." : t('analysis.completeFirstWorkout')}
+              </p>
+              {hasHistory && (
+                <button
+                  onClick={() => onViewHistory?.()}
+                  className="mt-6 btn-secondary px-6 py-3 max-w-xs mx-auto"
+                >
+                  <span>{t('analysis.viewFullHistory')}</span>
+                  <ArrowRight size={14} className="text-volt" />
+                </button>
+              )}
+            </div>
+          )}
+
+          <div className="mt-6 flex justify-between items-center px-1 opacity-40">
+            <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">{t('analysis.logStreamActive')}</span>
+            <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">{t('analysis.totalRecordsCount', { count: history.length })}</span>
+          </div>
+        </motion.div>
+
         {/* Mission Library Module */}
         <motion.div
           initial={{ y: 20, opacity: 0 }}

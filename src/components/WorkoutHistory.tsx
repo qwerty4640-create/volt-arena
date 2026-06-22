@@ -165,7 +165,7 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
             <ChevronLeft size={20} className="md:w-6 md:h-6" />
           </button>
           <div>
-            <h1 className="text-2xl md:text-3xl font-black uppercase tracking-tighter">Mission History</h1>
+            <h1 className="text-2xl md:text-3xl font-semibold uppercase tracking-widest">Mission History</h1>
             <p className="text-[8px] md:text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500">{t('analysis.reviewPerformance')}</p>
           </div>
         </div>
@@ -299,7 +299,7 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
         <div 
           ref={listRef}
           className={cn(
-            "space-y-4 overflow-y-auto custom-scrollbar relative",
+            "space-y-4 overflow-y-auto custom-scrollbar relative lg:h-[calc(100vh-14rem)] lg:pr-2",
             selectedWorkout ? "hidden lg:block" : "block"
           )}
         >
@@ -342,7 +342,7 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
                             {!isWorkout && ` • ${new Date(log.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`}
                           </span>
                         </div>
-                        <h3 className="text-xs md:text-sm font-black uppercase tracking-tight group-hover:text-volt transition-colors">
+                        <h3 className="text-xs md:text-sm font-semibold uppercase tracking-widest group-hover:text-volt transition-colors">
                           {isWorkout ? log.title : log.type}
                         </h3>
                         {isWorkout ? (
@@ -451,11 +451,11 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
         {/* Detail View */}
         <div 
           className={cn(
-            "h-fit",
+            "h-fit lg:h-[calc(100vh-14rem)] lg:sticky lg:top-0",
             selectedWorkout ? "block" : "hidden lg:block"
           )}
           style={{ 
-            marginTop: typeof window !== 'undefined' && window.innerWidth >= 1024 ? detailOffset : 0,
+            marginTop: 0,
             minHeight: '400px'
           }}
         >
@@ -483,7 +483,7 @@ export const WorkoutHistory = ({ onBack, initialSelectedWorkoutId }: WorkoutHist
                           <span>{t('analysis.backToList')}</span>
                         </button>
                       </div>
-                      <h2 className="text-lg md:text-2xl font-black uppercase tracking-tighter text-white leading-tight">
+                      <h2 className="text-lg md:text-2xl font-semibold uppercase tracking-widest text-white leading-tight">
                         {selectedWorkout.logType === 'workout' ? selectedWorkout.title : selectedWorkout.type}
                       </h2>
                       <div className="flex items-center gap-4 text-zinc-500">

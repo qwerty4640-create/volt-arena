@@ -787,7 +787,7 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
     
     const isCompleted = currentSet.isCompleted;
     const prescribedReps = parseInt(currentSet.baseReps || currentSet.reps) || 0;
-    const isRepFailure = actualReps < prescribedReps && actualReps > 0;
+    const isRepFailure = actualReps < prescribedReps;
     const isRpeOvershoot = !isNaN(actualRpe) && actualRpe > targetRpe;
 
     // Trigger auto-regulation either on overshoot OR if we fail the rep target
@@ -1230,7 +1230,7 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
         if (willAutoRegulate) {
           const actualReps = parseInt(newlyCompletedSet.reps || '0') || 0;
           const prescribedReps = parseInt(newlyCompletedSet.baseReps || newlyCompletedSet.reps || '0') || 0;
-          const isRepFailure = actualReps < prescribedReps && actualReps > 0;
+          const isRepFailure = actualReps < prescribedReps;
           
           let msg = t('toast.autoReg', { direction: t('workout.decreased' as any), rpe: (currentSession.targetRpe || 7) });
           if (isRepFailure) {

@@ -954,70 +954,7 @@ export const TrainingView = ({
         </div>
       </motion.div>
       
-      {/* Recent Logs Module */}
-      <motion.div
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.3 }}
-        className="col-span-1 md:col-span-2 lg:col-span-3 shrink-0 glass-panel dot-grid-bg p-4 md:p-8 flex flex-col w-full relative overflow-hidden vanguard-tour-past-missions"
-      >
 
-        <h2 className="text-2xl md:text-3xl font-semibold uppercase tracking-widest text-white mb-2 relative z-10">{t('analysis.missionLogs')}</h2>
-        <p className="text-zinc-400 text-xs font-medium max-w-md leading-relaxed mb-8">{t('analysis.missionLogsDesc')}</p>
-
-        {hasHistory ? (
-          <div className="flex flex-col gap-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-              {history.slice(0, 3).map((log, i) => (
-                <button
-                  key={log.id}
-                  onClick={() => onViewHistory?.(log.id)}
-                  className="bg-void/40 p-3 md:p-6 border border-white/5 relative group overflow-hidden transition-all duration-300 hover:bg-white/5 hover:border-volt/30 flex flex-col h-full text-left cursor-pointer"
-                >
-                  <div className="flex justify-between items-start mb-2 relative z-10 w-full">
-                     <div className="flex flex-col">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">{log.date}</span>
-                      <h3 className="font-headline text-xs md:text-sm font-black uppercase tracking-tight text-white group-hover:text-volt transition-colors">{log.title}</h3>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col gap-2 relative z-10">
-                    <div className="flex flex-wrap gap-1.5">
-                      {log.exercises?.slice(0, 3).map((ex, idx) => (
-                        <span key={idx} className="text-[8px] font-black uppercase tracking-widest text-zinc-600 bg-white/5 px-1.5 py-0.5 whitespace-nowrap">
-                          {getExerciseName(ex, t)}
-                        </span>
-                      ))}
-                      {(log.exercises?.length || 0) > 3 && <span className="text-[8px] font-black text-zinc-600">+{log.exercises.length - 3}</span>}
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-
-            <button
-              onClick={() => onViewHistory?.()}
-              className="w-full btn-secondary py-4"
-            >
-              <span>{t('analysis.viewFullHistory')}</span>
-              <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform text-volt" />
-            </button>
-          </div>
-        ) : (
-          <div className="flex-1 flex flex-col items-center justify-center border-none bg-void/20 p-8 md:p-12 text-center">
-            <span className="text-4xl md:text-6xl font-black text-zinc-800 mb-4">–</span>
-            <h3 className="text-lg md:text-xl font-black uppercase tracking-tight mb-2 text-zinc-500">{t('analysis.noHistory')}</h3>
-            <p className="text-[10px] md:text-xs font-bold text-zinc-600 uppercase tracking-widest max-w-xs leading-relaxed">
-              {t('analysis.completeFirstWorkout')}
-            </p>
-          </div>
-        )}
-
-        <div className="mt-6 flex justify-between items-center px-1 opacity-40">
-          <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">{t('analysis.logStreamActive')}</span>
-          <span className="font-headline text-[6px] font-black uppercase tracking-[0.3em]">{t('analysis.totalRecordsCount', { count: history.length })}</span>
-        </div>
-      </motion.div>
 
       {/* Custom Mission Module */}
       <motion.div

@@ -1089,6 +1089,82 @@ export const createSessionFromTemplate = (
     }
   }
 
+  // Tactical Autoregulation: Granular history-driven fatigue calculation
+  let historyFatigueDiscount = 1.0;
+  const fatigueReasons: string[] = [];
+
+  if (history && history.length > 0) {
+    const sortedCompleted = [...history]
+      .filter((s) => s.completedAt)
+      .sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
+
+    // A. Check for extreme recent overshoots in the last 3 sessions
+    let recentOvershootCount = 0;
+    sortedCompleted.slice(0, 3).forEach((session) => {
+      let sessionOvershot = false;
+      if (session.actualRpe && session.targetRpe && session.actualRpe > session.targetRpe) {
+        sessionOvershot = true;
+      }
+      session.exercises?.forEach((ex) => {
+        ex.sets?.forEach((s) => {
+          if (s.isCompleted && s.actualRpe && s.rpe) {
+            const actRpe = parseFloat(s.actualRpe);
+            const tgtRpe = parseFloat(s.rpe);
+            if (!isNaN(actRpe) && !isNaN(tgtRpe) && actRpe > tgtRpe + 0.5) {
+              sessionOvershot = true;
+            }
+          }
+        });
+      });
+      if (sessionOvershot) {
+        recentOvershootCount++;
+      }
+    });
+
+    if (recentOvershootCount >= 2) {
+      historyFatigueDiscount *= 0.94; // 6% discount for multiple recent overshoots
+      fatigueReasons.push("Multiple recent sessions overshot target intensity/RPE.");
+    } else if (recentOvershootCount === 1) {
+      historyFatigueDiscount *= 0.97; // 3% discount
+      fatigueReasons.push("Recent RPE overshoot detected.");
+    }
+
+    // B. density/short recovery window check
+    const now = Date.now();
+    const lastSessionTime = sortedCompleted[0]?.completedAt || 0;
+    const hoursSinceLast = (now - lastSessionTime) / 3600000;
+
+    if (hoursSinceLast > 0 && hoursSinceLast < 36) {
+      const lastSessionRpe = sortedCompleted[0]?.actualRpe || sortedCompleted[0]?.rpe || 7;
+      if (lastSessionRpe >= 8.5) {
+        historyFatigueDiscount *= 0.95; // 5% discount for short turnaround after heavy training
+        fatigueReasons.push(`High-intensity session completed within last ${Math.round(hoursSinceLast)} hours.`);
+      } else {
+        historyFatigueDiscount *= 0.98; // 2% discount for density
+        fatigueReasons.push(`Session density high: last workout completed within last ${Math.round(hoursSinceLast)} hours.`);
+      }
+    }
+
+    // C. Cumulative heavy sessions from last 7 days
+    const sevenDaysAgo = now - 7 * 24 * 3600 * 1000;
+    const lastWeekSessions = sortedCompleted.filter(
+      (s) => (s.completedAt || 0) > sevenDaysAgo
+    );
+    const heavySessionsLastWeek = lastWeekSessions.filter(
+      (s) => (s.actualRpe || s.rpe || 0) >= 8.5
+    ).length;
+
+    if (heavySessionsLastWeek >= 3) {
+      historyFatigueDiscount *= 0.94; // 6% discount
+      fatigueReasons.push("Accumulated CNS fatigue from high density of weekly heavy compounds.");
+    } else if (heavySessionsLastWeek === 2) {
+      historyFatigueDiscount *= 0.97; // 3% discount
+      fatigueReasons.push("Moderate accumulation of heavy compound sessions.");
+    }
+  }
+
+  historyFatigueDiscount = Math.max(0.85, historyFatigueDiscount);
+
   // 4. Volume and Goal-Specific Logic
   let volumeModifier = 1.0 * interferenceModifier;
 
@@ -1802,6 +1878,12 @@ export const createSessionFromTemplate = (
           weight = Math.round((weight * 0.85) / 5) * 5;
           unmodifiedWeight = Math.round((unmodifiedWeight * 0.85) / 5) * 5;
         }
+
+        // Apply history-driven fatigue load reduction scaling
+        if (historyFatigueDiscount < 1.0 && (isSquat || isBench || isDeadlift || isPrimaryMainLift)) {
+          weight = Math.round((weight * historyFatigueDiscount) / 5) * 5;
+          unmodifiedWeight = Math.round((unmodifiedWeight * historyFatigueDiscount) / 5) * 5;
+        }
       } else {
         // Nullify strict % math for accessories, use exact last weight or fall back to RPE
         if (lastWeight > 0) {
@@ -1839,6 +1921,15 @@ export const createSessionFromTemplate = (
       const unilateral =
         selectedExercise.isUnilateral || (slot as any).isUnilateral;
 
+      // User Spec: During strength block, primary squat/deadlift gets 3 sets, primary bench press gets 4 sets.
+      if (block.type === BlockType.STRENGTH && isPrimaryMainLift) {
+        if (isSquat || isDeadlift) {
+          sets = 3;
+        } else if (isBench) {
+          sets = 4;
+        }
+      }
+
       let slotVolumeModifier = volumeModifier;
       
       if (frequencyScale < 1.0) {
@@ -1851,22 +1942,13 @@ export const createSessionFromTemplate = (
         }
       }
 
-      if (slotVolumeModifier < 1.0) {
+      if (slotVolumeModifier < 1.0 && !isPrimaryMainLift) {
         sets = Math.round(sets * slotVolumeModifier);
         // Safeguard for main lifts to prevent excessive volume drop on frequency shifts
         if (isMainLift && sets < 2 && slotVolumeModifier > 0.5) {
           sets = 2;
         }
         sets = Math.max(1, sets);
-      }
-
-      // User Spec: During strength block, primary squat/deadlift gets 3 sets, primary bench press gets 4 sets.
-      if (block.type === BlockType.STRENGTH && isPrimaryMainLift) {
-        if (isSquat || isDeadlift) {
-          sets = 3;
-        } else if (isBench) {
-          sets = 4;
-        }
       }
 
       // Defer unilateral sets calculation until all volume adjustments and overriding is done
