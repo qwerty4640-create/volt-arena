@@ -17,6 +17,7 @@ import { useWorkout } from '../contexts/WorkoutContext';
 import { InfoTooltip } from './InfoTooltip';
 import { cn } from '../lib/utils';
 import { EXERCISE_DATABASE } from '../constants/exercises';
+import { isExerciseMatch } from '../utils/workoutUtils';
 
 export const JointStressWidget = ({ className }: { className?: string }) => {
   const { t, unit } = useSettings();
@@ -53,7 +54,7 @@ export const JointStressWidget = ({ className }: { className?: string }) => {
         const exerciseId = (ex as any).exerciseId || '';
         const exerciseName = ex.name || '';
         const definition = EXERCISE_DATABASE.find(
-          e => (exerciseId && e.id === exerciseId) || e.name.toLowerCase() === exerciseName.toLowerCase()
+          e => (exerciseId && e.id === exerciseId) || isExerciseMatch(e.name, exerciseName)
         );
         const stressScore = definition?.connectiveTissueStressScore || 3; // default: 3
 

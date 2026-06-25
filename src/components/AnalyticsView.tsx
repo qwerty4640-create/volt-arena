@@ -4,7 +4,7 @@ import { TrendingUp, BarChart3, Settings2, Info, BicepsFlexed, Navigation } from
 import { useSettings } from '../contexts/SettingsContext';
 import { useWorkout } from '../contexts/WorkoutContext';
 import { filterDataByRange, getTacticalImpact } from '../utils/analyticsEngine';
-import { isMainLiftMatch, calculateE1RM } from '../utils/workoutUtils';
+import { isMainLiftMatch, calculateE1RM, isExerciseMatch } from '../utils/workoutUtils';
 import { calculateExrxPercentile } from '../lib/strength';
 import { InfoTooltip } from './InfoTooltip';
 import { JointStressWidget } from './JointStressWidget';
@@ -195,7 +195,7 @@ export const AnalyticsView = () => {
         if (['Squat', 'Bench Press', 'Deadlift'].includes(liftId)) {
           return isMainLiftMatch(e.name, liftId);
         }
-        return e.name.toLowerCase() === liftId.toLowerCase();
+        return isExerciseMatch(e.name, liftId);
       });
       if (!ex || !ex.sets) return;
 
@@ -504,7 +504,7 @@ export const AnalyticsView = () => {
                           if (['Squat', 'Bench Press', 'Deadlift'].includes(lift.id)) {
                             return isMainLiftMatch(ex.name, lift.id);
                           }
-                          return ex.name.toLowerCase() === lift.id.toLowerCase();
+                          return isExerciseMatch(ex.name, lift.id);
                         }) || false);
                         return Math.round(getDecayedE1RMFromHistory(liftHistory, lift.id));
                       });
@@ -530,13 +530,13 @@ export const AnalyticsView = () => {
                         });
  
                       const filteredSessionsByRange = filterDataByRange(sortedSessions, timeFrame);
-
+ 
                       const getLiftE1RM = (session: typeof history[0], liftName: string) => {
                         const ex = session.exercises?.find(e => {
                           if (['Squat', 'Bench Press', 'Deadlift'].includes(liftName)) {
                             return isMainLiftMatch(e.name, liftName);
                           }
-                          return e.name.toLowerCase() === liftName.toLowerCase();
+                          return isExerciseMatch(e.name, liftName);
                         });
                         if (!ex) return null;
                         const e1rms = (ex.sets || []).map(set => calculateE1RM(parseFloat(set.weight) || 0, parseInt(set.reps) || 0, parseFloat(set.rpe || set.actualRpe || ''), ex.name));
@@ -670,7 +670,7 @@ export const AnalyticsView = () => {
                               <span className="text-sm font-black text-volt font-mono">{totalSBD > 0 ? `${totalSBD} ${weightUnit}` : '–'}</span>
                             </div>
                             {customLifts.map((lift, idx) => {
-                              const liftHistory = history.filter(s => s.exercises?.some(e => e.name?.toLowerCase() === lift.toLowerCase()) || false);
+                              const liftHistory = history.filter(s => s.exercises?.some(e => e.name && isExerciseMatch(e.name, lift)) || false);
                               const maxVal = Math.round(getDecayedE1RMFromHistory(liftHistory, lift));
                               const color = customColors[idx % customColors.length];
                               const isFirstCol = idx % 4 === 0;
@@ -713,7 +713,7 @@ export const AnalyticsView = () => {
                                       const nameLower = name.toLowerCase();
                                       return nameLower.includes(query) && 
                                              !coreLifts.includes(nameLower) && 
-                                             !customLifts.some(cl => cl.toLowerCase() === nameLower);
+                                             !customLifts.some(cl => isExerciseMatch(cl, name));
                                     }).slice(0, 5);
 
                                     return (
@@ -737,7 +737,7 @@ export const AnalyticsView = () => {
                                             <span className="text-[9px] text-volt font-black">+ ADD LIFT</span>
                                           </button>
                                         ))}
-                                        {!customLifts.some(cl => cl.toLowerCase() === query) && query && (
+                                        {!customLifts.some(cl => isExerciseMatch(cl, exerciseSearchQuery)) && query && (
                                           <button
                                             onClick={() => {
                                               setCustomLifts(prev => [...prev, exerciseSearchQuery.trim()]);

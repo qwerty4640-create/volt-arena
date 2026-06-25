@@ -791,6 +791,7 @@ export const createSessionFromTemplate = (
   hasAerobicInterference?: boolean,
   history: WorkoutSession[] = [],
   isNextWorkout: boolean = true,
+  hasCompletedReadinessCheck: boolean = false,
 ): WorkoutSession => {
   const goals =
     profile?.trainingObjectives ||
@@ -1044,7 +1045,7 @@ export const createSessionFromTemplate = (
 
   // 2. Readiness Adjustment
   let readinessModifier = 1.0;
-  if (isNextWorkout) {
+  if (isNextWorkout && hasCompletedReadinessCheck) {
     if (currentReadiness >= 90) readinessModifier = 1.05; 
     else if (currentReadiness >= 80) readinessModifier = 1.0;
     else if (currentReadiness >= 70) readinessModifier = 0.95;
@@ -1074,16 +1075,17 @@ export const createSessionFromTemplate = (
 
   // 3. Recovery Adjustment
   let recoveryModifier = 1.0;
-  if (isNextWorkout && lastSession) {
+  if (isNextWorkout && lastSession && hasCompletedReadinessCheck) {
     if (lastSession.rpe && lastSession.rpe >= 9) {
       recoveryModifier *= 0.95;
     }
     const hoursSinceLast =
       (Date.now() - (lastSession.completedAt || 0)) / 3600000;
+    // 24hr turnaround penalty:
+    // Only apply if they are actually repeating the exact same session (week and day)
     if (
       hoursSinceLast < 24 &&
-      (lastSession.title.includes(missionInfo.title) ||
-        lastSession.title.includes(initialTemplate.title))
+      (lastSession.id === `w${week}d${day}` || lastSession.title === `W${week}D${day}: ${missionInfo.title}`)
     ) {
       recoveryModifier *= 0.9;
     }
@@ -1093,7 +1095,7 @@ export const createSessionFromTemplate = (
   let historyFatigueDiscount = 1.0;
   const fatigueReasons: string[] = [];
 
-  if (history && history.length > 0) {
+  if (history && history.length > 0 && hasCompletedReadinessCheck) {
     const sortedCompleted = [...history]
       .filter((s) => s.completedAt)
       .sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
@@ -1874,13 +1876,13 @@ export const createSessionFromTemplate = (
         weight = Math.round((estimated1RM * adjustedIntensity) / 5) * 5;
 
         // Apply penalty for high-intensity aerobic activity before major lifts
-        if (hasAerobicInterference && (isSquat || isBench || isDeadlift)) {
+        if (hasCompletedReadinessCheck && hasAerobicInterference && (isSquat || isBench || isDeadlift)) {
           weight = Math.round((weight * 0.85) / 5) * 5;
           unmodifiedWeight = Math.round((unmodifiedWeight * 0.85) / 5) * 5;
         }
 
         // Apply history-driven fatigue load reduction scaling
-        if (historyFatigueDiscount < 1.0 && (isSquat || isBench || isDeadlift || isPrimaryMainLift)) {
+        if (hasCompletedReadinessCheck && historyFatigueDiscount < 1.0 && (isSquat || isBench || isDeadlift || isPrimaryMainLift)) {
           weight = Math.round((weight * historyFatigueDiscount) / 5) * 5;
           unmodifiedWeight = Math.round((unmodifiedWeight * historyFatigueDiscount) / 5) * 5;
         }
@@ -1893,8 +1895,18 @@ export const createSessionFromTemplate = (
           weight = slot.weight || 0;
           unmodifiedWeight = slot.weight || 0;
         } else {
-          weight = subsequentNonMain ? (isFinalWeek ? "9.0" : "8.5") : "RPE 8";
-          unmodifiedWeight = subsequentNonMain ? (isFinalWeek ? "9.0" : "8.5") : "RPE 8";
+          if (subsequentNonMain) {
+            if (goals.includes("powerbuilding")) {
+              weight = isFinalWeek ? "8.5" : "8.0";
+              unmodifiedWeight = isFinalWeek ? "8.5" : "8.0";
+            } else {
+              weight = isFinalWeek ? "9.0" : "8.5";
+              unmodifiedWeight = isFinalWeek ? "9.0" : "8.5";
+            }
+          } else {
+            weight = "RPE 8";
+            unmodifiedWeight = "RPE 8";
+          }
         }
       }
 
@@ -2065,7 +2077,11 @@ export const createSessionFromTemplate = (
                  targetSetRpe = j === 0 ? "8" : "7.5";
               }
             } else if (subsequentNonMain) {
-              targetSetRpe = isFinalWeek ? "9.0" : "8.5";
+              if (goals.includes("powerbuilding")) {
+                targetSetRpe = isFinalWeek ? "8.5" : "8.0";
+              } else {
+                targetSetRpe = isFinalWeek ? "9.0" : "8.5";
+              }
             } else if (isPrimaryMainLift) {
                const isBifurcated =
                 (block.type as any) === BlockType.STRENGTH ||
@@ -2093,7 +2109,7 @@ export const createSessionFromTemplate = (
                 } else if (goals.includes("longevity")) {
                   targetSetRpe = "7.5";
                 } else if (block.type === BlockType.HYPERTROPHY || block.type === BlockType.FOUNDATION) {
-                  if (goals.includes("powerbuilding") || goals.includes("hypertrophy")) {
+                  if (goals.includes("hypertrophy")) {
                     targetSetRpe = isFinalWeek ? "9" : "8.5";
                   } else {
                     targetSetRpe = isFinalWeek ? "8.5" : "8";
@@ -2108,8 +2124,10 @@ export const createSessionFromTemplate = (
                 (block.type as any) === BlockType.OVERREACH ||
                 (block.type as any) === BlockType.MAX_EFFORT
               ) {
-                if (goals.includes("hypertrophy") || goals.includes("powerbuilding")) {
+                if (goals.includes("hypertrophy")) {
                   targetSetRpe = "9";
+                } else if (goals.includes("powerbuilding")) {
+                  targetSetRpe = "8.5";
                 } else if (goals.includes("pure_strength")) {
                   targetSetRpe = "7.5";
                 }
@@ -2117,7 +2135,7 @@ export const createSessionFromTemplate = (
                 targetSetRpe = "7.0";
               } else if (goals.includes("powerbuilding") && ((block.type as any) === BlockType.STRENGTH || (block.type as any) === BlockType.MAX_EFFORT || (block.type as any) === BlockType.PEAKING)) {
                 // Strict bodybuilding rules for remaining back-offs/accessories
-                targetSetRpe = isFinalWeek ? "9" : "8.5";
+                targetSetRpe = isFinalWeek ? "8.5" : "8.0";
               } else {
                 targetSetRpe = goals.includes("hypertrophy") ? (isFinalWeek ? "9" : "8") : "7.5";
               }

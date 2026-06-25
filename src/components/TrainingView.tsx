@@ -24,7 +24,7 @@ import {
 import { cn } from '../lib/utils';
 import { useSettings } from '../contexts/SettingsContext';
 import { useWorkout, WorkoutSession, Exercise } from '../contexts/WorkoutContext';
-import { getExerciseName, isMainLiftMatch, isTimedExercise, calculateVolume } from '../utils/workoutUtils';
+import { getExerciseName, isMainLiftMatch, isTimedExercise, calculateVolume, isExerciseMatch } from '../utils/workoutUtils';
 import { calculateTier } from '../lib/strength';
 import { MissionBriefingModal } from './MissionBriefingModal';
 import { ExerciseSwapModal } from './ExerciseSwapModal';
@@ -459,7 +459,7 @@ export const TrainingView = ({
         if (flag === 'isSquat') matchesName = isMainLiftMatch(ex.name, 'Squat');
         else if (flag === 'isBench') matchesName = isMainLiftMatch(ex.name, 'Bench Press');
         else if (flag === 'isDeadlift') matchesName = isMainLiftMatch(ex.name, 'Deadlift');
-        else matchesName = ex.name.toLowerCase() === exerciseName.toLowerCase();
+        else matchesName = isExerciseMatch(ex.name, exerciseName);
 
         if (matchesFlag || matchesName) {
           ex.sets?.forEach(set => {

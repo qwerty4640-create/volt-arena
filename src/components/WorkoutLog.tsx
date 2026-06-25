@@ -1009,22 +1009,39 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
     const cleanName = (name: string) => name.replace(/\[?HEAVY PRIMARY\]?|\[?HYPERTROPHY\]?|\[?ACTIVE RECOVERY\]?|\[?MOVEMENT QUALITY\]?|\[?BLOOD FLOW\]?/gi, '').trim().toLowerCase();
     const cleanTargetName = cleanName(exerciseName);
 
-    const lastSession = history.find(session =>
-      session.exercises?.some(ex => cleanName(ex.name) === cleanTargetName)
-    );
-    if (!lastSession) return null;
+    let allSets: any[] = [];
+    history.forEach(session => {
+      const matchExercises = session.exercises?.filter(ex => cleanName(ex.name) === cleanTargetName) || [];
+      matchExercises.forEach(ex => {
+        if (ex.sets) {
+          // ignore sets that are clearly empty/placeholder
+          const validSets = ex.sets.filter(s => {
+             const weightNum = parseFloat(String(s.weight)) || 0;
+             const repsNum = parseFloat(String(s.reps)) || 0;
+             return weightNum > 0 || repsNum > 0 || s.isCompleted;
+          });
+          allSets.push(...validSets);
+        }
+      });
+    });
 
-    const lastEx = lastSession.exercises?.find(ex => cleanName(ex.name) === cleanTargetName);
-    if (!lastEx || !lastEx.sets || lastEx.sets.length === 0) return null;
+    if (allSets.length === 0) return null;
 
-    // Find best set by volume
-    const bestSet = lastEx.sets.reduce((best, current) => {
-      const bestVol = (parseFloat(best.weight) || 0) * (parseFloat(best.reps) || 0);
-      const currentVol = (parseFloat(current.weight) || 0) * (parseFloat(current.reps) || 0);
-      return currentVol > bestVol ? current : best;
-    }, lastEx.sets[0]);
+    // Find best set by max weight, then by max reps
+    const bestSet = allSets.reduce((best, current) => {
+      const bestWeight = parseFloat(String(best.weight).replace(/[^0-9.]/g, '')) || 0;
+      const currentWeight = parseFloat(String(current.weight).replace(/[^0-9.]/g, '')) || 0;
+      
+      if (currentWeight > bestWeight) return current;
+      if (currentWeight < bestWeight) return best;
+      
+      const bestReps = parseFloat(String(best.reps).replace(/[^0-9.]/g, '')) || 0;
+      const currentReps = parseFloat(String(current.reps).replace(/[^0-9.]/g, '')) || 0;
+      
+      return currentReps > bestReps ? current : best;
+    }, allSets[0]);
 
-    return `${bestSet.weight}${weightUnit} x ${bestSet.reps}${isTimedExercise(exerciseName) ? ' min' : ''}`;
+    return `${bestSet.weight}${weightUnit} x ${bestSet.reps}${isTimedExercise(exerciseName) && !String(bestSet.reps).includes('min') ? ' min' : ''}`;
   };
 
   const setExercises = (updater: (prev: Exercise[]) => Exercise[], extraSessionUpdates?: Partial<WorkoutSession>) => {

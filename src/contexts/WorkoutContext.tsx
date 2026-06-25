@@ -821,6 +821,8 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({
         currentReadiness,
         hasAerobicInterference,
         history,
+        true,
+        overrideReadinessScore !== undefined,
       );
     }
 
@@ -854,6 +856,8 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({
       currentReadiness,
       hasAerobicInterference,
       history,
+      true,
+      overrideReadinessScore !== undefined,
     );
 
     if (nextWorkoutOverrides) {
@@ -917,6 +921,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({
         hasAerobicInterference,
         history,
         isNextWorkout,
+        false,
       );
     },
     [history, profile, unit],
