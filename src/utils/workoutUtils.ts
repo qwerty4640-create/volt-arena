@@ -1,6 +1,20 @@
 import { EXERCISE_DATABASE_TYPED } from "../constants/exercises";
 import { Exercise } from "../contexts/WorkoutContext";
 
+export function cleanExerciseName(name: string): string {
+  if (!name) return "";
+  return name
+    .replace(/\[?(HEAVY PRIMARY|HYPERTROPHY|ACTIVE RECOVERY|MOVEMENT QUALITY|BLOOD FLOW)\]?/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
+
+export function isExerciseMatch(nameA: string, nameB: string): boolean {
+  if (!nameA || !nameB) return false;
+  return cleanExerciseName(nameA) === cleanExerciseName(nameB);
+}
+
 export function isUnilateral(exName: string): boolean {
   if (!exName) return false;
   const ex = EXERCISE_DATABASE_TYPED.find(
@@ -140,13 +154,13 @@ export function calculateE1RM(
 
   let e1rm: number;
 
-  // Use the Wathen equation for primary lifts with high reps (> 5).
+  // Use the Wathen equation for primary lifts across all rep ranges.
   // Scientifically validated (Wathen, 1994) to better account for non-linear exponential
-  // fatigue at higher rep ranges compared to the linear Brzycki formula.
-  if (isPrimary && effectiveReps > 5) {
+  // fatigue compared to the linear Brzycki formula, now continuous across all reps.
+  if (isPrimary) {
     e1rm = (100 * weight) / (48.8 + 53.8 * Math.exp(-0.075 * effectiveReps));
   } else {
-    // Standard Brzycki formula for low reps or non-primary accessories
+    // Standard Brzycki formula for non-primary accessories
     const cappedReps = Math.min(effectiveReps, 12);
     e1rm = weight * (36 / (37 - cappedReps));
   }
@@ -181,11 +195,11 @@ export function calculateWeightFromE1RM(
 
   let targetWeight: number;
 
-  // Use the inverse Wathen equation for primary lifts with high reps (> 5).
-  if (isPrimary && effectiveReps > 5) {
+  // Use the inverse Wathen equation for primary lifts across all rep ranges to ensure mathematical continuity.
+  if (isPrimary) {
     targetWeight = (e1rm * (48.8 + 53.8 * Math.exp(-0.075 * effectiveReps))) / 100;
   } else {
-    // Standard inverse Brzycki formula
+    // Standard inverse Brzycki formula for accessories
     const cappedReps = Math.min(effectiveReps, 12);
     targetWeight = e1rm * ((37 - cappedReps) / 36);
   }
