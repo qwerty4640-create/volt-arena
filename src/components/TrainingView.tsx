@@ -697,30 +697,7 @@ export const TrainingView = ({
             </span>
             {(() => {
               const rawName = exName;
-              const originalEx = isActiveSession ? mainLift : currentEx;
-              const originalName = (typeof originalEx === 'string' ? originalEx : originalEx?.name || "").toUpperCase();
-              let intentTag = (isActiveSession ? mainLift?.intent : currentEx?.intent) || 
-                (originalName.includes('HEAVY PRIMARY') ? 'HEAVY PRIMARY' : 
-                 originalName.includes('HYPERTROPHY') ? 'HYPERTROPHY' : undefined);
               const cleanName = rawName.replace(/\[?HEAVY PRIMARY\]?|\[?HYPERTROPHY\]?/g, '').trim();
-
-              const isS = isMainLiftMatch(cleanName, "Squat");
-              const isB = isMainLiftMatch(cleanName, "Bench Press");
-              const isD = isMainLiftMatch(cleanName, "Deadlift");
-              const isMain = isS || isB || isD;
-
-              if (!isMain && intentTag?.toUpperCase().includes("HEAVY PRIMARY")) {
-                intentTag = "HYPERTROPHY";
-              }
-
-              const isHeavyPrimary = intentTag?.toUpperCase().includes("HEAVY PRIMARY");
-              const isHypertrophy = intentTag?.toUpperCase().includes("HYPERTROPHY");
-              const isBloodFlow = intentTag?.toUpperCase().includes("BLOOD FLOW");
-
-              let tooltipTerm: 'HeavyPrimary' | 'Hypertrophy' | 'BloodFlow' | undefined = undefined;
-              if (isHeavyPrimary) tooltipTerm = 'HeavyPrimary';
-              else if (isHypertrophy) tooltipTerm = 'Hypertrophy';
-              else if (isBloodFlow) tooltipTerm = 'BloodFlow';
 
               return (
                 <div className="flex flex-wrap items-center gap-2 mt-1 mb-2">
@@ -730,20 +707,6 @@ export const TrainingView = ({
                   )}>
                     {cleanName}
                   </h2>
-                  {intentTag && (
-                    <div className="flex items-center gap-1">
-                      <span className={`px-2 py-0.5 text-[8px] font-black uppercase tracking-widest border rounded-none ${
-                        isHeavyPrimary 
-                          ? "bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/30" 
-                          : "bg-volt/10 text-volt border-volt/30"
-                      }`}>
-                        {intentTag}
-                      </span>
-                      {tooltipTerm && (
-                        <InfoTooltip term={tooltipTerm} className="ml-0 cursor-pointer text-[10px]" />
-                      )}
-                    </div>
-                  )}
                 </div>
               );
             })()}

@@ -792,6 +792,7 @@ export const createSessionFromTemplate = (
   history: WorkoutSession[] = [],
   isNextWorkout: boolean = true,
   hasCompletedReadinessCheck: boolean = false,
+  readinessModifierOverride?: number,
 ): WorkoutSession => {
   const goals =
     profile?.trainingObjectives ||
@@ -1045,12 +1046,22 @@ export const createSessionFromTemplate = (
 
   // 2. Readiness Adjustment
   let readinessModifier = 1.0;
+  let recoveryModifier = 1.0;
+  let historyFatigueDiscount = 1.0;
+
   if (isNextWorkout && hasCompletedReadinessCheck) {
-    if (currentReadiness >= 90) readinessModifier = 1.05; 
-    else if (currentReadiness >= 80) readinessModifier = 1.0;
-    else if (currentReadiness >= 70) readinessModifier = 0.95;
-    else if (currentReadiness >= 50) readinessModifier = 0.9;
-    else readinessModifier = 0.8;
+    if (readinessModifierOverride !== undefined) {
+      // If we are given an authoritative modifier from the HMS UI, it ALREADY includes
+      // recoveryModifier, historyFatigueDiscount, redline penalties, and readiness.
+      // We just adopt it cleanly to avoid hidden double dipping.
+      readinessModifier = readinessModifierOverride;
+    } else {
+      if (currentReadiness >= 90) readinessModifier = 1.05; 
+      else if (currentReadiness >= 80) readinessModifier = 1.0;
+      else if (currentReadiness >= 70) readinessModifier = 0.95;
+      else if (currentReadiness >= 50) readinessModifier = 0.9;
+      else readinessModifier = 0.8;
+    }
   }
 
   // Calculate readiness RPE limit according to sum of drains / readiness logic
@@ -1074,8 +1085,7 @@ export const createSessionFromTemplate = (
   }
 
   // 3. Recovery Adjustment
-  let recoveryModifier = 1.0;
-  if (isNextWorkout && lastSession && hasCompletedReadinessCheck) {
+  if (isNextWorkout && lastSession && hasCompletedReadinessCheck && readinessModifierOverride === undefined) {
     if (lastSession.rpe && lastSession.rpe >= 9) {
       recoveryModifier *= 0.95;
     }
@@ -1092,10 +1102,9 @@ export const createSessionFromTemplate = (
   }
 
   // Tactical Autoregulation: Granular history-driven fatigue calculation
-  let historyFatigueDiscount = 1.0;
   const fatigueReasons: string[] = [];
 
-  if (history && history.length > 0 && hasCompletedReadinessCheck) {
+  if (history && history.length > 0 && hasCompletedReadinessCheck && readinessModifierOverride === undefined) {
     const sortedCompleted = [...history]
       .filter((s) => s.completedAt)
       .sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
@@ -1874,12 +1883,6 @@ export const createSessionFromTemplate = (
       if (isMainLift) {
         unmodifiedWeight = Math.round((estimated1RM * adjustedBaseIntensity) / 5) * 5;
         weight = Math.round((estimated1RM * adjustedIntensity) / 5) * 5;
-
-        // Apply penalty for high-intensity aerobic activity before major lifts
-        if (hasCompletedReadinessCheck && hasAerobicInterference && (isSquat || isBench || isDeadlift)) {
-          weight = Math.round((weight * 0.85) / 5) * 5;
-          unmodifiedWeight = Math.round((unmodifiedWeight * 0.85) / 5) * 5;
-        }
 
         // Apply history-driven fatigue load reduction scaling
         if (hasCompletedReadinessCheck && historyFatigueDiscount < 1.0 && (isSquat || isBench || isDeadlift || isPrimaryMainLift)) {

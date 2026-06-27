@@ -1065,8 +1065,14 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({
           const baseValue = parseFloat(set.baseWeight || set.weight) || 0;
           let weightVal = baseValue;
 
-          if (readinessModifier !== undefined) {
+          // Only scale if it's a custom template.
+          // System-generated sessions (via getNextWorkoutTemplate) are already deeply
+          // autoregulated and scaled inside the session generator engine.
+          if (template && readinessModifier !== undefined) {
             weightVal = Math.round((baseValue * readinessModifier) / 5) * 5;
+          } else if (!template) {
+             // For system generated, it's already scaled in weight. We just use weight.
+             weightVal = parseFloat(set.weight) || 0;
           }
 
           let setRpe = set.baseRpe || set.rpe || "8";

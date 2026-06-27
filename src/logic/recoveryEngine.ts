@@ -193,6 +193,90 @@ export const calculateSystemReadiness = (
   else if (currentReadiness >= 50) readinessModifier = 0.90;
   else readinessModifier = 0.80;
 
+  // Granular history-driven fatigue calculation to align with session generator
+  let historyFatigueDiscount = 1.0;
+  let recoveryModifier = 1.0;
+  
+  if (filteredHistory && filteredHistory.length > 0) {
+    const sortedCompleted = [...filteredHistory]
+      .filter((s) => s.completedAt)
+      .sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
+
+    const mostRecent = sortedCompleted[0];
+    if (mostRecent && mostRecent.completedAt) {
+      const hoursSinceLast = (Date.now() - mostRecent.completedAt) / 3600000;
+      const lastSessionRpe = mostRecent.actualRpe || mostRecent.rpe || 7;
+      
+      // Recovery Modifier logic
+      if (lastSessionRpe >= 9) {
+        recoveryModifier *= 0.95;
+      }
+      if (hoursSinceLast < 24) {
+         recoveryModifier *= 0.9;
+      }
+
+      // Density check for history fatigue
+      if (hoursSinceLast > 0 && hoursSinceLast < 36) {
+        if (lastSessionRpe >= 8.5) {
+          historyFatigueDiscount *= 0.95;
+        } else {
+          historyFatigueDiscount *= 0.98;
+        }
+      }
+    }
+
+    // Overshoot check
+    let recentOvershootCount = 0;
+    sortedCompleted.slice(0, 3).forEach((session) => {
+      let sessionOvershot = false;
+      if (session.actualRpe && session.targetRpe && session.actualRpe > session.targetRpe) {
+        sessionOvershot = true;
+      }
+      session.exercises?.forEach((ex: any) => {
+        ex.sets?.forEach((s: any) => {
+          if (s.isCompleted && s.actualRpe && s.rpe) {
+            const actRpe = parseFloat(s.actualRpe);
+            const tgtRpe = parseFloat(s.rpe);
+            if (!isNaN(actRpe) && !isNaN(tgtRpe) && actRpe > tgtRpe + 0.5) {
+              sessionOvershot = true;
+            }
+          }
+        });
+      });
+      if (sessionOvershot) {
+        recentOvershootCount++;
+      }
+    });
+
+    if (recentOvershootCount >= 2) {
+      historyFatigueDiscount *= 0.94;
+    } else if (recentOvershootCount === 1) {
+      historyFatigueDiscount *= 0.97;
+    }
+
+    // Cumulative heavy sessions
+    const now = Date.now();
+    const sevenDaysAgo = now - 7 * 24 * 3600 * 1000;
+    const lastWeekSessions = sortedCompleted.filter(
+      (s) => (s.completedAt || 0) > sevenDaysAgo
+    );
+    const heavySessionsLastWeek = lastWeekSessions.filter(
+      (s) => (s.actualRpe || s.rpe || 0) >= 8.5
+    ).length;
+
+    if (heavySessionsLastWeek >= 3) {
+      historyFatigueDiscount *= 0.94;
+    } else if (heavySessionsLastWeek === 2) {
+      historyFatigueDiscount *= 0.97;
+    }
+  }
+
+  historyFatigueDiscount = Math.max(0.85, historyFatigueDiscount);
+  
+  // Fold the history and recovery modifiers into the global readiness modifier
+  // so that the UI accurately reflects the true scaling applied to the prescription.
+  readinessModifier = readinessModifier * recoveryModifier * historyFatigueDiscount;
+
   const isRedline = cumulativeFatigueScore >= 18;
   let recommendedRpe = 7.5;
   
