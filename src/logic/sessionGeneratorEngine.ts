@@ -678,7 +678,7 @@ export const getDailyMissionTitleAndDesc = (
   ) {
     if (dIndex === 1) {
       return {
-        title: "Max Effort (Heavy Singles/Doubles)",
+        title: "Max Effort",
         desc: "Test rate of force development and motor unit synchronization.",
         rulesOfEngagement:
           "High CNS strain with low total session volume. Prepare mentally for maximal motor-unit recruitment. Spotters and safety protocols are mandatory.",
@@ -1806,7 +1806,7 @@ export const createSessionFromTemplate = (
             dynamicReps = "2-3";
             dynamicSets = 7;
           } else if (targetIntensityForReps < 0.95) {
-            dynamicReps = "1-2";
+            dynamicReps = "1-3";
             dynamicSets = 8;
           } else {
             dynamicReps = "1";

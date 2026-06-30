@@ -247,7 +247,7 @@ export const calculateRetentionProtocol = (
         setsToInject: 1,
         patternTarget: 'compound_accessory'
       },
-      reason: 'Concurrent Preservation: Because mechanical volume is already high, introducing 1–2 background heavy single/double sets maintains neurological familiarity with absolute load, locking in cross-sectional muscle gains.'
+      reason: 'Concurrent Preservation: Because mechanical volume is already high, introducing 1–2 background heavy sets (1-3 rep max range) maintains neurological familiarity with absolute load, locking in cross-sectional muscle gains.'
     };
   }
 

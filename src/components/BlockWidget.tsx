@@ -226,7 +226,10 @@ export const BlockWidget = ({}: BlockWidgetProps) => {
                   const prsW = parseFloat(s.baseWeight || fallbackWeight) || 0;
                   
                   if (prsW > 10) {
-                    weightRatioSum += actW / prsW;
+                    const rawRatio = actW / prsW;
+                    // Cap individual set weight ratios to prevent empty-bar math, typos, or warm-up anomalies
+                    const cappedRatio = Math.max(0.5, Math.min(1.12, rawRatio));
+                    weightRatioSum += cappedRatio;
                     weightSetCount += 1;
                   }
                 }
@@ -270,8 +273,9 @@ export const BlockWidget = ({}: BlockWidgetProps) => {
       }
 
       // A standard scientific model: 1 RPE point difference ~ 3% intensity change
-      const rpeMultiplier = 1 + rpeDiff * 0.03;
-      const ratio = avgWeightRatio * rpeMultiplier;
+      const rpeMultiplier = Math.max(0.85, Math.min(1.15, 1 + rpeDiff * 0.03));
+      // Cap the cumulative ratio between 0.5 and 1.08 to prevent unrealistic spikes over planned curves
+      const ratio = Math.max(0.5, Math.min(1.08, avgWeightRatio * rpeMultiplier));
 
       let actualIntensity = Math.round(d.intensity * ratio);
       actualIntensity = Math.max(0, Math.min(100, actualIntensity));

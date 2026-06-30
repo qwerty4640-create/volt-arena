@@ -783,8 +783,9 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({
     };
   };
 
-  const getNextWorkoutTemplate = useCallback((overrideReadinessScore?: number) => {
-    let filteredHistory = history.filter(s => !(s as any).isCustom);
+  const getNextWorkoutTemplate = useCallback(
+    (overrideReadinessScore?: number, overrideReadinessModifier?: number) => {
+      let filteredHistory = history.filter((s) => !(s as any).isCustom);
 
     // Mitigate bugged backfills: if programResetAt exists but wipes ALL history
     // when we clearly have history, it's likely a bugged timestamp. Ignore it.
@@ -823,6 +824,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({
         history,
         true,
         overrideReadinessScore !== undefined,
+        overrideReadinessModifier
       );
     }
 
@@ -858,6 +860,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({
       history,
       true,
       overrideReadinessScore !== undefined,
+      overrideReadinessModifier
     );
 
     if (nextWorkoutOverrides) {
@@ -972,7 +975,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({
         })),
       }));
     } else {
-      session = getNextWorkoutTemplate(readinessScore);
+      session = getNextWorkoutTemplate(readinessScore, readinessModifier);
       session.startTime = Date.now();
       // Clear overrides when session starts
       setNextWorkoutOverrides(null);
