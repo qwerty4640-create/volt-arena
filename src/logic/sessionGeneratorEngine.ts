@@ -368,7 +368,8 @@ export const getMuscleDominance = (exercise: any): "quads" | "hamstrings" | "cal
     nameLower.includes("extension") || 
     nameLower.includes("sissy") || 
     nameLower.includes("hack squat") || 
-    nameLower.includes("leg press")
+    nameLower.includes("leg press") ||
+    nameLower.includes("reverse nordic")
   ) {
     return "quads";
   }
@@ -827,7 +828,8 @@ export const createSessionFromTemplate = (
     !currentPhaseStr || 
     ["hypertrophy", "foundation", "powerbuilding", "strength", "pure_strength", "max_effort", "overreach", "deload"].includes(
       currentPhaseStr
-    )
+    ) ||
+    (currentPhaseStr === "competition / taper" && (goals.includes("powerbuilding") || goals.includes("pure_strength")))
   ) {
     if (frequency === 3) {
       templatePool = FULL_BODY_TEMPLATES;
@@ -851,9 +853,8 @@ export const createSessionFromTemplate = (
   } else if (["tactical"].includes(currentPhaseStr)) {
     templatePool = TACTICAL_TEMPLATES;
   } else if (
-    ["explosiveness", "power", "peaking", "competition / taper"].includes(
-      currentPhaseStr,
-    )
+    ["explosiveness", "power", "peaking"].includes(currentPhaseStr) ||
+    (currentPhaseStr === "competition / taper" && !goals.includes("powerbuilding") && !goals.includes("pure_strength"))
   ) {
     templatePool = EXPLOSIVE_TEMPLATES;
   } else if (
@@ -1040,6 +1041,25 @@ export const createSessionFromTemplate = (
     });
   }
 
+  // Taper Strategy (Phase 1): Split CNS Priming and Active Recovery
+  if (block.type === BlockType.COMPETITION) {
+    if (day === 1) {
+      // Day 1: CNS Priming (Squat & Bench focus)
+      dynamicSlots = [
+        { pattern: "squat", weight: 75, reps: "1", sets: 3, impact: "high" },
+        { pattern: "push_horizontal", weight: 75, reps: "1", sets: 3, impact: "high" },
+        { pattern: "mobility", reps: "10-15", sets: 2, weight: 0, impact: "low" },
+      ];
+    } else {
+      // Day 2+: Structural Integrity & Active Recovery
+      dynamicSlots = [
+        { pattern: "pull_vertical", impact: "low", reps: "15", sets: 2, weight: 0 },
+        { pattern: "accessory", focus: "lower", impact: "low", reps: "15", sets: 2, weight: 0 },
+        { pattern: "impact", focus: "steady_state", reps: "20-30", sets: 1, weight: 0, impact: "low" },
+      ];
+    }
+  }
+
   // 1. Base Intensity from Block + Weekly Progression
   let blockIntensity =
     block.baseIntensity + (weekInBlock - 1) * block.intensityIncrementPerWeek;
@@ -1056,8 +1076,7 @@ export const createSessionFromTemplate = (
       // We just adopt it cleanly to avoid hidden double dipping.
       readinessModifier = readinessModifierOverride;
     } else {
-      if (currentReadiness >= 90) readinessModifier = 1.05; 
-      else if (currentReadiness >= 80) readinessModifier = 1.0;
+      if (currentReadiness >= 80) readinessModifier = 1.0;
       else if (currentReadiness >= 70) readinessModifier = 0.95;
       else if (currentReadiness >= 50) readinessModifier = 0.9;
       else readinessModifier = 0.8;
@@ -1065,27 +1084,30 @@ export const createSessionFromTemplate = (
   }
 
   // Calculate readiness RPE limit according to sum of drains / readiness logic
-  let readinessRpeLimit = 7.5;
-  if (currentReadiness >= 95) readinessRpeLimit = 9.5;
-  else if (currentReadiness >= 90) readinessRpeLimit = 9.0;
-  else if (currentReadiness >= 80) readinessRpeLimit = 8.5;
-  else if (currentReadiness >= 70) readinessRpeLimit = 8.0;
-  else if (currentReadiness >= 60) readinessRpeLimit = 7.5;
-  else if (currentReadiness >= 50) readinessRpeLimit = 7.0;
-  else readinessRpeLimit = 6.0;
+  let readinessRpeLimit = 10.0;
+  
+  if (readinessModifierOverride !== undefined && readinessModifierOverride > 0.95) {
+    // If user manually overrides intensity high, trust them. No restrictive RPE cap.
+    readinessRpeLimit = 10.0;
+  } else {
+    if (currentReadiness >= 80) readinessRpeLimit = 10.0;
+    else if (currentReadiness >= 60) readinessRpeLimit = 9.5;
+    else if (currentReadiness >= 40) readinessRpeLimit = 9.0;
+    else readinessRpeLimit = 8.5;
 
-  if (isNextWorkout && lastSession && lastSession.completedAt) {
-    const hoursSinceLast = (Date.now() - lastSession.completedAt) / 3600000;
-    if (hoursSinceLast < 36) {
-      readinessRpeLimit = Math.min(readinessRpeLimit, 8.5);
-    }
-    if (hoursSinceLast < 12) {
-      readinessRpeLimit = Math.min(readinessRpeLimit, 7.5);
+    if (isNextWorkout && lastSession && lastSession.completedAt) {
+      const hoursSinceLast = (Date.now() - lastSession.completedAt) / 3600000;
+      if (hoursSinceLast < 24) {
+        readinessRpeLimit = Math.min(readinessRpeLimit, 9.0);
+      }
+      if (hoursSinceLast < 12) {
+        readinessRpeLimit = Math.min(readinessRpeLimit, 8.5);
+      }
     }
   }
 
   // 3. Recovery Adjustment
-  if (isNextWorkout && lastSession && hasCompletedReadinessCheck && readinessModifierOverride === undefined) {
+  if (isNextWorkout && lastSession && readinessModifierOverride === undefined) {
     if (lastSession.rpe && lastSession.rpe >= 9) {
       recoveryModifier *= 0.95;
     }
@@ -1104,7 +1126,7 @@ export const createSessionFromTemplate = (
   // Tactical Autoregulation: Granular history-driven fatigue calculation
   const fatigueReasons: string[] = [];
 
-  if (history && history.length > 0 && hasCompletedReadinessCheck && readinessModifierOverride === undefined) {
+  if (history && history.length > 0 && isNextWorkout) {
     const sortedCompleted = [...history]
       .filter((s) => s.completedAt)
       .sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
@@ -1203,10 +1225,11 @@ export const createSessionFromTemplate = (
   ) {
     volumeModifier *= 0.6; // 40% drop in volume for fatigue dissipation
   } else if (
-    goals.includes("peaking") &&
+    (goals.includes("peaking") || goals.includes("powerbuilding") || goals.includes("pure_strength")) &&
     block.type === BlockType.COMPETITION
   ) {
-    volumeModifier *= 0.5; // Drastic set reduction for realization
+    volumeModifier *= 0.5; // Drastic set reduction for realization/taper
+    blockIntensity = 0.75; // 75% intensity for CNS priming
   } else if (
     goals.includes("longevity") &&
     block.type === BlockType.REGENERATION
@@ -1389,48 +1412,63 @@ export const createSessionFromTemplate = (
 
       // Select best fit exercise for the goal, rotating through available exercises based on week, day and index to ensure variety per session
       const isLowerBodySlot = slot.pattern === "squat" || slot.pattern === "hinge" || (slot.pattern === "accessory" && slotFocus === "lower");
+      let preferredDominance: "quads" | "hamstrings" | "calves" | null = null;
+      
       if (isLowerBodySlot && lowerBodySelections.length > 0) {
         const lastLower = lowerBodySelections[lowerBodySelections.length - 1];
         const lastDominance = lastLower.target;
-        let preferredDominance: "quads" | "hamstrings" | "calves" | null = null;
         if (lastDominance === "quads") {
           preferredDominance = "hamstrings";
         } else if (lastDominance === "hamstrings") {
           preferredDominance = "quads";
         }
-        if (preferredDominance) {
-          const matchingPreferred = availableExercises.filter(e => getMuscleDominance(e) === preferredDominance);
-          const others = availableExercises.filter(e => getMuscleDominance(e) !== preferredDominance);
-          if (matchingPreferred.length > 0) {
-            availableExercises = [...matchingPreferred, ...others];
-          }
-        }
       }
 
-      let rotationIndex = 0;
       const stablePatterns = ['squat', 'hinge', 'push_horizontal', 'pull_vertical', 'push_vertical', 'pull_horizontal'];
       
-      if (!stablePatterns.includes(slot.pattern as string)) {
+      const getRotationIndexForList = (list: any[]) => {
+        if (!stablePatterns.includes(slot.pattern as string)) {
           // Give it high variety based on week, day, and index. Coprime multipliers 13, 17, 5 prevent cyclic collisions
-          rotationIndex = ((week - 1) * 13 + (day - 1) * 17 + i * 5) % Math.max(1, availableExercises.length);
-      } else if (i > 1 && !slot.weight) {
+          return ((week - 1) * 13 + (day - 1) * 17 + i * 5) % Math.max(1, list.length);
+        } else if (i > 1 && !slot.weight) {
           // If it's a main movement pattern but it's an unweighted secondary movement late in the workout, rotate it slightly
-          rotationIndex = ((week - 1) + (day - 1) + i) % Math.max(1, availableExercises.length);
-      }
-      
-      let selectedExercise = availableExercises[rotationIndex] || availableExercises[0];
+          return ((week - 1) + (day - 1) + i) % Math.max(1, list.length);
+        }
+        return 0;
+      };
 
-      // Prevent duplicates in the same session via linear probing
-      let probeOffset = 0;
-      while (
-        selectedExercise && 
-        chosenIds.has(selectedExercise.id) && 
-        probeOffset < availableExercises.length &&
-        !["impact"].includes(slot.pattern as string)
-      ) {
-        probeOffset++;
-        const nextIndex = (rotationIndex + probeOffset) % availableExercises.length;
-        selectedExercise = availableExercises[nextIndex];
+      const selectExerciseFromList = (list: any[], strictUnique: boolean) => {
+        if (list.length === 0) return null;
+        const rIndex = getRotationIndexForList(list);
+        let selected = list[rIndex] || list[0];
+        
+        let pOffset = 0;
+        const isImpact = ["impact"].includes(slot.pattern as string);
+        
+        while (selected && chosenIds.has(selected.id) && pOffset < list.length && !isImpact) {
+          pOffset++;
+          selected = list[(rIndex + pOffset) % list.length];
+        }
+        
+        if (strictUnique && selected && chosenIds.has(selected.id) && !isImpact) {
+          return null;
+        }
+        return selected;
+      };
+
+      let selectedExercise = null;
+
+      if (preferredDominance) {
+        const matchingPreferred = availableExercises.filter(e => getMuscleDominance(e) === preferredDominance);
+        selectedExercise = selectExerciseFromList(matchingPreferred, true);
+      }
+
+      if (!selectedExercise) {
+        selectedExercise = selectExerciseFromList(availableExercises, true);
+      }
+
+      if (!selectedExercise) {
+        selectedExercise = selectExerciseFromList(availableExercises, false);
       }
       
       if (selectedExercise) {
@@ -1475,6 +1513,20 @@ export const createSessionFromTemplate = (
           (e) => e.name && !e.name.includes("Barbell"),
         );
         if (safer) selectedExercise = safer;
+      }
+
+      // Posterior Chain Flushing during Taper week
+      if (
+        block.type === BlockType.COMPETITION &&
+        i > 0 &&
+        (slot.pattern === "hinge" || (selectedExercise && selectedExercise.pattern === "hinge"))
+      ) {
+        const flushingOptions = EXERCISE_DATABASE.filter(e => 
+          e.id === "kettlebell_swings" || e.id === "db_rdl"
+        );
+        if (flushingOptions.length > 0) {
+          selectedExercise = flushingOptions[Math.floor(Math.random() * flushingOptions.length)];
+        }
       }
 
       // --- PHASE 2: Apply Constraints ---
@@ -1543,6 +1595,7 @@ export const createSessionFromTemplate = (
 
       // Apply Intensity Adjustments from constraints
       let adjustedIntensity = finalIntensity;
+
       if (constraintExercise.intensityCap)
         adjustedIntensity = Math.min(
           adjustedIntensity,
@@ -1707,7 +1760,7 @@ export const createSessionFromTemplate = (
         );
       }
 
-      let baseFinalIntensity = blockIntensity * recoveryModifier;
+      const baseFinalIntensity = blockIntensity * recoveryModifier;
       let adjustedBaseIntensity = baseFinalIntensity;
       if (constraintExercise.intensityCap)
         adjustedBaseIntensity = Math.min(
@@ -1762,7 +1815,15 @@ export const createSessionFromTemplate = (
         } else if (goals.includes("powerbuilding")) {
           // Powerbuilding strictly mandates exactly 3 heavy working sets for the main lift
           dynamicSets = 3;
-          if (targetIntensityForReps < 0.75) {
+          if (block.type === BlockType.COMPETITION) {
+            if (isDeadlift) {
+              dynamicSets = 1;
+              dynamicReps = "1";
+            } else {
+              dynamicSets = 3; // 3 single reps
+              dynamicReps = "1"; // Taper reps for freshness
+            }
+          } else if (targetIntensityForReps < 0.75) {
             dynamicReps = "6-8";
           } else if (targetIntensityForReps < 0.85) {
             dynamicReps = "4-6";
@@ -1790,7 +1851,15 @@ export const createSessionFromTemplate = (
           }
         } else {
           // Standard strength / peaking block mapping
-          if (targetIntensityForReps < 0.65) {
+          if (block.type === BlockType.COMPETITION) {
+            if (isDeadlift) {
+              dynamicSets = 1;
+              dynamicReps = "1";
+            } else {
+              dynamicSets = 3; // 3 single reps
+              dynamicReps = "1"; // Taper reps for freshness
+            }
+          } else if (targetIntensityForReps < 0.65) {
             dynamicReps = "8-10";
             dynamicSets = 3;
           } else if (targetIntensityForReps < 0.75) {
@@ -1834,8 +1903,9 @@ export const createSessionFromTemplate = (
         dynamicSets = Math.min(dynamicSets, 5);
       }
 
-      let reps = isPrimaryMainLift ? dynamicReps : slot.reps;
-      let sets = isPrimaryMainLift ? dynamicSets : slot.sets;
+      const useDynamic = isPrimaryMainLift || (block.type === BlockType.COMPETITION && isMainLift);
+      let reps = useDynamic ? dynamicReps : slot.reps;
+      let sets = useDynamic ? dynamicSets : slot.sets;
 
       // Progressive Volume For Endurance (Increase duration by 10% per week in block)
       if (["endurance", "aerobic base", "capacity", "vo2 max", "threshold", "endurance retention"].includes(currentPhaseStr)) {
@@ -1855,16 +1925,26 @@ export const createSessionFromTemplate = (
       }
 
       if (!isMainLift && goals.includes("powerbuilding") && slot.pattern !== "impact" && slot.pattern !== "mobility" && slot.pattern !== "core") {
-        // Enforce purely hypertrophy focus for all accessories (ignore cardio/impact slots)
-        reps = "10-15";
-        sets = Math.max(3, Number(sets) || 3);
+        if (block.type === BlockType.COMPETITION) {
+          reps = "8-10";
+          sets = 2; // Reduce accessory volume during taper
+        } else {
+          // Enforce purely hypertrophy focus for all accessories (ignore cardio/impact slots)
+          reps = "10-15";
+          sets = Math.max(3, Number(sets) || 3);
+        }
+      }
+
+      if (block.type === BlockType.COMPETITION && isDeadlift) {
+        adjustedIntensity = 0.55;
+        adjustedBaseIntensity = 0.55;
       }
 
       // Auto-Regulate the Intensity to prevent mechanical failure on high-readiness high-rep sets
-      if (estimated1RM > 0) {
+      if (estimated1RM > 0 && !isMainLift) {
         let parsedMinReps = parseInt(reps.split("-")[0]) || 8;
         let targetRpeCeiling =
-          constraintExercise.targetRPE || (isMainLift ? 8.5 : 8.0);
+          constraintExercise.targetRPE || 8.0;
         let effectiveReps = parsedMinReps + (10 - targetRpeCeiling);
         let safeIntensityLimit = (37 - Math.min(effectiveReps, 12)) / 36;
 
@@ -1883,12 +1963,6 @@ export const createSessionFromTemplate = (
       if (isMainLift) {
         unmodifiedWeight = Math.round((estimated1RM * adjustedBaseIntensity) / 5) * 5;
         weight = Math.round((estimated1RM * adjustedIntensity) / 5) * 5;
-
-        // Apply history-driven fatigue load reduction scaling
-        if (hasCompletedReadinessCheck && historyFatigueDiscount < 1.0 && (isSquat || isBench || isDeadlift || isPrimaryMainLift)) {
-          weight = Math.round((weight * historyFatigueDiscount) / 5) * 5;
-          unmodifiedWeight = Math.round((unmodifiedWeight * historyFatigueDiscount) / 5) * 5;
-        }
       } else {
         // Nullify strict % math for accessories, use exact last weight or fall back to RPE
         if (lastWeight > 0) {
@@ -1957,11 +2031,15 @@ export const createSessionFromTemplate = (
         }
       }
 
-      if (slotVolumeModifier < 1.0 && !isPrimaryMainLift) {
+      if (slotVolumeModifier < 1.0 && !useDynamic) {
         sets = Math.round(sets * slotVolumeModifier);
         // Safeguard for main lifts to prevent excessive volume drop on frequency shifts
         if (isMainLift && sets < 2 && slotVolumeModifier > 0.5) {
           sets = 2;
+        }
+        // Preserve 2 sets for accessory, hypertrophy, and mobility work during taper/competition week
+        if (block.type === BlockType.COMPETITION && !isMainLift && slot.pattern !== "impact") {
+          sets = Math.max(2, sets);
         }
         sets = Math.max(1, sets);
       }
@@ -2000,9 +2078,9 @@ export const createSessionFromTemplate = (
           block.type === BlockType.REGENERATION ||
           goals.includes("longevity");
         if (isRecovery) {
-          intent = "[ACTIVE RECOVERY]";
+          intent = "ACTIVE RECOVERY";
         } else if (isHybrid) {
-          intent = "[MOVEMENT QUALITY]";
+          intent = "MOVEMENT QUALITY";
         } else if (currentReadiness < 70) {
           intent = "BLOOD FLOW";
         } else {
@@ -2025,9 +2103,9 @@ export const createSessionFromTemplate = (
           block.type === BlockType.REGENERATION ||
           goals.includes("longevity");
         if (isRecovery) {
-          intent = "[ACTIVE RECOVERY]";
+          intent = "ACTIVE RECOVERY";
         } else if (isHybrid) {
-          intent = "[MOVEMENT QUALITY]";
+          intent = "MOVEMENT QUALITY";
         } else if (currentReadiness < 70) {
           intent = "BLOOD FLOW";
         } else {
@@ -2061,8 +2139,10 @@ export const createSessionFromTemplate = (
               ? constraintExercise.targetRPE.toString()
               : "";
 
-            // Progressive RPE scaling for endurance impact work
-            if (["endurance", "aerobic base", "capacity", "vo2 max", "threshold", "endurance retention"].includes(currentPhaseStr) || selectedExercise.pattern === "impact") {
+            // Taper/Competition week sets RPE strictly to 5.5
+            if (block.type === BlockType.COMPETITION) {
+              targetSetRpe = "5.5";
+            } else if (["endurance", "aerobic base", "capacity", "vo2 max", "threshold", "endurance retention"].includes(currentPhaseStr) || selectedExercise.pattern === "impact") {
               if (String(reps).toLowerCase().includes("warmup")) {
                 targetSetRpe = "2";
               } else if (String(reps).toLowerCase().includes("max effort") || String(reps).toLowerCase().includes("sprint")) {

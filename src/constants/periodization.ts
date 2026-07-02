@@ -64,7 +64,7 @@ export const BLOCK_TEMPLATES: Record<string, Partial<BlockDefinition>> = {
   [BlockType.REGENERATION]: { type: BlockType.REGENERATION, label: 'Regeneration', baseIntensity: 0.55, baseReps: '12', baseSets: 3, intensityIncrementPerWeek: 0.01 },
   [BlockType.MAX_EFFORT]: { type: BlockType.MAX_EFFORT, label: 'Max Effort', baseIntensity: 0.94, baseReps: '1-3', baseSets: 3, intensityIncrementPerWeek: 0.03 },
   [BlockType.OVERREACH]: { type: BlockType.OVERREACH, label: 'Overreach', baseIntensity: 0.82, baseReps: '8', baseSets: 5, intensityIncrementPerWeek: 0.025 },
-  [BlockType.COMPETITION]: { type: BlockType.COMPETITION, label: 'Competition', baseIntensity: 0.95, baseReps: '1', baseSets: 3, intensityIncrementPerWeek: 0 },
+  [BlockType.COMPETITION]: { type: BlockType.COMPETITION, label: 'Competition', baseIntensity: 0.75, baseReps: '1', baseSets: 3, intensityIncrementPerWeek: 0 },
   [BlockType.PURE_STRENGTH]: { type: BlockType.PURE_STRENGTH as BlockType, label: 'Pure Strength', baseIntensity: 0.85, baseReps: '3', baseSets: 5, intensityIncrementPerWeek: 0.015 },
   [BlockType.POWERBUILDING]: { type: BlockType.POWERBUILDING as BlockType, label: 'Powerbuilding', baseIntensity: 0.75, baseReps: '8', baseSets: 4, intensityIncrementPerWeek: 0.015 },
   [BlockType.LONGEVITY]: { type: BlockType.LONGEVITY as BlockType, label: 'Longevity', baseIntensity: 0.65, baseReps: '12', baseSets: 3, intensityIncrementPerWeek: 0.01 },
@@ -89,7 +89,7 @@ export const GOAL_EXPANSIONS: Record<string, { type: BlockType; ratio: number }[
     { type: BlockType.HYPERTROPHY, ratio: 0.35 },
     { type: BlockType.STRENGTH, ratio: 0.3 },
     { type: BlockType.MAX_EFFORT, ratio: 0.1 },
-    { type: BlockType.DELOAD, ratio: 0.1 }
+    { type: BlockType.COMPETITION, ratio: 0.1 }
   ],
   [BlockType.HYPERTROPHY]: [
     { type: BlockType.FOUNDATION, ratio: 0.2 },

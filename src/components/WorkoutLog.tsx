@@ -268,6 +268,9 @@ const ExerciseAccordion = ({
             if (displayIntent && displayIntent.toUpperCase().includes("HEAVY PRIMARY") && !isMain) {
               displayIntent = "HYPERTROPHY";
             }
+            if (displayIntent) {
+              displayIntent = displayIntent.replace(/[\[\]]/g, '');
+            }
 
             const isHeavyPrimary = displayIntent?.toUpperCase().includes("HEAVY PRIMARY");
             const isHypertrophy = displayIntent?.toUpperCase().includes("HYPERTROPHY");
@@ -788,7 +791,8 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
     const isCompleted = currentSet.isCompleted;
     const prescribedReps = parseInt(currentSet.baseReps || currentSet.reps) || 0;
     const isRepFailure = actualReps < prescribedReps;
-    const isRpeOvershoot = !isNaN(actualRpe) && actualRpe > targetRpe;
+    // Autoregulation is less aggressive on RPE. Require at least 1.0 overshoot to trigger intra-workout drop, unless they hit RPE 10.
+    const isRpeOvershoot = !isNaN(actualRpe) && !isNaN(targetRpe) && (actualRpe >= targetRpe + 1.0 || (actualRpe >= 10 && targetRpe < 10));
 
     // Trigger auto-regulation either on overshoot OR if we fail the rep target
     if (!isCompleted || (!isRpeOvershoot && !isRepFailure)) {

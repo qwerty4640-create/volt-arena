@@ -205,6 +205,10 @@ export const MissionBriefingModal: React.FC<MissionBriefingModalProps> = ({
                                   intentTag = "HYPERTROPHY";
                                 }
 
+                                if (intentTag) {
+                                  intentTag = intentTag.replace(/[\[\]]/g, '');
+                                }
+
                                 const isHeavyPrimary = intentTag?.toUpperCase().includes("HEAVY PRIMARY");
                                 const isHypertrophy = intentTag?.toUpperCase().includes("HYPERTROPHY");
                                 const isBloodFlow = intentTag?.toUpperCase().includes("BLOOD FLOW");

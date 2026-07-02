@@ -108,7 +108,12 @@ export const calculateSystemReadiness = (
       let rpeCount = 0;
 
       session.exercises?.forEach((ex: any) => {
-        const isCalisthenics = EXERCISE_DATABASE.find(e => e.id === ex.exerciseId)?.isCalisthenics;
+        const exDef = EXERCISE_DATABASE.find(e => e.id === ex.exerciseId);
+        const isCalisthenics = exDef?.isCalisthenics;
+        const axialScore = exDef?.axialFatigueScore !== undefined ? exDef.axialFatigueScore : 3;
+        // Base factor of 0.1 for isolation/low axial, scales up to 1.0 for heavy compounds
+        const axialFactor = 0.1 + (axialScore / 10);
+
         ex.sets?.forEach((s: any) => {
           if (s.isCompleted && !s.isWarmup) {
             let weight = parseFloat(s.weight) || 0;
@@ -119,7 +124,8 @@ export const calculateSystemReadiness = (
               weight = 0; // If they did 0 weight for a non-calisthenics, it shouldn't magically get bulk volume
             }
             const reps = parseInt(s.reps) || 0;
-            volumeVal += weight * reps;
+            // Scale the volume by the axial stress of the movement
+            volumeVal += weight * reps * axialFactor;
             const sRpe = parseFloat(s.rpe) || 0;
             if (sRpe > 0) {
               rpeSum += sRpe;
@@ -152,9 +158,9 @@ export const calculateSystemReadiness = (
   });
 
   currentFatigue = Math.min(70, currentFatigue);
-  const fatiguePenalty = 1.0 + currentFatigue;
+  const fatiguePenalty = currentFatigue;
 
-  let stressPenalty = 1.0;
+  let stressPenalty = 0.0;
   let sleepDeficit = 0;
   let subjectiveFatigueDeficit = 0;
   let sorenessMultiplier = 1.0;
@@ -163,7 +169,7 @@ export const calculateSystemReadiness = (
   if (subjectiveReadiness) {
     const t_stress = Math.max(0, (Date.now() - (subjectiveReadiness.timestamp || Date.now())) / 3600000);
     const subjectiveStressDeficit = (5 - (subjectiveReadiness.stress || 5)) * 4;
-    stressPenalty = 1.0 + subjectiveStressDeficit * Math.exp(-k_stress * t_stress);
+    stressPenalty = subjectiveStressDeficit * Math.exp(-k_stress * t_stress);
     sleepDeficit = (5 - (subjectiveReadiness.sleep || 5)) * 5;
     subjectiveFatigueDeficit = (5 - (subjectiveReadiness.fatigue || 5)) * 4;
 
@@ -172,14 +178,14 @@ export const calculateSystemReadiness = (
     else if (soreness === 2) sorenessMultiplier = 0.90;
     else if (soreness === 3) sorenessMultiplier = 0.95;
     else if (soreness === 4) sorenessMultiplier = 1.00;
-    else if (soreness >= 5) sorenessMultiplier = 1.02;
+    else if (soreness >= 5) sorenessMultiplier = 1.00;
 
     const mood = subjectiveReadiness.mood !== undefined ? subjectiveReadiness.mood : 5;
     if (mood <= 1) moodMultiplier = 0.90;
     else if (mood === 2) moodMultiplier = 0.95;
     else if (mood === 3) moodMultiplier = 1.00;
-    else if (mood === 4) moodMultiplier = 1.02;
-    else if (mood >= 5) moodMultiplier = 1.05;
+    else if (mood === 4) moodMultiplier = 1.00;
+    else if (mood >= 5) moodMultiplier = 1.00;
   }
 
   systemReadiness = 100 - sleepDeficit - fatiguePenalty - stressPenalty - subjectiveFatigueDeficit;
@@ -187,11 +193,16 @@ export const calculateSystemReadiness = (
   const currentReadiness = Math.round(Math.max(0, Math.min(100, systemReadiness)));
 
   let readinessModifier = 1.0;
-  if (currentReadiness >= 90) readinessModifier = 1.05;
-  else if (currentReadiness >= 80) readinessModifier = 1.00;
-  else if (currentReadiness >= 70) readinessModifier = 0.95;
-  else if (currentReadiness >= 50) readinessModifier = 0.90;
-  else readinessModifier = 0.80;
+  if (currentReadiness >= 80) {
+    // 80 to 100 -> 1.0
+    readinessModifier = 1.0;
+  } else if (currentReadiness >= 50) {
+    // 50 to 80 -> 0.90 to 1.0
+    readinessModifier = 0.90 + ((currentReadiness - 50) / 30) * 0.10;
+  } else {
+    // 0 to 50 -> 0.75 to 0.90
+    readinessModifier = 0.75 + (currentReadiness / 50) * 0.15;
+  }
 
   // Granular history-driven fatigue calculation to align with session generator
   let historyFatigueDiscount = 1.0;

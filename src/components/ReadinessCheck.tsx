@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Activity,
@@ -7,6 +8,8 @@ import {
   Moon,
   Heart,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   AlertTriangle,
   Zap,
   ShieldCheck,
@@ -138,6 +141,65 @@ export const ReadinessCheck = ({
 
   const [scores, setScores] = useState<Record<string, number>>({});
   const [showResult, setShowResult] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
+  const [showFormulaTooltip, setShowFormulaTooltip] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  const {
+    sorenessVal,
+    sorenessMult,
+    moodVal,
+    moodMult,
+    subjectiveFatigueDeficit,
+    calculatedSubtotal
+  } = useMemo(() => {
+    const sorenessVal = scores.soreness !== undefined ? scores.soreness : 5;
+    let sorenessMult = 1.0;
+    if (sorenessVal <= 1) sorenessMult = 0.85;
+    else if (sorenessVal === 2) sorenessMult = 0.90;
+    else if (sorenessVal === 3) sorenessMult = 0.95;
+    else if (sorenessVal === 4) sorenessMult = 1.00;
+
+    const moodVal = scores.mood !== undefined ? scores.mood : 5;
+    let moodMult = 1.0;
+    if (moodVal <= 1) moodMult = 0.90;
+    else if (moodVal === 2) moodMult = 0.95;
+    else if (moodVal === 3) moodMult = 1.00;
+    else if (moodVal === 4) moodMult = 1.00;
+
+    const subjectiveFatigueDeficit = (5 - (scores.fatigue || 5)) * 4;
+    const rawReadiness = 100 - (calibration.sleepDeficit || 0) - (calibration.fatiguePenalty || 0) - (calibration.stressPenalty || 0) - subjectiveFatigueDeficit;
+    const calculatedSubtotal = Math.max(0, rawReadiness);
+
+    return {
+      sorenessVal,
+      sorenessMult,
+      moodVal,
+      moodMult,
+      subjectiveFatigueDeficit,
+      calculatedSubtotal
+    };
+  }, [scores, calibration]);
+
+  const dynamicReadinessScore = Math.round(Math.max(0, Math.min(100, calculatedSubtotal * sorenessMult * moodMult)));
+
+  const dynamicReadinessModifier = useMemo(() => {
+    let finalReadinessModifier = 1.0;
+    if (dynamicReadinessScore >= 80) {
+      finalReadinessModifier = 1.0;
+    } else if (dynamicReadinessScore >= 50) {
+      finalReadinessModifier = 0.90 + ((dynamicReadinessScore - 50) / 30) * 0.10;
+    } else {
+      finalReadinessModifier = 0.75 + (dynamicReadinessScore / 50) * 0.15;
+    }
+    // Note: To match recoveryEngine accurately, we would need historyFatigueDiscount. 
+    // But since HMS is an authoritative override, we just pass this base modifier.
+    return finalReadinessModifier;
+  }, [dynamicReadinessScore]);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const totalScore = (Object.values(scores) as number[]).reduce(
     (a, b) => a + b,
@@ -241,8 +303,8 @@ export const ReadinessCheck = ({
 
   const handleComplete = () => {
     onComplete(
-      calibration.readiness,
-      calibration.readinessModifier,
+      dynamicReadinessScore,
+      dynamicReadinessModifier,
       targetRpe,
       {
         sleep: scores.sleep,
@@ -261,7 +323,8 @@ export const ReadinessCheck = ({
   }, [showResult]);
 
   return (
-    <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
+    <>
+      <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -352,103 +415,213 @@ export const ReadinessCheck = ({
               >
                 <div
                   className={cn(
-                    "p-4 md:p-6 border flex items-center gap-6 md:gap-8",
+                    "p-4 md:p-6 border flex items-start gap-4 md:gap-6",
                     scenario.bg,
                     scenario.border,
                   )}
                 >
+                  <div className={cn("p-2.5 bg-white/5 mt-0.5 shrink-0", scenario.color)}>
+                    <scenario.icon size={18} />
+                  </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 mb-1">
-                      <div className={cn("p-2 bg-white/10", scenario.color)}>
-                        <scenario.icon size={16} />
+                    <h3
+                      className={cn(
+                        "font-headline text-base md:text-lg font-black uppercase tracking-tight leading-tight",
+                        isRedline ? "text-crimson" : scenario.color,
+                      )}
+                    >
+                      YOUR READINESS IS {dynamicReadinessScore}%.
+                    </h3>
+                    <p className="text-xs text-zinc-400 mt-2 leading-relaxed">
+                      Based on your response, you are ready for {t(scenario.title)}. Take it easy on the warm ups and focus on technique.
+                    </p>
+                    <p className="text-xs text-zinc-400 mt-3 leading-relaxed">
+                      Stay at modified weight to prevent excessive neural fatigue.
+                    </p>
+                  </div>
+                </div>
+
+                {(() => {
+                  return (
+                    <div className="space-y-6">
+                      {/* Metrics Side-by-Side Grid */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="p-4 bg-zinc-900/40 border border-white/5 flex flex-col justify-between h-full">
+                          <div>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                              WEIGHT MODIFIER
+                            </span>
+                            <span className="text-2xl font-black text-volt font-headline mt-1.5 mb-2 block leading-none">
+                              {Math.round(dynamicReadinessModifier * 100)}%
+                            </span>
+                          </div>
+                          <span className="text-xs text-zinc-400 leading-relaxed block">
+                            Your target training weights are auto-scaled by {Math.round(dynamicReadinessModifier * 100)}% to align with current neurological drive for primary lift.
+                          </span>
+                        </div>
+
+                        <div className="p-4 bg-zinc-900/40 border border-white/5 flex flex-col justify-between h-full">
+                          <div>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                              SRPE CEILING
+                            </span>
+                            <span className="text-2xl font-black text-volt font-headline mt-1.5 mb-2 block leading-none">
+                              {targetRpe}
+                            </span>
+                          </div>
+                          <span className="text-xs text-zinc-400 leading-relaxed block">
+                            Your Session RPE is capped at {targetRpe} to prevent excessive muscular/neural fatigue. Stay at or under RPE {targetRpe} on each set.
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <h3
-                          className={cn(
-                            "font-headline text-base md:text-lg font-black uppercase  tracking-tight leading-tight",
-                            isRedline ? "text-crimson" : scenario.color,
-                          )}
+
+                      {/* Expandable Accordion for Diagnostics */}
+                      <div className="border border-white/5 bg-surface-container-lowest overflow-hidden">
+                        <button
+                          onClick={() => setShowDetails(!showDetails)}
+                          className="w-full py-4 bg-white/[0.02] hover:bg-white/5 flex items-center justify-between px-4 text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-white transition-all rounded-none"
                         >
-                          {t("readiness.score_result", {
-                            score: calibration.readiness,
-                          })}
-                        </h3>
-                        <p className="text-xs text-zinc-400 mt-2">
-                          {t("readiness.recommendation_msg", {
-                            scenario: t(scenario.title).toLowerCase(),
-                          })}
-                        </p>
+                          <span className="flex items-center gap-2">
+                            <Info size={14} className="text-volt" />
+                            {showDetails ? "Hide Calculation Breakdown" : "View Calculation Breakdown"}
+                          </span>
+                          <ChevronDown
+                            size={14}
+                            className={cn(
+                              "transition-transform duration-300 text-zinc-400",
+                              showDetails && "rotate-180 text-volt"
+                            )}
+                          />
+                        </button>
+
+                        <AnimatePresence>
+                          {showDetails && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: "auto", opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.25, ease: "easeInOut" }}
+                              className="border-t border-white/5 overflow-hidden"
+                            >
+                              <div className="p-4 space-y-6 text-xs leading-relaxed text-zinc-300">
+                                {/* Section 1: Why It Matters */}
+                                <div>
+                                  <h4 className="font-headline font-bold text-base text-volt mb-1.5">
+                                    1. Why these metrics matter
+                                  </h4>
+                                  <p className="text-xs text-zinc-400">
+                                    These numbers serve as automatic regulators for your workout. Instead of forcing fixed loads, the system scales weights, sets, and reps in real-time to align with your current neurological and recovery capacities. This optimizes strength progression while preventing central nervous system (CNS) burnout.
+                                  </p>
+                                </div>
+
+                                {/* Section 2: Why Applied */}
+                                <div>
+                                  <h4 className="font-headline font-bold text-base text-volt mb-1.5">
+                                    2. Why scaling was applied
+                                  </h4>
+                                  <p className="text-xs text-zinc-400">
+                                    The system tracks accumulated fatigue decay from the last 5 sessions and combines it with today’s subjective biometrics, such as sleep, stress, fatigue, soreness, and motivation to map your overall recovery state.
+                                  </p>
+                                </div>
+
+                                {/* Section 3: Diagnostic Calculation Breakdown */}
+                                <div>
+                                  <div className="flex items-center gap-2 mb-1.5">
+                                    <h4 className="font-headline font-bold text-base text-volt">
+                                      3. Net readiness calculation
+                                    </h4>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        setShowFormulaTooltip(true);
+                                      }}
+                                      className="text-zinc-500 hover:text-white transition-colors"
+                                      title="Explain metrics"
+                                    >
+                                      <Info size={14} className="text-volt" />
+                                    </button>
+                                  </div>
+
+                                  <div className="bg-void/40 border border-white/5 p-4 space-y-4 font-mono text-xs text-zinc-400">
+                                    {/* Subtraction Table */}
+                                    <div className="space-y-2">
+                                      <div className="flex justify-between">
+                                        <span>Baseline Capacity</span>
+                                        <span className="text-white">100.0</span>
+                                      </div>
+                                      {(calibration.sleepDeficit || 0) > 0 && (
+                                        <div className="flex justify-between text-crimson">
+                                          <span>- Sleep Deficit</span>
+                                          <span>-{calibration.sleepDeficit?.toFixed(1)}</span>
+                                        </div>
+                                      )}
+                                      {(calibration.fatiguePenalty || 0) > 0 && (
+                                        <div className="flex justify-between text-crimson">
+                                          <span>- Axial Fatigue Drain</span>
+                                          <span>-{calibration.fatiguePenalty?.toFixed(1)}</span>
+                                        </div>
+                                      )}
+                                      {(calibration.stressPenalty || 0) > 0 && (
+                                        <div className="flex justify-between text-crimson">
+                                          <span>- Systemic Life Stress</span>
+                                          <span>-{calibration.stressPenalty?.toFixed(1)}</span>
+                                        </div>
+                                      )}
+                                      {subjectiveFatigueDeficit > 0 && (
+                                        <div className="flex justify-between text-crimson">
+                                          <span>- Subjective Fatigue</span>
+                                          <span>-{subjectiveFatigueDeficit.toFixed(1)}</span>
+                                        </div>
+                                      )}
+                                      <div className="flex justify-between border-t border-b border-white/10 py-2.5 font-bold text-white items-center">
+                                        <div className="flex items-center gap-1.5">
+                                          <span>Raw Subtotal</span>
+                                          <button
+                                            type="button"
+                                            onClick={(e) => {
+                                              e.preventDefault();
+                                              e.stopPropagation();
+                                              setShowFormulaTooltip(true);
+                                            }}
+                                            className="text-zinc-500 hover:text-white transition-colors"
+                                            title="Explain calculation"
+                                          >
+                                            <Info size={14} className="text-volt cursor-pointer" />
+                                          </button>
+                                        </div>
+                                        <span>{calculatedSubtotal.toFixed(1)}</span>
+                                      </div>
+                                    </div>
+
+                                    {/* Multipliers */}
+                                    <div className="space-y-2 py-1">
+                                      <div className="flex justify-between">
+                                        <span>x Soreness Multiplier</span>
+                                        <span className="text-volt">x{sorenessMult.toFixed(2)}</span>
+                                      </div>
+                                      <div className="flex justify-between">
+                                        <span>x Motivation Multiplier</span>
+                                        <span className="text-volt">x{moodMult.toFixed(2)}</span>
+                                      </div>
+                                    </div>
+
+                                    {/* Final equation */}
+                                    <div className="border-t border-white/10 pt-3 flex justify-between items-baseline">
+                                      <span className="text-volt font-headline font-bold text-base tracking-wider">Net Readiness</span>
+                                      <span className="text-volt font-headline font-black text-2xl tracking-tight">{dynamicReadinessScore}%</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </div>
                     </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4 p-4 bg-surface-container-lowest border border-white/5">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Info size={14} className="text-zinc-500" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-white">
-                      System Readiness Formula
-                    </span>
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-zinc-400">Baseline Capacity</span>
-                      <span className="font-mono text-white">100.0</span>
-                    </div>
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-zinc-400">Sleep Deficit</span>
-                      <span className="font-mono text-crimson">
-                        -{calibration.sleepDeficit?.toFixed(1) || "0.0"}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-zinc-400">Axial Fatigue Drain</span>
-                      <span className="font-mono text-crimson">
-                        -{calibration.fatiguePenalty?.toFixed(1) || "0.0"}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center text-sm border-b border-white/10 pb-2">
-                      <span className="text-zinc-400">Systemic Stress</span>
-                      <span className="font-mono text-crimson">
-                        -{calibration.stressPenalty?.toFixed(1) || "0.0"}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center text-sm pt-1">
-                      <span className="text-white font-bold uppercase tracking-widest text-[10px]">
-                        Net Readiness
-                      </span>
-                      <span className="font-mono text-volt font-bold">
-                        {calibration.readiness}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-white/5">
-                    <div className="p-3 bg-white/5 flex flex-col gap-1">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
-                        System Modifier
-                      </span>
-                      <span className="text-xl font-black text-volt">
-                        {Math.round(calibration.readinessModifier * 100)}%
-                      </span>
-                    </div>
-                    <div className="p-3 bg-white/5 flex flex-col gap-1">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
-                        sRPE Ceiling
-                      </span>
-                      <span className="text-xl font-black text-volt">
-                        {targetRpe}
-                      </span>
-                    </div>
-                  </div>
-
-                  <p className="text-[10px] text-zinc-500 uppercase font-bold mt-2 leading-relaxed">
-                    The system automatically calculates exponential decay
-                    factors based on your last logged sessions. Manual override
-                    has been disabled to ensure autonomous progressive overload.
-                  </p>
-                </div>
+                  );
+                })()}
               </motion.div>
             )}
           </AnimatePresence>
@@ -479,5 +652,95 @@ export const ReadinessCheck = ({
         </div>
       </motion.div>
     </div>
+
+    {mounted && createPortal(
+      <AnimatePresence>
+        {showFormulaTooltip && (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-6">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowFormulaTooltip(false)}
+              className="absolute inset-0 bg-void/90 backdrop-blur-xl"
+            />
+            
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-sm glass-panel border-volt/30 p-6 shadow-[0_0_50px_var(--primary-glow)]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-1.5 h-6 bg-volt" />
+                  <h2 className="text-xl font-black uppercase tracking-tight text-white">
+                    Calculation Breakdown
+                  </h2>
+                </div>
+                <button
+                  onClick={() => setShowFormulaTooltip(false)}
+                  className="text-zinc-500 hover:text-white transition-colors"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              
+              <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
+                <div className="p-4 bg-volt/5 border border-volt/10 space-y-3">
+                  <p className="text-xs font-bold text-volt uppercase tracking-widest">
+                    Formula & Drains
+                  </p>
+                  <div className="space-y-3 text-xs leading-relaxed text-zinc-300">
+                    <div>
+                      <strong className="text-white">Sleep Deficit:</strong> Score reduction calculated from difference between targeted sleep hours and actual logged sleep.
+                    </div>
+                    <div>
+                      <strong className="text-white">Axial Fatigue Drain:</strong> Cumulative fatigue calculated from your last 5 workouts to protect CNS.
+                    </div>
+                    <div>
+                      <strong className="text-white">Systemic Life Stress:</strong> CNS load penalty mapped directly from current subjective mental/work stress.
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-zinc-900/50 border border-white/5 space-y-3">
+                  <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest">
+                    Autoregulation Multipliers
+                  </p>
+                  <div className="space-y-3 text-xs leading-relaxed text-zinc-400">
+                    <div>
+                      <strong className="text-white">Soreness Multiplier:</strong> Muscle recovery factor (soreness 1-5 scales from 0.85x up to 1.02x).
+                    </div>
+                    <div>
+                      <strong className="text-white">Motivation Multiplier:</strong> CNS output scale based on neurological drive (motivation 1-5 scales from 0.90x up to 1.05x).
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-volt/10 border border-volt/30 space-y-2">
+                  <p className="text-xs font-bold text-volt uppercase tracking-widest">
+                    Raw Subtotal Adjustment
+                  </p>
+                  <p className="text-xs leading-relaxed text-zinc-100 font-mono">
+                    the raw subtotal is adjusted by your muscle soreness score ({sorenessVal}/5) and motivation level ({moodVal}/5) to yield the final net readiness of {dynamicReadinessScore}%
+                  </p>
+                </div>
+              </div>
+
+              <button 
+                onClick={() => setShowFormulaTooltip(false)}
+                className="w-full mt-6 btn-secondary py-4"
+              >
+                <X size={16} className="inline mr-2" /> {t('common.close')}
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>,
+      document.body
+    )}
+  </>
   );
 };
