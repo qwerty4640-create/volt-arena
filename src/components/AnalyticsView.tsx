@@ -247,7 +247,13 @@ export const AnalyticsView = () => {
     history.forEach(session => {
       session.exercises?.forEach(ex => {
         if (ex.name) {
-          names.add(ex.name);
+          const clean = ex.name
+            .replace(/\[?(HEAVY PRIMARY|HYPERTROPHY|ACTIVE RECOVERY|MOVEMENT QUALITY|BLOOD FLOW)\]?/gi, '')
+            .replace(/\s+/g, ' ')
+            .trim();
+          if (clean) {
+            names.add(clean);
+          }
         }
       });
     });
@@ -740,12 +746,14 @@ export const AnalyticsView = () => {
                                         {!customLifts.some(cl => isExerciseMatch(cl, exerciseSearchQuery)) && query && (
                                           <button
                                             onClick={() => {
-                                              setCustomLifts(prev => [...prev, exerciseSearchQuery.trim()]);
+                                              const cleanedQuery = exerciseSearchQuery.trim().replace(/\[?(HEAVY PRIMARY|HYPERTROPHY|ACTIVE RECOVERY|MOVEMENT QUALITY|BLOOD FLOW)\]?/gi, '').replace(/\s+/g, ' ').trim();
+                                              setCustomLifts(prev => [...prev, cleanedQuery]);
                                               setExerciseSearchQuery('');
                                             }}
                                             onKeyDown={(e) => {
                                               if (e.key === 'Enter') {
-                                                  setCustomLifts(prev => [...prev, exerciseSearchQuery.trim()]);
+                                                  const cleanedQuery = exerciseSearchQuery.trim().replace(/\[?(HEAVY PRIMARY|HYPERTROPHY|ACTIVE RECOVERY|MOVEMENT QUALITY|BLOOD FLOW)\]?/gi, '').replace(/\s+/g, ' ').trim();
+                                               setCustomLifts(prev => [...prev, cleanedQuery]);
                                                   setExerciseSearchQuery('');
                                               }
                                             }}

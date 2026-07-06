@@ -212,7 +212,7 @@ export const TrainingView = ({
         "side_plank",
       ].includes(newDef.id);
 
-    if (isCalisthenic) {
+    if (isCalisthenic && lastWeight === 0) {
       updatedSets = updatedSets.map(s => ({
         ...s,
         weight: "0",
@@ -715,7 +715,7 @@ export const TrainingView = ({
                 ? (isEnduranceMode ? (
                     <span aria-live="assertive">Phase {currentSetIdx + 1} of {displayTotalSets} • {displayTargetReps}</span>
                   ) : (
-                    <span aria-live="assertive">{t('analysis.setOfPattern', { current: currentSetIdx + 1, total: displayTotalSets, weight: displayTargetWeight, unit: weightUnit })} RPE {sessionRpe}</span>
+                    <span aria-live="assertive">{t('analysis.setOfPattern', { current: currentSetIdx + 1, total: displayTotalSets, weight: displayTargetWeight, unit: weightUnit })} RPE {currentEx?.sets?.[currentSetIdx]?.rpe || sessionRpe}</span>
                   ))
                 : (() => {
                     const l = mainLift || currentEx;
@@ -751,9 +751,11 @@ export const TrainingView = ({
                       return `Top Set: 1x${topReps} @ ${topWeight}${weightUnit} (RPE ${topRpe}) + Back-Off: ${backOffSets.length}x${backReps} @ ${backWeight}${weightUnit} (RPE ${backRpe})`;
                     }
                     if (isTimedExercise(l.name || '')) {
-                      return `${displayTotalSets} sets x ${displayTargetReps} sec @ ${displayTargetWeight}${weightUnit} RPE ${sessionRpe}`;
+                      const exerciseRpe = l.sets?.[0]?.rpe || l.sets?.[0]?.baseRpe || sessionRpe;
+                      return `${displayTotalSets} sets x ${displayTargetReps} sec @ ${displayTargetWeight}${weightUnit} RPE ${exerciseRpe}`;
                     }
-                    return `${t('analysis.repsAtPattern', { sets: displayTotalSets, reps: displayTargetReps, weight: displayTargetWeight, unit: weightUnit })} RPE ${sessionRpe}`;
+                    const exerciseRpe = l.sets?.[0]?.rpe || l.sets?.[0]?.baseRpe || sessionRpe;
+                    return `${t('analysis.repsAtPattern', { sets: displayTotalSets, reps: displayTargetReps, weight: displayTargetWeight, unit: weightUnit })} RPE ${exerciseRpe}`;
                   })()
               }
             </span>

@@ -17,6 +17,7 @@ export interface ExerciseDefinition {
   gymRequired?: boolean;
   isUnilateral?: boolean;
   isCalisthenics?: boolean;
+  isDumbbell?: boolean;
   // Ingested properties from ExerciseDB
   gifUrl?: string;
   bodyPart?: string;
@@ -49,7 +50,15 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     "muscles": [
       "Quads"
     ],
-    "isCalisthenics": true
+    "isCalisthenics": true,
+    "gifUrl": "https://static.exercisedb.dev/media/xdYPUtE.gif",
+    "bodyPart": "upper legs",
+    "equipment": "body weight",
+    "targetMuscle": "quads",
+    "secondaryMuscles": [
+      "calves",
+      "glutes"
+    ]
   },
   {
     "id": "reverse_nordic_curl",
@@ -73,7 +82,15 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     "muscles": [
       "Quads"
     ],
-    "isCalisthenics": true
+    "isCalisthenics": true,
+    "gifUrl": "https://static.exercisedb.dev/media/E4PwJqI.gif",
+    "bodyPart": "upper legs",
+    "equipment": "body weight",
+    "targetMuscle": "hamstrings",
+    "secondaryMuscles": [
+      "glutes",
+      "calves"
+    ]
   },
   {
     "id": "box_jumps",
@@ -98,7 +115,16 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     ],
     "energySystem": "anaerobic_alactic",
     "axialFatigueScore": 2,
-    "connectiveTissueStressScore": 7
+    "connectiveTissueStressScore": 7,
+    "gifUrl": "https://static.exercisedb.dev/media/iPm26QU.gif",
+    "bodyPart": "lower legs",
+    "equipment": "body weight",
+    "targetMuscle": "calves",
+    "secondaryMuscles": [
+      "quadriceps",
+      "hamstrings",
+      "glutes"
+    ]
   },
   {
     "id": "med_ball_slams",
@@ -121,7 +147,16 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     ],
     "energySystem": "anaerobic_alactic",
     "axialFatigueScore": 1,
-    "connectiveTissueStressScore": 3
+    "connectiveTissueStressScore": 3,
+    "gifUrl": "https://static.exercisedb.dev/media/ktf3nvW.gif",
+    "bodyPart": "chest",
+    "equipment": "kettlebell",
+    "targetMuscle": "pectorals",
+    "secondaryMuscles": [
+      "triceps",
+      "shoulders",
+      "core"
+    ]
   },
   {
     "id": "kettlebell_swings",
@@ -175,7 +210,15 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     ],
     "energySystem": "aerobic",
     "axialFatigueScore": 0,
-    "connectiveTissueStressScore": 1
+    "connectiveTissueStressScore": 1,
+    "gifUrl": "https://static.exercisedb.dev/media/VO2qeJg.gif",
+    "bodyPart": "upper legs",
+    "equipment": "body weight",
+    "targetMuscle": "adductors",
+    "secondaryMuscles": [
+      "obliques",
+      "glutes"
+    ]
   },
   {
     "id": "cat_cow",
@@ -198,7 +241,15 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     ],
     "energySystem": "aerobic",
     "axialFatigueScore": 0,
-    "connectiveTissueStressScore": 1
+    "connectiveTissueStressScore": 1,
+    "gifUrl": "https://static.exercisedb.dev/media/CosupLu.gif",
+    "bodyPart": "waist",
+    "equipment": "body weight",
+    "targetMuscle": "abs",
+    "secondaryMuscles": [
+      "obliques",
+      "shoulders"
+    ]
   },
   {
     "id": "worlds_greatest_stretch",
@@ -263,7 +314,17 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     ],
     "energySystem": "anaerobic_alactic",
     "axialFatigueScore": 9,
-    "connectiveTissueStressScore": 8
+    "connectiveTissueStressScore": 8,
+    "gifUrl": "https://static.exercisedb.dev/media/qXTaZnJ.gif",
+    "bodyPart": "upper legs",
+    "equipment": "barbell",
+    "targetMuscle": "glutes",
+    "secondaryMuscles": [
+      "quadriceps",
+      "hamstrings",
+      "calves",
+      "core"
+    ]
   },
   {
     "id": "squat_safety_bar",
@@ -292,7 +353,17 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     ],
     "energySystem": "anaerobic_alactic",
     "axialFatigueScore": 7,
-    "connectiveTissueStressScore": 6
+    "connectiveTissueStressScore": 6,
+    "gifUrl": "https://static.exercisedb.dev/media/Gnfo4FM.gif",
+    "bodyPart": "upper legs",
+    "equipment": "barbell",
+    "targetMuscle": "glutes",
+    "secondaryMuscles": [
+      "quadriceps",
+      "hamstrings",
+      "calves",
+      "core"
+    ]
   },
   {
     "id": "squat_high_bar",
@@ -320,7 +391,17 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     ],
     "energySystem": "anaerobic_alactic",
     "axialFatigueScore": 8,
-    "connectiveTissueStressScore": 7
+    "connectiveTissueStressScore": 7,
+    "gifUrl": "https://static.exercisedb.dev/media/zG0zs85.gif",
+    "bodyPart": "upper legs",
+    "equipment": "barbell",
+    "targetMuscle": "glutes",
+    "secondaryMuscles": [
+      "quadriceps",
+      "hamstrings",
+      "calves",
+      "core"
+    ]
   },
   {
     "id": "bodyweight_squat",
@@ -348,7 +429,15 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     ],
     "energySystem": "aerobic",
     "axialFatigueScore": 1,
-    "connectiveTissueStressScore": 2
+    "connectiveTissueStressScore": 2,
+    "gifUrl": "https://static.exercisedb.dev/media/75Bgtjy.gif",
+    "bodyPart": "waist",
+    "equipment": "body weight",
+    "targetMuscle": "abs",
+    "secondaryMuscles": [
+      "quadriceps",
+      "glutes"
+    ]
   },
   {
     "id": "goblet_squat",
@@ -376,7 +465,17 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     ],
     "energySystem": "anaerobic_lactic",
     "axialFatigueScore": 3,
-    "connectiveTissueStressScore": 3
+    "connectiveTissueStressScore": 3,
+    "gifUrl": "https://static.exercisedb.dev/media/yn8yg1r.gif",
+    "bodyPart": "upper legs",
+    "isDumbbell": true,
+    "equipment": "dumbbell",
+    "targetMuscle": "quads",
+    "secondaryMuscles": [
+      "glutes",
+      "hamstrings",
+      "calves"
+    ]
   },
   {
     "id": "leg_press",
@@ -404,7 +503,16 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     ],
     "energySystem": "anaerobic_lactic",
     "axialFatigueScore": 1,
-    "connectiveTissueStressScore": 4
+    "connectiveTissueStressScore": 4,
+    "gifUrl": "https://static.exercisedb.dev/media/10Z2DXU.gif",
+    "bodyPart": "upper legs",
+    "equipment": "sled machine",
+    "targetMuscle": "glutes",
+    "secondaryMuscles": [
+      "quadriceps",
+      "hamstrings",
+      "calves"
+    ]
   },
   {
     "id": "hack_squat",
@@ -431,7 +539,16 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     ],
     "energySystem": "anaerobic_lactic",
     "axialFatigueScore": 2,
-    "connectiveTissueStressScore": 5
+    "connectiveTissueStressScore": 5,
+    "gifUrl": "https://static.exercisedb.dev/media/Qa55kX1.gif",
+    "bodyPart": "upper legs",
+    "equipment": "sled machine",
+    "targetMuscle": "glutes",
+    "secondaryMuscles": [
+      "quadriceps",
+      "hamstrings",
+      "calves"
+    ]
   },
   {
     "id": "landmine_squat",
@@ -459,7 +576,16 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     ],
     "energySystem": "anaerobic_lactic",
     "axialFatigueScore": 3,
-    "connectiveTissueStressScore": 3
+    "connectiveTissueStressScore": 3,
+    "gifUrl": "https://static.exercisedb.dev/media/pkSoCW9.gif",
+    "bodyPart": "upper legs",
+    "equipment": "barbell",
+    "targetMuscle": "glutes",
+    "secondaryMuscles": [
+      "quadriceps",
+      "hamstrings",
+      "calves"
+    ]
   },
   {
     "id": "landmine_goblet_squat",
@@ -486,7 +612,17 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     ],
     "energySystem": "anaerobic_lactic",
     "axialFatigueScore": 3,
-    "connectiveTissueStressScore": 3
+    "connectiveTissueStressScore": 3,
+    "gifUrl": "https://static.exercisedb.dev/media/yn8yg1r.gif",
+    "bodyPart": "upper legs",
+    "isDumbbell": true,
+    "equipment": "dumbbell",
+    "targetMuscle": "quads",
+    "secondaryMuscles": [
+      "glutes",
+      "hamstrings",
+      "calves"
+    ]
   },
   {
     "id": "pistol_squat",
@@ -516,7 +652,16 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     ],
     "energySystem": "anaerobic_lactic",
     "axialFatigueScore": 2,
-    "connectiveTissueStressScore": 6
+    "connectiveTissueStressScore": 6,
+    "gifUrl": "https://static.exercisedb.dev/media/nqs5HGV.gif",
+    "bodyPart": "upper legs",
+    "equipment": "body weight",
+    "targetMuscle": "glutes",
+    "secondaryMuscles": [
+      "quadriceps",
+      "hamstrings",
+      "calves"
+    ]
   },
   {
     "id": "standing_calf_raise",
@@ -540,9 +685,9 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     "muscles": [
       "Calves"
     ],
-    "gifUrl": "https://static.exercisedb.dev/media/yl2IYyy.gif",
+    "gifUrl": "https://static.exercisedb.dev/media/8ozhUIZ.gif",
     "bodyPart": "lower legs",
-    "equipment": "cable",
+    "equipment": "barbell",
     "targetMuscle": "calves",
     "secondaryMuscles": [
       "hamstrings",
@@ -576,6 +721,7 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     ],
     "gifUrl": "https://static.exercisedb.dev/media/RRWFUcw.gif",
     "bodyPart": "upper legs",
+    "isDumbbell": true,
     "equipment": "dumbbell",
     "targetMuscle": "glutes",
     "secondaryMuscles": [
@@ -609,8 +755,16 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Triceps"
     ],
     "energySystem": "anaerobic_alactic",
-    "axialFatigueScore": 6,
-    "connectiveTissueStressScore": 5
+    "axialFatigueScore": 2,
+    "connectiveTissueStressScore": 5,
+    "gifUrl": "https://static.exercisedb.dev/media/EIeI8Vf.gif",
+    "bodyPart": "chest",
+    "equipment": "barbell",
+    "targetMuscle": "pectorals",
+    "secondaryMuscles": [
+      "triceps",
+      "shoulders"
+    ]
   },
   {
     "id": "bicep_cable_curl",
@@ -633,6 +787,13 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     ],
     "muscles": [
       "Biceps"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/G08RZcQ.gif",
+    "bodyPart": "upper arms",
+    "equipment": "cable",
+    "targetMuscle": "biceps",
+    "secondaryMuscles": [
+      "forearms"
     ]
   },
   {
@@ -658,6 +819,7 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     ],
     "gifUrl": "https://static.exercisedb.dev/media/DsgkuIt.gif",
     "bodyPart": "shoulders",
+    "isDumbbell": true,
     "equipment": "dumbbell",
     "targetMuscle": "delts",
     "secondaryMuscles": [
@@ -685,6 +847,13 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     ],
     "muscles": [
       "Triceps"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/KWdF2JI.gif",
+    "bodyPart": "upper arms",
+    "equipment": "cable",
+    "targetMuscle": "triceps",
+    "secondaryMuscles": [
+      "shoulders"
     ]
   },
   {
@@ -707,6 +876,13 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     ],
     "muscles": [
       "Quads"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/my33uHU.gif",
+    "bodyPart": "upper legs",
+    "equipment": "leverage machine",
+    "targetMuscle": "quads",
+    "secondaryMuscles": [
+      "hamstrings"
     ]
   },
   {
@@ -729,6 +905,13 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     ],
     "muscles": [
       "Hamstrings"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/Zg3XY7P.gif",
+    "bodyPart": "upper legs",
+    "equipment": "leverage machine",
+    "targetMuscle": "hamstrings",
+    "secondaryMuscles": [
+      "calves"
     ]
   },
   {
@@ -753,6 +936,14 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     "muscles": [
       "Chest",
       "Triceps"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/DOoWcnA.gif",
+    "bodyPart": "chest",
+    "equipment": "leverage machine",
+    "targetMuscle": "pectorals",
+    "secondaryMuscles": [
+      "triceps",
+      "shoulders"
     ]
   },
   {
@@ -775,6 +966,14 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     ],
     "muscles": [
       "Chest"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/0CXGHya.gif",
+    "bodyPart": "chest",
+    "equipment": "cable",
+    "targetMuscle": "pectorals",
+    "secondaryMuscles": [
+      "deltoids",
+      "triceps"
     ]
   },
   {
@@ -801,6 +1000,7 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     ],
     "gifUrl": "https://static.exercisedb.dev/media/yz9nUhF.gif",
     "bodyPart": "chest",
+    "isDumbbell": true,
     "equipment": "dumbbell",
     "targetMuscle": "pectorals",
     "secondaryMuscles": [
@@ -831,9 +1031,9 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Shoulders",
       "Triceps"
     ],
-    "gifUrl": "https://static.exercisedb.dev/media/5v7KYld.gif",
+    "gifUrl": "https://static.exercisedb.dev/media/3TZduzM.gif",
     "bodyPart": "chest",
-    "equipment": "smith machine",
+    "equipment": "barbell",
     "targetMuscle": "pectorals",
     "secondaryMuscles": [
       "shoulders",
@@ -866,6 +1066,7 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     ],
     "gifUrl": "https://static.exercisedb.dev/media/SpYC0Kp.gif",
     "bodyPart": "chest",
+    "isDumbbell": true,
     "equipment": "dumbbell",
     "targetMuscle": "pectorals",
     "secondaryMuscles": [
@@ -894,6 +1095,14 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     "muscles": [
       "Chest",
       "Triceps"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/neonEDL.gif",
+    "bodyPart": "chest",
+    "equipment": "barbell",
+    "targetMuscle": "pectorals",
+    "secondaryMuscles": [
+      "deltoids",
+      "triceps"
     ]
   },
   {
@@ -918,7 +1127,7 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Triceps",
       "Chest"
     ],
-    "gifUrl": "https://static.exercisedb.dev/media/WcHl7ru.gif",
+    "gifUrl": "https://static.exercisedb.dev/media/yB9SvIF.gif",
     "bodyPart": "upper arms",
     "equipment": "smith machine",
     "targetMuscle": "triceps",
@@ -950,6 +1159,15 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Upper Chest",
       "Shoulders",
       "Triceps"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/ns0SIbU.gif",
+    "bodyPart": "chest",
+    "isDumbbell": true,
+    "equipment": "dumbbell",
+    "targetMuscle": "pectorals",
+    "secondaryMuscles": [
+      "shoulders",
+      "triceps"
     ]
   },
   {
@@ -1010,6 +1228,15 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Chest",
       "Core",
       "Triceps"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/I4hDWkc.gif",
+    "bodyPart": "chest",
+    "equipment": "body weight",
+    "targetMuscle": "pectorals",
+    "secondaryMuscles": [
+      "triceps",
+      "deltoids",
+      "core"
     ]
   },
   {
@@ -1071,6 +1298,15 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Chest",
       "Shoulders",
       "Triceps"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/mAYqY4M.gif",
+    "bodyPart": "chest",
+    "equipment": "body weight",
+    "targetMuscle": "pectorals",
+    "secondaryMuscles": [
+      "shoulders",
+      "triceps",
+      "core"
     ]
   },
   {
@@ -1099,6 +1335,14 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Lower Back",
       "Traps",
       "Forearms"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/ila4NZS.gif",
+    "bodyPart": "upper legs",
+    "equipment": "barbell",
+    "targetMuscle": "glutes",
+    "secondaryMuscles": [
+      "hamstrings",
+      "lower back"
     ]
   },
   {
@@ -1125,6 +1369,15 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Glutes",
       "Quads",
       "Lower Back"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/KgI0tqW.gif",
+    "bodyPart": "upper legs",
+    "equipment": "barbell",
+    "targetMuscle": "glutes",
+    "secondaryMuscles": [
+      "hamstrings",
+      "quadriceps",
+      "lower back"
     ]
   },
   {
@@ -1185,6 +1438,14 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Hamstrings",
       "Glutes",
       "Lower Back"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/wQ2c4XD.gif",
+    "bodyPart": "upper legs",
+    "equipment": "barbell",
+    "targetMuscle": "glutes",
+    "secondaryMuscles": [
+      "hamstrings",
+      "lower back"
     ]
   },
   {
@@ -1209,6 +1470,14 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Hamstrings",
       "Glutes",
       "Lower Back"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/hrVQWvE.gif",
+    "bodyPart": "upper legs",
+    "equipment": "barbell",
+    "targetMuscle": "hamstrings",
+    "secondaryMuscles": [
+      "glutes",
+      "lower back"
     ]
   },
   {
@@ -1237,6 +1506,7 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     ],
     "gifUrl": "https://static.exercisedb.dev/media/rR0LJzx.gif",
     "bodyPart": "upper legs",
+    "isDumbbell": true,
     "equipment": "dumbbell",
     "targetMuscle": "glutes",
     "secondaryMuscles": [
@@ -1267,6 +1537,14 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Shoulders (Deltoids)",
       "Triceps",
       "Upper Chest"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/wdRZISl.gif",
+    "bodyPart": "shoulders",
+    "equipment": "barbell",
+    "targetMuscle": "delts",
+    "secondaryMuscles": [
+      "triceps",
+      "upper back"
     ]
   },
   {
@@ -1293,6 +1571,15 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Triceps",
       "Quads",
       "Core"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/FS63wTN.gif",
+    "bodyPart": "shoulders",
+    "isDumbbell": true,
+    "equipment": "dumbbell",
+    "targetMuscle": "delts",
+    "secondaryMuscles": [
+      "triceps",
+      "core"
     ]
   },
   {
@@ -1317,6 +1604,15 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     "muscles": [
       "Shoulders",
       "Triceps"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/84RyJf8.gif",
+    "bodyPart": "shoulders",
+    "isDumbbell": true,
+    "equipment": "dumbbell",
+    "targetMuscle": "delts",
+    "secondaryMuscles": [
+      "triceps",
+      "upper back"
     ]
   },
   {
@@ -1341,6 +1637,15 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Shoulders",
       "Triceps",
       "Core"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/A6wtbuL.gif",
+    "bodyPart": "shoulders",
+    "isDumbbell": true,
+    "equipment": "dumbbell",
+    "targetMuscle": "delts",
+    "secondaryMuscles": [
+      "triceps",
+      "upper back"
     ]
   },
   {
@@ -1367,6 +1672,7 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     ],
     "gifUrl": "https://static.exercisedb.dev/media/znQUdHY.gif",
     "bodyPart": "shoulders",
+    "isDumbbell": true,
     "equipment": "dumbbell",
     "targetMuscle": "delts",
     "secondaryMuscles": [
@@ -1394,6 +1700,15 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     ],
     "muscles": [
       "Shoulders"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/Xy4jlWA.gif",
+    "bodyPart": "shoulders",
+    "isDumbbell": true,
+    "equipment": "dumbbell",
+    "targetMuscle": "delts",
+    "secondaryMuscles": [
+      "triceps",
+      "upper chest"
     ]
   },
   {
@@ -1418,6 +1733,14 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     "muscles": [
       "Shoulders",
       "Triceps"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/wdRZISl.gif",
+    "bodyPart": "shoulders",
+    "equipment": "barbell",
+    "targetMuscle": "delts",
+    "secondaryMuscles": [
+      "triceps",
+      "upper back"
     ]
   },
   {
@@ -1444,6 +1767,15 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Glutes",
       "Shoulders",
       "Core"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/1gFNTZV.gif",
+    "bodyPart": "upper legs",
+    "equipment": "barbell",
+    "targetMuscle": "glutes",
+    "secondaryMuscles": [
+      "quadriceps",
+      "hamstrings",
+      "calves"
     ]
   },
   {
@@ -1470,13 +1802,12 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Triceps",
       "Core"
     ],
-    "gifUrl": "https://static.exercisedb.dev/media/rQxwMxO.gif",
+    "gifUrl": "https://static.exercisedb.dev/media/XooAdhl.gif",
     "bodyPart": "upper arms",
     "equipment": "body weight",
     "targetMuscle": "triceps",
     "secondaryMuscles": [
       "shoulders",
-      "chest",
       "core"
     ]
   },
@@ -1502,6 +1833,15 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     "muscles": [
       "Shoulders",
       "Triceps"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/XPUDTt7.gif",
+    "bodyPart": "upper legs",
+    "equipment": "body weight",
+    "targetMuscle": "glutes",
+    "secondaryMuscles": [
+      "core",
+      "shoulders",
+      "triceps"
     ]
   },
   {
@@ -1525,6 +1865,15 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     "muscles": [
       "Shoulders",
       "Core"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/rQxwMxO.gif",
+    "bodyPart": "upper arms",
+    "equipment": "body weight",
+    "targetMuscle": "triceps",
+    "secondaryMuscles": [
+      "shoulders",
+      "chest",
+      "core"
     ]
   },
   {
@@ -1582,6 +1931,15 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Lats",
       "Back",
       "Biceps"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/LEprlgG.gif",
+    "bodyPart": "back",
+    "equipment": "cable",
+    "targetMuscle": "lats",
+    "secondaryMuscles": [
+      "biceps",
+      "rhomboids",
+      "rear deltoids"
     ]
   },
   {
@@ -1640,6 +1998,14 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Lats",
       "Back",
       "Biceps"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/VnfUNW7.gif",
+    "bodyPart": "back",
+    "equipment": "body weight",
+    "targetMuscle": "lats",
+    "secondaryMuscles": [
+      "biceps",
+      "forearms"
     ]
   },
   {
@@ -1666,6 +2032,15 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Back",
       "Biceps",
       "Core"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/I4hDWkc.gif",
+    "bodyPart": "chest",
+    "equipment": "body weight",
+    "targetMuscle": "pectorals",
+    "secondaryMuscles": [
+      "triceps",
+      "deltoids",
+      "core"
     ]
   },
   {
@@ -1691,6 +2066,14 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Lats",
       "Biceps",
       "Core"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/T2mxWqc.gif",
+    "bodyPart": "back",
+    "equipment": "body weight",
+    "targetMuscle": "lats",
+    "secondaryMuscles": [
+      "biceps",
+      "forearms"
     ]
   },
   {
@@ -1786,6 +2169,16 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Chest",
       "Triceps",
       "Core"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/yJUHKTn.gif",
+    "bodyPart": "back",
+    "equipment": "body weight",
+    "targetMuscle": "lats",
+    "secondaryMuscles": [
+      "biceps",
+      "triceps",
+      "shoulders",
+      "chest"
     ]
   },
   {
@@ -1846,6 +2239,14 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Lats",
       "Core",
       "Shoulders"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/d1GgzTU.gif",
+    "bodyPart": "back",
+    "equipment": "body weight",
+    "targetMuscle": "lats",
+    "secondaryMuscles": [
+      "biceps",
+      "forearms"
     ]
   },
   {
@@ -1871,6 +2272,14 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Back",
       "Lats",
       "Biceps"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/eZyBC3j.gif",
+    "bodyPart": "back",
+    "equipment": "barbell",
+    "targetMuscle": "upper back",
+    "secondaryMuscles": [
+      "biceps",
+      "forearms"
     ]
   },
   {
@@ -1895,6 +2304,14 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Back",
       "Lats",
       "Biceps"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/fUBheHs.gif",
+    "bodyPart": "back",
+    "equipment": "cable",
+    "targetMuscle": "upper back",
+    "secondaryMuscles": [
+      "biceps",
+      "forearms"
     ]
   },
   {
@@ -1920,6 +2337,14 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Back",
       "Lats",
       "Biceps"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/EIsE3u8.gif",
+    "bodyPart": "back",
+    "equipment": "cable",
+    "targetMuscle": "upper back",
+    "secondaryMuscles": [
+      "biceps",
+      "forearms"
     ]
   },
   {
@@ -1947,6 +2372,7 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     ],
     "gifUrl": "https://static.exercisedb.dev/media/9XjtHvS.gif",
     "bodyPart": "chest",
+    "isDumbbell": true,
     "equipment": "dumbbell",
     "targetMuscle": "pectorals",
     "secondaryMuscles": [
@@ -2005,6 +2431,14 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Back",
       "Lats",
       "Biceps"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/LuBEORI.gif",
+    "bodyPart": "back",
+    "equipment": "leverage machine",
+    "targetMuscle": "upper back",
+    "secondaryMuscles": [
+      "biceps",
+      "forearms"
     ]
   },
   {
@@ -2028,6 +2462,14 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     "muscles": [
       "Back",
       "Lats"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/7I6LNUG.gif",
+    "bodyPart": "back",
+    "equipment": "leverage machine",
+    "targetMuscle": "upper back",
+    "secondaryMuscles": [
+      "biceps",
+      "forearms"
     ]
   },
   {
@@ -2052,6 +2494,14 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Back",
       "Lats",
       "Biceps"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/eZyBC3j.gif",
+    "bodyPart": "back",
+    "equipment": "barbell",
+    "targetMuscle": "upper back",
+    "secondaryMuscles": [
+      "biceps",
+      "forearms"
     ]
   },
   {
@@ -2076,6 +2526,14 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Back",
       "Lats",
       "Biceps"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/LuBEORI.gif",
+    "bodyPart": "back",
+    "equipment": "leverage machine",
+    "targetMuscle": "upper back",
+    "secondaryMuscles": [
+      "biceps",
+      "forearms"
     ]
   },
   {
@@ -2102,6 +2560,14 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Back",
       "Lats",
       "Biceps"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/Fhdtwf3.gif",
+    "bodyPart": "back",
+    "equipment": "barbell",
+    "targetMuscle": "upper back",
+    "secondaryMuscles": [
+      "biceps",
+      "forearms"
     ]
   },
   {
@@ -2125,8 +2591,9 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     "muscles": [
       "Biceps"
     ],
-    "gifUrl": "https://static.exercisedb.dev/media/NbVPDMW.gif",
+    "gifUrl": "https://static.exercisedb.dev/media/uSkDMYl.gif",
     "bodyPart": "upper arms",
+    "isDumbbell": true,
     "equipment": "dumbbell",
     "targetMuscle": "biceps",
     "secondaryMuscles": [
@@ -2153,6 +2620,14 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     ],
     "muscles": [
       "Biceps"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/ByX0WxV.gif",
+    "bodyPart": "upper arms",
+    "isDumbbell": true,
+    "equipment": "dumbbell",
+    "targetMuscle": "biceps",
+    "secondaryMuscles": [
+      "forearms"
     ]
   },
   {
@@ -2177,6 +2652,14 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Biceps",
       "Brachialis",
       "Forearms"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/slDvUAU.gif",
+    "bodyPart": "upper arms",
+    "isDumbbell": true,
+    "equipment": "dumbbell",
+    "targetMuscle": "biceps",
+    "secondaryMuscles": [
+      "forearms"
     ]
   },
   {
@@ -2199,6 +2682,13 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     ],
     "muscles": [
       "Biceps"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/hacCyUv.gif",
+    "bodyPart": "upper arms",
+    "equipment": "ez barbell",
+    "targetMuscle": "biceps",
+    "secondaryMuscles": [
+      "forearms"
     ]
   },
   {
@@ -2223,6 +2713,14 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     ],
     "muscles": [
       "Biceps"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/7inpWch.gif",
+    "bodyPart": "upper arms",
+    "isDumbbell": true,
+    "equipment": "dumbbell",
+    "targetMuscle": "biceps",
+    "secondaryMuscles": [
+      "forearms"
     ]
   },
   {
@@ -2247,6 +2745,14 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     "muscles": [
       "Biceps",
       "Forearms"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/kXaIn5A.gif",
+    "bodyPart": "upper arms",
+    "isDumbbell": true,
+    "equipment": "dumbbell",
+    "targetMuscle": "biceps",
+    "secondaryMuscles": [
+      "forearms"
     ]
   },
   {
@@ -2269,6 +2775,13 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     ],
     "muscles": [
       "Triceps"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/dU605di.gif",
+    "bodyPart": "upper arms",
+    "equipment": "cable",
+    "targetMuscle": "triceps",
+    "secondaryMuscles": [
+      "forearms"
     ]
   },
   {
@@ -2291,6 +2804,13 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     ],
     "muscles": [
       "Triceps"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/h8LFzo9.gif",
+    "bodyPart": "upper arms",
+    "equipment": "barbell",
+    "targetMuscle": "triceps",
+    "secondaryMuscles": [
+      "shoulders"
     ]
   },
   {
@@ -2315,6 +2835,14 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     "muscles": [
       "Triceps",
       "Chest"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/9WTm7dq.gif",
+    "bodyPart": "chest",
+    "equipment": "body weight",
+    "targetMuscle": "pectorals",
+    "secondaryMuscles": [
+      "triceps",
+      "shoulders"
     ]
   },
   {
@@ -2337,6 +2865,14 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     ],
     "muscles": [
       "Triceps"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/5fKX7wi.gif",
+    "bodyPart": "upper arms",
+    "isDumbbell": true,
+    "equipment": "dumbbell",
+    "targetMuscle": "triceps",
+    "secondaryMuscles": [
+      "shoulders"
     ]
   },
   {
@@ -2361,6 +2897,14 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     ],
     "muscles": [
       "Triceps"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/Wgbn9qo.gif",
+    "bodyPart": "upper arms",
+    "equipment": "body weight",
+    "targetMuscle": "triceps",
+    "secondaryMuscles": [
+      "chest",
+      "shoulders"
     ]
   },
   {
@@ -2387,7 +2931,16 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     ],
     "energySystem": "aerobic",
     "axialFatigueScore": 1,
-    "connectiveTissueStressScore": 1
+    "connectiveTissueStressScore": 1,
+    "gifUrl": "https://static.exercisedb.dev/media/hCjGsRQ.gif",
+    "bodyPart": "waist",
+    "equipment": "body weight",
+    "targetMuscle": "abs",
+    "secondaryMuscles": [
+      "shoulders",
+      "triceps",
+      "glutes"
+    ]
   },
   {
     "id": "hanging_leg_raises",
@@ -2448,7 +3001,15 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     ],
     "energySystem": "anaerobic_lactic",
     "axialFatigueScore": 1,
-    "connectiveTissueStressScore": 1
+    "connectiveTissueStressScore": 1,
+    "gifUrl": "https://static.exercisedb.dev/media/tZkGYZ9.gif",
+    "bodyPart": "waist",
+    "equipment": "band",
+    "targetMuscle": "abs",
+    "secondaryMuscles": [
+      "hip flexors",
+      "obliques"
+    ]
   },
   {
     "id": "reverse_crunch",
@@ -2546,12 +3107,13 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     "energySystem": "anaerobic_lactic",
     "axialFatigueScore": 1,
     "connectiveTissueStressScore": 1,
-    "gifUrl": "https://static.exercisedb.dev/media/XVDdcoj.gif",
+    "gifUrl": "https://static.exercisedb.dev/media/d9Xaxq6.gif",
     "bodyPart": "waist",
-    "equipment": "body weight",
+    "equipment": "cable",
     "targetMuscle": "abs",
     "secondaryMuscles": [
-      "obliques"
+      "obliques",
+      "lower back"
     ]
   },
   {
@@ -2562,23 +3124,32 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     "pattern": "core",
     "impact": "medium",
     "velocity": "slow",
-    "description": "Extreme core stability exercise.",
+    "description": "An intense anti-extension core exercise rolling forward on a wheel from a kneeling position.",
     "instructions": [
-      "Kneel with ab wheel.",
-      "Roll forward.",
-      "Roll back."
+      "Kneel on a soft pad and grip the handles of the ab wheel.",
+      "Roll the wheel forward, extending your body as far as you can without letting your back sag.",
+      "Engage your abs and pull yourself back to the starting kneeling position."
     ],
     "tips": [
-      "Don't arch lower back.",
-      "Go to comfort.",
-      "Brace hard."
+      "Do not let your hips sag or your lower back arch; keep a slight hollow body position.",
+      "Pull back with your core, not your hips.",
+      "Initiate the movement slowly."
     ],
     "muscles": [
-      "Core"
+      "Core",
+      "Lats",
+      "Shoulders"
     ],
     "energySystem": "anaerobic_lactic",
     "axialFatigueScore": 3,
-    "connectiveTissueStressScore": 2
+    "connectiveTissueStressScore": 2,
+    "gifUrl": "https://static.exercisedb.dev/media/NAgVB3t.gif",
+    "bodyPart": "waist",
+    "equipment": "wheel roller",
+    "targetMuscle": "abs",
+    "secondaryMuscles": [
+      "lower back"
+    ]
   },
   {
     "id": "v_ups",
@@ -2605,7 +3176,15 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     ],
     "energySystem": "anaerobic_lactic",
     "axialFatigueScore": 2,
-    "connectiveTissueStressScore": 2
+    "connectiveTissueStressScore": 2,
+    "gifUrl": "https://static.exercisedb.dev/media/qcNN2FN.gif",
+    "bodyPart": "waist",
+    "equipment": "body weight",
+    "targetMuscle": "abs",
+    "secondaryMuscles": [
+      "hip flexors",
+      "lower back"
+    ]
   },
   {
     "id": "flutter_kicks",
@@ -2667,7 +3246,14 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     ],
     "energySystem": "anaerobic_lactic",
     "axialFatigueScore": 1,
-    "connectiveTissueStressScore": 1
+    "connectiveTissueStressScore": 1,
+    "gifUrl": "https://static.exercisedb.dev/media/WhuFnR7.gif",
+    "bodyPart": "waist",
+    "equipment": "body weight",
+    "targetMuscle": "abs",
+    "secondaryMuscles": [
+      "hip flexors"
+    ]
   },
   {
     "id": "toe_touches",
@@ -2694,7 +3280,15 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     ],
     "energySystem": "anaerobic_lactic",
     "axialFatigueScore": 1,
-    "connectiveTissueStressScore": 1
+    "connectiveTissueStressScore": 1,
+    "gifUrl": "https://static.exercisedb.dev/media/p195zsJ.gif",
+    "bodyPart": "back",
+    "equipment": "body weight",
+    "targetMuscle": "spine",
+    "secondaryMuscles": [
+      "hamstrings",
+      "glutes"
+    ]
   },
   {
     "id": "side_plank",
@@ -2721,7 +3315,15 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     ],
     "energySystem": "aerobic",
     "axialFatigueScore": 1,
-    "connectiveTissueStressScore": 1
+    "connectiveTissueStressScore": 1,
+    "gifUrl": "https://static.exercisedb.dev/media/VO2qeJg.gif",
+    "bodyPart": "upper legs",
+    "equipment": "body weight",
+    "targetMuscle": "adductors",
+    "secondaryMuscles": [
+      "obliques",
+      "glutes"
+    ]
   },
   {
     "id": "sandbag_zercher_carry",
@@ -2744,6 +3346,16 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Core",
       "Biceps",
       "Forearms"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/LSTChY9.gif",
+    "bodyPart": "upper legs",
+    "equipment": "barbell",
+    "targetMuscle": "glutes",
+    "secondaryMuscles": [
+      "quadriceps",
+      "hamstrings",
+      "calves",
+      "core"
     ]
   },
   {
@@ -2768,6 +3380,15 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Calves",
       "Core",
       "Shoulders"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/sVQCCeG.gif",
+    "bodyPart": "upper legs",
+    "equipment": "body weight",
+    "targetMuscle": "glutes",
+    "secondaryMuscles": [
+      "quadriceps",
+      "hamstrings",
+      "calves"
     ]
   },
   {
@@ -2790,6 +3411,15 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Shoulders",
       "Triceps",
       "Upper Back"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/A6wtbuL.gif",
+    "bodyPart": "shoulders",
+    "isDumbbell": true,
+    "equipment": "dumbbell",
+    "targetMuscle": "delts",
+    "secondaryMuscles": [
+      "triceps",
+      "upper back"
     ]
   },
   {
@@ -2813,6 +3443,16 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Traps",
       "Core",
       "Glutes"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/qPEzJjA.gif",
+    "bodyPart": "upper legs",
+    "isDumbbell": true,
+    "equipment": "dumbbell",
+    "targetMuscle": "quads",
+    "secondaryMuscles": [
+      "calves",
+      "forearms",
+      "core"
     ]
   },
   {
@@ -2867,6 +3507,17 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     "muscles": [
       "Full Body",
       "Cardio"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/dK9394r.gif",
+    "bodyPart": "cardio",
+    "equipment": "body weight",
+    "targetMuscle": "cardiovascular system",
+    "secondaryMuscles": [
+      "quadriceps",
+      "hamstrings",
+      "calves",
+      "shoulders",
+      "chest"
     ]
   },
   {
@@ -2889,6 +3540,16 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Full Body",
       "Shoulders",
       "Back"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/SGY8Zui.gif",
+    "bodyPart": "upper legs",
+    "equipment": "barbell",
+    "targetMuscle": "quads",
+    "secondaryMuscles": [
+      "hamstrings",
+      "glutes",
+      "shoulders",
+      "triceps"
     ]
   },
   {
@@ -2911,6 +3572,15 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Quads",
       "Calves",
       "Glutes"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/CB8WET1.gif",
+    "bodyPart": "chest",
+    "equipment": "body weight",
+    "targetMuscle": "pectorals",
+    "secondaryMuscles": [
+      "triceps",
+      "shoulders",
+      "core"
     ]
   },
   {
@@ -2934,6 +3604,15 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Hamstrings",
       "Quads",
       "Calves"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/uZKq7lo.gif",
+    "bodyPart": "upper legs",
+    "equipment": "body weight",
+    "targetMuscle": "quads",
+    "secondaryMuscles": [
+      "calves",
+      "hamstrings",
+      "glutes"
     ]
   },
   {
@@ -2959,6 +3638,16 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Lower Back",
       "Shoulders",
       "Core"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/6pTkI99.gif",
+    "bodyPart": "upper legs",
+    "isDumbbell": true,
+    "equipment": "dumbbell",
+    "targetMuscle": "glutes",
+    "secondaryMuscles": [
+      "hamstrings",
+      "quadriceps",
+      "core"
     ]
   },
   {
@@ -2980,6 +3669,15 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     "muscles": [
       "Full Body",
       "Cardio"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/uZKq7lo.gif",
+    "bodyPart": "upper legs",
+    "equipment": "body weight",
+    "targetMuscle": "quads",
+    "secondaryMuscles": [
+      "calves",
+      "hamstrings",
+      "glutes"
     ]
   },
   {
@@ -3002,6 +3700,15 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Glutes",
       "Quads",
       "Hamstrings"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/uZKq7lo.gif",
+    "bodyPart": "upper legs",
+    "equipment": "body weight",
+    "targetMuscle": "quads",
+    "secondaryMuscles": [
+      "calves",
+      "hamstrings",
+      "glutes"
     ]
   },
   {
@@ -3025,6 +3732,16 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Hamstrings",
       "Calves",
       "Core"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/rjtuP6X.gif",
+    "bodyPart": "cardio",
+    "equipment": "elliptical machine",
+    "targetMuscle": "cardiovascular system",
+    "secondaryMuscles": [
+      "quadriceps",
+      "hamstrings",
+      "glutes",
+      "calves"
     ]
   },
   {
@@ -3050,6 +3767,15 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     "jointStress": [
       "knee",
       "ankle"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/rjiM4L3.gif",
+    "bodyPart": "cardio",
+    "equipment": "leverage machine",
+    "targetMuscle": "cardiovascular system",
+    "secondaryMuscles": [
+      "quadriceps",
+      "hamstrings",
+      "calves"
     ]
   },
   {
@@ -3075,6 +3801,15 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     "jointStress": [
       "knee",
       "hip"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/a8VDgLw.gif",
+    "bodyPart": "cardio",
+    "equipment": "leverage machine",
+    "targetMuscle": "cardiovascular system",
+    "secondaryMuscles": [
+      "quadriceps",
+      "hamstrings",
+      "calves"
     ]
   },
   {
@@ -3099,6 +3834,15 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     ],
     "jointStress": [
       "knee"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/a8VDgLw.gif",
+    "bodyPart": "cardio",
+    "equipment": "leverage machine",
+    "targetMuscle": "cardiovascular system",
+    "secondaryMuscles": [
+      "quadriceps",
+      "hamstrings",
+      "calves"
     ]
   },
   {
@@ -3121,6 +3865,15 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Quads",
       "Glutes",
       "Calves"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/a8VDgLw.gif",
+    "bodyPart": "cardio",
+    "equipment": "leverage machine",
+    "targetMuscle": "cardiovascular system",
+    "secondaryMuscles": [
+      "quadriceps",
+      "hamstrings",
+      "calves"
     ]
   },
   {
@@ -3145,6 +3898,15 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Calves",
       "Core",
       "Traps"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/rjiM4L3.gif",
+    "bodyPart": "cardio",
+    "equipment": "leverage machine",
+    "targetMuscle": "cardiovascular system",
+    "secondaryMuscles": [
+      "quadriceps",
+      "hamstrings",
+      "calves"
     ]
   },
   {
@@ -3166,6 +3928,13 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     "muscles": [
       "Full Body",
       "Cardio"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/1ZFqTDN.gif",
+    "bodyPart": "waist",
+    "equipment": "body weight",
+    "targetMuscle": "abs",
+    "secondaryMuscles": [
+      "hip flexors"
     ]
   },
   {
@@ -3189,6 +3958,15 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Legs",
       "Core",
       "Back"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/a8VDgLw.gif",
+    "bodyPart": "cardio",
+    "equipment": "leverage machine",
+    "targetMuscle": "cardiovascular system",
+    "secondaryMuscles": [
+      "quadriceps",
+      "hamstrings",
+      "calves"
     ]
   },
   {
@@ -3212,6 +3990,15 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Glutes",
       "Calves",
       "Quads"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/Qoujh3Q.gif",
+    "bodyPart": "waist",
+    "equipment": "body weight",
+    "targetMuscle": "abs",
+    "secondaryMuscles": [
+      "quadriceps",
+      "hamstrings",
+      "calves"
     ]
   },
   {
@@ -3234,6 +4021,15 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Shoulders",
       "Core",
       "Arms"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/yaAxcQr.gif",
+    "bodyPart": "back",
+    "equipment": "rope",
+    "targetMuscle": "upper back",
+    "secondaryMuscles": [
+      "forearms",
+      "biceps",
+      "shoulders"
     ]
   },
   {
@@ -3257,6 +4053,15 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Shoulders",
       "Core",
       "Full Body"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/SP3hUez.gif",
+    "bodyPart": "upper legs",
+    "equipment": "body weight",
+    "targetMuscle": "glutes",
+    "secondaryMuscles": [
+      "hamstrings",
+      "quadriceps",
+      "calves"
     ]
   },
   {
@@ -3279,6 +4084,14 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Rear Delts",
       "Traps",
       "Rhomboids"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/VtTbiP3.gif",
+    "bodyPart": "upper legs",
+    "equipment": "band",
+    "targetMuscle": "glutes",
+    "secondaryMuscles": [
+      "hamstrings",
+      "lower back"
     ]
   },
   {
@@ -3359,6 +4172,14 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Traps",
       "Shoulders",
       "Scapula"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/ZZTGMKh.gif",
+    "bodyPart": "back",
+    "equipment": "body weight",
+    "targetMuscle": "lats",
+    "secondaryMuscles": [
+      "shoulders",
+      "triceps"
     ]
   },
   {
@@ -3381,6 +4202,14 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Core",
       "Glutes",
       "Spine"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/01qpYSe.gif",
+    "bodyPart": "back",
+    "equipment": "body weight",
+    "targetMuscle": "spine",
+    "secondaryMuscles": [
+      "shoulders",
+      "chest"
     ]
   },
   {
@@ -3403,6 +4232,14 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     "muscles": [
       "Calves",
       "Achilles"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/2ORFMoR.gif",
+    "bodyPart": "lower legs",
+    "equipment": "sled machine",
+    "targetMuscle": "calves",
+    "secondaryMuscles": [
+      "hamstrings",
+      "glutes"
     ]
   },
   {
@@ -3425,6 +4262,15 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Rear Delts",
       "Shoulders",
       "Upper Back"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/ZfyAGhK.gif",
+    "bodyPart": "shoulders",
+    "equipment": "cable",
+    "targetMuscle": "delts",
+    "secondaryMuscles": [
+      "trapezius",
+      "rhomboids",
+      "biceps"
     ]
   },
   {
@@ -3449,6 +4295,14 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Hamstrings",
       "Lower Back",
       "Glutes"
+    ],
+    "axialFatigueScore": 8,
+    "gifUrl": "https://static.exercisedb.dev/media/XlZ4lAC.gif",
+    "bodyPart": "upper legs",
+    "equipment": "barbell",
+    "targetMuscle": "hamstrings",
+    "secondaryMuscles": [
+      "lower back"
     ]
   },
   {
@@ -3477,6 +4331,7 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     ],
     "gifUrl": "https://static.exercisedb.dev/media/aXtJhlg.gif",
     "bodyPart": "upper legs",
+    "isDumbbell": true,
     "equipment": "dumbbell",
     "targetMuscle": "glutes",
     "secondaryMuscles": [
@@ -3506,6 +4361,15 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     "muscles": [
       "Shoulders",
       "Triceps"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/A6wtbuL.gif",
+    "bodyPart": "shoulders",
+    "isDumbbell": true,
+    "equipment": "dumbbell",
+    "targetMuscle": "delts",
+    "secondaryMuscles": [
+      "triceps",
+      "upper back"
     ]
   },
   {
@@ -3532,6 +4396,7 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     ],
     "gifUrl": "https://static.exercisedb.dev/media/DsgkuIt.gif",
     "bodyPart": "shoulders",
+    "isDumbbell": true,
     "equipment": "dumbbell",
     "targetMuscle": "delts",
     "secondaryMuscles": [
@@ -3561,6 +4426,7 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     ],
     "gifUrl": "https://static.exercisedb.dev/media/3eGE2JC.gif",
     "bodyPart": "shoulders",
+    "isDumbbell": true,
     "equipment": "dumbbell",
     "targetMuscle": "delts",
     "secondaryMuscles": [
@@ -3593,6 +4459,7 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     ],
     "gifUrl": "https://static.exercisedb.dev/media/mu5Guxt.gif",
     "bodyPart": "shoulders",
+    "isDumbbell": true,
     "equipment": "dumbbell",
     "targetMuscle": "delts",
     "secondaryMuscles": [
@@ -3622,6 +4489,15 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     "muscles": [
       "Quads",
       "Glutes"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/9E25EOx.gif",
+    "bodyPart": "upper legs",
+    "equipment": "body weight",
+    "targetMuscle": "quads",
+    "secondaryMuscles": [
+      "glutes",
+      "hamstrings",
+      "calves"
     ]
   },
   {
@@ -3646,6 +4522,15 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Rear Delts",
       "Traps",
       "Rotator Cuff"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/ZfyAGhK.gif",
+    "bodyPart": "shoulders",
+    "equipment": "cable",
+    "targetMuscle": "delts",
+    "secondaryMuscles": [
+      "trapezius",
+      "rhomboids",
+      "biceps"
     ]
   },
   {
@@ -3700,6 +4585,14 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     "muscles": [
       "Quads",
       "Glutes"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/V07qpXy.gif",
+    "bodyPart": "upper legs",
+    "equipment": "leverage machine",
+    "targetMuscle": "quads",
+    "secondaryMuscles": [
+      "hamstrings",
+      "glutes"
     ]
   },
   {
@@ -3757,6 +4650,382 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Chest",
       "Core",
       "Shoulders"
+    ],
+    "gifUrl": "https://static.exercisedb.dev/media/I4hDWkc.gif",
+    "bodyPart": "chest",
+    "equipment": "body weight",
+    "targetMuscle": "pectorals",
+    "secondaryMuscles": [
+      "triceps",
+      "deltoids",
+      "core"
+    ]
+  },
+  {
+    "id": "front_squat",
+    "name": "Barbell Front Squat",
+    "category": "Squat",
+    "pattern": "squat",
+    "impact": "high",
+    "velocity": "medium",
+    "description": "A high-bar squat variation that shifts load to the anterior chain (quads) and demands intense upper back extension.",
+    "instructions": [
+      "Rest the bar on the front of your shoulders, high on the clavicles and deltoids.",
+      "Keep elbows high, pointing forward, parallel to the ground.",
+      "Squat deeply while maintaining an upright, vertical torso.",
+      "Drive upward through the mid-foot back to the starting position."
+    ],
+    "tips": [
+      "Keep elbows pointing up throughout the movement.",
+      "Stay highly upright to prevent forward tipping.",
+      "Brace the core aggressively."
+    ],
+    "muscles": [
+      "Quads",
+      "Upper Back",
+      "Core",
+      "Glutes"
+    ],
+    "axialFatigueScore": 8,
+    "connectiveTissueStressScore": 7,
+    "gifUrl": "https://static.exercisedb.dev/media/zG0zs85.gif",
+    "bodyPart": "upper legs",
+    "equipment": "barbell",
+    "targetMuscle": "glutes",
+    "secondaryMuscles": [
+      "quadriceps",
+      "hamstrings",
+      "calves",
+      "core"
+    ]
+  },
+  {
+    "id": "deficit_deadlift",
+    "name": "Deficit Deadlift",
+    "category": "Deadlift",
+    "pattern": "hinge",
+    "impact": "high",
+    "velocity": "medium",
+    "description": "Deadlifting while standing on a small platform or plates, increasing the range of motion and leg drive off the floor.",
+    "instructions": [
+      "Stand on a 1-3 inch platform or bumper plate.",
+      "Set your feet under the bar and hinge down.",
+      "Keep your back flat, brace, and pull tension out of the bar.",
+      "Drive aggressively with your legs to break the bar off the floor."
+    ],
+    "tips": [
+      "Do not allow your lower back to round due to the lower starting position.",
+      "Focus on initial quad leg drive to get the bar moving.",
+      "Keep the bar tight to your shins."
+    ],
+    "muscles": [
+      "Hamstrings",
+      "Glutes",
+      "Lower Back",
+      "Lats",
+      "Core"
+    ],
+    "axialFatigueScore": 10,
+    "connectiveTissueStressScore": 9,
+    "gifUrl": "https://static.exercisedb.dev/media/ila4NZS.gif",
+    "bodyPart": "upper legs",
+    "equipment": "barbell",
+    "targetMuscle": "glutes",
+    "secondaryMuscles": [
+      "hamstrings",
+      "lower back"
+    ]
+  },
+  {
+    "id": "weighted_dips",
+    "name": "Weighted Tricep Dips",
+    "category": "Press",
+    "pattern": "push_vertical",
+    "impact": "medium",
+    "velocity": "medium",
+    "description": "A classic upper-body compound movement performed on parallel bars with added external weight.",
+    "instructions": [
+      "Mount parallel bars and suspend yourself with straight arms.",
+      "Lower your body by bending the elbows until shoulders are below the elbow crease.",
+      "Press back up to lock out using the triceps and chest."
+    ],
+    "tips": [
+      "Avoid excessive forward lean to balance triceps and chest recruitment.",
+      "Control the eccentric phase to protect the shoulder joint.",
+      "Keep your neck neutral."
+    ],
+    "muscles": [
+      "Triceps",
+      "Chest",
+      "Shoulders"
+    ],
+    "axialFatigueScore": 4,
+    "connectiveTissueStressScore": 6,
+    "gifUrl": "https://static.exercisedb.dev/media/bZq4bwK.gif",
+    "bodyPart": "upper arms",
+    "equipment": "weighted",
+    "targetMuscle": "triceps",
+    "secondaryMuscles": [
+      "chest",
+      "shoulders"
+    ]
+  },
+  {
+    "id": "weighted_pull_ups",
+    "name": "Weighted Pull-Up",
+    "category": "Pull",
+    "pattern": "pull_vertical",
+    "impact": "medium",
+    "velocity": "medium",
+    "description": "Pull-ups performed with extra load attached via a dip belt or holding a dumbbell.",
+    "instructions": [
+      "Grip the pull-up bar with an overhand grip slightly wider than shoulder-width.",
+      "Hang with fully extended arms, keeping core engaged.",
+      "Pull yourself up by driving elbows down until your chin clears the bar.",
+      "Lower with control back to a dead hang."
+    ],
+    "tips": [
+      "Do not use momentum or leg swing.",
+      "Ensure a full range of motion from dead hang to chin-over-bar.",
+      "Engage the shoulder blades first."
+    ],
+    "muscles": [
+      "Lats",
+      "Upper Back",
+      "Biceps",
+      "Forearms"
+    ],
+    "axialFatigueScore": 3,
+    "connectiveTissueStressScore": 4,
+    "gifUrl": "https://static.exercisedb.dev/media/HMzLjXx.gif",
+    "bodyPart": "back",
+    "equipment": "weighted",
+    "targetMuscle": "lats",
+    "secondaryMuscles": [
+      "biceps",
+      "forearms"
+    ]
+  },
+  {
+    "id": "pendlay_row",
+    "name": "Barbell Pendlay Row",
+    "category": "Row",
+    "pattern": "pull_horizontal",
+    "impact": "high",
+    "velocity": "medium",
+    "description": "A strict barbell row where each rep starts from a dead stop on the floor, with the torso completely parallel to the ground.",
+    "instructions": [
+      "Set up with a loaded barbell on the floor, feet shoulder-width apart.",
+      "Hinge over until your torso is parallel to the floor.",
+      "Grip the bar slightly wider than shoulder-width.",
+      "Explosively row the bar to your lower chest/upper abdomen without changing torso angle.",
+      "Return the bar to the floor and let it come to a dead stop."
+    ],
+    "tips": [
+      "Ensure your torso does not rise as you pull.",
+      "Each rep must start from a completely dead stop on the floor.",
+      "Pull with your elbows."
+    ],
+    "muscles": [
+      "Lats",
+      "Upper Back",
+      "Lower Back",
+      "Rear Delts",
+      "Biceps"
+    ],
+    "axialFatigueScore": 7,
+    "connectiveTissueStressScore": 5,
+    "gifUrl": "https://static.exercisedb.dev/media/r0z6xzQ.gif",
+    "bodyPart": "back",
+    "equipment": "barbell",
+    "targetMuscle": "upper back",
+    "secondaryMuscles": [
+      "biceps",
+      "forearms"
+    ]
+  },
+  {
+    "id": "yoke_walk",
+    "name": "Yoke Walk",
+    "category": "Tactical",
+    "pattern": "impact",
+    "impact": "high",
+    "velocity": "slow",
+    "description": "An intense strongman carry where a heavy metal yoke frame is placed on the upper back and walked for distance.",
+    "instructions": [
+      "Position yourself inside the yoke frame, resting the bar on your upper back/traps.",
+      "Grip the uprights, brace your core deeply, and lift the yoke using your legs.",
+      "Walk forward with short, rapid, high-frequency steps.",
+      "Keep your core extremely rigid and maintain posture throughout the run."
+    ],
+    "tips": [
+      "Keep steps small and fast to prevent the yoke from swinging.",
+      "Do not look down; keep your eyes forward.",
+      "Brace your abs like you are expecting a punch."
+    ],
+    "muscles": [
+      "Core",
+      "Quads",
+      "Lower Back",
+      "Traps",
+      "Glutes",
+      "Calves"
+    ],
+    "axialFatigueScore": 10,
+    "connectiveTissueStressScore": 9,
+    "gifUrl": "https://static.exercisedb.dev/media/qPEzJjA.gif",
+    "bodyPart": "upper legs",
+    "isDumbbell": true,
+    "equipment": "dumbbell",
+    "targetMuscle": "quads",
+    "secondaryMuscles": [
+      "calves",
+      "forearms",
+      "core"
+    ]
+  },
+  {
+    "id": "zercher_squat",
+    "name": "Barbell Zercher Squat",
+    "category": "Squat",
+    "pattern": "squat",
+    "impact": "high",
+    "velocity": "medium",
+    "description": "A squat variation where the barbell is cradled in the crooks of the elbows, requiring extreme core and upper back stability.",
+    "instructions": [
+      "Hold the barbell securely in the crooks of your elbows with arms crossed or hands clasped.",
+      "Set your feet in a moderate to wide squat stance.",
+      "Squat deeply while keeping the bar close to your torso and spine upright.",
+      "Drive through your midfoot to stand up."
+    ],
+    "tips": [
+      "Squeeze your shoulder blades together to create a solid base.",
+      "Wrap a towel or pad around the bar to minimize elbow discomfort.",
+      "Keep your core fully braced to prevent being pulled forward."
+    ],
+    "muscles": [
+      "Quads",
+      "Upper Back",
+      "Core",
+      "Glutes"
+    ],
+    "axialFatigueScore": 8,
+    "connectiveTissueStressScore": 7,
+    "gifUrl": "https://static.exercisedb.dev/media/LSTChY9.gif",
+    "bodyPart": "upper legs",
+    "equipment": "barbell",
+    "targetMuscle": "glutes",
+    "secondaryMuscles": [
+      "quadriceps",
+      "hamstrings",
+      "calves",
+      "core"
+    ]
+  },
+  {
+    "id": "spoto_press",
+    "name": "Spoto Press",
+    "category": "Bench",
+    "pattern": "push_horizontal",
+    "impact": "high",
+    "velocity": "medium",
+    "description": "A bench press variation where you pause the barbell 1-2 inches above your chest to eliminate momentum and build supreme isometric strength.",
+    "instructions": [
+      "Set up on a flat bench and unrack the barbell.",
+      "Lower the bar with control, stopping 1-2 inches above your chest.",
+      "Hold a strict isometric pause for 1-2 seconds.",
+      "Explosively press the bar back up to lockout."
+    ],
+    "tips": [
+      "Keep your entire body extremely tight during the pause.",
+      "Do not let the bar sink or rest; maintain active muscular tension.",
+      "Squeeze the bar aggressively."
+    ],
+    "muscles": [
+      "Chest",
+      "Triceps",
+      "Shoulders (Anterior)"
+    ],
+    "axialFatigueScore": 3,
+    "connectiveTissueStressScore": 6,
+    "gifUrl": "https://static.exercisedb.dev/media/EIeI8Vf.gif",
+    "bodyPart": "chest",
+    "equipment": "barbell",
+    "targetMuscle": "pectorals",
+    "secondaryMuscles": [
+      "triceps",
+      "shoulders"
+    ]
+  },
+  {
+    "id": "kb_snatch",
+    "name": "Kettlebell One Arm Snatch",
+    "category": "Explosive",
+    "pattern": "plyometric",
+    "impact": "medium",
+    "velocity": "fast",
+    "description": "A dynamic ballistic movement lifting a kettlebell from between the knees to an overhead lockout position in one fluid motion.",
+    "instructions": [
+      "Hike the kettlebell back between your legs.",
+      "Drive your hips forward explosively, snapping your glutes.",
+      "Pull the bell up, keeping it close to your body.",
+      "Punch your hand through the handle at the top to catch it overhead smoothly."
+    ],
+    "tips": [
+      "The power comes from the hips, not a shoulder raise.",
+      "Keep your grip loose to allow the handle to rotate freely.",
+      "Tense your glutes and core at lock out."
+    ],
+    "muscles": [
+      "Glutes",
+      "Hamstrings",
+      "Shoulders",
+      "Core",
+      "Upper Back"
+    ],
+    "axialFatigueScore": 5,
+    "connectiveTissueStressScore": 4,
+    "gifUrl": "https://static.exercisedb.dev/media/aXcUyKb.gif",
+    "bodyPart": "shoulders",
+    "equipment": "kettlebell",
+    "targetMuscle": "delts",
+    "secondaryMuscles": [
+      "trapezius",
+      "forearms",
+      "core"
+    ]
+  },
+  {
+    "id": "db_incline_flys",
+    "name": "Dumbbell Incline Fly",
+    "category": "Bench",
+    "pattern": "push_horizontal",
+    "impact": "low",
+    "velocity": "medium",
+    "description": "An isolation movement performed on an incline bench to stretch and isolate the upper fibers of the chest.",
+    "instructions": [
+      "Lie on an incline bench with dumbbells held over your chest.",
+      "Lower the weights out to the sides in a wide arc with a slight bend in your elbows.",
+      "Feel the stretch across your chest, then squeeze your pecs to bring the weights back together."
+    ],
+    "tips": [
+      "Maintain a fixed angle at the elbow throughout the movement.",
+      "Do not allow the dumbbells to touch at the top to keep constant tension.",
+      "Focus on the contraction at the top."
+    ],
+    "muscles": [
+      "Chest",
+      "Shoulders"
+    ],
+    "axialFatigueScore": 1,
+    "connectiveTissueStressScore": 3,
+    "gifUrl": "https://static.exercisedb.dev/media/ESOd5Pl.gif",
+    "bodyPart": "chest",
+    "isDumbbell": true,
+    "equipment": "dumbbell",
+    "targetMuscle": "pectorals",
+    "secondaryMuscles": [
+      "shoulders"
     ]
   }
 

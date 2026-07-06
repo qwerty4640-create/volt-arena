@@ -181,11 +181,10 @@ const ExerciseAccordion = ({
     return cleanStr(e.name) === cleanStr(exercise.name);
   });
   const unilateral = isUnilateral(exercise.name);
-  const dumbbell = isDumbbell(exercise.name);
+  const dumbbell = exerciseDefinition?.isDumbbell || isDumbbell(exercise.name);
   const showPerSide = unilateral || dumbbell;
   const weightLabel = showPerSide ? `${weightUnit} PER SIDE` : weightUnit;
-  // Apply calisthenics label specifically if isCalisthenics is true
-  const displayWeightLabel = exerciseDefinition?.isCalisthenics ? `${weightUnit} + Bodyweight` : weightLabel;
+  const displayWeightLabel = weightLabel;
   const isTimed = isTimedExercise(exercise.name);
 
   const isBifurcatedBlock = 
@@ -842,13 +841,10 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
     if (!currentSession) return 0;
     let volume = 0;
     currentSession.exercises.forEach(ex => {
-      const isCalisthenics = EXERCISE_DATABASE.find(e => e.id === ex.exerciseId)?.isCalisthenics;
       ex.sets.forEach(set => {
         if (set.isCompleted) {
           const weight = parseFloat(set.weight) || 0;
-          const bodyWeight = profile?.weight || 0;
-          const calculatedWeight = isCalisthenics ? (weight + bodyWeight) : weight;
-          volume += calculatedWeight * (parseFloat(set.reps) || 0);
+          volume += weight * (parseFloat(set.reps) || 0);
         }
       });
     });
@@ -984,7 +980,7 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
             "side_plank",
           ].includes(newDef.id);
 
-        if (isCalisthenic) {
+        if (isCalisthenic && lastWeight === 0) {
           updatedSets = updatedSets.map(s => ({
             ...s,
             weight: "0",

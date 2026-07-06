@@ -4,8 +4,7 @@ import { Set } from '../../types/workout';
 export class HypertrophyModality implements ModalityStrategy {
   calculateVolume(sets: Set[], isCalisthenics?: boolean, bodyweight?: number): number {
     return sets.reduce((sum, s) => {
-      let w = parseFloat(s.weight) || 0;
-      if (isCalisthenics && bodyweight) w += bodyweight;
+      const w = parseFloat(s.weight) || 0;
       return sum + w * (parseInt(s.reps) || 0);
     }, 0);
   }

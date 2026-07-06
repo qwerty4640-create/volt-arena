@@ -110,18 +110,32 @@ export const calculateSystemReadiness = (
       session.exercises?.forEach((ex: any) => {
         const exDef = EXERCISE_DATABASE.find(e => e.id === ex.exerciseId);
         const isCalisthenics = exDef?.isCalisthenics;
-        const axialScore = exDef?.axialFatigueScore !== undefined ? exDef.axialFatigueScore : 3;
+        let axialScore = 3;
+        if (exDef?.axialFatigueScore !== undefined) {
+          axialScore = exDef.axialFatigueScore;
+        } else if (exDef?.id === 'deadlift_conventional') {
+          axialScore = 10;
+        } else if (exDef?.category === 'Deadlift' || exDef?.pattern === 'hinge') {
+          axialScore = 9;
+        } else if (exDef?.category === 'Squat' || exDef?.pattern === 'squat') {
+          axialScore = 8;
+        } else if (exDef?.category === 'Row' || exDef?.pattern === 'pull_horizontal') {
+          axialScore = 5;
+        } else if (exDef?.category === 'Press' || exDef?.pattern === 'push_vertical' || exDef?.pattern === 'push_horizontal') {
+          axialScore = 4;
+        } else if (exDef?.impact === 'high') {
+          axialScore = 7;
+        } else if (exDef?.impact === 'medium') {
+          axialScore = 4;
+        }
         // Base factor of 0.1 for isolation/low axial, scales up to 1.0 for heavy compounds
         const axialFactor = 0.1 + (axialScore / 10);
 
         ex.sets?.forEach((s: any) => {
           if (s.isCompleted && !s.isWarmup) {
             let weight = parseFloat(s.weight) || 0;
-            if (isCalisthenics) {
-              const bw = userWeight || (unit === 'imperial' ? 100 : 45);
-              weight = weight + bw;
-            } else if (weight <= 0) {
-              weight = 0; // If they did 0 weight for a non-calisthenics, it shouldn't magically get bulk volume
+            if (weight <= 0) {
+              weight = 0;
             }
             const reps = parseInt(s.reps) || 0;
             // Scale the volume by the axial stress of the movement
@@ -144,13 +158,13 @@ export const calculateSystemReadiness = (
         avgRpe = rpeCount > 0 ? rpeSum / rpeCount : 7;
       }
       
-      const rpeExertionFactor = Math.pow(avgRpe / 8, 2);
+      const rpeExertionFactor = Math.pow(avgRpe / 7, 3);
       
       // Sub-linear volume scaling: high volume shouldn't linearly destroy readiness.
       // E.g., 30000^0.8 ≈ 3804. 10000^0.8 ≈ 1584.
       const scaledVolume = Math.pow(volumeVal, 0.8);
       
-      const intensityScale = unit === 'imperial' ? 1000 : 550;
+      const intensityScale = unit === 'imperial' ? 750 : 415;
       const normalizedIntensity = (scaledVolume * avgRpe * rpeExertionFactor) / intensityScale;
       
       currentFatigue += normalizedIntensity * Math.exp(-k_fatigue * t);

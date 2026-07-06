@@ -990,7 +990,7 @@ export const createSessionFromTemplate = (
       description: `${template.title} - ${preferredModality} Monostructural Session. ${missionInfo.desc}`,
       rulesOfEngagement: `Maintain strict metabolic targets. Progressive overload active. ${missionInfo.rulesOfEngagement || ""}`,
       startTime: Date.now(),
-      targetRpe: readinessRpeLimit,
+      targetRpe: (block.type === BlockType.DELOAD || block.type === BlockType.COMPETITION) ? (parseFloat(exSets[0]?.rpe) || readinessRpeLimit) : readinessRpeLimit,
       blockType: block.type,
       blockLabel: block.label,
       weekInBlock,
@@ -1266,7 +1266,7 @@ export const createSessionFromTemplate = (
     description: missionInfo.desc,
     rulesOfEngagement: missionInfo.rulesOfEngagement,
     startTime: Date.now(),
-    targetRpe: readinessRpeLimit,
+    targetRpe: (block.type === BlockType.COMPETITION) ? 5.5 : (block.type === BlockType.DELOAD ? 7.0 : readinessRpeLimit),
     blockType: block.type,
     blockLabel: block.label,
     weekInBlock,
@@ -2000,7 +2000,7 @@ export const createSessionFromTemplate = (
           "side_plank",
         ].includes(selectedExercise?.id as string);
 
-      if (isCalisthenic) {
+      if (isCalisthenic && lastWeight === 0 && dynamicPR === 0) {
         weight = 0;
         unmodifiedWeight = 0;
       }

@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X } from 'lucide-react';
-import { ExerciseDefinition } from '../constants/exercises';
+import { ExerciseDefinition, EXERCISE_DATABASE } from '../constants/exercises';
 import { haptics } from '../lib/haptics';
 import { Portal } from './Portal';
 
@@ -12,6 +12,32 @@ interface ExerciseInfoModalProps {
 }
 
 export const ExerciseInfoModal = ({ exercise, isOpen, onClose }: ExerciseInfoModalProps) => {
+  // Find the master definition to safeguard against incomplete objects or null/missing gifUrls
+  const masterDef = exercise ? EXERCISE_DATABASE.find(e => {
+    if (exercise.id && e.id === exercise.id) return true;
+    if ((exercise as any).exerciseId && e.id === (exercise as any).exerciseId) return true;
+    if (e.name && exercise.name && e.name.toLowerCase().trim() === exercise.name.toLowerCase().trim()) return true;
+    const cleanStr = (s: string) => s?.replace(/\[?HEAVY PRIMARY\]?|\[?HYPERTROPHY\]?|\[?ACTIVE RECOVERY\]?|\[?MOVEMENT QUALITY\]?|\[?BLOOD FLOW\]?/gi, '').trim().toLowerCase() || '';
+    return exercise.name && cleanStr(e.name) === cleanStr(exercise.name);
+  }) : undefined;
+
+  const rawGifUrl = (exercise?.gifUrl && exercise.gifUrl !== 'null') ? exercise.gifUrl : (masterDef?.gifUrl || null);
+  const correctedGifUrl = rawGifUrl;
+
+  const resolved = {
+    ...masterDef,
+    ...exercise,
+    gifUrl: correctedGifUrl,
+    description: exercise?.description || masterDef?.description || '',
+    tips: (exercise?.tips && exercise.tips.length > 0) ? exercise.tips : (masterDef?.tips || []),
+    instructions: (exercise?.instructions && exercise.instructions.length > 0) ? exercise.instructions : (masterDef?.instructions || []),
+    muscles: (exercise?.muscles && exercise.muscles.length > 0) ? exercise.muscles : (masterDef?.muscles || []),
+    bodyPart: exercise?.bodyPart || masterDef?.bodyPart || '',
+    equipment: exercise?.equipment || masterDef?.equipment || '',
+    targetMuscle: exercise?.targetMuscle || masterDef?.targetMuscle || '',
+    secondaryMuscles: (exercise?.secondaryMuscles && exercise.secondaryMuscles.length > 0) ? exercise.secondaryMuscles : (masterDef?.secondaryMuscles || []),
+  };
+
   return (
     <Portal>
       <AnimatePresence>
@@ -36,7 +62,7 @@ export const ExerciseInfoModal = ({ exercise, isOpen, onClose }: ExerciseInfoMod
             <div className="flex items-center gap-3">
               <div className="w-1.5 h-6 bg-volt" />
               <h2 className="text-xl font-black uppercase tracking-tight text-white">
-                {exercise.name}
+                {resolved.name}
               </h2>
             </div>
             <button onClick={() => { haptics.button(); onClose(); }} className="text-zinc-500 hover:text-white">
@@ -45,11 +71,11 @@ export const ExerciseInfoModal = ({ exercise, isOpen, onClose }: ExerciseInfoMod
           </div>
           
           <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
-            {exercise.gifUrl && (
+            {resolved.gifUrl && (
               <div className="p-1 bg-zinc-950 border border-white/10 flex items-center justify-center">
                 <img 
-                  src={exercise.gifUrl} 
-                  alt={exercise.name} 
+                  src={resolved.gifUrl} 
+                  alt={resolved.name} 
                   className="w-full aspect-square object-cover"
                   referrerPolicy="no-referrer"
                 />
@@ -59,36 +85,36 @@ export const ExerciseInfoModal = ({ exercise, isOpen, onClose }: ExerciseInfoMod
             <div className="p-4 bg-zinc-900/50 border border-white/5">
               <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-1 font-sans">Description</p>
               <p className="text-sm text-zinc-200 leading-relaxed">
-                {exercise.description || 'No description available.'}
+                {resolved.description || 'No description available.'}
               </p>
             </div>
 
-            {(exercise.bodyPart || exercise.equipment || exercise.targetMuscle) && (
+            {(resolved.bodyPart || resolved.equipment || resolved.targetMuscle) && (
               <div className="p-4 bg-zinc-950/40 border border-white/5 space-y-2 font-mono text-xs text-zinc-400">
                 <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest font-sans mb-2">Technical Specs</p>
-                {exercise.bodyPart && (
+                {resolved.bodyPart && (
                   <div className="flex justify-between border-b border-white/5 pb-1">
                     <span>Body Part</span>
-                    <span className="text-volt font-bold uppercase">{exercise.bodyPart}</span>
+                    <span className="text-volt font-bold uppercase">{resolved.bodyPart}</span>
                   </div>
                 )}
-                {exercise.targetMuscle && (
+                {resolved.targetMuscle && (
                   <div className="flex justify-between border-b border-white/5 pb-1">
                     <span>Target Muscle</span>
-                    <span className="text-volt font-bold uppercase">{exercise.targetMuscle}</span>
+                    <span className="text-volt font-bold uppercase">{resolved.targetMuscle}</span>
                   </div>
                 )}
-                {exercise.equipment && (
+                {resolved.equipment && (
                   <div className="flex justify-between border-b border-white/5 pb-1">
                     <span>Equipment</span>
-                    <span className="text-zinc-200 uppercase">{exercise.equipment}</span>
+                    <span className="text-zinc-200 uppercase">{resolved.equipment}</span>
                   </div>
                 )}
-                {exercise.secondaryMuscles && exercise.secondaryMuscles.length > 0 && (
+                {resolved.secondaryMuscles && resolved.secondaryMuscles.length > 0 && (
                   <div className="space-y-1 pt-1">
                     <p className="text-zinc-500 text-[10px] uppercase">Secondary Muscles</p>
                     <div className="flex flex-wrap gap-1.5 pt-1">
-                      {exercise.secondaryMuscles.map((m, idx) => (
+                      {resolved.secondaryMuscles.map((m, idx) => (
                         <span key={idx} className="bg-zinc-900 border border-white/10 px-1.5 py-0.5 text-[10px] text-zinc-300 uppercase">
                           {m}
                         </span>
@@ -99,11 +125,11 @@ export const ExerciseInfoModal = ({ exercise, isOpen, onClose }: ExerciseInfoMod
               </div>
             )}
 
-            {exercise.muscles && exercise.muscles.length > 0 && (
+            {resolved.muscles && resolved.muscles.length > 0 && (
               <div className="p-4 bg-volt/5 border border-volt/10">
                 <p className="text-xs font-bold text-volt uppercase tracking-widest mb-1">Muscles Targeted</p>
                 <div className="flex flex-wrap gap-2">
-                    {exercise.muscles.map((muscle, i) => (
+                    {resolved.muscles.map((muscle, i) => (
                         <span key={i} className="text-xs text-white bg-volt/20 px-2 py-1">{muscle}</span>
                     ))}
                 </div>
@@ -111,22 +137,22 @@ export const ExerciseInfoModal = ({ exercise, isOpen, onClose }: ExerciseInfoMod
             )}
 
 
-            {exercise.instructions && exercise.instructions.length > 0 && (
+            {resolved.instructions && resolved.instructions.length > 0 && (
               <div className="p-4 bg-zinc-900/50 border border-white/5">
                 <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-1">How To Perform</p>
                 <ul className="list-decimal list-inside space-y-1">
-                    {exercise.instructions.map((step, i) => (
+                    {resolved.instructions.map((step, i) => (
                         <li key={i} className="text-sm text-zinc-400 leading-relaxed">{step}</li>
                     ))}
                 </ul>
               </div>
             )}
 
-            {exercise.tips && exercise.tips.length > 0 && (
+            {resolved.tips && resolved.tips.length > 0 && (
               <div className="p-4 bg-zinc-900/50 border border-white/5">
                 <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-1">Cues & Tips</p>
                 <ul className="list-disc list-inside space-y-1">
-                    {exercise.tips.map((tip, i) => (
+                    {resolved.tips.map((tip, i) => (
                         <li key={i} className="text-sm text-zinc-400 leading-relaxed">{tip}</li>
                     ))}
                 </ul>
