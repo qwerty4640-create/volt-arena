@@ -7,7 +7,7 @@ async function searchRemoteDb() {
     if (!res.ok) throw new Error(`Failed to fetch remote DB: ${res.status}`);
     const remoteExercises = await res.json() as any[];
 
-    const queries = ["barbell squat", "back squat", "squat"];
+    const queries = ["barbell back squat", "barbell squat", "back squat", "barbell bench press", "bench press", "barbell deadlift", "deadlift", "barbell row", "bent over row"];
     console.log(`\nSearching for: ${queries.join(', ')}\n`);
 
     const results = remoteExercises.filter(ex => {
