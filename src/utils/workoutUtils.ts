@@ -254,7 +254,6 @@ export function calculateVolume(
       // If countAllSets is true (like in TrainingView), bypass completed/warmup check
       if (countAllSets || (s.isCompleted && !s.isWarmup)) {
         let w = parseFloat(s.weight) || 0;
-        if (isCalis) w += userWeight;
         if (redlineScale) {
           w = Math.round((w * 0.75) / 5) * 5;
         }
