@@ -223,7 +223,9 @@ export const AnalyticsView = () => {
         let maxMissedReps = 0;
         workingSets.forEach((set: any) => {
           const setTargetStr = set.baseReps || set.reps;
-          const setTarget = parseInt(setTargetStr.split("-")[0]) || 5;
+          const setTarget = (setTargetStr && typeof setTargetStr === "string")
+            ? (parseInt(setTargetStr.split("-")[0]) || 5)
+            : (parseInt(setTargetStr) || 5);
           const setActual = parseInt(set.reps) || 0;
           if (setActual < setTarget) {
             const missed = setTarget - setActual;

@@ -300,7 +300,11 @@ export const TrainingView = ({
         case 'Regeneration': return t('analysis.focusRegeneration');
         case 'Max Effort': return t('analysis.focusMaxEffort');
         case 'Overreach': return t('analysis.focusOverreach');
-        case 'Competition / Taper': return t('analysis.focusCompetition');
+        case 'Comp Prep / Taper':
+        case 'Competition / Taper':
+        case 'Comp Prep':
+        case 'Competition':
+          return t('analysis.focusCompetition');
       }
     }
 

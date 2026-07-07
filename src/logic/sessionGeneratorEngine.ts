@@ -8,6 +8,12 @@ import { UserProfile } from "../contexts/SettingsContext";
 // Types derived from WorkoutContext (import them from types file if moved later)
 import type { WorkoutSession, Exercise, Set as WorkoutSet } from "../types/workout";
 
+const isCompetitionBlock = (type?: string): boolean => {
+  if (!type) return false;
+  const t = type.toLowerCase();
+  return t === "comp prep" || t === "competition" || t === "competition / taper" || t === "comp prep / taper";
+};
+
 export const FULL_BODY_TEMPLATES = [
   {
     title: "Full Body 1",
@@ -569,7 +575,8 @@ export const calculateFallback1RM = (
 export const getDailyMissionTitleAndDesc = (
   blockType: string,
   day: number,
-  frequency: number = 3
+  frequency: number = 3,
+  week?: number
 ): { title: string; desc: string; rulesOfEngagement: string } => {
   const normBlock = (blockType || "").toLowerCase();
 
@@ -675,12 +682,14 @@ export const getDailyMissionTitleAndDesc = (
     normBlock.includes("power") ||
     normBlock.includes("explosiveness") ||
     normBlock.includes("overreach") ||
-    normBlock.includes("competition")
+    normBlock.includes("competition") ||
+    normBlock.includes("comp prep")
   ) {
     if (dIndex === 1) {
+      const isCompPrep = week === 12;
       return {
-        title: "Max Effort",
-        desc: "Test rate of force development and motor unit synchronization.",
+        title: isCompPrep ? "Comp Prep" : "Max Effort",
+        desc: isCompPrep ? "Prepare for maximal output in competition settings." : "Test rate of force development and motor unit synchronization.",
         rulesOfEngagement:
           "High CNS strain with low total session volume. Prepare mentally for maximal motor-unit recruitment. Spotters and safety protocols are mandatory.",
       };
@@ -794,6 +803,7 @@ export const createSessionFromTemplate = (
   isNextWorkout: boolean = true,
   hasCompletedReadinessCheck: boolean = false,
   readinessModifierOverride?: number,
+  isSimulatedForDeduplication: boolean = false
 ): WorkoutSession => {
   const goals =
     profile?.trainingObjectives ||
@@ -820,7 +830,7 @@ export const createSessionFromTemplate = (
   const currentPhaseStr = (block.type as string).toLowerCase();
 
   const frequency = profile?.trainingFrequency || 3;
-  const missionInfo = getDailyMissionTitleAndDesc(block.type, day, frequency);
+  const missionInfo = getDailyMissionTitleAndDesc(block.type, day, frequency, week);
 
   let templatePool = UPPER_LOWER_TEMPLATES;
   
@@ -829,7 +839,7 @@ export const createSessionFromTemplate = (
     ["hypertrophy", "foundation", "powerbuilding", "strength", "pure_strength", "max_effort", "overreach", "deload"].includes(
       currentPhaseStr
     ) ||
-    (currentPhaseStr === "competition / taper" && (goals.includes("powerbuilding") || goals.includes("pure_strength")))
+    ((currentPhaseStr === "competition / taper" || currentPhaseStr === "comp prep" || currentPhaseStr === "comp prep / taper" || currentPhaseStr === "competition") && (goals.includes("powerbuilding") || goals.includes("pure_strength")))
   ) {
     if (frequency === 3) {
       templatePool = FULL_BODY_TEMPLATES;
@@ -854,7 +864,7 @@ export const createSessionFromTemplate = (
     templatePool = TACTICAL_TEMPLATES;
   } else if (
     ["explosiveness", "power", "peaking"].includes(currentPhaseStr) ||
-    (currentPhaseStr === "competition / taper" && !goals.includes("powerbuilding") && !goals.includes("pure_strength"))
+    ((currentPhaseStr === "competition / taper" || currentPhaseStr === "comp prep" || currentPhaseStr === "comp prep / taper" || currentPhaseStr === "competition") && !goals.includes("powerbuilding") && !goals.includes("pure_strength"))
   ) {
     templatePool = EXPLOSIVE_TEMPLATES;
   } else if (
@@ -990,7 +1000,7 @@ export const createSessionFromTemplate = (
       description: `${template.title} - ${preferredModality} Monostructural Session. ${missionInfo.desc}`,
       rulesOfEngagement: `Maintain strict metabolic targets. Progressive overload active. ${missionInfo.rulesOfEngagement || ""}`,
       startTime: Date.now(),
-      targetRpe: (block.type === BlockType.DELOAD || block.type === BlockType.COMPETITION) ? (parseFloat(exSets[0]?.rpe) || readinessRpeLimit) : readinessRpeLimit,
+      targetRpe: (block.type === BlockType.DELOAD || isCompetitionBlock(block.type)) ? (parseFloat(exSets[0]?.rpe) || readinessRpeLimit) : readinessRpeLimit,
       blockType: block.type,
       blockLabel: block.label,
       weekInBlock,
@@ -1020,7 +1030,7 @@ export const createSessionFromTemplate = (
   const interferenceModifier = getInterferenceAdjustment(activePhaseGoals);
 
   // Clone slots to avoid mutating constants
-  let dynamicSlots = initialTemplate.slots.map((s) => ({ ...s }));
+  let dynamicSlots: any[] = initialTemplate.slots.map((s) => ({ ...s }));
 
   // Apply Medical Conditions filtering
   if (profile?.hasMedicalConditions && profile.medicalConditionDetails) {
@@ -1042,20 +1052,145 @@ export const createSessionFromTemplate = (
   }
 
   // Taper Strategy (Phase 1): Split CNS Priming and Active Recovery
-  if (block.type === BlockType.COMPETITION) {
+  if (isCompetitionBlock(block.type)) {
     if (day === 1) {
-      // Day 1: CNS Priming (Squat & Bench focus)
       dynamicSlots = [
-        { pattern: "squat", weight: 75, reps: "1", sets: 3, impact: "high" },
-        { pattern: "push_horizontal", weight: 75, reps: "1", sets: 3, impact: "high" },
-        { pattern: "mobility", reps: "10-15", sets: 2, weight: 0, impact: "low" },
+        {
+          pattern: "squat",
+          exerciseId: "squat_conventional",
+          nameOverride: "Competition Squat",
+          impact: "high",
+          customSets: [
+            { reps: "1", intensity: 0.80, rpe: "6" },
+            { reps: "3", intensity: 0.70, rpe: "6" },
+            { reps: "3", intensity: 0.70, rpe: "6" }
+          ]
+        },
+        {
+          pattern: "hinge",
+          exerciseId: "rdl",
+          nameOverride: "Romanian Deadlift",
+          impact: "medium",
+          customSets: [
+            { reps: "6", rpe: "6" },
+            { reps: "6", rpe: "6" }
+          ]
+        },
+        {
+          pattern: "core",
+          exerciseId: "hanging_leg_raises",
+          nameOverride: "Hanging Leg Raise",
+          impact: "low",
+          customSets: [
+            { reps: "10" },
+            { reps: "10" }
+          ]
+        },
+      ];
+    } else if (day === 2) {
+      dynamicSlots = [
+        {
+          pattern: "push_horizontal",
+          exerciseId: "bench_press_conventional",
+          nameOverride: "Competition Bench Press",
+          impact: "high",
+          customSets: [
+            { reps: "1", intensity: 0.80, rpe: "6" },
+            { reps: "3", intensity: 0.70, rpe: "6" },
+            { reps: "3", intensity: 0.70, rpe: "6" }
+          ]
+        },
+        {
+          pattern: "pull_horizontal",
+          exerciseId: "chest_supported_rows",
+          nameOverride: "Chest-Supported Row",
+          impact: "medium",
+          customSets: [
+            { reps: "8", rpe: "6" },
+            { reps: "8", rpe: "6" }
+          ]
+        },
+        {
+          pattern: "accessory",
+          exerciseId: "db_lateral_raise",
+          nameOverride: "Dumbbell Lateral Raise",
+          impact: "low",
+          customSets: [
+            { reps: "12" },
+            { reps: "12" }
+          ]
+        },
+      ];
+    } else if (day === 3) {
+      dynamicSlots = [
+        {
+          pattern: "hinge",
+          exerciseId: "deadlift_conventional",
+          nameOverride: "Competition Deadlift",
+          impact: "high",
+          customSets: [
+            { reps: "2", intensity: 0.78, rpe: "6" }
+          ]
+        },
+        {
+          pattern: "pull_vertical",
+          exerciseId: "lat_pulldowns",
+          nameOverride: "Lat Pulldown",
+          impact: "medium",
+          customSets: [
+            { reps: "8-10", rpe: "5.5" },
+            { reps: "8-10", rpe: "5.5" }
+          ]
+        },
+        {
+          pattern: "push_vertical",
+          exerciseId: "db_overhead_press",
+          nameOverride: "Dumbbell Overhead Press",
+          impact: "low",
+          customSets: [
+            { reps: "8", rpe: "6" },
+            { reps: "8", rpe: "6" }
+          ]
+        },
+      ];
+    } else if (day === 4) {
+      dynamicSlots = [
+        {
+          pattern: "squat",
+          exerciseId: "squat_conventional",
+          nameOverride: "Squat (Technique)",
+          impact: "medium",
+          customSets: [
+            { reps: "2", intensity: 0.55, rpe: "5" },
+            { reps: "2", intensity: 0.55, rpe: "5" },
+            { reps: "2", intensity: 0.55, rpe: "5" }
+          ]
+        },
+        {
+          pattern: "push_horizontal",
+          exerciseId: "bench_press_conventional",
+          nameOverride: "Bench Press (Technique)",
+          impact: "medium",
+          customSets: [
+            { reps: "3", intensity: 0.55, rpe: "5" },
+            { reps: "3", intensity: 0.55, rpe: "5" },
+            { reps: "3", intensity: 0.55, rpe: "5" }
+          ]
+        },
+        {
+          pattern: "pull_horizontal",
+          exerciseId: "face_pulls",
+          nameOverride: "Face Pulls",
+          impact: "low",
+          customSets: [
+            { reps: "15" },
+            { reps: "15" }
+          ]
+        },
       ];
     } else {
-      // Day 2+: Structural Integrity & Active Recovery
       dynamicSlots = [
-        { pattern: "pull_vertical", impact: "low", reps: "15", sets: 2, weight: 0 },
-        { pattern: "accessory", focus: "lower", impact: "low", reps: "15", sets: 2, weight: 0 },
-        { pattern: "impact", focus: "steady_state", reps: "20-30", sets: 1, weight: 0, impact: "low" },
+        { pattern: "mobility", reps: "10-15", sets: 2, weight: 0, impact: "low" },
       ];
     }
   }
@@ -1226,7 +1361,7 @@ export const createSessionFromTemplate = (
     volumeModifier *= 0.6; // 40% drop in volume for fatigue dissipation
   } else if (
     (goals.includes("peaking") || goals.includes("powerbuilding") || goals.includes("pure_strength")) &&
-    block.type === BlockType.COMPETITION
+    isCompetitionBlock(block.type)
   ) {
     volumeModifier *= 0.5; // Drastic set reduction for realization/taper
     blockIntensity = 0.75; // 75% intensity for CNS priming
@@ -1251,6 +1386,23 @@ export const createSessionFromTemplate = (
 
   // Initialize a set of chosen exercise IDs to prevent duplicates in the SAME session
   const chosenIds = new Set<string>();
+  
+  // Pre-calculate recent exercise IDs from the previous days in the SAME week to prevent consecutive duplication
+  const recentDayExerciseIds = new Set<string>();
+  if (!isSimulatedForDeduplication && day > 1) {
+    for (let back = 1; back <= 2; back++) {
+        if (day - back > 0) {
+            const prevSession = createSessionFromTemplate(
+                week, day - back, profile, currentUnit, lastSession, 
+                currentReadiness, hasAerobicInterference, history, 
+                false, hasCompletedReadinessCheck, readinessModifierOverride, 
+                true // isSimulatedForDeduplication
+            );
+            prevSession.exercises.forEach(e => recentDayExerciseIds.add(e.id));
+        }
+    }
+  }
+
   let hasPassedStrengthThreshold = false;
   const lowerBodySelections: Array<{ id: string; target: "quads" | "hamstrings" | "calves" | "other" }> = [];
 
@@ -1266,7 +1418,7 @@ export const createSessionFromTemplate = (
     description: missionInfo.desc,
     rulesOfEngagement: missionInfo.rulesOfEngagement,
     startTime: Date.now(),
-    targetRpe: (block.type === BlockType.COMPETITION) ? 5.5 : (block.type === BlockType.DELOAD ? 7.0 : readinessRpeLimit),
+    targetRpe: isCompetitionBlock(block.type) ? 5.5 : (block.type === BlockType.DELOAD ? 7.0 : readinessRpeLimit),
     blockType: block.type,
     blockLabel: block.label,
     weekInBlock,
@@ -1445,12 +1597,12 @@ export const createSessionFromTemplate = (
         let pOffset = 0;
         const isImpact = ["impact"].includes(slot.pattern as string);
         
-        while (selected && chosenIds.has(selected.id) && pOffset < list.length && !isImpact) {
+        while (selected && (chosenIds.has(selected.id) || recentDayExerciseIds.has(selected.id)) && pOffset < list.length && !isImpact) {
           pOffset++;
           selected = list[(rIndex + pOffset) % list.length];
         }
         
-        if (strictUnique && selected && chosenIds.has(selected.id) && !isImpact) {
+        if (strictUnique && selected && (chosenIds.has(selected.id) || recentDayExerciseIds.has(selected.id)) && !isImpact) {
           return null;
         }
         return selected;
@@ -1458,7 +1610,11 @@ export const createSessionFromTemplate = (
 
       let selectedExercise = null;
 
-      if (preferredDominance) {
+      if ((slot as any).exerciseId) {
+        selectedExercise = EXERCISE_DATABASE.find((e: any) => e.id === (slot as any).exerciseId) || null;
+      }
+
+      if (!selectedExercise && preferredDominance) {
         const matchingPreferred = availableExercises.filter(e => getMuscleDominance(e) === preferredDominance);
         selectedExercise = selectExerciseFromList(matchingPreferred, true);
       }
@@ -1517,9 +1673,10 @@ export const createSessionFromTemplate = (
 
       // Posterior Chain Flushing during Taper week
       if (
-        block.type === BlockType.COMPETITION &&
+        isCompetitionBlock(block.type) &&
         i > 0 &&
-        (slot.pattern === "hinge" || (selectedExercise && selectedExercise.pattern === "hinge"))
+        (slot.pattern === "hinge" || (selectedExercise && selectedExercise.pattern === "hinge")) &&
+        !(slot as any).exerciseId
       ) {
         const flushingOptions = EXERCISE_DATABASE.filter(e => 
           e.id === "kettlebell_swings" || e.id === "db_rdl"
@@ -1664,7 +1821,9 @@ export const createSessionFromTemplate = (
               let maxMissedReps = 0;
               workingSets.forEach((set: any) => {
                 const setTargetStr = set.baseReps || set.reps;
-                const setTarget = parseInt(setTargetStr.split("-")[0]) || 5;
+                const setTarget = (setTargetStr && typeof setTargetStr === "string")
+                  ? (parseInt(setTargetStr.split("-")[0]) || 5)
+                  : (parseInt(setTargetStr) || 5);
                 const setActual = parseInt(set.reps) || 0;
                 if (setActual < setTarget) {
                   const missed = setTarget - setActual;
@@ -1815,7 +1974,7 @@ export const createSessionFromTemplate = (
         } else if (goals.includes("powerbuilding")) {
           // Powerbuilding strictly mandates exactly 3 heavy working sets for the main lift
           dynamicSets = 3;
-          if (block.type === BlockType.COMPETITION) {
+          if (isCompetitionBlock(block.type)) {
             if (isDeadlift) {
               dynamicSets = 1;
               dynamicReps = "1";
@@ -1851,7 +2010,7 @@ export const createSessionFromTemplate = (
           }
         } else {
           // Standard strength / peaking block mapping
-          if (block.type === BlockType.COMPETITION) {
+          if (isCompetitionBlock(block.type)) {
             if (isDeadlift) {
               dynamicSets = 1;
               dynamicReps = "1";
@@ -1903,7 +2062,10 @@ export const createSessionFromTemplate = (
         dynamicSets = Math.min(dynamicSets, 5);
       }
 
-      const useDynamic = isPrimaryMainLift || (block.type === BlockType.COMPETITION && isMainLift);
+      let useDynamic = isPrimaryMainLift || (isCompetitionBlock(block.type) && isMainLift);
+      if ((slot as any).exerciseId) {
+        useDynamic = false;
+      }
       let reps = useDynamic ? dynamicReps : slot.reps;
       let sets = useDynamic ? dynamicSets : slot.sets;
 
@@ -1924,8 +2086,8 @@ export const createSessionFromTemplate = (
         }
       }
 
-      if (!isMainLift && goals.includes("powerbuilding") && slot.pattern !== "impact" && slot.pattern !== "mobility" && slot.pattern !== "core") {
-        if (block.type === BlockType.COMPETITION) {
+      if (!isMainLift && goals.includes("powerbuilding") && slot.pattern !== "impact" && slot.pattern !== "mobility" && slot.pattern !== "core" && !(slot as any).exerciseId) {
+        if (isCompetitionBlock(block.type)) {
           reps = "8-10";
           sets = 2; // Reduce accessory volume during taper
         } else {
@@ -1935,14 +2097,16 @@ export const createSessionFromTemplate = (
         }
       }
 
-      if (block.type === BlockType.COMPETITION && isDeadlift) {
+      if (isCompetitionBlock(block.type) && isDeadlift && !(slot as any).exerciseId) {
         adjustedIntensity = 0.55;
         adjustedBaseIntensity = 0.55;
       }
 
       // Auto-Regulate the Intensity to prevent mechanical failure on high-readiness high-rep sets
       if (estimated1RM > 0 && !isMainLift) {
-        let parsedMinReps = parseInt(reps.split("-")[0]) || 8;
+        let parsedMinReps = (reps && typeof reps === "string")
+          ? (parseInt(reps.split("-")[0]) || 8)
+          : (parseInt(reps as any) || 8);
         let targetRpeCeiling =
           constraintExercise.targetRPE || 8.0;
         let effectiveReps = parsedMinReps + (10 - targetRpeCeiling);
@@ -2005,7 +2169,7 @@ export const createSessionFromTemplate = (
         unmodifiedWeight = 0;
       }
 
-      let exerciseName = selectedExercise.name;
+      let exerciseName = (slot as any).nameOverride || selectedExercise.name;
 
       const unilateral =
         selectedExercise.isUnilateral || (slot as any).isUnilateral;
@@ -2031,14 +2195,14 @@ export const createSessionFromTemplate = (
         }
       }
 
-      if (slotVolumeModifier < 1.0 && !useDynamic) {
+      if (slotVolumeModifier < 1.0 && !useDynamic && !(slot as any).exerciseId) {
         sets = Math.round(sets * slotVolumeModifier);
         // Safeguard for main lifts to prevent excessive volume drop on frequency shifts
         if (isMainLift && sets < 2 && slotVolumeModifier > 0.5) {
           sets = 2;
         }
         // Preserve 2 sets for accessory, hypertrophy, and mobility work during taper/competition week
-        if (block.type === BlockType.COMPETITION && !isMainLift && slot.pattern !== "impact") {
+        if (isCompetitionBlock(block.type) && !isMainLift && slot.pattern !== "impact") {
           sets = Math.max(2, sets);
         }
         sets = Math.max(1, sets);
@@ -2133,160 +2297,206 @@ export const createSessionFromTemplate = (
         intent,
         restPeriod: constraintExercise.restPeriod || (isMainLift ? 180 : 90),
         sets: (() => {
-          let topSetRpeNum = 0;
-          const mappedSets = Array.from({ length: sets }).map((_, j) => {
-            let targetSetRpe = constraintExercise.targetRPE
-              ? constraintExercise.targetRPE.toString()
-              : "";
+          let mappedSets: any[] = [];
+          if ((slot as any).customSets) {
+            mappedSets = (slot as any).customSets.map((customSet: any, j: number) => {
+              let setWeight: number | string = 0;
+              let setUnmodifiedWeight: number | string = 0;
 
-            // Taper/Competition week sets RPE strictly to 5.5
-            if (block.type === BlockType.COMPETITION) {
-              targetSetRpe = "5.5";
-            } else if (["endurance", "aerobic base", "capacity", "vo2 max", "threshold", "endurance retention"].includes(currentPhaseStr) || selectedExercise.pattern === "impact") {
-              if (String(reps).toLowerCase().includes("warmup")) {
-                targetSetRpe = "2";
-              } else if (String(reps).toLowerCase().includes("max effort") || String(reps).toLowerCase().includes("sprint")) {
-                targetSetRpe = "9.5";
-              } else if (String(reps).toLowerCase().includes("tempo") || String(reps).toLowerCase().includes("threshold")) {
-                targetSetRpe = "8";
+              if (isMainLift && estimated1RM > 0) {
+                const setIntensity = customSet.intensity || 0.70;
+                setUnmodifiedWeight = Math.round((estimated1RM * setIntensity) / 5) * 5;
+                setWeight = Math.round((estimated1RM * setIntensity * readinessModifier * recoveryModifier) / 5) * 5;
               } else {
-                targetSetRpe = "3"; // Base building default
-              }
-            } else if ([BlockType.RETENTION, BlockType.STRENGTH_RETENTION, BlockType.ENDURANCE_RETENTION].includes(block.type as BlockType)) {
-              if (block.type === BlockType.ENDURANCE_RETENTION) {
-                 targetSetRpe = "7";
-              } else {
-                 // Strength retention keeps tension high but avoids excessive RPE build up
-                 targetSetRpe = j === 0 ? "8" : "7.5";
-              }
-            } else if (subsequentNonMain) {
-              if (goals.includes("powerbuilding")) {
-                targetSetRpe = isFinalWeek ? "8.5" : "8.0";
-              } else {
-                targetSetRpe = isFinalWeek ? "9.0" : "8.5";
-              }
-            } else if (isPrimaryMainLift) {
-               const isBifurcated =
-                (block.type as any) === BlockType.STRENGTH ||
-                (block.type as any) === BlockType.MAX_EFFORT ||
-                (block.type as any) === BlockType.PEAKING;
-
-              if (isBifurcated) {
-                if (goals.includes("pure_strength")) {
-                  targetSetRpe = j === 0 ? (isFinalWeek ? "10" : "9.5") : (isFinalWeek ? "9" : "8.5");
-                } else if (goals.includes("powerbuilding")) {
-                  targetSetRpe = j === 0 ? (isFinalWeek ? "9.5" : "9") : (isFinalWeek ? "8.5" : "8");
-                } else if (goals.includes("hypertrophy")) {
-                  targetSetRpe = j === 0 ? (isFinalWeek ? "9.5" : "9") : (isFinalWeek ? "8.5" : "8");
-                } else if (goals.includes("peaking")) {
-                  targetSetRpe = j === 0 ? (isFinalWeek ? "10" : "9") : (isFinalWeek ? "8.5" : "8");
-                } else if (goals.includes("longevity")) {
-                  targetSetRpe = "7.5";
+                if (customSet.weight !== undefined) {
+                  setWeight = customSet.weight;
+                  setUnmodifiedWeight = customSet.weight;
+                } else if (lastWeight > 0) {
+                  setWeight = lastWeight;
+                  setUnmodifiedWeight = lastWeight;
+                } else if (slot.pattern === "impact" || slot.pattern === "mobility" || slot.pattern === "core") {
+                  setWeight = slot.weight || 0;
+                  setUnmodifiedWeight = slot.weight || 0;
                 } else {
-                  targetSetRpe = j === 0 ? "9" : "8"; // Top set vs Back-off sets (Strength fallback)
+                  if (customSet.rpe) {
+                    setWeight = `RPE ${customSet.rpe}`;
+                    setUnmodifiedWeight = `RPE ${customSet.rpe}`;
+                  } else {
+                    setWeight = slot.weight || "RPE 6";
+                    setUnmodifiedWeight = slot.weight || "RPE 6";
+                  }
                 }
-              } else {
-                // Straight sets during foundation, hypertrophy, deload, etc. (no bifurcation RPE drop)
-                if (block.type === BlockType.DELOAD) {
-                  targetSetRpe = "7";
-                } else if (goals.includes("longevity")) {
-                  targetSetRpe = "7.5";
-                } else if (block.type === BlockType.HYPERTROPHY || block.type === BlockType.FOUNDATION) {
-                  if (goals.includes("hypertrophy")) {
-                    targetSetRpe = isFinalWeek ? "9" : "8.5";
+              }
+
+              const targetSetRpe = customSet.rpe ? customSet.rpe.toString() : "";
+
+              return {
+                id: `s${i}-${j}`,
+                weight: setWeight.toString(),
+                baseWeight: setUnmodifiedWeight.toString(),
+                reps: customSet.reps || "1",
+                baseReps: customSet.reps || "1",
+                rpe: targetSetRpe,
+                baseRpe: targetSetRpe,
+                isCompleted: false,
+              };
+            });
+          } else {
+            let topSetRpeNum = 0;
+            mappedSets = Array.from({ length: sets }).map((_, j) => {
+              let targetSetRpe = constraintExercise.targetRPE
+                ? constraintExercise.targetRPE.toString()
+                : "";
+
+              // Taper/Competition week sets RPE strictly to 5.5 unless explicitly set in the slot
+              if (isCompetitionBlock(block.type)) {
+                targetSetRpe = constraintExercise.targetRPE ? constraintExercise.targetRPE.toString() : "5.5";
+              } else if (["endurance", "aerobic base", "capacity", "vo2 max", "threshold", "endurance retention"].includes(currentPhaseStr) || selectedExercise.pattern === "impact") {
+                if (String(reps).toLowerCase().includes("warmup")) {
+                  targetSetRpe = "2";
+                } else if (String(reps).toLowerCase().includes("max effort") || String(reps).toLowerCase().includes("sprint")) {
+                  targetSetRpe = "9.5";
+                } else if (String(reps).toLowerCase().includes("tempo") || String(reps).toLowerCase().includes("threshold")) {
+                  targetSetRpe = "8";
+                } else {
+                  targetSetRpe = "3"; // Base building default
+                }
+              } else if ([BlockType.RETENTION, BlockType.STRENGTH_RETENTION, BlockType.ENDURANCE_RETENTION].includes(block.type as BlockType)) {
+                if (block.type === BlockType.ENDURANCE_RETENTION) {
+                   targetSetRpe = "7";
+                } else {
+                   // Strength retention keeps tension high but avoids excessive RPE build up
+                   targetSetRpe = j === 0 ? "8" : "7.5";
+                }
+              } else if (subsequentNonMain) {
+                if (goals.includes("powerbuilding")) {
+                  targetSetRpe = isFinalWeek ? "8.5" : "8.0";
+                } else {
+                  targetSetRpe = isFinalWeek ? "9.0" : "8.5";
+                }
+              } else if (isPrimaryMainLift) {
+                 const isBifurcated =
+                  (block.type as any) === BlockType.STRENGTH ||
+                  (block.type as any) === BlockType.MAX_EFFORT ||
+                  (block.type as any) === BlockType.PEAKING;
+
+                if (isBifurcated) {
+                  if (goals.includes("pure_strength")) {
+                    targetSetRpe = j === 0 ? (isFinalWeek ? "10" : "9.5") : (isFinalWeek ? "9" : "8.5");
+                  } else if (goals.includes("powerbuilding")) {
+                    targetSetRpe = j === 0 ? (isFinalWeek ? "9.5" : "9") : (isFinalWeek ? "8.5" : "8");
+                  } else if (goals.includes("hypertrophy")) {
+                    targetSetRpe = j === 0 ? (isFinalWeek ? "9.5" : "9") : (isFinalWeek ? "8.5" : "8");
+                  } else if (goals.includes("peaking")) {
+                    targetSetRpe = j === 0 ? (isFinalWeek ? "10" : "9") : (isFinalWeek ? "8.5" : "8");
+                  } else if (goals.includes("longevity")) {
+                    targetSetRpe = "7.5";
+                  } else {
+                    targetSetRpe = j === 0 ? "9" : "8"; // Top set vs Back-off sets (Strength fallback)
+                  }
+                } else {
+                  // Straight sets during foundation, hypertrophy, deload, etc. (no bifurcation RPE drop)
+                  if (block.type === BlockType.DELOAD) {
+                    targetSetRpe = "7";
+                  } else if (goals.includes("longevity")) {
+                    targetSetRpe = "7.5";
+                  } else if (block.type === BlockType.HYPERTROPHY || block.type === BlockType.FOUNDATION) {
+                    if (goals.includes("hypertrophy")) {
+                      targetSetRpe = isFinalWeek ? "9" : "8.5";
+                    } else {
+                      targetSetRpe = isFinalWeek ? "8.5" : "8";
+                    }
                   } else {
                     targetSetRpe = isFinalWeek ? "8.5" : "8";
                   }
+                }
+              } else if (!targetSetRpe) {
+                // Accessories
+                if (
+                  (block.type as any) === BlockType.OVERREACH ||
+                  (block.type as any) === BlockType.MAX_EFFORT
+                ) {
+                  if (goals.includes("hypertrophy")) {
+                    targetSetRpe = "9";
+                  } else if (goals.includes("powerbuilding")) {
+                    targetSetRpe = "8.5";
+                  } else if (goals.includes("pure_strength")) {
+                    targetSetRpe = "7.5";
+                  }
+                } else if (goals.includes("longevity")) {
+                  targetSetRpe = "7.0";
+                } else if (goals.includes("powerbuilding") && ((block.type as any) === BlockType.STRENGTH || (block.type as any) === BlockType.MAX_EFFORT || (block.type as any) === BlockType.PEAKING)) {
+                  // Strict bodybuilding rules for remaining back-offs/accessories
+                  targetSetRpe = isFinalWeek ? "8.5" : "8.0";
                 } else {
-                  targetSetRpe = isFinalWeek ? "8.5" : "8";
+                  targetSetRpe = goals.includes("hypertrophy") ? (isFinalWeek ? "9" : "8") : "7.5";
                 }
               }
-            } else if (!targetSetRpe) {
-              // Accessories
-              if (
-                (block.type as any) === BlockType.OVERREACH ||
-                (block.type as any) === BlockType.MAX_EFFORT
-              ) {
-                if (goals.includes("hypertrophy")) {
-                  targetSetRpe = "9";
-                } else if (goals.includes("powerbuilding")) {
-                  targetSetRpe = "8.5";
-                } else if (goals.includes("pure_strength")) {
-                  targetSetRpe = "7.5";
-                }
-              } else if (goals.includes("longevity")) {
-                targetSetRpe = "7.0";
-              } else if (goals.includes("powerbuilding") && ((block.type as any) === BlockType.STRENGTH || (block.type as any) === BlockType.MAX_EFFORT || (block.type as any) === BlockType.PEAKING)) {
-                // Strict bodybuilding rules for remaining back-offs/accessories
-                targetSetRpe = isFinalWeek ? "8.5" : "8.0";
-              } else {
-                targetSetRpe = goals.includes("hypertrophy") ? (isFinalWeek ? "9" : "8") : "7.5";
-              }
-            }
 
-            if (targetSetRpe) {
-              let rpeVal = parseFloat(targetSetRpe);
-              if (!isNaN(rpeVal)) {
+              if (targetSetRpe) {
+                let rpeVal = parseFloat(targetSetRpe);
+                if (!isNaN(rpeVal)) {
+                  const isBifurcated =
+                    (block.type as any) === BlockType.STRENGTH ||
+                    (block.type as any) === BlockType.MAX_EFFORT ||
+                    (block.type as any) === BlockType.PEAKING;
+
+                  if (isPrimaryMainLift && isBifurcated) {
+                    if (j === 0) {
+                      rpeVal = Math.min(rpeVal, readinessRpeLimit);
+                    } else {
+                      let originalTopSetRpe = 9;
+                      if (goals.includes("pure_strength") || goals.includes("peaking")) {
+                        originalTopSetRpe = isFinalWeek ? 10 : 9.5;
+                      } else if (goals.includes("powerbuilding") || goals.includes("hypertrophy")) {
+                        originalTopSetRpe = isFinalWeek ? 9.5 : 9;
+                      }
+                      const originalValue = rpeVal;
+                      const dropFromTop = Math.max(0, originalTopSetRpe - originalValue);
+                      const cappedTop = Math.min(originalTopSetRpe, readinessRpeLimit);
+                      rpeVal = Math.min(originalValue, cappedTop - dropFromTop);
+                    }
+                  } else {
+                    rpeVal = Math.min(rpeVal, readinessRpeLimit);
+                  }
+                  rpeVal = Math.max(5, rpeVal);
+                  targetSetRpe = rpeVal.toString();
+                }
+              }
+
+              let setWeight = typeof weight === "number" ? weight : parseFloat(weight as string) || 0;
+              let setUnmodifiedWeight = typeof unmodifiedWeight === "number" ? unmodifiedWeight : parseFloat(unmodifiedWeight as string) || 0;
+
+              if (j === 0) {
+                topSetRpeNum = parseFloat(targetSetRpe) || 8;
+              } else if (j > 0 && targetSetRpe) {
+                const currentRpeNum = parseFloat(targetSetRpe) || 8;
+                const rpeDrop = topSetRpeNum - currentRpeNum;
                 const isBifurcated =
                   (block.type as any) === BlockType.STRENGTH ||
                   (block.type as any) === BlockType.MAX_EFFORT ||
                   (block.type as any) === BlockType.PEAKING;
 
-                if (isPrimaryMainLift && isBifurcated) {
-                  if (j === 0) {
-                    rpeVal = Math.min(rpeVal, readinessRpeLimit);
-                  } else {
-                    let originalTopSetRpe = 9;
-                    if (goals.includes("pure_strength") || goals.includes("peaking")) {
-                      originalTopSetRpe = isFinalWeek ? 10 : 9.5;
-                    } else if (goals.includes("powerbuilding") || goals.includes("hypertrophy")) {
-                      originalTopSetRpe = isFinalWeek ? 9.5 : 9;
-                    }
-                    const originalValue = rpeVal;
-                    const dropFromTop = Math.max(0, originalTopSetRpe - originalValue);
-                    const cappedTop = Math.min(originalTopSetRpe, readinessRpeLimit);
-                    rpeVal = Math.min(originalValue, cappedTop - dropFromTop);
-                  }
-                } else {
-                  rpeVal = Math.min(rpeVal, readinessRpeLimit);
+                if (rpeDrop > 0 && isMainLift && isBifurcated) {
+                  // Each point of RPE drop reduces weight by ~5% (0.05) to maintain the rep target
+                  const dropFactor = 1 - (rpeDrop * 0.05);
+                  setWeight = Math.round((setWeight * dropFactor) / 5) * 5;
+                  setUnmodifiedWeight = Math.round((setUnmodifiedWeight * dropFactor) / 5) * 5;
                 }
-                rpeVal = Math.max(5, rpeVal);
-                targetSetRpe = rpeVal.toString();
               }
-            }
 
-            let setWeight = typeof weight === "number" ? weight : parseFloat(weight as string) || 0;
-            let setUnmodifiedWeight = typeof unmodifiedWeight === "number" ? unmodifiedWeight : parseFloat(unmodifiedWeight as string) || 0;
-
-            if (j === 0) {
-              topSetRpeNum = parseFloat(targetSetRpe) || 8;
-            } else if (j > 0 && targetSetRpe) {
-              const currentRpeNum = parseFloat(targetSetRpe) || 8;
-              const rpeDrop = topSetRpeNum - currentRpeNum;
-              const isBifurcated =
-                (block.type as any) === BlockType.STRENGTH ||
-                (block.type as any) === BlockType.MAX_EFFORT ||
-                (block.type as any) === BlockType.PEAKING;
-
-              if (rpeDrop > 0 && isMainLift && isBifurcated) {
-                // Each point of RPE drop reduces weight by ~5% (0.05) to maintain the rep target
-                const dropFactor = 1 - (rpeDrop * 0.05);
-                setWeight = Math.round((setWeight * dropFactor) / 5) * 5;
-                setUnmodifiedWeight = Math.round((setUnmodifiedWeight * dropFactor) / 5) * 5;
-              }
-            }
-
-            return {
-              id: `s${i}-${j}`,
-              weight: setWeight.toString(),
-              baseWeight: setUnmodifiedWeight.toString(),
-              reps: reps,
-              baseReps: reps,
-              rpe: targetSetRpe,
-              baseRpe: targetSetRpe,
-              isCompleted: false,
-            };
-          });
+              return {
+                id: `s${i}-${j}`,
+                weight: setWeight.toString(),
+                baseWeight: setUnmodifiedWeight.toString(),
+                reps: reps,
+                baseReps: reps,
+                rpe: targetSetRpe,
+                baseRpe: targetSetRpe,
+                isCompleted: false,
+              };
+            });
+          }
 
           let isTargetForMed = false;
           if (retentionProtocol.active) {

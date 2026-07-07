@@ -915,6 +915,36 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     ]
   },
   {
+    "id": "leg_curl_standing",
+    "name": "Standing Leg Curl",
+    "category": "Accessory",
+    "pattern": "accessory",
+    "impact": "low",
+    "velocity": "medium",
+    "description": "Isolation exercise for hamstrings using a standing cable.",
+    "instructions": [
+      "Stand facing the machine.",
+      "Attach cable to ankle.",
+      "Curl leg back.",
+      "Control return."
+    ],
+    "tips": [
+      "Keep torso upright.",
+      "Focus on hamstrings.",
+      "Don't use momentum."
+    ],
+    "muscles": [
+      "Hamstrings"
+    ],
+    "gifUrl": "",
+    "bodyPart": "upper legs",
+    "equipment": "cable",
+    "targetMuscle": "hamstrings",
+    "secondaryMuscles": [
+      "glutes"
+    ]
+  },
+  {
     "id": "chest_press_machine",
     "name": "Chest Press Machine",
     "category": "Bench",
@@ -4086,12 +4116,12 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Rhomboids"
     ],
     "gifUrl": "https://static.exercisedb.dev/media/VtTbiP3.gif",
-    "bodyPart": "upper legs",
+    "bodyPart": "shoulders",
     "equipment": "band",
-    "targetMuscle": "glutes",
+    "targetMuscle": "rear delts",
     "secondaryMuscles": [
-      "hamstrings",
-      "lower back"
+      "traps",
+      "rhomboids"
     ]
   },
   {

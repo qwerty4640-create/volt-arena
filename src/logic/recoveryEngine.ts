@@ -96,7 +96,7 @@ export const calculateSystemReadiness = (
     }
   });
 
-  let currentFatigue = 0;
+  let currentFatigue = 1.0;
   const recentSessions = filteredHistory.slice(0, 5);
   
   recentSessions.forEach(session => {
@@ -174,7 +174,7 @@ export const calculateSystemReadiness = (
   currentFatigue = Math.min(70, currentFatigue);
   const fatiguePenalty = currentFatigue;
 
-  let stressPenalty = 0.0;
+  let stressPenalty = 1.0;
   let sleepDeficit = 0;
   let subjectiveFatigueDeficit = 0;
   let sorenessMultiplier = 1.0;
@@ -183,7 +183,7 @@ export const calculateSystemReadiness = (
   if (subjectiveReadiness) {
     const t_stress = Math.max(0, (Date.now() - (subjectiveReadiness.timestamp || Date.now())) / 3600000);
     const subjectiveStressDeficit = (5 - (subjectiveReadiness.stress || 5)) * 4;
-    stressPenalty = subjectiveStressDeficit * Math.exp(-k_stress * t_stress);
+    stressPenalty = Math.max(1.0, subjectiveStressDeficit * Math.exp(-k_stress * t_stress));
     sleepDeficit = (5 - (subjectiveReadiness.sleep || 5)) * 5;
     subjectiveFatigueDeficit = (5 - (subjectiveReadiness.fatigue || 5)) * 4;
 

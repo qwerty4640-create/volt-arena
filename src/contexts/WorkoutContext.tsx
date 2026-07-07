@@ -1238,12 +1238,16 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({
                 : deadliftPRUpdate;
             const targetRepsStr =
               completedSets[0].baseReps || completedSets[0].reps;
-            const targetRepsParsed = parseInt(targetRepsStr.split("-")[0]) || 5;
+            const targetRepsParsed = (targetRepsStr && typeof targetRepsStr === "string")
+              ? (parseInt(targetRepsStr.split("-")[0]) || 5)
+              : (parseInt(targetRepsStr) || 5);
 
             let maxMissedReps = 0;
             completedSets.forEach((set) => {
               const setTargetStr = set.baseReps || set.reps;
-              const setTarget = parseInt(setTargetStr.split("-")[0]) || 5;
+              const setTarget = (setTargetStr && typeof setTargetStr === "string")
+                ? (parseInt(setTargetStr.split("-")[0]) || 5)
+                : (parseInt(setTargetStr) || 5);
               const setActual = parseInt(set.reps) || 0;
               if (setActual < setTarget) {
                 const missed = setTarget - setActual;

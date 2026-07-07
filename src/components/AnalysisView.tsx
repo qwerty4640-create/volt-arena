@@ -680,10 +680,10 @@ export const ReadinessAnalysisWidget = () => {
                                                 </span>
                                             </div>
                                             <span className={cn(
-                                                "font-headline text-[10px] font-black uppercase tracking-widest border-l-2 pl-3 block mb-4 text-zinc-600 border-zinc-800",
-                                                ewmaRatio > 1.5 ? "text-crimson" : ewmaRatio >= 0.8 && ewmaRatio <= 1.3 ? "text-volt" : "text-zinc-400"
+                                                "font-headline text-[10px] font-black uppercase tracking-widest border-l-2 pl-3 block mb-4 border-zinc-800",
+                                                ewmaRatio > 1.5 ? "text-crimson" : ewmaRatio >= 0.8 && ewmaRatio <= 1.3 ? "text-volt" : ewmaRatio < 0.8 ? "text-sky-400" : "text-zinc-400"
                                             )}>
-                                                {ewmaRatio > 1.5 ? "Elevated" : ewmaRatio >= 0.8 && ewmaRatio <= 1.3 ? "Optimal" : "Monitor"}
+                                                {ewmaRatio > 1.5 ? "Elevated" : ewmaRatio >= 0.8 && ewmaRatio <= 1.3 ? "Optimal" : ewmaRatio < 0.8 ? "Tapering" : "Monitor"}
                                             </span>
                                         </div>
                                     ) : (
