@@ -20,7 +20,11 @@ const getPhase = (typeStr: string): number => {
   return 1; // foundation, deload, regeneration, prehab
 };
 
-export const getFitnessTestInfo = (profile: UserProfile | null, currentMissionTitle?: string): FitnessTestInfo => {
+export const getFitnessTestInfo = (
+  profile: UserProfile | null, 
+  currentMissionTitle?: string,
+  history?: any[]
+): FitnessTestInfo => {
   if (!profile) {
     return {
       testType: 'none',
@@ -121,7 +125,43 @@ export const getFitnessTestInfo = (profile: UserProfile | null, currentMissionTi
   }
 
   const totalMissions = nextTargetWeeks * frequency;
-  const completedMissions = ((currentMissionWeek - 1) * frequency) + (currentMissionDay - 1);
+  
+  const offsetMissions = (profile.trainingWeekOffset || 0) * frequency;
+  const completedFromTitle = ((currentMissionWeek - 1) * frequency) + (currentMissionDay - 1);
+  const completedFromCurrentTitle = Math.max(0, completedFromTitle - offsetMissions);
+
+  let historyCompletedLength = 0;
+  let maxHistoryTitleCompleted = 0;
+
+  if (history) {
+    let filteredHistory = history.filter((s) => !s.isCustom);
+    if (profile.programResetAt) {
+      const tempFiltered = filteredHistory.filter((s) => (s.completedAt || 0) > profile.programResetAt!);
+      if (tempFiltered.length > 0) {
+        filteredHistory = tempFiltered;
+      } else if (history.length > 0 && Date.now() - profile.programResetAt < 24 * 60 * 60 * 1000) {
+        // Ignore bugged recent backfill
+      } else if (tempFiltered.length === 0) {
+        filteredHistory = [];
+      }
+    }
+    historyCompletedLength = filteredHistory.length;
+
+    for (const session of filteredHistory) {
+      const match = session.title?.match(/W(\d+)D(\d+)/);
+      if (match) {
+        const hWeek = parseInt(match[1]);
+        const hDay = parseInt(match[2]);
+        const hCompleted = ((hWeek - 1) * frequency) + hDay; 
+        if (hCompleted > maxHistoryTitleCompleted) {
+           maxHistoryTitleCompleted = hCompleted;
+        }
+      }
+    }
+  }
+  
+  const completedFromMaxTitle = Math.max(0, maxHistoryTitleCompleted - offsetMissions);
+  const completedMissions = Math.max(historyCompletedLength, completedFromCurrentTitle, completedFromMaxTitle);
   const missionsRemaining = Math.max(0, totalMissions - completedMissions);
 
   // Calculate physical target date. We subtract trainingWeekOffset so that if they skipped ahead, 
