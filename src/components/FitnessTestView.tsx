@@ -64,16 +64,16 @@ import { useWorkout } from '../contexts/WorkoutContext';
 
 export const FitnessTestView = ({ immersionMode = 'immersive', isVoiceActive = false, lastVoiceCommand, onReadyChange }: StageViewProps) => {
   const { t, profile, updateProfile, unit, theme } = useSettings();
-  const { getNextWorkoutTemplate } = useWorkout();
+  const { getNextWorkoutTemplate, history } = useWorkout();
   const nextWorkout = getNextWorkoutTemplate();
-  const { isUnlocked, daysRemaining, missionsRemaining, testLabel, testType, isFinalTest } = getFitnessTestInfo(profile, nextWorkout?.title);
+  const { isUnlocked, daysRemaining, missionsRemaining, testLabel, testType, isFinalTest } = getFitnessTestInfo(profile, nextWorkout?.title, history);
   
   const [isReady, setIsReady] = useState(false);
   const [hasEntered, setHasEntered] = useState(false);
   const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
   const [isPostponeModalOpen, setIsPostponeModalOpen] = useState(false);
-  const [setupStep, setSetupStep] = useState<1 | 2>(1);
+  const [setupStep, setSetupStep] = useState<1 | 2>(2);
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
   const [selectedStage, setSelectedStage] = useState<StageType>('arnold');
   const getInitialTargets = () => {
@@ -341,11 +341,10 @@ export const FitnessTestView = ({ immersionMode = 'immersive', isVoiceActive = f
 
     // Global Commands (Redundant but kept for local context if needed)
     if (transcript.includes('next step')) {
-      if (setupStep === 1) setSetupStep(2);
-      else if (setupStep === 2) setIsTermsModalOpen(true);
+      setIsTermsModalOpen(true);
     }
     if (transcript.includes('back')) {
-      if (setupStep === 2) setSetupStep(1);
+      setHasEntered(false);
     }
     if (transcript.includes('enter arena') || transcript.includes('start competition')) {
       setIsTermsModalOpen(true);
@@ -422,10 +421,10 @@ export const FitnessTestView = ({ immersionMode = 'immersive', isVoiceActive = f
 
   const renderSetup = () => (
     <motion.div 
-      key={`step-${setupStep}`}
-      initial={{ opacity: 0, x: setupStep === 1 ? -20 : setupStep === 2 ? 0 : 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: setupStep === 1 ? 20 : setupStep === 2 ? 0 : -20 }}
+      key="step-setup"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
       className="relative z-30 w-full max-w-screen-2xl flex flex-col gap-6 md:grid md:grid-cols-12 md:gap-8"
     >
       {/* Header */}
@@ -433,192 +432,140 @@ export const FitnessTestView = ({ immersionMode = 'immersive', isVoiceActive = f
         <div className="flex items-center gap-4">
           <Trophy className="text-volt" size={24} />
           <span className="font-sans text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] md:tracking-[0.4em] text-volt">
-            {t('stage.stepCount', { step: setupStep, total: 2 })}: {setupStep === 1 ? t('stage.selectArena') : t('stage.enterWeights')}
+            {t('stage.enterWeights')}
           </span>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <div className={cn("w-8 md:w-12 h-1 transition-colors", setupStep === 1 ? "bg-volt" : "bg-volt/20")} />
-          <div className={cn("w-8 md:w-12 h-1 transition-colors", setupStep === 2 ? "bg-volt" : "bg-volt/20")} />
         </div>
       </div>
 
-      {setupStep === 1 && (
-        <div className="col-span-12">
-          <section className="glass-panel p-4 md:p-8 border-white/5 space-y-6 md:space-y-8">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {STAGES.map((stage) => (
-                <button
-                  key={stage.id}
-                  onClick={() => setSelectedStage(stage.id as StageType)}
-                  className={cn(
-                    "relative h-28 md:h-36 lg:h-44 overflow-hidden border-2 transition-all group",
-                    selectedStage === stage.id 
-                      ? "border-volt ring-4 ring-volt/20" 
-                      : "border-white/5 hover:border-white/20"
-                  )}
-                >
-                  <img 
-                    src={stage.image} 
-                    alt={stage.label}
-                    className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:scale-110 transition-transform duration-700"
-                    referrerPolicy="no-referrer"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-void via-void/40 to-transparent" />
-                  <div className="absolute bottom-6 left-6 text-left">
-                    <span className={cn(
-                      "font-sans text-sm font-bold uppercase tracking-widest",
-                      selectedStage === stage.id ? "text-volt" : "text-white"
-                    )}>
-                      {t(stage.label)}
-                    </span>
+      <div className="col-span-12 flex flex-col gap-6 md:gap-8">
+        <section className="glass-panel p-4 md:p-8 border-none space-y-6">
+          {testTargets.some(t => t.attempt !== undefined) ? (
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 xl:gap-6">
+              {(['stage.squat', 'stage.benchPress', 'stage.deadlift']).map((liftName) => {
+                const attempts = testTargets.filter(t => t.name === liftName);
+                return (
+                  <div key={liftName} className="glass-panel p-4 md:p-5 xl:p-6 border-white/5 bg-white/5 flex flex-col gap-5">
+                    <div className="border-b border-white/10 pb-3 flex items-center justify-between">
+                      <h3 className="font-sans text-base md:text-lg font-black uppercase text-volt leading-none tracking-wider">
+                        {t(liftName)}
+                      </h3>
+                      <span className="text-[9px] font-black tracking-widest text-zinc-500 uppercase">
+                        MAX: {getLiftMax(liftName)} {t(unit === 'imperial' ? 'stage.lbs' : 'stage.kg')}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col gap-4">
+                      {attempts.map((attemptItem) => {
+                        const globalIndex = testTargets.findIndex(t => t === attemptItem);
+                        return (
+                          <div key={`attempt-${attemptItem.attempt}`} className="flex flex-col gap-2 p-4 bg-void/40 border border-white/5">
+                            <div className="flex justify-between items-center text-[10px] font-bold text-zinc-500 uppercase tracking-widest leading-none">
+                              <span>Attempt {attemptItem.attempt}</span>
+                              {attemptItem.attempt === 3 && (
+                                <span className="text-volt px-1.5 py-0.5 bg-volt/10 text-[8px] font-black tracking-[0.1em]">
+                                  PR GOAL
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="flex items-center justify-between gap-4 mt-1">
+                              <button
+                                onClick={() => updateTarget(globalIndex, -attemptItem.step)}
+                                className="w-10 h-10 shrink-0 bg-white/5 hover:bg-white/10 active:bg-volt/10 flex items-center justify-center text-zinc-400 hover:text-white font-black text-lg transition-colors"
+                                id={`sub-btn-${globalIndex}`}
+                              >
+                                -
+                              </button>
+                              <div className="text-center flex-1 flex items-center justify-center gap-2">
+                                <input
+                                  type="text"
+                                  inputMode="decimal"
+                                  value={targetInputs[globalIndex] !== undefined ? targetInputs[globalIndex] : attemptItem.target.toString()}
+                                  onChange={(e) => handleInputChange(globalIndex, e.target.value)}
+                                  onBlur={() => handleInputBlur(globalIndex)}
+                                  className="w-24 bg-void/50 text-center border border-white/10 font-sans text-2xl font-black text-white focus:border-volt/50 focus:outline-none py-1 leading-none selection:bg-volt/30"
+                                  style={{ borderRadius: '0' }}
+                                />
+                                <span className="text-[10px] font-black text-zinc-500 uppercase leading-none">
+                                  {t(attemptItem.unit)}
+                                </span>
+                              </div>
+                              <button
+                                onClick={() => updateTarget(globalIndex, attemptItem.step)}
+                                className="w-10 h-10 shrink-0 bg-white/5 hover:bg-white/10 active:bg-volt/10 flex items-center justify-center text-zinc-400 hover:text-white font-black text-lg transition-colors"
+                                id={`add-btn-${globalIndex}`}
+                              >
+                                +
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
-                </button>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="space-y-3 md:space-y-4">
+              {testTargets.map((targetItem, index) => (
+                <div 
+                  key={`${targetItem.name}-${index}`}
+                  className="flex flex-col sm:flex-row sm:items-center justify-between p-4 md:p-6 bg-white/5 border-none gap-4"
+                >
+                  <div>
+                    <span className="font-sans text-[10px] font-bold text-zinc-600 uppercase tracking-widest block mb-1">Target {index + 1}</span>
+                    <span className="font-sans text-lg md:text-xl font-black uppercase text-white leading-none">{t(targetItem.name)}</span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between sm:justify-end gap-4">
+                    <button 
+                      onClick={() => updateTarget(index, -targetItem.step)}
+                      className="w-10 h-10 bg-white/5 hover:bg-white/10 flex items-center justify-center text-zinc-400 transition-colors"
+                    >
+                      -
+                    </button>
+                    <div className="text-center min-w-[124px] flex items-center justify-center gap-2">
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        value={targetInputs[index] !== undefined ? targetInputs[index] : targetItem.target.toString()}
+                        onChange={(e) => handleInputChange(index, e.target.value)}
+                        onBlur={() => handleInputBlur(index)}
+                        className="w-24 bg-void/50 text-center border border-white/10 font-sans text-2xl md:text-3xl font-black text-volt focus:border-volt focus:outline-none py-1 leading-none selection:bg-volt/30"
+                        style={{ borderRadius: '0' }}
+                      />
+                      <span className="text-[10px] font-black text-zinc-500 uppercase leading-none">{t(targetItem.unit)}</span>
+                    </div>
+                    <button 
+                      onClick={() => updateTarget(index, targetItem.step)}
+                      className="w-10 h-10 bg-white/5 hover:bg-white/10 flex items-center justify-center text-zinc-400 transition-colors"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
               ))}
             </div>
-            
+          )}
+          
+          <div className="flex flex-col-reverse sm:flex-row gap-4">
             <button
-              onClick={() => setSetupStep(2)}
-              className="w-full py-4 btn-primary group shadow-[0_0_30px_var(--primary-glow)]"
+              onClick={() => setHasEntered(false)}
+              className="flex-1 py-3 btn-secondary"
             >
-              <span className="text-sm md:text-base font-black uppercase tracking-[0.15em]">{t('stage.nextStep')}</span>
-              <ArrowRight size={24} className="group-hover:translate-x-2 transition-transform" />
+              <span className="text-xs md:text-sm font-black uppercase tracking-[0.15em]">{t('stage.back')}</span>
             </button>
-          </section>
-        </div>
-      )}
-
-      {setupStep === 2 && (
-        <div className="col-span-12 flex flex-col gap-6 md:gap-8">
-          <section className="glass-panel p-4 md:p-8 border-none space-y-6">
-            {testTargets.some(t => t.attempt !== undefined) ? (
-              <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 xl:gap-6">
-                {(['stage.squat', 'stage.benchPress', 'stage.deadlift']).map((liftName) => {
-                  const attempts = testTargets.filter(t => t.name === liftName);
-                  return (
-                    <div key={liftName} className="glass-panel p-4 md:p-5 xl:p-6 border-white/5 bg-white/5 flex flex-col gap-5">
-                      <div className="border-b border-white/10 pb-3 flex items-center justify-between">
-                        <h3 className="font-sans text-base md:text-lg font-black uppercase text-volt leading-none tracking-wider">
-                          {t(liftName)}
-                        </h3>
-                        <span className="text-[9px] font-black tracking-widest text-zinc-500 uppercase">
-                          MAX: {getLiftMax(liftName)} {t(unit === 'imperial' ? 'stage.lbs' : 'stage.kg')}
-                        </span>
-                      </div>
-
-                      <div className="flex flex-col gap-4">
-                        {attempts.map((attemptItem) => {
-                          const globalIndex = testTargets.findIndex(t => t === attemptItem);
-                          return (
-                            <div key={`attempt-${attemptItem.attempt}`} className="flex flex-col gap-2 p-4 bg-void/40 border border-white/5">
-                              <div className="flex justify-between items-center text-[10px] font-bold text-zinc-500 uppercase tracking-widest leading-none">
-                                <span>Attempt {attemptItem.attempt}</span>
-                                {attemptItem.attempt === 3 && (
-                                  <span className="text-volt px-1.5 py-0.5 bg-volt/10 text-[8px] font-black tracking-[0.1em]">
-                                    PR GOAL
-                                  </span>
-                                )}
-                              </div>
-
-                              <div className="flex items-center justify-between gap-4 mt-1">
-                                <button
-                                  onClick={() => updateTarget(globalIndex, -attemptItem.step)}
-                                  className="w-10 h-10 shrink-0 bg-white/5 hover:bg-white/10 active:bg-volt/10 flex items-center justify-center text-zinc-400 hover:text-white font-black text-lg transition-colors"
-                                  id={`sub-btn-${globalIndex}`}
-                                >
-                                  -
-                                </button>
-                                <div className="text-center flex-1 flex items-center justify-center gap-2">
-                                  <input
-                                    type="text"
-                                    inputMode="decimal"
-                                    value={targetInputs[globalIndex] !== undefined ? targetInputs[globalIndex] : attemptItem.target.toString()}
-                                    onChange={(e) => handleInputChange(globalIndex, e.target.value)}
-                                    onBlur={() => handleInputBlur(globalIndex)}
-                                    className="w-24 bg-void/50 text-center border border-white/10 font-sans text-2xl font-black text-white focus:border-volt/50 focus:outline-none py-1 leading-none selection:bg-volt/30"
-                                    style={{ borderRadius: '0' }}
-                                  />
-                                  <span className="text-[10px] font-black text-zinc-500 uppercase leading-none">
-                                    {t(attemptItem.unit)}
-                                  </span>
-                                </div>
-                                <button
-                                  onClick={() => updateTarget(globalIndex, attemptItem.step)}
-                                  className="w-10 h-10 shrink-0 bg-white/5 hover:bg-white/10 active:bg-volt/10 flex items-center justify-center text-zinc-400 hover:text-white font-black text-lg transition-colors"
-                                  id={`add-btn-${globalIndex}`}
-                                >
-                                  +
-                                </button>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="space-y-3 md:space-y-4">
-                {testTargets.map((targetItem, index) => (
-                  <div 
-                    key={`${targetItem.name}-${index}`}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between p-4 md:p-6 bg-white/5 border-none gap-4"
-                  >
-                    <div>
-                      <span className="font-sans text-[10px] font-bold text-zinc-600 uppercase tracking-widest block mb-1">Target {index + 1}</span>
-                      <span className="font-sans text-lg md:text-xl font-black uppercase text-white leading-none">{t(targetItem.name)}</span>
-                    </div>
-                    
-                    <div className="flex items-center justify-between sm:justify-end gap-4">
-                      <button 
-                        onClick={() => updateTarget(index, -targetItem.step)}
-                        className="w-10 h-10 bg-white/5 hover:bg-white/10 flex items-center justify-center text-zinc-400 transition-colors"
-                      >
-                        -
-                      </button>
-                      <div className="text-center min-w-[124px] flex items-center justify-center gap-2">
-                        <input
-                          type="text"
-                          inputMode="decimal"
-                          value={targetInputs[index] !== undefined ? targetInputs[index] : targetItem.target.toString()}
-                          onChange={(e) => handleInputChange(index, e.target.value)}
-                          onBlur={() => handleInputBlur(index)}
-                          className="w-24 bg-void/50 text-center border border-white/10 font-sans text-2xl md:text-3xl font-black text-volt focus:border-volt focus:outline-none py-1 leading-none selection:bg-volt/30"
-                          style={{ borderRadius: '0' }}
-                        />
-                        <span className="text-[10px] font-black text-zinc-500 uppercase leading-none">{t(targetItem.unit)}</span>
-                      </div>
-                      <button 
-                        onClick={() => updateTarget(index, targetItem.step)}
-                        className="w-10 h-10 bg-white/5 hover:bg-white/10 flex items-center justify-center text-zinc-400 transition-colors"
-                      >
-                        +
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-            
-            <div className="flex flex-col-reverse sm:flex-row gap-4">
-              <button
-                onClick={() => setSetupStep(1)}
-                className="flex-1 py-3 btn-secondary"
-              >
-                <span className="text-xs md:text-sm font-black uppercase tracking-[0.15em]">{t('stage.back')}</span>
-              </button>
-              <button
-                onClick={() => setIsTermsModalOpen(true)}
-                className="flex-[2] py-4 btn-primary group shadow-[0_0_30px_var(--primary-glow)]"
-              >
-                <span className="text-sm md:text-base font-black uppercase tracking-[0.15em]">{t('stage.enterTest')}</span>
-                <ArrowRight size={20} className="group-hover:translate-x-2 transition-transform" />
-              </button>
-            </div>
-          </section>
-        </div>
-      )}
+            <button
+              onClick={() => setIsTermsModalOpen(true)}
+              className="flex-[2] py-4 btn-primary group shadow-[0_0_30px_var(--primary-glow)]"
+            >
+              <span className="text-sm md:text-base font-black uppercase tracking-[0.15em]">{t('stage.enterTest')}</span>
+              <ArrowRight size={20} className="group-hover:translate-x-2 transition-transform" />
+            </button>
+          </div>
+        </section>
+      </div>
     </motion.div>
   );
 
@@ -724,7 +671,7 @@ export const FitnessTestView = ({ immersionMode = 'immersive', isVoiceActive = f
                   ...(maxDeadliftVal !== undefined && { deadliftPR: maxDeadliftVal }),
                 });
                 setIsReady(false);
-                setSetupStep(1);
+                setSetupStep(2);
                 setHasEntered(false);
                 setActiveRestType(null);
               }}
@@ -1078,7 +1025,7 @@ export const FitnessTestView = ({ immersionMode = 'immersive', isVoiceActive = f
                 ...(maxDeadliftVal !== undefined && { deadliftPR: maxDeadliftVal }),
               });
               setIsReady(false);
-              setSetupStep(1);
+              setSetupStep(2);
               setHasEntered(false);
               setActiveRestType(null);
             }}
@@ -1145,15 +1092,15 @@ export const FitnessTestView = ({ immersionMode = 'immersive', isVoiceActive = f
                 {testType === 'big3' && (
                   <div className="grid grid-cols-3 gap-2 w-full mt-4 border-t border-white/5 pt-4">
                     <div className="flex flex-col items-center">
-                      <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">{t('onboarding.movement.squat').split(' ')[0]}</span>
+                      <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">{t('onboarding.squat')}</span>
                       <span className="text-sm font-black text-white">{profile?.squatPR || 0}<span className="text-[10px] text-zinc-500 ml-0.5">{profile?.unit === 'imperial' ? 'LB' : 'KG'}</span></span>
                     </div>
                     <div className="flex flex-col items-center border-x border-white/5">
-                      <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">{t('onboarding.movement.bench').split(' ')[0]}</span>
+                      <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">{t('onboarding.bench') === 'Bench' ? 'Bench Press' : t('onboarding.bench')}</span>
                       <span className="text-sm font-black text-white">{profile?.benchPR || 0}<span className="text-[10px] text-zinc-500 ml-0.5">{profile?.unit === 'imperial' ? 'LB' : 'KG'}</span></span>
                     </div>
                     <div className="flex flex-col items-center">
-                      <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">{t('onboarding.movement.deadlift').split(' ')[0]}</span>
+                      <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">{t('onboarding.deadlift')}</span>
                       <span className="text-sm font-black text-white">{profile?.deadliftPR || 0}<span className="text-[10px] text-zinc-500 ml-0.5">{profile?.unit === 'imperial' ? 'LB' : 'KG'}</span></span>
                     </div>
                   </div>
@@ -1441,7 +1388,7 @@ export const FitnessTestView = ({ immersionMode = 'immersive', isVoiceActive = f
                   <button
                     onClick={() => {
                       setIsReady(false);
-                      setSetupStep(1);
+                      setSetupStep(2);
                       setCurrentTargetIndex(0);
                       setTestTargets(getInitialTargets());
                       setIsWithdrawModalOpen(false);

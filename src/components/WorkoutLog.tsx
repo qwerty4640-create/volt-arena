@@ -273,6 +273,7 @@ const ExerciseAccordion = ({
 
             const isHeavyPrimary = displayIntent?.toUpperCase().includes("HEAVY PRIMARY");
             const isHypertrophy = displayIntent?.toUpperCase().includes("HYPERTROPHY");
+            const isTechnique = displayIntent?.toUpperCase().includes("TECHNIQUE");
             const isBloodFlow = displayIntent?.toUpperCase().includes("BLOOD FLOW");
 
             let tooltipTerm: 'HeavyPrimary' | 'Hypertrophy' | 'BloodFlow' | undefined = undefined;
@@ -286,7 +287,7 @@ const ExerciseAccordion = ({
                   "inline-block px-1.5 py-0.5 text-[9px] font-black uppercase tracking-widest border rounded-none",
                   isHeavyPrimary
                     ? "bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/30"
-                    : isHypertrophy
+                    : (isHypertrophy || isTechnique)
                     ? "bg-volt/10 text-volt border-volt/30"
                     : "bg-zinc-800 text-zinc-400 border border-zinc-700"
                 )}>
@@ -892,6 +893,14 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
     const cleanName = (name: string) => name.replace(/\[?HEAVY PRIMARY\]?|\[?HYPERTROPHY\]?|\[?ACTIVE RECOVERY\]?|\[?MOVEMENT QUALITY\]?|\[?BLOOD FLOW\]?/gi, '').trim().toLowerCase();
     const searchTargetName = cleanName(newDef.name);
 
+    const matchesTargetExercise = (exName: string) => {
+      if (!exName) return false;
+      if (isS) return isMainLiftMatch(exName, "Squat");
+      if (isB) return isMainLiftMatch(exName, "Bench Press");
+      if (isD) return isMainLiftMatch(exName, "Deadlift");
+      return cleanName(exName) === searchTargetName;
+    };
+
     let lastWeight = 0;
     if (history && history.length > 0) {
       const sessionsWithEx = history
@@ -899,7 +908,7 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
           s.exercises?.some(
             (ex) =>
               ex.name &&
-              cleanName(ex.name) === searchTargetName,
+              matchesTargetExercise(ex.name),
           ),
         )
         .sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
@@ -909,7 +918,7 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
         const targetEx = latestSession.exercises?.find(
           (ex) =>
             ex.name &&
-            cleanName(ex.name) === searchTargetName,
+            matchesTargetExercise(ex.name),
         );
         if (targetEx && targetEx.sets) {
           // Screen out warm-up sets if there are any working sets, and find the maximum working weight
@@ -1009,9 +1018,19 @@ export const WorkoutLog = ({ onBack, onComplete, onEndSession }: WorkoutLogProps
     const cleanName = (name: string) => name.replace(/\[?HEAVY PRIMARY\]?|\[?HYPERTROPHY\]?|\[?ACTIVE RECOVERY\]?|\[?MOVEMENT QUALITY\]?|\[?BLOOD FLOW\]?/gi, '').trim().toLowerCase();
     const cleanTargetName = cleanName(exerciseName);
 
+    const isS = isMainLiftMatch(exerciseName, "Squat");
+    const isB = isMainLiftMatch(exerciseName, "Bench Press");
+    const isD = isMainLiftMatch(exerciseName, "Deadlift");
+
     let allSets: any[] = [];
     history.forEach(session => {
-      const matchExercises = session.exercises?.filter(ex => cleanName(ex.name) === cleanTargetName) || [];
+      const matchExercises = session.exercises?.filter(ex => {
+        if (!ex.name) return false;
+        if (isS) return isMainLiftMatch(ex.name, "Squat");
+        if (isB) return isMainLiftMatch(ex.name, "Bench Press");
+        if (isD) return isMainLiftMatch(ex.name, "Deadlift");
+        return cleanName(ex.name) === cleanTargetName;
+      }) || [];
       matchExercises.forEach(ex => {
         if (ex.sets) {
           // ignore sets that are clearly empty/placeholder

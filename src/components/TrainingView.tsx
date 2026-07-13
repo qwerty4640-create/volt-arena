@@ -131,6 +131,14 @@ export const TrainingView = ({
     const cleanName = (name: string) => name.replace(/\[?HEAVY PRIMARY\]?|\[?HYPERTROPHY\]?|\[?ACTIVE RECOVERY\]?|\[?MOVEMENT QUALITY\]?|\[?BLOOD FLOW\]?/gi, '').trim().toLowerCase();
     const searchTargetName = cleanName(newDef.name);
 
+    const matchesTargetExercise = (exName: string) => {
+      if (!exName) return false;
+      if (isS) return isMainLiftMatch(exName, "Squat");
+      if (isB) return isMainLiftMatch(exName, "Bench Press");
+      if (isD) return isMainLiftMatch(exName, "Deadlift");
+      return cleanName(exName) === searchTargetName;
+    };
+
     let lastWeight = 0;
     if (history && history.length > 0) {
       const sessionsWithEx = history
@@ -138,7 +146,7 @@ export const TrainingView = ({
           s.exercises?.some(
             (ex) =>
               ex.name &&
-              cleanName(ex.name) === searchTargetName,
+              matchesTargetExercise(ex.name),
           ),
         )
         .sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
@@ -148,7 +156,7 @@ export const TrainingView = ({
         const targetEx = latestSession.exercises?.find(
           (ex) =>
             ex.name &&
-            cleanName(ex.name) === searchTargetName,
+            matchesTargetExercise(ex.name),
         );
         if (targetEx && targetEx.sets) {
           // Screen out warm-up sets if there are any working sets, and find the maximum working weight
@@ -502,8 +510,8 @@ export const TrainingView = ({
   };
   const sessionProgress = calculateProgress(currentSession);
 
-  const fitnessTestInfo = getFitnessTestInfo(profile, activeOrNext?.title);
-  const isTestRequiredAndLocked = fitnessTestInfo.daysRemaining <= 0 && !profile?.devOverrideFitnessTest && !isActiveSession;
+  const fitnessTestInfo = getFitnessTestInfo(profile, activeOrNext?.title, history);
+  const isTestRequiredAndLocked = (fitnessTestInfo.daysRemaining <= 0 || fitnessTestInfo.missionsRemaining <= 0) && !profile?.devOverrideFitnessTest && !isActiveSession;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 auto-rows-min w-full">

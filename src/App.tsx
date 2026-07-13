@@ -111,7 +111,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'analytics', label: 'nav.analytics', icon: BarChart3 },
   { id: 'training', label: 'nav.training', icon: DeploymentIcon },
   { id: 'deployment', label: 'nav.deployment', icon: MissionIcon },
-  { id: 'fitness-test', label: 'nav.fitnessTest', icon: SportShoeIcon, isExperimental: true },
+  { id: 'fitness-test', label: 'nav.fitnessTest', icon: SportShoeIcon },
   { id: 'library', label: 'nav.library', icon: BookSearch },
   { id: 'settings', label: 'nav.settings', icon: Settings },
 ];
@@ -158,6 +158,8 @@ function AppContent() {
   } = useWorkout();
   
   const nextWorkoutForTest = getNextWorkoutTemplate();
+  const fitnessTestState = getFitnessTestInfo(profile, nextWorkoutForTest?.title, history);
+  const isFitnessTestUnlocked = fitnessTestState.isUnlocked;
   
   const calibration = getCalibrationStatus();
   const readinessValue = calibration.readiness;
@@ -261,9 +263,6 @@ function AppContent() {
     if (!query) return [];
 
     const results: any[] = [];
-    const nextWorkoutForTest = getNextWorkoutTemplate();
-    const fitnessTestState = getFitnessTestInfo(profile, nextWorkoutForTest?.title);
-    const isFitnessTestUnlocked = showExperimentalMenus && fitnessTestState.isUnlocked;
 
     // 1. Check NAV_ITEMS (excluding locked views)
     NAV_ITEMS.forEach(item => {
@@ -1216,6 +1215,7 @@ function AppContent() {
                     (item.id === 'training' && ['workout-log', 'post-workout', 'berserker', 'workout-history', 'upcoming-missions'].includes(activeView));
                   
                   if (!showExperimentalMenus && item.isExperimental) return null;
+                  if (item.id === 'fitness-test' && !isFitnessTestUnlocked) return null;
 
                   return (
                     <button
@@ -1250,7 +1250,7 @@ function AppContent() {
                         {item.id === 'fitness-test' && (
                           <span className="text-[8px] opacity-70 text-zinc-500 font-bold whitespace-nowrap text-left">
                             {(() => {
-                              const info = getFitnessTestInfo(profile, nextWorkoutForTest?.title);
+                              const info = getFitnessTestInfo(profile, nextWorkoutForTest?.title, history);
                               if (info.isUnlocked) return 'UNLOCKED';
                               return `D-${info.daysRemaining} | M-${info.missionsRemaining}`;
                             })()}
@@ -1421,7 +1421,7 @@ function AppContent() {
             <span className="text-[8px] font-black uppercase tracking-widest">{t('nav.deployment').split(' ')[0]}</span>
           </button>
           
-          {showExperimentalMenus && (
+          {isFitnessTestUnlocked && (
             <button
               onClick={() => setActiveView('fitness-test')}
               className={cn(

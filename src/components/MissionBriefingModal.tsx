@@ -211,6 +211,7 @@ export const MissionBriefingModal: React.FC<MissionBriefingModalProps> = ({
 
                                 const isHeavyPrimary = intentTag?.toUpperCase().includes("HEAVY PRIMARY");
                                 const isHypertrophy = intentTag?.toUpperCase().includes("HYPERTROPHY");
+                                const isTechnique = intentTag?.toUpperCase().includes("TECHNIQUE");
                                 const isBloodFlow = intentTag?.toUpperCase().includes("BLOOD FLOW");
 
                                 let tooltipTerm: 'HeavyPrimary' | 'Hypertrophy' | 'BloodFlow' | undefined = undefined;
@@ -229,7 +230,9 @@ export const MissionBriefingModal: React.FC<MissionBriefingModalProps> = ({
                                         <span className={`px-2 py-0.5 text-[8px] font-black uppercase tracking-widest border rounded-none ${
                                           isHeavyPrimary 
                                             ? "bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/30" 
-                                            : "bg-volt/10 text-volt border-volt/30"
+                                            : (isHypertrophy || isTechnique)
+                                            ? "bg-volt/10 text-volt border-volt/30"
+                                            : "bg-zinc-800 text-zinc-400 border border-zinc-700"
                                         }`}>
                                           {intentTag}
                                         </span>

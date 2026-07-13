@@ -1091,7 +1091,7 @@ export const createSessionFromTemplate = (
       dynamicSlots = [
         {
           pattern: "push_horizontal",
-          exerciseId: "bench_press_conventional",
+          exerciseId: "bench_flat",
           nameOverride: "Competition Bench Press",
           impact: "high",
           customSets: [
@@ -1158,23 +1158,25 @@ export const createSessionFromTemplate = (
         {
           pattern: "squat",
           exerciseId: "squat_conventional",
-          nameOverride: "Squat (Technique)",
+          nameOverride: "Squat",
+          intentOverride: "TECHNIQUE",
           impact: "medium",
           customSets: [
-            { reps: "2", intensity: 0.55, rpe: "5" },
-            { reps: "2", intensity: 0.55, rpe: "5" },
-            { reps: "2", intensity: 0.55, rpe: "5" }
+            { reps: "2", intensity: 0.35, rpe: "5" },
+            { reps: "2", intensity: 0.35, rpe: "5" },
+            { reps: "2", intensity: 0.35, rpe: "5" }
           ]
         },
         {
           pattern: "push_horizontal",
-          exerciseId: "bench_press_conventional",
-          nameOverride: "Bench Press (Technique)",
+          exerciseId: "bench_flat",
+          nameOverride: "Bench Press",
+          intentOverride: "TECHNIQUE",
           impact: "medium",
           customSets: [
-            { reps: "3", intensity: 0.55, rpe: "5" },
-            { reps: "3", intensity: 0.55, rpe: "5" },
-            { reps: "3", intensity: 0.55, rpe: "5" }
+            { reps: "3", intensity: 0.45, rpe: "5" },
+            { reps: "3", intensity: 0.45, rpe: "5" },
+            { reps: "3", intensity: 0.45, rpe: "5" }
           ]
         },
         {
@@ -1778,12 +1780,20 @@ export const createSessionFromTemplate = (
         const cleanName = (name: string) => name.replace(/\[?HEAVY PRIMARY\]?|\[?HYPERTROPHY\]?|\[?ACTIVE RECOVERY\]?|\[?MOVEMENT QUALITY\]?|\[?BLOOD FLOW\]?/gi, '').trim().toLowerCase();
         const searchTargetName = cleanName(selectedExercise.name);
 
+        const matchesTargetExercise = (exName: string) => {
+          if (!exName) return false;
+          if (isSquat) return isMainLiftMatch(exName, "Squat");
+          if (isBench) return isMainLiftMatch(exName, "Bench Press");
+          if (isDeadlift) return isMainLiftMatch(exName, "Deadlift");
+          return cleanName(exName) === searchTargetName;
+        };
+
         const sessionsWithEx = history
           .filter((s) =>
             s.exercises.some(
               (ex) =>
                 ex.name &&
-                cleanName(ex.name) === searchTargetName,
+                matchesTargetExercise(ex.name),
             ),
           )
           .sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
@@ -1793,7 +1803,7 @@ export const createSessionFromTemplate = (
           const chronologicalSessions = [...sessionsWithEx].reverse();
           chronologicalSessions.forEach(session => {
             const ex = session.exercises.find(
-              (e) => e.name && cleanName(e.name) === searchTargetName
+              (e) => e.name && matchesTargetExercise(e.name)
             );
             if (!ex || !ex.sets) return;
 
@@ -1845,7 +1855,7 @@ export const createSessionFromTemplate = (
           const targetEx = latestSession.exercises.find(
             (ex) =>
               ex.name &&
-              cleanName(ex.name) === searchTargetName,
+              matchesTargetExercise(ex.name),
           );
           if (targetEx && targetEx.sets) {
             // Screen out warm-up sets if there are any working sets, and find the maximum working weight
@@ -2229,8 +2239,12 @@ export const createSessionFromTemplate = (
         (block.type as any) === BlockType.PEAKING;
 
       let intent: string | undefined;
-      if (isMainLift) {
-        intent = "HEAVY PRIMARY";
+      const prescribedForTechnique = (slot as any).intentOverride === "TECHNIQUE" || slot.nameOverride?.toLowerCase().includes("technique");
+
+      if (prescribedForTechnique) {
+        intent = "TECHNIQUE";
+      } else if (isMainLift) {
+        intent = isCompetitionBlock(block.type) ? "TECHNIQUE" : "HEAVY PRIMARY";
       } else if (isBifurcatedBlock) {
         const isHybrid =
           missionInfo.title.toLowerCase().includes("hybrid") ||
